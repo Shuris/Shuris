@@ -1,0 +1,202 @@
+{
+  "frameWidth": 112,
+  "frameHeight": 88,
+  "originX": 56,
+  "originY": 83,
+  "frameCount": 29,
+  "animations": {
+    "idle": {
+      "start": 0,
+      "count": 4,
+      "fps": 5,
+      "loop": true
+    },
+    "walk": {
+      "start": 4,
+      "count": 6,
+      "fps": 10,
+      "loop": true
+    },
+    "attack": {
+      "start": 10,
+      "count": 4,
+      "fps": 10,
+      "loop": false
+    },
+    "block": {
+      "start": 14,
+      "count": 2,
+      "fps": 6,
+      "loop": true
+    },
+    "hit": {
+      "start": 16,
+      "count": 2,
+      "fps": 8,
+      "loop": false
+    },
+    "dodge": {
+      "start": 18,
+      "count": 3,
+      "fps": 9,
+      "loop": false
+    },
+    "victory": {
+      "start": 21,
+      "count": 4,
+      "fps": 4,
+      "loop": true
+    },
+    "defeat": {
+      "start": 25,
+      "count": 4,
+      "fps": 4,
+      "loop": false
+    }
+  },
+  "layerOrder": [
+    "body_back",
+    "legs_back",
+    "weapon",
+    "body_main",
+    "cloth",
+    "belt",
+    "legs_front",
+    "armor",
+    "hair",
+    "beard",
+    "helmet",
+    "body_front",
+    "shield"
+  ],
+  "sheets": {
+    "body_back_0": {
+      "file": "sprites/gladiator/body_back_0.png",
+      "layer": "body_back"
+    },
+    "body_main_0": {
+      "file": "sprites/gladiator/body_main_0.png",
+      "layer": "body_main"
+    },
+    "body_front_0": {
+      "file": "sprites/gladiator/body_front_0.png",
+      "layer": "body_front"
+    },
+    "body_back_1": {
+      "file": "sprites/gladiator/body_back_1.png",
+      "layer": "body_back"
+    },
+    "body_main_1": {
+      "file": "sprites/gladiator/body_main_1.png",
+      "layer": "body_main"
+    },
+    "body_front_1": {
+      "file": "sprites/gladiator/body_front_1.png",
+      "layer": "body_front"
+    },
+    "body_back_2": {
+      "file": "sprites/gladiator/body_back_2.png",
+      "layer": "body_back"
+    },
+    "body_main_2": {
+      "file": "sprites/gladiator/body_main_2.png",
+      "layer": "body_main"
+    },
+    "body_front_2": {
+      "file": "sprites/gladiator/body_front_2.png",
+      "layer": "body_front"
+    },
+    "cloth": {
+      "file": "sprites/gladiator/cloth.png",
+      "layer": "cloth"
+    },
+    "belt": {
+      "file": "sprites/gladiator/belt.png",
+      "layer": "belt"
+    },
+    "hair_0": {
+      "file": "sprites/gladiator/hair_0.png",
+      "layer": "hair"
+    },
+    "hair_1": {
+      "file": "sprites/gladiator/hair_1.png",
+      "layer": "hair"
+    },
+    "hair_2": {
+      "file": "sprites/gladiator/hair_2.png",
+      "layer": "hair"
+    },
+    "beard": {
+      "file": "sprites/gladiator/beard.png",
+      "layer": "beard"
+    },
+    "weapon_rudis": {
+      "file": "sprites/gladiator/weapon_rudis.png",
+      "layer": "weapon"
+    },
+    "weapon_gladius": {
+      "file": "sprites/gladiator/weapon_gladius.png",
+      "layer": "weapon"
+    },
+    "weapon_shortsword": {
+      "file": "sprites/gladiator/weapon_shortsword.png",
+      "layer": "weapon"
+    },
+    "weapon_spear": {
+      "file": "sprites/gladiator/weapon_spear.png",
+      "layer": "weapon"
+    },
+    "weapon_trident": {
+      "file": "sprites/gladiator/weapon_trident.png",
+      "layer": "weapon"
+    },
+    "shield_parmula": {
+      "file": "sprites/gladiator/shield_parmula.png",
+      "layer": "shield"
+    },
+    "shield_scutum": {
+      "file": "sprites/gladiator/shield_scutum.png",
+      "layer": "shield"
+    },
+    "helmet_cap": {
+      "file": "sprites/gladiator/helmet_cap.png",
+      "layer": "helmet"
+    },
+    "helmet_galea": {
+      "file": "sprites/gladiator/helmet_galea.png",
+      "layer": "helmet"
+    },
+    "helmet_murmillo": {
+      "file": "sprites/gladiator/helmet_murmillo.png",
+      "layer": "helmet"
+    },
+    "armor_light": {
+      "file": "sprites/gladiator/armor_light.png",
+      "layer": "armor"
+    },
+    "armor_medium": {
+      "file": "sprites/gladiator/armor_medium.png",
+      "layer": "armor"
+    },
+    "armor_heavy": {
+      "file": "sprites/gladiator/armor_heavy.png",
+      "layer": "armor"
+    },
+    "legsb_iron": {
+      "file": "sprites/gladiator/legsb_iron.png",
+      "layer": "legs_back"
+    },
+    "legsf_iron": {
+      "file": "sprites/gladiator/legsf_iron.png",
+      "layer": "legs_front"
+    },
+    "legsb_bronze": {
+      "file": "sprites/gladiator/legsb_bronze.png",
+      "layer": "legs_back"
+    },
+    "legsf_bronze": {
+      "file": "sprites/gladiator/legsf_bronze.png",
+      "layer": "legs_front"
+    }
+  }
+}

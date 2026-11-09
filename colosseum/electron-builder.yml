@@ -1,0 +1,45 @@
+# Configuração do Electron Builder — instalador e versão portátil para Windows.
+appId: com.shuris.colosseum
+productName: Colosseum
+copyright: Copyright © 2026 Shuris
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - package.json
+asar: true
+publish: null
+compression: normal
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build/icon.ico
+  executableName: Colosseum
+  legalTrademarks: Colosseum
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: Colosseum
+  uninstallDisplayName: Colosseum
+  deleteAppDataOnUninstall: false
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+  runAfterFinish: true
+  language: "1046"
+  installerLanguages: [pt_BR]
+  artifactName: Colosseum-Setup-${version}.${ext}
+portable:
+  artifactName: Colosseum-Portatil-${version}.${ext}
+linux:
+  target: [AppImage]
+  category: Game
+  icon: build/icon.png

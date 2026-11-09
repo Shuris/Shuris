@@ -1,0 +1,45 @@
+# Compila e testa o COLOSSEUM num runner Windows real e publica os .exe como artefato.
+name: Colosseum - build Windows
+
+on:
+  push:
+    paths:
+      - 'colosseum/**'
+      - '.github/workflows/colosseum-windows.yml'
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: colosseum
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: colosseum/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes unitários
+        run: npm test
+
+      - name: Gerar instalador e versão portátil
+        run: npm run dist:win
+
+      - name: Publicar executáveis
+        uses: actions/upload-artifact@v4
+        with:
+          name: Colosseum-Windows
+          path: |
+            colosseum/release/Colosseum-Setup-*.exe
+            colosseum/release/Colosseum-Portatil-*.exe
+          retention-days: 30
+
+      - name: Teste E2E do aplicativo (Windows)
+        run: npm run test:e2e

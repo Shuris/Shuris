@@ -1,0 +1,15 @@
+# Dependências e artefatos de build
+node_modules/
+dist/
+release/
+.vite/
+*.log
+npm-debug.log*
+
+# Python (gerador de assets)
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
+Thumbs.db

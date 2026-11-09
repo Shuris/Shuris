@@ -1,0 +1,37 @@
+{
+  "name": "colosseum",
+  "productName": "Colosseum",
+  "version": "0.1.0",
+  "description": "COLOSSEUM — RPG de gladiadores em pixel art com modo desktop companion",
+  "author": "Shuris",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main/main.js",
+  "scripts": {
+    "dev": "node tools/dev.mjs",
+    "build:main": "node tools/build-main.mjs",
+    "build:renderer": "vite build",
+    "build": "npm run typecheck && npm run build:renderer && npm run build:main",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "start": "electron .",
+    "test": "vitest run",
+    "test:e2e": "node tools/run-e2e.mjs",
+    "balance": "vitest run tests/unit/balance.test.ts --reporter=verbose",
+    "assets": "python3 tools/generate_assets.py",
+    "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "dist:dir": "npm run build && electron-builder --dir --publish never"
+  },
+  "devDependencies": {
+    "@fontsource/pixelify-sans": "5.3.0",
+    "@fontsource/vt323": "5.3.0",
+    "@playwright/test": "1.65.0",
+    "@types/node": "^22.20.5",
+    "electron": "45.2.3",
+    "electron-builder": "26.18.0",
+    "esbuild": "0.28.2",
+    "phaser": "3.90.0",
+    "typescript": "5.9.3",
+    "vite": "6.4.6",
+    "vitest": "3.2.7"
+  }
+}

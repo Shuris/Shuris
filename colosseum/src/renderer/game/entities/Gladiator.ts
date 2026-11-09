@@ -1,0 +1,170 @@
+// Representação visual de um gladiador: pilha de camadas (corpo, roupas, cabelo,
+// equipamentos) que tocam sempre o mesmo quadro. Não contém lógica de combate.
+import * as Phaser from 'phaser';
+import type { FighterVisual } from '../../core/combat/CombatantFactory';
+import { CLOTH_COLORS, HAIR_COLORS } from '../../core/data/gladiators';
+import { getManifest, sheetKey, type GladiatorManifest } from '../assets';
+
+interface Step {
+  frame: number;
+  dur: number;
+}
+
+export class GladiatorView extends Phaser.GameObjects.Container {
+  private manifest: GladiatorManifest;
+  private layers: Phaser.GameObjects.Sprite[] = [];
+  private baseTints: number[] = [];
+  private shadow: Phaser.GameObjects.Ellipse;
+  private anim = 'idle';
+  private loop = true;
+  private fps = 5;
+  private frameIdx = 0;
+  private frameTime = 0;
+  private seq: Step[] | null = null;
+  private seqIdx = 0;
+  private flashTime = 0;
+  private facingDir: 1 | -1 = 1;
+  private baseScale = 1;
+  speedMul = 1;
+  aura: Phaser.GameObjects.Ellipse;
+
+  constructor(scene: Phaser.Scene, x: number, y: number, visual: FighterVisual) {
+    super(scene, x, y);
+    this.manifest = getManifest(scene);
+    this.shadow = scene.add.ellipse(0, 0, 26, 6, 0x000000, 0.28);
+    this.add(this.shadow);
+    this.aura = scene.add.ellipse(0, -22, 30, 50, 0xffd36a, 0);
+    this.aura.setBlendMode(Phaser.BlendModes.ADD);
+    this.add(this.aura);
+    this.setVisual(visual);
+    scene.add.existing(this);
+  }
+
+  setVisual(v: FighterVisual): void {
+    for (const l of this.layers) l.destroy();
+    this.layers = [];
+    this.baseTints = [];
+    const m = this.manifest;
+    const a = v.appearance;
+    const entries: Array<{ sheet: string; tint: number }> = [];
+    const push = (sheet: string, tint = 0xffffff) => {
+      if (m.sheets[sheet]) entries.push({ sheet, tint });
+    };
+    push(`body_back_${a.skin}`);
+    push(`body_main_${a.skin}`);
+    push('cloth', CLOTH_COLORS[a.clothColor] ?? 0xffffff);
+    push('belt');
+    push(`body_front_${a.skin}`);
+    const hasHelmet = !!v.gear.head;
+    if (!hasHelmet) push(`hair_${a.hairStyle}`, HAIR_COLORS[a.hairColor] ?? 0xffffff);
+    if (a.beard) push('beard', HAIR_COLORS[a.hairColor] ?? 0xffffff);
+    for (const item of Object.values(v.gear)) {
+      if (!item) continue;
+      for (const s of item.visual.sheets) push(s, item.visual.tint ?? 0xffffff);
+    }
+    const order = new Map(m.layerOrder.map((l, i) => [l, i]));
+    entries.sort((x, y) => (order.get(m.sheets[x.sheet].layer) ?? 0) - (order.get(m.sheets[y.sheet].layer) ?? 0));
+    const ox = m.originX / m.frameWidth;
+    const oy = m.originY / m.frameHeight;
+    for (const e of entries) {
+      const s = this.scene.add.sprite(0, 0, sheetKey(e.sheet), 0).setOrigin(ox, oy);
+      s.setTint(e.tint);
+      this.layers.push(s);
+      this.baseTints.push(e.tint);
+      this.add(s);
+    }
+    this.applyFrame();
+  }
+
+  setFacing(dir: 1 | -1): void {
+    this.facingDir = dir;
+    this.setScale(this.baseScale * dir, this.baseScale);
+  }
+
+  setBaseScale(s: number): void {
+    this.baseScale = s;
+    this.setFacing(this.facingDir);
+  }
+
+  /** Toca uma animação do manifesto. */
+  play(anim: string, opts: { loop?: boolean; fps?: number; restart?: boolean } = {}): void {
+    const def = this.manifest.animations[anim];
+    if (!def) return;
+    if (!opts.restart && this.anim === anim && !this.seq && this.loop === (opts.loop ?? def.loop)) {
+      if (opts.fps) this.fps = opts.fps;
+      return;
+    }
+    this.seq = null;
+    this.anim = anim;
+    this.loop = opts.loop ?? def.loop;
+    this.fps = opts.fps ?? def.fps;
+    this.frameIdx = 0;
+    this.frameTime = 0;
+    this.applyFrame();
+  }
+
+  /** Sequência explícita de quadros (anim, índice, duração) — sincroniza com o motor. */
+  sequence(steps: Array<[string, number, number]>): void {
+    const m = this.manifest.animations;
+    this.seq = steps.filter(([a]) => m[a]).map(([a, i, d]) => ({ frame: m[a].start + Math.min(i, m[a].count - 1), dur: d }));
+    this.seqIdx = 0;
+    this.frameTime = 0;
+    this.applyFrame();
+  }
+
+  /** Mantém um quadro fixo. */
+  hold(anim: string, idx: number): void {
+    this.sequence([[anim, idx, 9999]]);
+  }
+
+  flash(duration = 0.08): void {
+    this.flashTime = duration;
+    for (const l of this.layers) l.setTintFill(0xffffff);
+  }
+
+  setAura(on: boolean): void {
+    this.scene.tweens.killTweensOf(this.aura);
+    if (on) {
+      this.aura.setFillStyle(0xffd36a, 0.22);
+      this.scene.tweens.add({ targets: this.aura, alpha: { from: 0.6, to: 1 }, duration: 400, yoyo: true, repeat: -1 });
+    } else {
+      this.aura.setFillStyle(0xffd36a, 0);
+    }
+  }
+
+  private currentFrame(): number {
+    if (this.seq) return this.seq[Math.min(this.seqIdx, this.seq.length - 1)]?.frame ?? 0;
+    const def = this.manifest.animations[this.anim];
+    return def.start + this.frameIdx;
+  }
+
+  private applyFrame(): void {
+    const f = this.currentFrame();
+    for (const l of this.layers) l.setFrame(f);
+  }
+
+  tick(dt: number): void {
+    if (this.flashTime > 0) {
+      this.flashTime -= dt;
+      if (this.flashTime <= 0) this.layers.forEach((l, i) => (l.clearTint(), l.setTint(this.baseTints[i])));
+    }
+    this.frameTime += dt * this.speedMul;
+    if (this.seq) {
+      const step = this.seq[this.seqIdx];
+      if (step && this.frameTime >= step.dur && this.seqIdx < this.seq.length - 1) {
+        this.frameTime -= step.dur;
+        this.seqIdx++;
+        this.applyFrame();
+      }
+      return;
+    }
+    const def = this.manifest.animations[this.anim];
+    const spf = 1 / this.fps;
+    if (this.frameTime >= spf) {
+      this.frameTime -= spf;
+      if (this.frameIdx < def.count - 1) this.frameIdx++;
+      else if (this.loop) this.frameIdx = 0;
+      this.applyFrame();
+    }
+  }
+}
