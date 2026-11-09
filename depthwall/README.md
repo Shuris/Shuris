@@ -17,6 +17,9 @@ Dicas: fotos com um objeto ou pessoa em primeiro plano e fundo distante dão o m
 Na prévia, pince para dar zoom, arraste para mover a foto e toque duas vezes para voltar ao padrão.
 Para o novo mapa de profundidade valer em uma foto antiga, escolha a foto de novo.
 
+Se a IA errar em algum ponto (ex.: uma corda fina), use **Corrigir profundidade (pincel)**: o mapa aparece
+sobre a foto (laranja = perto, azul = longe) e você pinta onde precisa ajustar.
+
 ## Estrutura
 - `DepthEstimator.kt`: Depth Anything V2 Small (Apache-2.0) via ONNX Runtime, na proporção real da foto.
 - `GuidedFilter.java`: refino das bordas do mapa usando as cores da foto (recorte de bordas + mediana).
@@ -24,6 +27,7 @@ Para o novo mapa de profundidade valer em uma foto antiga, escolha a foto de nov
 - `DepthRenderer.kt`: shader OpenGL ES 2 com parallax por ray marching, enquadramento e efeitos entre camadas.
 - `TiltSensor.kt`: giroscópio que volta sozinho ao centro (fallback para acelerômetro).
 - `GLWallpaperService.java` / `DepthWallpaperService.kt`: o live wallpaper.
+- `DepthEditor.kt`: pincel para corrigir o mapa à mão (frente, trás, igualar, suavizar), com modo inteligente que respeita as bordas da foto.
 - `MainActivity.kt`: escolha da foto, prévia e painel de ajustes.
 
 ## Compilar localmente

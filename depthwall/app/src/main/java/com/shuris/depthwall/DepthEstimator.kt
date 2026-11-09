@@ -156,8 +156,9 @@ class DepthEstimator(private val ctx: Context) {
     private companion object {
         const val MODEL_URL =
             "https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_quantized.onnx"
-        const val INPUT_SHORT_SIDE = 518 // resolução nativa do modelo
-        const val INPUT_MAX_SIDE = 1036    // limite do lado maior (múltiplo de 14)
+        // Acima da resolução de treino (518) para enxergar melhor objetos finos (ex.: cordas).
+        const val INPUT_SHORT_SIDE = 616   // múltiplo de 14
+        const val INPUT_MAX_SIDE = 1232    // limite do lado maior (múltiplo de 14)
         const val GUIDE_LONG_SIDE = 960    // resolução final do mapa de profundidade
         val MEAN = floatArrayOf(0.485f, 0.456f, 0.406f)
         val STD = floatArrayOf(0.229f, 0.224f, 0.225f)

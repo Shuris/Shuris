@@ -30,10 +30,18 @@ class DepthRenderer(
     @Volatile var extraY = 0f
     @Volatile var showDepth = false
 
+    /** Modo pincel: mostra o mapa sobre a foto e congela o movimento para pintar com precisão. */
+    @Volatile var depthOverlay = false
+    @Volatile var freezeMotion = false
+
     /** Escala atual (fração da foto visível por eixo), usada pela prévia para converter gestos. */
     @Volatile var visibleFractionX = 1f
         private set
     @Volatile var visibleFractionY = 1f
+        private set
+    @Volatile var currentPanX = 0f
+        private set
+    @Volatile var currentPanY = 0f
         private set
 
     private var program = 0
@@ -103,8 +111,8 @@ class DepthRenderer(
         fxTime = (fxTime + dt * lerp(0.25f, 2.5f, s.fxSpeed)) % 3600f
 
         // Suaviza o movimento para não tremer.
-        val tx = (tilt.targetX + extraX).coerceIn(-1.2f, 1.2f)
-        val ty = (tilt.targetY + extraY).coerceIn(-1.2f, 1.2f)
+        val tx = if (freezeMotion) 0f else (tilt.targetX + extraX).coerceIn(-1.2f, 1.2f)
+        val ty = if (freezeMotion) 0f else (tilt.targetY + extraY).coerceIn(-1.2f, 1.2f)
         offX += (tx - offX) * 0.12f
         offY += (ty - offY) * 0.12f
 
@@ -122,6 +130,8 @@ class DepthRenderer(
         visibleFractionY = sy
         val panX = clampPan(s.panX, sx)
         val panY = clampPan(s.panY, sy)
+        currentPanX = panX
+        currentPanY = panY
 
         val shiftAmount = MAX_SHIFT * s.strength
         val shiftX = offX * shiftAmount
@@ -143,7 +153,7 @@ class DepthRenderer(
         GLES20.glUniform2f(u["uShiftS"]!!, shiftX / sx * viewAspect, shiftY / sy)
         GLES20.glUniform1f(u["uFocus"]!!, s.focus)
         GLES20.glUniform1f(u["uAspect"]!!, viewAspect)
-        GLES20.glUniform1i(u["uShowDepth"]!!, if (showDepth) 1 else 0)
+        GLES20.glUniform1i(u["uShowDepth"]!!, if (depthOverlay) 2 else if (showDepth) 1 else 0)
 
         GLES20.glUniform1i(u["uEffect"]!!, s.effect)
         GLES20.glUniform1f(u["uFxTime"]!!, fxTime)
@@ -155,6 +165,11 @@ class DepthRenderer(
         GLES20.glVertexAttribPointer(aPos, 2, GLES20.GL_FLOAT, false, 0, quad)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         GLES20.glDisableVertexAttribArray(aPos)
+    }
+
+    /** Troca o mapa de profundidade na hora (pincel). Chamar na thread do GL (queueEvent). */
+    fun replaceDepth(bmp: Bitmap) {
+        if (depthTex != 0) upload(depthTex, bmp)
     }
 
     private fun bindTexture(unit: Int, tex: Int, uniform: String) {
@@ -465,6 +480,12 @@ void main() {
 
     if (uShowDepth == 1) {
         gl_FragColor = vec4(vec3(d), 1.0);
+        return;
+    }
+    if (uShowDepth == 2) {
+        // Sobreposição do pincel: azul = longe, laranja = perto.
+        vec3 heat = mix(vec3(0.10, 0.25, 0.95), vec3(1.0, 0.45, 0.10), d);
+        gl_FragColor = vec4(mix(photo * inside, heat, 0.55 * inside), 1.0);
         return;
     }
 

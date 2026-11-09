@@ -49,6 +49,18 @@ class MainActivity : ComponentActivity() {
     /** Controles que só fazem sentido quando há um efeito ativo. */
     private val effectControls = mutableListOf<View>()
 
+    // Pincel de correção da profundidade.
+    private lateinit var editor: DepthEditor
+    private var brushMode: DepthEditor.Mode? = null
+    private var brushSize = 0.3f
+    private var brushStrength = 0.5f
+    private var brushSmart = true
+    private var painting = false
+    private var lastU = 0f
+    private var lastV = 0f
+    private var lastUploadMs = 0L
+    private val brushControls = mutableListOf<View>()
+
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) processPhoto(uri)
     }
@@ -60,6 +72,7 @@ class MainActivity : ComponentActivity() {
         tilt = TiltSensor(this)
         renderer = DepthRenderer(applicationContext, tilt)
         estimator = DepthEstimator(applicationContext)
+        editor = DepthEditor(applicationContext)
         settings = Scene.settings(this)
 
         glView = findViewById(R.id.glView)
@@ -98,6 +111,42 @@ class MainActivity : ComponentActivity() {
         slider("Ponto fixo (fundo ↔ frente)", settings.focus) { v -> update { it.copy(focus = v) } }
         toggle("Ver mapa de profundidade", false) { renderer.showDepth = it }
 
+        section("Corrigir profundidade (pincel)")
+        note(
+            "Onde a IA errou, pinte na prévia. Laranja = perto, azul = longe. " +
+                "\"Frente\" aproxima, \"Trás\" afasta, \"Igualar\" copia a profundidade de onde o traço começa " +
+                "(ótimo para deixar uma corda inteira com o mesmo valor) e \"Suavizar\" tira degraus. " +
+                "Com o pincel ligado, use dois dedos para dar zoom e mover.",
+        )
+        choices(listOf("Desligado", "Frente", "Trás", "Igualar", "Suavizar"), 0) { i ->
+            setBrushMode(
+                when (i) {
+                    1 -> DepthEditor.Mode.FORWARD
+                    2 -> DepthEditor.Mode.BACK
+                    3 -> DepthEditor.Mode.LEVEL
+                    4 -> DepthEditor.Mode.SMOOTH
+                    else -> null
+                },
+            )
+        }
+        brushControls += slider("Tamanho do pincel", brushSize) { brushSize = it }
+        brushControls += slider("Força", brushStrength) { brushStrength = it }
+        brushControls += toggle("Pincel inteligente (respeita as bordas da foto)", brushSmart) { brushSmart = it }
+        val brushButtons = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        brushButtons.addView(Button(this).apply {
+            text = "Desfazer"
+            setOnClickListener { if (editor.undo()) commitEdits() }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        brushButtons.addView(Button(this).apply {
+            text = "Mapa original"
+            setOnClickListener {
+                if (editor.restoreOriginal()) commitEdits()
+                else Toast.makeText(this@MainActivity, "Mapa original indisponível (escolha a foto de novo)", Toast.LENGTH_LONG).show()
+            }
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        panel.addView(brushButtons, matchWidth())
+        brushControls += brushButtons
+
         section("Efeito entre as camadas")
         choices(listOf("Nenhum", "Neve", "Chuva", "Vaga-lumes", "Neblina"), settings.effect) { i ->
             update { it.copy(effect = i) }
@@ -120,6 +169,7 @@ class MainActivity : ComponentActivity() {
     private fun refreshEnabled() {
         val fxOn = settings.effect != Effect.NONE
         effectControls.forEach { setEnabledDeep(it, fxOn) }
+        brushControls.forEach { setEnabledDeep(it, brushMode != null) }
     }
 
     private fun setEnabledDeep(v: View, enabled: Boolean) {
@@ -217,8 +267,21 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("ClickableViewAccessibility")
     private fun setupFramingGestures() {
         val scaleDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            private var focusX = 0f
+            private var focusY = 0f
+
+            override fun onScaleBegin(d: ScaleGestureDetector): Boolean {
+                focusX = d.focusX
+                focusY = d.focusY
+                return true
+            }
+
             override fun onScale(d: ScaleGestureDetector): Boolean {
                 update { it.copy(zoom = (it.zoom * d.scaleFactor).coerceIn(Scene.MIN_ZOOM, Scene.MAX_ZOOM)) }
+                // No modo pincel, dois dedos também movem a foto.
+                if (brushMode != null) panBy(focusX - d.focusX, focusY - d.focusY)
+                focusX = d.focusX
+                focusY = d.focusY
                 return true
             }
         })
@@ -226,15 +289,7 @@ class MainActivity : ComponentActivity() {
             override fun onDown(e: MotionEvent) = true
 
             override fun onScroll(e1: MotionEvent?, e2: MotionEvent, dx: Float, dy: Float): Boolean {
-                // Converte pixels da prévia em coordenadas da foto (o dedo "segura" a foto).
-                val fx = renderer.visibleFractionX
-                val fy = renderer.visibleFractionY
-                update {
-                    it.copy(
-                        panX = DepthRenderer.clampPan(it.panX + dx / glView.width * fx, fx),
-                        panY = DepthRenderer.clampPan(it.panY + dy / glView.height * fy, fy),
-                    )
-                }
+                panBy(dx, dy)
                 return true
             }
 
@@ -245,9 +300,128 @@ class MainActivity : ComponentActivity() {
         })
         glView.setOnTouchListener { _, e ->
             scaleDetector.onTouchEvent(e)
-            if (!scaleDetector.isInProgress) gestureDetector.onTouchEvent(e)
+            if (brushMode != null) handleBrushTouch(e)
+            else if (!scaleDetector.isInProgress) gestureDetector.onTouchEvent(e)
             true
         }
+    }
+
+    /** Converte pixels da prévia em deslocamento da foto (o dedo "segura" a foto). */
+    private fun panBy(dx: Float, dy: Float) {
+        val fx = renderer.visibleFractionX
+        val fy = renderer.visibleFractionY
+        update {
+            it.copy(
+                panX = DepthRenderer.clampPan(it.panX + dx / glView.width * fx, fx),
+                panY = DepthRenderer.clampPan(it.panY + dy / glView.height * fy, fy),
+            )
+        }
+    }
+
+    // ---------------------------------------------------------------- pincel
+
+    private fun setBrushMode(mode: DepthEditor.Mode?) {
+        if (mode != null && !Scene.hasScene(this)) {
+            Toast.makeText(this, "Escolha uma foto primeiro", Toast.LENGTH_SHORT).show()
+        }
+        if (mode != null && !editor.isLoaded && Scene.hasScene(this)) {
+            if (!editor.load()) Toast.makeText(this, "Não foi possível abrir o mapa", Toast.LENGTH_SHORT).show()
+        }
+        if (painting) finishStroke()
+        brushMode = mode
+        renderer.depthOverlay = mode != null
+        renderer.freezeMotion = mode != null
+        refreshEnabled()
+    }
+
+    /** Ponto da tela -> coordenadas da foto em [0, 1] (sem parallax: o movimento fica congelado). */
+    private fun toImage(x: Float, y: Float): Pair<Float, Float> {
+        val u = (x / glView.width - 0.5f) * renderer.visibleFractionX + 0.5f + renderer.currentPanX
+        val v = (y / glView.height - 0.5f) * renderer.visibleFractionY + 0.5f + renderer.currentPanY
+        return u to v
+    }
+
+    private fun brushRadiusPx(): Float {
+        val screenFrac = 0.01f + 0.11f * brushSize
+        return screenFrac * renderer.visibleFractionX * editor.width
+    }
+
+    private fun handleBrushTouch(e: MotionEvent) {
+        val mode = brushMode ?: return
+        if (!editor.isLoaded) return
+        when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                val (u, v) = toImage(e.x, e.y)
+                editor.beginStroke(u, v)
+                editor.dab(u, v, brushRadiusPx(), brushStrength, mode, brushSmart)
+                lastU = u
+                lastV = v
+                painting = true
+                uploadDepth(force = true)
+            }
+            MotionEvent.ACTION_MOVE -> {
+                if (!painting || e.pointerCount > 1) return
+                val (u, v) = toImage(e.x, e.y)
+                editor.strokeSegment(lastU, lastV, u, v, brushRadiusPx(), brushStrength, mode, brushSmart)
+                lastU = u
+                lastV = v
+                uploadDepth(force = false)
+            }
+            // Segundo dedo: vira zoom/movimento, encerra o traço.
+            MotionEvent.ACTION_POINTER_DOWN -> if (painting) finishStroke()
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> if (painting) finishStroke()
+        }
+    }
+
+    private fun uploadDepth(force: Boolean) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastUploadMs < 40) return
+        lastUploadMs = now
+        val bmp = editor.toBitmap()
+        glView.queueEvent {
+            renderer.replaceDepth(bmp)
+            bmp.recycle()
+        }
+    }
+
+    private fun finishStroke() {
+        painting = false
+        commitEdits()
+    }
+
+    /** Mostra o mapa editado e salva (com a camada de fundo recalculada) em segundo plano. */
+    private fun commitEdits() {
+        if (!editor.isLoaded) return
+        uploadDepth(force = true)
+        val snap = editor.snapshot()
+        worker.execute {
+            try {
+                val w = snap.width
+                val h = snap.height
+                val bg = BackgroundLayer.build(snap.guide, snap.depth, w, h, Math.ceil(0.055 * maxOf(w, h)).toInt(), 0.06f)
+                val depthBmp = grayBitmap(snap.depth, w, h)
+                val bgDepthBmp = grayBitmap(bg.depth, w, h)
+                val bgColorBmp = Bitmap.createBitmap(bg.color, w, h, Bitmap.Config.ARGB_8888)
+                writeAtomically(Scene.depthFile(this)) { depthBmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                writeAtomically(Scene.bgColorFile(this)) { bgColorBmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                writeAtomically(Scene.bgDepthFile(this)) { bgDepthBmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                depthBmp.recycle()
+                bgDepthBmp.recycle()
+                bgColorBmp.recycle()
+                Scene.bumpVersion(this)
+            } catch (t: Throwable) {
+                showStatus("Erro ao salvar a correção: ${t.message ?: t.javaClass.simpleName}")
+            }
+        }
+    }
+
+    private fun grayBitmap(values: FloatArray, w: Int, h: Int): Bitmap {
+        val out = IntArray(w * h)
+        for (i in out.indices) {
+            val v = (values[i] * 255f).toInt().coerceIn(0, 255)
+            out[i] = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
+        }
+        return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
     }
 
     /** Deixa a prévia com a mesma proporção da tela do celular: o que você enquadra é o que aparece. */
@@ -295,6 +469,7 @@ class MainActivity : ComponentActivity() {
 
                 writeAtomically(Scene.imageFile(this)) { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
                 writeAtomically(Scene.depthFile(this)) { result.depth.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                writeAtomically(Scene.depthAiFile(this)) { result.depth.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 writeAtomically(Scene.bgColorFile(this)) { result.bgColor.compress(Bitmap.CompressFormat.JPEG, 90, it) }
                 writeAtomically(Scene.bgDepthFile(this)) { result.bgDepth.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 bitmap.recycle()
@@ -308,6 +483,9 @@ class MainActivity : ComponentActivity() {
                 runOnUiThread {
                     status.visibility = View.GONE
                     pickButton.isEnabled = true
+                    // O pincel passa a editar o mapa da foto nova.
+                    editor.unload()
+                    if (brushMode != null) editor.load()
                 }
             } catch (t: Throwable) {
                 showStatus("Erro: ${t.message ?: t.javaClass.simpleName}\nVerifique a internet e tente de novo.")
