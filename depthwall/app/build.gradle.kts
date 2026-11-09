@@ -11,8 +11,8 @@ android {
         applicationId = "com.shuris.depthwall"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0-prototipo"
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionName = "0.2.0-prototipo"
         ndk {
             abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86_64")
         }
