@@ -1,6 +1,5 @@
 package com.shuris.depthwall
 
-import android.app.KeyguardManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -11,13 +10,14 @@ import android.util.Log
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
-import java.util.Date
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.abs
 
 /**
- * Desenha a foto deslocando cada pixel de acordo com sua profundidade (parallax por mapa
- * de profundidade), com relógio e partículas posicionados em camadas de profundidade.
+ * Desenha a foto deslocando cada pixel de acordo com sua profundidade (parallax por mapa de
+ * profundidade, com "ray marching" para tratar corretamente o que fica na frente de quê),
+ * mais as partículas posicionadas em camadas de profundidade.
  * Usado tanto na prévia do app quanto no wallpaper.
  */
 class DepthRenderer(
@@ -25,24 +25,21 @@ class DepthRenderer(
     private val tilt: TiltSensor,
 ) : GLSurfaceView.Renderer {
 
-    /** Deslocamento extra (arrastar na prévia / rolagem de páginas do launcher), em [-1, 1]. */
+    /** Deslocamento extra (rolagem de páginas do launcher), em [-1, 1]. */
     @Volatile var extraX = 0f
     @Volatile var extraY = 0f
     @Volatile var showDepth = false
 
-    /** No wallpaper real, respeita a opção "relógio só na tela de bloqueio". */
-    @Volatile var respectLockScreen = false
-
-    private val keyguard = ctx.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-    private var locked = true
-    private var frame = 0
+    /** Escala atual (fração da foto visível por eixo), usada pela prévia para converter gestos. */
+    @Volatile var visibleFractionX = 1f
+        private set
+    @Volatile var visibleFractionY = 1f
+        private set
 
     private var program = 0
     private var imageTex = 0
     private var depthTex = 0
-    private var clockTex = 0
-    private var clockKey = ""
-    private var clockAspect = 1f
+    private var blurTex = 0
     private var hasScene = false
     private var loadedVersion = Long.MIN_VALUE
     private var imgAspect = 1f
@@ -65,8 +62,7 @@ class DepthRenderer(
         // Contexto novo: texturas antigas não existem mais.
         imageTex = 0
         depthTex = 0
-        clockTex = 0
-        clockKey = ""
+        blurTex = 0
         hasScene = false
         loadedVersion = Long.MIN_VALUE
         lastNanos = 0L
@@ -107,31 +103,35 @@ class DepthRenderer(
         offX += (tx - offX) * 0.12f
         offY += (ty - offY) * 0.12f
 
-        // "Cover": preenche a tela cortando a foto, com um zoom extra que esconde as bordas.
+        // "Cover": fração da foto que cabe na tela ao preenchê-la.
         val viewAspect = viewW.toFloat() / viewH
-        var sx = 1f
-        var sy = 1f
-        if (imgAspect > viewAspect) sx = viewAspect / imgAspect else sy = imgAspect / viewAspect
-        val zoom = 1f / (1f + 0.12f * s.strength)
-        sx *= zoom
-        sy *= zoom
+        var coverX = 1f
+        var coverY = 1f
+        if (imgAspect > viewAspect) coverX = viewAspect / imgAspect else coverY = imgAspect / viewAspect
+
+        // Zoom do usuário + um zoom pequeno que esconde as bordas durante o movimento.
+        val zoom = s.zoom.coerceIn(Scene.MIN_ZOOM, Scene.MAX_ZOOM) * (1f + 0.12f * s.strength)
+        val sx = coverX / zoom
+        val sy = coverY / zoom
+        visibleFractionX = sx
+        visibleFractionY = sy
+        val panX = clampPan(s.panX, sx)
+        val panY = clampPan(s.panY, sy)
 
         val shiftAmount = 0.05f * s.strength
         val shiftX = offX * shiftAmount
         val shiftY = offY * shiftAmount
 
-        if (respectLockScreen && frame++ % 15 == 0) locked = keyguard.isKeyguardLocked
-        val clockVisible = s.clockOn && (!s.clockLockOnly || !respectLockScreen || locked)
-        if (clockVisible) updateClock(s)
-
         GLES20.glUseProgram(program)
         bindTexture(0, imageTex, "uImage")
         bindTexture(1, depthTex, "uDepth")
-        bindTexture(2, clockTex, "uClock")
+        bindTexture(2, blurTex, "uBlur")
 
         GLES20.glUniform2f(u["uScale"]!!, sx, sy)
+        GLES20.glUniform2f(u["uPan"]!!, panX, panY)
+        GLES20.glUniform2f(u["uBlurScale"]!!, coverX, coverY)
         GLES20.glUniform2f(u["uShift"]!!, shiftX, shiftY)
-        // Mesmo deslocamento convertido para o espaço da tela (relógio e partículas).
+        // Mesmo deslocamento convertido para o espaço da tela (usado pelas partículas).
         GLES20.glUniform2f(u["uShiftS"]!!, shiftX / sx * viewAspect, shiftY / sy)
         GLES20.glUniform1f(u["uFocus"]!!, s.focus)
         GLES20.glUniform1f(u["uAspect"]!!, viewAspect)
@@ -142,43 +142,11 @@ class DepthRenderer(
         GLES20.glUniform1f(u["uFxAmount"]!!, s.fxAmount)
         GLES20.glUniform1f(u["uFxSizeInv"]!!, 1f / lerp(0.5f, 1.9f, s.fxSize))
 
-        val clockOn = clockVisible && clockTex != 0
-        GLES20.glUniform1i(u["uClockOn"]!!, if (clockOn) 1 else 0)
-        if (clockOn) {
-            val w = lerp(0.35f, 0.95f, s.clockSize) * viewAspect
-            val h = w / clockAspect
-            val top = lerp(0.05f, 0.80f, s.clockY)
-            GLES20.glUniform4f(u["uClockRect"]!!, 0.5f * viewAspect, top + h / 2f, w, h)
-            // Um pouco além de 1.0 para que, no máximo, o relógio fique na frente de tudo.
-            GLES20.glUniform1f(u["uClockDepth"]!!, s.clockDepth * 1.1f)
-        }
-
         quad.position(0)
         GLES20.glEnableVertexAttribArray(aPos)
         GLES20.glVertexAttribPointer(aPos, 2, GLES20.GL_FLOAT, false, 0, quad)
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4)
         GLES20.glDisableVertexAttribArray(aPos)
-    }
-
-    /** Redesenha o bitmap do relógio só quando muda o minuto ou o visual. */
-    private fun updateClock(s: Scene.Settings) {
-        val nowMs = System.currentTimeMillis()
-        val key = "${nowMs / 60_000}|${s.clockStyle}|${s.clockColor}|${s.clock24h}|${s.clockDate}"
-        if (key == clockKey && clockTex != 0) return
-        clockKey = key
-        try {
-            val bmp = ClockPainter.render(s, Date(nowMs))
-            if (clockTex == 0) {
-                val ids = IntArray(1)
-                GLES20.glGenTextures(1, ids, 0)
-                clockTex = ids[0]
-            }
-            upload(clockTex, bmp)
-            clockAspect = bmp.width.toFloat() / bmp.height
-            bmp.recycle()
-        } catch (t: Throwable) {
-            Log.e(TAG, "Falha ao desenhar o relógio", t)
-        }
     }
 
     private fun bindTexture(unit: Int, tex: Int, uniform: String) {
@@ -188,9 +156,10 @@ class DepthRenderer(
     }
 
     private fun loadTextures() {
-        if (imageTex != 0) GLES20.glDeleteTextures(2, intArrayOf(imageTex, depthTex), 0)
+        if (imageTex != 0) GLES20.glDeleteTextures(3, intArrayOf(imageTex, depthTex, blurTex), 0)
         imageTex = 0
         depthTex = 0
+        blurTex = 0
         hasScene = false
         if (!Scene.hasScene(ctx)) return
         try {
@@ -199,14 +168,23 @@ class DepthRenderer(
                 img.recycle(); return
             }
             imgAspect = img.width.toFloat() / img.height
-            val ids = IntArray(2)
-            GLES20.glGenTextures(2, ids, 0)
+            // Versão minúscula da foto: ampliada com filtro linear vira um fundo desfocado,
+            // usado quando a foto é diminuída e não cobre a tela toda.
+            val tinyW = 24
+            val tinyH = maxOf(1, (tinyW / imgAspect).toInt())
+            val tiny = Bitmap.createScaledBitmap(img, tinyW, tinyH, true)
+
+            val ids = IntArray(3)
+            GLES20.glGenTextures(3, ids, 0)
             imageTex = ids[0]
             depthTex = ids[1]
+            blurTex = ids[2]
             upload(imageTex, img)
             upload(depthTex, depth)
+            upload(blurTex, tiny)
             img.recycle()
             depth.recycle()
+            tiny.recycle()
             hasScene = true
         } catch (t: Throwable) {
             Log.e(TAG, "Falha ao carregar a cena", t)
@@ -256,16 +234,24 @@ class DepthRenderer(
 
     private fun lerp(a: Float, b: Float, t: Float) = a + (b - a) * t
 
-    private companion object {
-        const val TAG = "DepthRenderer"
+    companion object {
+        private const val TAG = "DepthRenderer"
 
-        val UNIFORMS = listOf(
-            "uImage", "uDepth", "uClock", "uScale", "uShift", "uShiftS", "uFocus", "uAspect",
-            "uShowDepth", "uEffect", "uFxTime", "uFxAmount", "uFxSizeInv",
-            "uClockOn", "uClockRect", "uClockDepth",
+        /**
+         * Limita o deslocamento da foto: com zoom, a foto não "descola" da borda da tela;
+         * diminuída, ela pode ser movida até encostar na borda.
+         */
+        fun clampPan(pan: Float, visibleFraction: Float): Float {
+            val limit = abs(1f - visibleFraction) / 2f
+            return pan.coerceIn(-limit, limit)
+        }
+
+        private val UNIFORMS = listOf(
+            "uImage", "uDepth", "uBlur", "uScale", "uPan", "uBlurScale", "uShift", "uShiftS",
+            "uFocus", "uAspect", "uShowDepth", "uEffect", "uFxTime", "uFxAmount", "uFxSizeInv",
         )
 
-        const val VERTEX_SHADER = """
+        private const val VERTEX_SHADER = """
 attribute vec2 aPos;
 varying vec2 vUv;
 void main() {
@@ -277,7 +263,7 @@ void main() {
         // Profundidade normalizada: 1.0 = mais perto, 0.0 = mais longe.
         // Coordenadas de imagem têm y para baixo; vUv tem y para cima.
         // "s" = espaço da tela com y para baixo e x em [0, aspecto] (pixels quadrados).
-        const val FRAGMENT_SHADER = """
+        private const val FRAGMENT_SHADER = """
 #ifdef GL_FRAGMENT_PRECISION_HIGH
 precision highp float;
 #else
@@ -287,8 +273,10 @@ precision mediump float;
 varying vec2 vUv;
 uniform sampler2D uImage;
 uniform sampler2D uDepth;
-uniform sampler2D uClock;
+uniform sampler2D uBlur;
 uniform vec2 uScale;
+uniform vec2 uPan;
+uniform vec2 uBlurScale;
 uniform vec2 uShift;
 uniform vec2 uShiftS;
 uniform float uFocus;
@@ -300,9 +288,7 @@ uniform float uFxTime;
 uniform float uFxAmount;
 uniform float uFxSizeInv;
 
-uniform int uClockOn;
-uniform vec4 uClockRect;
-uniform float uClockDepth;
+const int STEPS = 28;
 
 float hash12(vec2 p) {
     vec3 p3 = fract(vec3(p.xyx) * 0.1031);
@@ -379,33 +365,58 @@ vec2 atDepth(vec2 s, float pd) {
 }
 
 void main() {
-    vec2 base = (vec2(vUv.x, 1.0 - vUv.y) - 0.5) * uScale + 0.5;
+    vec2 sUv = vec2(vUv.x, 1.0 - vUv.y);
+    vec2 base = (sUv - 0.5) * uScale + 0.5 + uPan;
 
-    // Parallax: busca iterativa do pixel de origem, uv = base - shift * (d(uv) - foco).
-    vec2 uv = base;
-    float d = texture2D(uDepth, base).r;
-    for (int i = 0; i < 5; i++) {
-        uv = base - uShift * (d - uFocus);
-        d = texture2D(uDepth, uv).r;
+    // Ray marching: um ponto da foto com profundidade D aparece em base + shift*(D - foco).
+    // Percorre as camadas da frente (h=1) para o fundo (h=0) e para no primeiro ponto em que a
+    // superfície da foto é alcançada. Assim, o que está na frente sempre cobre o que está atrás
+    // e o fundo não é "arrastado" junto com os objetos próximos.
+    float hPrev = 1.0;
+    float dPrev = texture2D(uDepth, base - uShift * (1.0 - uFocus)).r;
+    float hit = 0.0;
+    float wall = 0.0;
+    if (dPrev >= 1.0) {
+        hit = 1.0;
+    } else {
+        for (int i = 1; i <= STEPS; i++) {
+            float h = 1.0 - float(i) / float(STEPS);
+            float dd = texture2D(uDepth, base - uShift * (h - uFocus)).r;
+            if (dd >= h) {
+                // Salto grande entre duas amostras = o raio bateu na "parede" lateral de um
+                // objeto próximo. Essa faixa é fundo que estava escondido: preenche com o fundo
+                // vizinho em vez de esticar a borda do objeto.
+                if (dd - dPrev > 0.12) {
+                    wall = 1.0;
+                    hit = hPrev;
+                } else {
+                    // Refinamento linear entre as duas amostras.
+                    float a = dPrev - hPrev;
+                    float b = dd - h;
+                    hit = mix(hPrev, h, a / (a - b));
+                }
+                break;
+            }
+            hPrev = h;
+            dPrev = dd;
+        }
     }
+    vec2 uv = base - uShift * (hit - uFocus);
+    float d = wall > 0.5 ? dPrev : texture2D(uDepth, uv).r;
+
+    // Fora da foto (quando ela foi diminuída): fundo desfocado e escurecido da própria foto.
+    vec2 edge = step(vec2(0.0), uv) * step(uv, vec2(1.0));
+    float inside = edge.x * edge.y;
+    d *= inside;
 
     if (uShowDepth == 1) {
         gl_FragColor = vec4(vec3(d), 1.0);
         return;
     }
 
-    vec3 col = texture2D(uImage, uv).rgb;
+    vec3 bg = texture2D(uBlur, (sUv - 0.5) * uBlurScale + 0.5).rgb * 0.6;
+    vec3 col = mix(bg, texture2D(uImage, uv).rgb, inside);
     vec2 s = vec2(vUv.x * uAspect, 1.0 - vUv.y);
-
-    // Relógio: uma camada na profundidade uClockDepth, coberta por tudo que estiver mais perto.
-    if (uClockOn == 1) {
-        vec2 cuv = (atDepth(s, uClockDepth) - uClockRect.xy) / uClockRect.zw + 0.5;
-        if (cuv.x >= 0.0 && cuv.x <= 1.0 && cuv.y >= 0.0 && cuv.y <= 1.0) {
-            vec4 c = texture2D(uClock, cuv); // alfa pré-multiplicado
-            float vis = inFront(uClockDepth, d);
-            col = col * (1.0 - c.a * vis) + c.rgb * vis;
-        }
-    }
 
     if (uEffect == 1) {
         float a = 0.0;

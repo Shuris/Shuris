@@ -59,15 +59,19 @@ class DepthEstimator(private val ctx: Context) {
         if (!tmp.renameTo(modelFile)) throw IOException("Não foi possível salvar o modelo")
     }
 
-    /** Retorna um mapa de profundidade em tons de cinza (branco = perto). */
-    fun estimate(src: Bitmap): Bitmap {
-        val n = INPUT_SIZE
-        val scaled = Bitmap.createScaledBitmap(src, n, n, true)
-        val px = IntArray(n * n)
-        scaled.getPixels(px, 0, n, 0, 0, n, n)
+    /**
+     * Retorna um mapa de profundidade em tons de cinza (branco = perto), com a mesma proporção
+     * da foto e bordas refinadas pela própria foto.
+     */
+    fun estimate(src: Bitmap, onStep: (String) -> Unit = {}): Bitmap {
+        // 1) IA na proporção real da foto (lado menor 518, múltiplos de 14).
+        val (iw, ih) = modelInputSize(src.width, src.height)
+        val scaled = Bitmap.createScaledBitmap(src, iw, ih, true)
+        val px = IntArray(iw * ih)
+        scaled.getPixels(px, 0, iw, 0, 0, iw, ih)
         if (scaled !== src) scaled.recycle()
 
-        val plane = n * n
+        val plane = iw * ih
         val input = ByteBuffer.allocateDirect(3 * plane * 4).order(ByteOrder.nativeOrder()).asFloatBuffer()
         for (i in 0 until plane) {
             val p = px[i]
@@ -77,85 +81,68 @@ class DepthEstimator(private val ctx: Context) {
         }
 
         val env = OrtEnvironment.getEnvironment()
-        val (depth, w, h) = OrtSession.SessionOptions().use { opts ->
+        val (raw, ow, oh) = OrtSession.SessionOptions().use { opts ->
             env.createSession(modelFile.absolutePath, opts).use { session ->
-                OnnxTensor.createTensor(env, input, longArrayOf(1, 3, n.toLong(), n.toLong())).use { tensor ->
+                OnnxTensor.createTensor(env, input, longArrayOf(1, 3, ih.toLong(), iw.toLong())).use { tensor ->
                     session.run(mapOf(session.inputNames.first() to tensor)).use { result ->
                         val out = result.get(0) as OnnxTensor
                         val shape = out.info.shape
-                        val oh = shape[shape.size - 2].toInt()
-                        val ow = shape[shape.size - 1].toInt()
-                        val values = FloatArray(ow * oh)
+                        val h = shape[shape.size - 2].toInt()
+                        val w = shape[shape.size - 1].toInt()
+                        val values = FloatArray(w * h)
                         out.floatBuffer.get(values)
-                        Triple(values, ow, oh)
+                        Triple(values, w, h)
                     }
                 }
             }
         }
+        normalizeRobust(raw)
 
-        normalize(depth)
-        // Dilatar a frente e suavizar reduz o "rasgo" nas bordas dos objetos ao mover.
-        maxFilter(depth, w, h, 3)
-        repeat(2) { boxBlur(depth, w, h, 3) }
+        // 2) Amplia até a resolução da guia e "recorta" as bordas usando as cores da foto.
+        onStep("Refinando as bordas…")
+        val scale = GUIDE_LONG_SIDE.toFloat() / maxOf(src.width, src.height)
+        val gw = (src.width * minOf(1f, scale)).toInt().coerceAtLeast(1)
+        val gh = (src.height * minOf(1f, scale)).toInt().coerceAtLeast(1)
+        val guideBmp = Bitmap.createScaledBitmap(src, gw, gh, true)
+        val guide = IntArray(gw * gh)
+        guideBmp.getPixels(guide, 0, gw, 0, 0, gw, gh)
+        if (guideBmp !== src) guideBmp.recycle()
 
-        val out = IntArray(w * h)
+        var depth = GuidedFilter.resize(raw, ow, oh, gw, gh)
+        val radius = maxOf(6, maxOf(gw, gh) / 90)
+        depth = GuidedFilter.snapEdges(guide, depth, gw, gh, radius, 0.12f)
+        depth = GuidedFilter.median3(depth, gw, gh)
+
+        val out = IntArray(gw * gh)
         for (i in out.indices) {
             val v = (depth[i] * 255f).toInt().coerceIn(0, 255)
             out[i] = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
         }
-        return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
+        return Bitmap.createBitmap(out, gw, gh, Bitmap.Config.ARGB_8888)
     }
 
-    private fun normalize(a: FloatArray) {
-        var mn = Float.MAX_VALUE
-        var mx = -Float.MAX_VALUE
-        for (v in a) {
-            if (v < mn) mn = v
-            if (v > mx) mx = v
-        }
-        val range = (mx - mn).takeIf { it > 1e-6f } ?: 1f
-        for (i in a.indices) a[i] = (a[i] - mn) / range
+    private fun modelInputSize(w: Int, h: Int): Pair<Int, Int> {
+        val s = INPUT_SHORT_SIDE.toFloat() / minOf(w, h)
+        fun snap(v: Float) = (Math.round(v / 14f) * 14).coerceIn(14 * 10, INPUT_MAX_SIDE)
+        return snap(w * s) to snap(h * s)
     }
 
-    private fun maxFilter(a: FloatArray, w: Int, h: Int, r: Int) {
-        val tmp = FloatArray(a.size)
-        for (y in 0 until h) for (x in 0 until w) {
-            var m = 0f
-            for (k in -r..r) {
-                val v = a[y * w + (x + k).coerceIn(0, w - 1)]
-                if (v > m) m = v
-            }
-            tmp[y * w + x] = m
-        }
-        for (y in 0 until h) for (x in 0 until w) {
-            var m = 0f
-            for (k in -r..r) {
-                val v = tmp[(y + k).coerceIn(0, h - 1) * w + x]
-                if (v > m) m = v
-            }
-            a[y * w + x] = m
-        }
-    }
-
-    private fun boxBlur(a: FloatArray, w: Int, h: Int, r: Int) {
-        val tmp = FloatArray(a.size)
-        val norm = 1f / (2 * r + 1)
-        for (y in 0 until h) for (x in 0 until w) {
-            var s = 0f
-            for (k in -r..r) s += a[y * w + (x + k).coerceIn(0, w - 1)]
-            tmp[y * w + x] = s * norm
-        }
-        for (y in 0 until h) for (x in 0 until w) {
-            var s = 0f
-            for (k in -r..r) s += tmp[(y + k).coerceIn(0, h - 1) * w + x]
-            a[y * w + x] = s * norm
-        }
+    /** Normaliza para [0, 1] ignorando 1% de valores extremos de cada lado. */
+    private fun normalizeRobust(a: FloatArray) {
+        val sample = FloatArray(minOf(a.size, 20_000)) { a[(it.toLong() * a.size / minOf(a.size, 20_000)).toInt()] }
+        sample.sort()
+        val lo = sample[(sample.size * 0.01f).toInt()]
+        val hi = sample[(sample.size * 0.99f).toInt().coerceAtMost(sample.size - 1)]
+        val range = (hi - lo).takeIf { it > 1e-6f } ?: 1f
+        for (i in a.indices) a[i] = ((a[i] - lo) / range).coerceIn(0f, 1f)
     }
 
     private companion object {
         const val MODEL_URL =
             "https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/main/onnx/model_quantized.onnx"
-        const val INPUT_SIZE = 518 // múltiplo de 14, resolução nativa do modelo
+        const val INPUT_SHORT_SIDE = 518 // resolução nativa do modelo
+        const val INPUT_MAX_SIDE = 1036    // limite do lado maior (múltiplo de 14)
+        const val GUIDE_LONG_SIDE = 960    // resolução final do mapa de profundidade
         val MEAN = floatArrayOf(0.485f, 0.456f, 0.406f)
         val STD = floatArrayOf(0.229f, 0.224f, 0.225f)
     }

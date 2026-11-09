@@ -27,17 +27,14 @@ object Scene {
         val fxAmount: Float = 0.5f,
         val fxSpeed: Float = 0.5f,
         val fxSize: Float = 0.5f,
-        // Relógio
-        val clockOn: Boolean = true,
-        val clockStyle: Int = ClockPainter.STYLE_CLASSIC,
-        val clockColor: Int = 0xFFFFFFFF.toInt(),
-        val clockSize: Float = 0.5f,
-        val clockY: Float = 0.15f,
-        val clockDepth: Float = 0.55f,
-        val clockDate: Boolean = true,
-        val clock24h: Boolean = true,
-        val clockLockOnly: Boolean = false,
+        // Enquadramento: zoom relativo a "preencher a tela" (1 = preenche) e deslocamento da foto.
+        val zoom: Float = 1f,
+        val panX: Float = 0f,
+        val panY: Float = 0f,
     )
+
+    const val MIN_ZOOM = 0.5f
+    const val MAX_ZOOM = 4f
 
     private const val PREFS = "scene"
     private const val KEY_VERSION = "version"
@@ -73,15 +70,9 @@ object Scene {
             .putFloat("fxAmount", s.fxAmount)
             .putFloat("fxSpeed", s.fxSpeed)
             .putFloat("fxSize", s.fxSize)
-            .putBoolean("clockOn", s.clockOn)
-            .putInt("clockStyle", s.clockStyle)
-            .putInt("clockColor", s.clockColor)
-            .putFloat("clockSize", s.clockSize)
-            .putFloat("clockY", s.clockY)
-            .putFloat("clockDepth", s.clockDepth)
-            .putBoolean("clockDate", s.clockDate)
-            .putBoolean("clock24h", s.clock24h)
-            .putBoolean("clockLockOnly", s.clockLockOnly)
+            .putFloat("zoom", s.zoom)
+            .putFloat("panX", s.panX)
+            .putFloat("panY", s.panY)
             .apply()
     }
 
@@ -95,15 +86,9 @@ object Scene {
             fxAmount = p.getFloat("fxAmount", d.fxAmount),
             fxSpeed = p.getFloat("fxSpeed", d.fxSpeed),
             fxSize = p.getFloat("fxSize", d.fxSize),
-            clockOn = p.getBoolean("clockOn", d.clockOn),
-            clockStyle = p.getInt("clockStyle", d.clockStyle),
-            clockColor = p.getInt("clockColor", d.clockColor),
-            clockSize = p.getFloat("clockSize", d.clockSize),
-            clockY = p.getFloat("clockY", d.clockY),
-            clockDepth = p.getFloat("clockDepth", d.clockDepth),
-            clockDate = p.getBoolean("clockDate", d.clockDate),
-            clock24h = p.getBoolean("clock24h", d.clock24h),
-            clockLockOnly = p.getBoolean("clockLockOnly", d.clockLockOnly),
+            zoom = p.getFloat("zoom", d.zoom),
+            panX = p.getFloat("panX", d.panX),
+            panY = p.getFloat("panY", d.panY),
         )
     }
 }

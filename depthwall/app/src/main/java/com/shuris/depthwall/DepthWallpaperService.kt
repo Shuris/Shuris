@@ -14,8 +14,6 @@ class DepthWallpaperService : GLWallpaperService() {
             super.onCreate(surfaceHolder)
             tilt = TiltSensor(this@DepthWallpaperService)
             renderer = DepthRenderer(applicationContext, tilt)
-            // Na prévia do seletor de wallpaper, mostra o relógio sempre.
-            renderer.respectLockScreen = !isPreview
             setRenderer(renderer)
         }
 
