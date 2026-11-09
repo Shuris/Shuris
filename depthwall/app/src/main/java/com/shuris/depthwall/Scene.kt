@@ -44,6 +44,8 @@ object Scene {
 
     fun imageFile(ctx: Context) = File(ctx.filesDir, "scene_image.jpg")
     fun depthFile(ctx: Context) = File(ctx.filesDir, "scene_depth.png")
+    fun bgColorFile(ctx: Context) = File(ctx.filesDir, "scene_bg_color.jpg")
+    fun bgDepthFile(ctx: Context) = File(ctx.filesDir, "scene_bg_depth.png")
 
     fun hasScene(ctx: Context) = imageFile(ctx).exists() && depthFile(ctx).exists()
 

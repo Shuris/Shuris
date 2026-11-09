@@ -156,12 +156,16 @@ public final class GuidedFilter {
                 bR /= bN; bG /= bN; bB /= bN; bD /= bDN;
                 float dR = fR - bR, dG = fG - bG, dB = fB - bB;
                 float len2 = dR * dR + dG * dG + dB * dB;
-                if (len2 < 0.002f) continue; // cores parecidas demais: não dá para separar
+                if (len2 < 0.004f) continue; // cores parecidas demais: não dá para separar
                 float alpha = ((sr[i] - bR) * dR + (sg[i] - bG) * dG + (sb[i] - bB) * dB) / len2;
-                // Deixa a decisão mais nítida, mantendo uma transição suave de ~1px.
-                float t = Math.max(0f, Math.min(1f, (alpha - 0.3f) / 0.4f));
+                // Transição suave (evita "dentes" duros quando a decisão é incerta).
+                float t = Math.max(0f, Math.min(1f, (alpha - 0.15f) / 0.7f));
                 t = t * t * (3f - 2f * t);
-                out[i] = bD + (fD - bD) * t;
+                float snapped = bD + (fD - bD) * t;
+                // Confiança: quanto mais diferentes as cores dos dois lados, mais vale o recorte;
+                // com cores parecidas, fica perto do valor original da IA.
+                float conf = Math.max(0f, Math.min(1f, (len2 - 0.004f) / 0.026f));
+                out[i] = p[i] + (snapped - p[i]) * conf;
             }
         }
         return out;

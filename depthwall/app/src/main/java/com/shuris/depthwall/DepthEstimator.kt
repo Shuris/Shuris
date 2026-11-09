@@ -59,11 +59,14 @@ class DepthEstimator(private val ctx: Context) {
         if (!tmp.renameTo(modelFile)) throw IOException("Não foi possível salvar o modelo")
     }
 
+    /** Mapa de profundidade + camada de fundo reconstruída (todos com a proporção da foto). */
+    class Result(val depth: Bitmap, val bgColor: Bitmap, val bgDepth: Bitmap)
+
     /**
-     * Retorna um mapa de profundidade em tons de cinza (branco = perto), com a mesma proporção
-     * da foto e bordas refinadas pela própria foto.
+     * Calcula o mapa de profundidade (branco = perto) com bordas refinadas pela própria foto e
+     * a camada de fundo usada para preencher o que aparece atrás dos objetos ao mover.
      */
-    fun estimate(src: Bitmap, onStep: (String) -> Unit = {}): Bitmap {
+    fun estimate(src: Bitmap, onStep: (String) -> Unit = {}): Result {
         // 1) IA na proporção real da foto (lado menor 518, múltiplos de 14).
         val (iw, ih) = modelInputSize(src.width, src.height)
         val scaled = Bitmap.createScaledBitmap(src, iw, ih, true)
@@ -113,12 +116,25 @@ class DepthEstimator(private val ctx: Context) {
         depth = GuidedFilter.snapEdges(guide, depth, gw, gh, radius, 0.12f)
         depth = GuidedFilter.median3(depth, gw, gh)
 
-        val out = IntArray(gw * gh)
+        // 3) Camada de fundo: o que está escondido atrás das bordas dos objetos próximos.
+        onStep("Reconstruindo o fundo…")
+        val bgRadius = Math.ceil(0.055 * maxOf(gw, gh)).toInt()
+        val bg = BackgroundLayer.build(guide, depth, gw, gh, bgRadius, 0.06f)
+
+        return Result(
+            depth = grayBitmap(depth, gw, gh),
+            bgColor = Bitmap.createBitmap(bg.color, gw, gh, Bitmap.Config.ARGB_8888),
+            bgDepth = grayBitmap(bg.depth, gw, gh),
+        )
+    }
+
+    private fun grayBitmap(values: FloatArray, w: Int, h: Int): Bitmap {
+        val out = IntArray(w * h)
         for (i in out.indices) {
-            val v = (depth[i] * 255f).toInt().coerceIn(0, 255)
+            val v = (values[i] * 255f).toInt().coerceIn(0, 255)
             out[i] = (0xFF shl 24) or (v shl 16) or (v shl 8) or v
         }
-        return Bitmap.createBitmap(out, gw, gh, Bitmap.Config.ARGB_8888)
+        return Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888)
     }
 
     private fun modelInputSize(w: Int, h: Int): Pair<Int, Int> {

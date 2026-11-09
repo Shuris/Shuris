@@ -20,6 +20,7 @@ Para o novo mapa de profundidade valer em uma foto antiga, escolha a foto de nov
 ## Estrutura
 - `DepthEstimator.kt`: Depth Anything V2 Small (Apache-2.0) via ONNX Runtime, na proporção real da foto.
 - `GuidedFilter.java`: refino das bordas do mapa usando as cores da foto (recorte de bordas + mediana).
+- `BackgroundLayer.java`: reconstrói o fundo escondido atrás das bordas dos objetos, usado quando eles se movem.
 - `DepthRenderer.kt`: shader OpenGL ES 2 com parallax por ray marching, enquadramento e efeitos entre camadas.
 - `TiltSensor.kt`: giroscópio que volta sozinho ao centro (fallback para acelerômetro).
 - `GLWallpaperService.java` / `DepthWallpaperService.kt`: o live wallpaper.

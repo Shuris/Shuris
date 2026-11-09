@@ -40,6 +40,9 @@ class DepthRenderer(
     private var imageTex = 0
     private var depthTex = 0
     private var blurTex = 0
+    private var bgColorTex = 0
+    private var bgDepthTex = 0
+    private var hasBgLayer = false
     private var hasScene = false
     private var loadedVersion = Long.MIN_VALUE
     private var imgAspect = 1f
@@ -63,6 +66,8 @@ class DepthRenderer(
         imageTex = 0
         depthTex = 0
         blurTex = 0
+        bgColorTex = 0
+        bgDepthTex = 0
         hasScene = false
         loadedVersion = Long.MIN_VALUE
         lastNanos = 0L
@@ -118,7 +123,7 @@ class DepthRenderer(
         val panX = clampPan(s.panX, sx)
         val panY = clampPan(s.panY, sy)
 
-        val shiftAmount = 0.05f * s.strength
+        val shiftAmount = MAX_SHIFT * s.strength
         val shiftX = offX * shiftAmount
         val shiftY = offY * shiftAmount
 
@@ -126,6 +131,9 @@ class DepthRenderer(
         bindTexture(0, imageTex, "uImage")
         bindTexture(1, depthTex, "uDepth")
         bindTexture(2, blurTex, "uBlur")
+        bindTexture(3, bgColorTex, "uBgImage")
+        bindTexture(4, bgDepthTex, "uBgDepth")
+        GLES20.glUniform1i(u["uHasBg"]!!, if (hasBgLayer) 1 else 0)
 
         GLES20.glUniform2f(u["uScale"]!!, sx, sy)
         GLES20.glUniform2f(u["uPan"]!!, panX, panY)
@@ -156,10 +164,14 @@ class DepthRenderer(
     }
 
     private fun loadTextures() {
-        if (imageTex != 0) GLES20.glDeleteTextures(3, intArrayOf(imageTex, depthTex, blurTex), 0)
+        val old = intArrayOf(imageTex, depthTex, blurTex, bgColorTex, bgDepthTex).filter { it != 0 }.distinct()
+        if (old.isNotEmpty()) GLES20.glDeleteTextures(old.size, old.toIntArray(), 0)
         imageTex = 0
         depthTex = 0
         blurTex = 0
+        bgColorTex = 0
+        bgDepthTex = 0
+        hasBgLayer = false
         hasScene = false
         if (!Scene.hasScene(ctx)) return
         try {
@@ -185,6 +197,24 @@ class DepthRenderer(
             img.recycle()
             depth.recycle()
             tiny.recycle()
+
+            // Camada de fundo. Cenas criadas por versões antigas não têm: usa a própria foto.
+            val bgColor = Scene.bgColorFile(ctx).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.absolutePath) }
+            val bgDepth = Scene.bgDepthFile(ctx).takeIf { it.exists() }?.let { BitmapFactory.decodeFile(it.absolutePath) }
+            if (bgColor != null && bgDepth != null) {
+                val bgIds = IntArray(2)
+                GLES20.glGenTextures(2, bgIds, 0)
+                bgColorTex = bgIds[0]
+                bgDepthTex = bgIds[1]
+                upload(bgColorTex, bgColor)
+                upload(bgDepthTex, bgDepth)
+                hasBgLayer = true
+            } else {
+                bgColorTex = imageTex
+                bgDepthTex = depthTex
+            }
+            bgColor?.recycle()
+            bgDepth?.recycle()
             hasScene = true
         } catch (t: Throwable) {
             Log.e(TAG, "Falha ao carregar a cena", t)
@@ -237,6 +267,9 @@ class DepthRenderer(
     companion object {
         private const val TAG = "DepthRenderer"
 
+        /** Deslocamento máximo da foto (fração da largura) com intensidade 100%. */
+        private const val MAX_SHIFT = 0.04f
+
         /**
          * Limita o deslocamento da foto: com zoom, a foto não "descola" da borda da tela;
          * diminuída, ela pode ser movida até encostar na borda.
@@ -247,7 +280,7 @@ class DepthRenderer(
         }
 
         private val UNIFORMS = listOf(
-            "uImage", "uDepth", "uBlur", "uScale", "uPan", "uBlurScale", "uShift", "uShiftS",
+            "uImage", "uDepth", "uBlur", "uBgImage", "uBgDepth", "uHasBg", "uScale", "uPan", "uBlurScale", "uShift", "uShiftS",
             "uFocus", "uAspect", "uShowDepth", "uEffect", "uFxTime", "uFxAmount", "uFxSizeInv",
         )
 
@@ -274,6 +307,9 @@ varying vec2 vUv;
 uniform sampler2D uImage;
 uniform sampler2D uDepth;
 uniform sampler2D uBlur;
+uniform sampler2D uBgImage;
+uniform sampler2D uBgDepth;
+uniform int uHasBg;
 uniform vec2 uScale;
 uniform vec2 uPan;
 uniform vec2 uBlurScale;
@@ -384,8 +420,8 @@ void main() {
             float dd = texture2D(uDepth, base - uShift * (h - uFocus)).r;
             if (dd >= h) {
                 // Salto grande entre duas amostras = o raio bateu na "parede" lateral de um
-                // objeto próximo. Essa faixa é fundo que estava escondido: preenche com o fundo
-                // vizinho em vez de esticar a borda do objeto.
+                // objeto próximo. Essa faixa é fundo que estava escondido: usa a camada de fundo
+                // reconstruída em vez de esticar a borda do objeto.
                 if (dd - dPrev > 0.12) {
                     wall = 1.0;
                     hit = hPrev;
@@ -402,7 +438,25 @@ void main() {
         }
     }
     vec2 uv = base - uShift * (hit - uFocus);
-    float d = wall > 0.5 ? dPrev : texture2D(uDepth, uv).r;
+    float d;
+    vec3 photo;
+    if (wall > 0.5 && uHasBg == 0) {
+        // Cena antiga, sem camada de fundo: repete o fundo vizinho.
+        d = dPrev;
+        photo = texture2D(uImage, uv).rgb;
+    } else if (wall > 0.5) {
+        // A camada de fundo é suave, então uma iteração simples de ponto fixo converge.
+        vec2 ub = base - uShift * (dPrev - uFocus);
+        for (int k = 0; k < 4; k++) {
+            ub = base - uShift * (texture2D(uBgDepth, ub).r - uFocus);
+        }
+        uv = ub;
+        d = texture2D(uBgDepth, ub).r;
+        photo = texture2D(uBgImage, ub).rgb;
+    } else {
+        d = texture2D(uDepth, uv).r;
+        photo = texture2D(uImage, uv).rgb;
+    }
 
     // Fora da foto (quando ela foi diminuída): fundo desfocado e escurecido da própria foto.
     vec2 edge = step(vec2(0.0), uv) * step(uv, vec2(1.0));
@@ -415,7 +469,7 @@ void main() {
     }
 
     vec3 bg = texture2D(uBlur, (sUv - 0.5) * uBlurScale + 0.5).rgb * 0.6;
-    vec3 col = mix(bg, texture2D(uImage, uv).rgb, inside);
+    vec3 col = mix(bg, photo, inside);
     vec2 s = vec2(vUv.x * uAspect, 1.0 - vUv.y);
 
     if (uEffect == 1) {

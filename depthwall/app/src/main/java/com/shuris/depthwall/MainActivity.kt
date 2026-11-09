@@ -291,12 +291,16 @@ class MainActivity : ComponentActivity() {
                     estimator.ensureModel { pct -> showStatus("Baixando modelo de IA (só na primeira vez)… $pct%") }
                 }
                 showStatus("Calculando profundidade…")
-                val depth = estimator.estimate(bitmap) { step -> showStatus(step) }
+                val result = estimator.estimate(bitmap) { step -> showStatus(step) }
 
                 writeAtomically(Scene.imageFile(this)) { bitmap.compress(Bitmap.CompressFormat.JPEG, 92, it) }
-                writeAtomically(Scene.depthFile(this)) { depth.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                writeAtomically(Scene.depthFile(this)) { result.depth.compress(Bitmap.CompressFormat.PNG, 100, it) }
+                writeAtomically(Scene.bgColorFile(this)) { result.bgColor.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                writeAtomically(Scene.bgDepthFile(this)) { result.bgDepth.compress(Bitmap.CompressFormat.PNG, 100, it) }
                 bitmap.recycle()
-                depth.recycle()
+                result.depth.recycle()
+                result.bgColor.recycle()
+                result.bgDepth.recycle()
                 // Foto nova começa com o enquadramento padrão.
                 update { it.copy(zoom = 1f, panX = 0f, panY = 0f) }
                 Scene.bumpVersion(this)
