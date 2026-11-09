@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#101114"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <android.opengl.GLSurfaceView
+            android:id="@+id/glView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="24dp"
+            android:background="#B3000000"
+            android:gravity="center"
+            android:padding="16dp"
+            android:text="@string/hint_empty"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="8dp">
+
+        <Button
+            android:id="@+id/pickButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/pick_photo" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/strength"
+            android:textColor="#CCFFFFFF" />
+
+        <SeekBar
+            android:id="@+id/strength"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/focus"
+            android:textColor="#CCFFFFFF" />
+
+        <SeekBar
+            android:id="@+id/focus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/effect"
+            android:textColor="#CCFFFFFF" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <RadioGroup
+                android:id="@+id/effectGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <RadioButton android:id="@+id/effectNone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/effect_none" />
+                <RadioButton android:id="@+id/effectSnow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/effect_snow" />
+                <RadioButton android:id="@+id/effectRain" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/effect_rain" />
+                <RadioButton android:id="@+id/effectFireflies" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/effect_fireflies" />
+                <RadioButton android:id="@+id/effectFog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/effect_fog" />
+            </RadioGroup>
+        </HorizontalScrollView>
+
+        <CheckBox
+            android:id="@+id/showDepth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/show_depth" />
+
+        <Button
+            android:id="@+id/applyButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/apply" />
+    </LinearLayout>
+</LinearLayout>

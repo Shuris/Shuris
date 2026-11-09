@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DepthWall</string>
+    <string name="wallpaper_description">Transforma sua foto em um papel de parede 3D que se move com o celular.</string>
+    <string name="pick_photo">Escolher foto</string>
+    <string name="strength">Intensidade 3D</string>
+    <string name="focus">Ponto fixo (fundo ↔ frente)</string>
+    <string name="effect">Efeito entre as camadas</string>
+    <string name="effect_none">Nenhum</string>
+    <string name="effect_snow">Neve</string>
+    <string name="effect_rain">Chuva</string>
+    <string name="effect_fireflies">Vaga-lumes</string>
+    <string name="effect_fog">Neblina</string>
+    <string name="show_depth">Ver mapa de profundidade</string>
+    <string name="apply">Definir como papel de parede</string>
+    <string name="hint_empty">Escolha uma foto para começar.\nIncline o celular (ou arraste aqui) para ver o efeito.</string>
+</resources>
