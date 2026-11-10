@@ -60,7 +60,7 @@ export class IntroScreen {
         <div class="title-screen">
           <img class="title-icon" src="assets/ui/app-icon.png" alt="">
           <h1 class="logo">COLOSSEUM</h1>
-          <p class="tagline">Roma, ano 80 d.C. As portas do anfiteatro se abrem.<br>Forje a carreira de um gladiador — da rúdis de madeira à glória da arena.</p>
+          <p class="tagline">Do ludus à glória da arena.</p>
           <button class="btn btn-red big" data-i="new">Iniciar carreira</button>
         </div>`;
       return;
@@ -72,12 +72,12 @@ export class IntroScreen {
         const bonus = Object.entries(o.bonus)
           .map(([k, v]) => `${ATTRIBUTE_INFO[k as AttributeKey].short} +${v}`)
           .join(', ');
-        return `<button class="origin ${o.id === this.origin ? 'active' : ''}" data-i="origin" data-v="${o.id}"><b>${esc(o.name)}</b><span>${esc(o.description)}</span><em>${bonus}</em></button>`;
+        return `<button class="origin ${o.id === this.origin ? 'active' : ''}" data-i="origin" data-v="${o.id}" title="${esc(o.description)}"><b>${esc(o.name)}</b><em>${bonus}</em></button>`;
       }).join('');
       this.root.innerHTML = `
         <div class="create panel">
-          <h2>Criação do gladiador</h2>
-          <label class="field">Nome do gladiador
+          <h2>Seu gladiador</h2>
+          <label class="field">Nome
             <input name="gname" maxlength="${MAX_NAME_LENGTH}" autocomplete="off" spellcheck="false" placeholder="Ex.: Maximus" value="${esc(this.name)}">
           </label>
           <div class="form-error">${esc(this.error)}</div>
@@ -87,9 +87,9 @@ export class IntroScreen {
           <div class="appear">
             <span>Pele</span><div>${SKIN_SWATCH.map((c, i) => swatch('skin', i, c, this.appearance.skin === i, SKIN_NAMES[i])).join('')}</div>
             <span>Cabelo</span><div>${HAIR_STYLE_NAMES.map((n, i) => `<button class="btn sm ${this.appearance.hairStyle === i ? 'active' : ''}" data-i="hairStyle" data-v="${i}">${esc(n)}</button>`).join('')}</div>
-            <span>Cor do cabelo</span><div>${HAIR_COLORS.map((c, i) => swatch('hairColor', i, hex(c), this.appearance.hairColor === i, '')).join('')}</div>
+            <span>Cor</span><div>${HAIR_COLORS.map((c, i) => swatch('hairColor', i, hex(c), this.appearance.hairColor === i, '')).join('')}</div>
             <span>Barba</span><div><button class="btn sm ${this.appearance.beard ? '' : 'active'}" data-i="beard" data-v="0">Sem barba</button><button class="btn sm ${this.appearance.beard ? 'active' : ''}" data-i="beard" data-v="1">Com barba</button></div>
-            <span>Tanga (subligaculum)</span><div>${CLOTH_COLORS.map((c, i) => swatch('clothColor', i, hex(c), this.appearance.clothColor === i, '')).join('')}</div>
+            <span>Roupa</span><div>${CLOTH_COLORS.map((c, i) => swatch('clothColor', i, hex(c), this.appearance.clothColor === i, '')).join('')}</div>
           </div>
           <div class="row end"><button class="btn btn-red" data-i="next">Continuar</button></div>
         </div>`;
@@ -100,17 +100,14 @@ export class IntroScreen {
     }
     this.root.innerHTML = `
       <div class="story panel">
-        <h2>Bem-vindo ao ludus, ${esc(this.name.trim())}</h2>
-        <p>Você foi comprado por um lanista e agora treina no ludus para lutar no anfiteatro. Sua carreira é permanente: vitórias e derrotas fazem parte do caminho — ninguém morre nesta arena, mas a glória precisa ser conquistada.</p>
+        <h2>Bem-vindo, ${esc(this.name.trim())}!</h2>
         <ul class="howto">
-          <li><b>Arena:</b> escolha o adversário e a estratégia. A luta é automática — acompanhe e torça.</li>
-          <li><b>Gladiador:</b> distribua os 3 pontos de atributo que você ganha a cada nível.</li>
-          <li><b>Treinamento:</b> gaste moedas para aprimorar atributos aos poucos.</li>
-          <li><b>Equipamentos:</b> compre e equipe armas, escudos e proteções.</li>
-          <li><b>Modo companion:</b> o botão no topo transforma o jogo em uma janelinha flutuante para acompanhar as lutas enquanto usa o computador.</li>
+          <li><b>Arena</b> — escolha o rival e clique em LUTAR. A luta é automática.</li>
+          <li><b>Gladiador</b> — use os pontos ganhos ao subir de nível.</li>
+          <li><b>Treino</b> e <b>Equipamentos</b> — fique mais forte com suas moedas.</li>
         </ul>
-        <p class="hint">Você começa com uma rúdis de madeira e 150 moedas. Uma boa ideia é comprar um escudo pequeno ou uma armadura leve antes da primeira luta.</p>
-        <div class="row end"><button class="btn" data-i="back">Voltar</button><button class="btn btn-red" data-i="finish">Entrar na arena</button></div>
+        <p class="hint">Derrotas não tiram nada. Dica: compre um escudo antes da primeira luta.</p>
+        <div class="row end"><button class="btn" data-i="back">Voltar</button><button class="btn btn-red" data-i="finish">Começar</button></div>
       </div>`;
   }
 

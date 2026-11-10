@@ -213,3 +213,39 @@ describe('salvamento', () => {
     expect(writes.length).toBe(2);
   });
 });
+
+import { ARENAS, arenaForOpponent } from '../../src/renderer/core/data/arenas';
+import { clockLabel, phaseName, timeOfDay, CYCLE_MS } from '../../src/renderer/core/systems/TimeOfDay';
+
+describe('arenas', () => {
+  it('uma arena diferente a cada dois adversários', () => {
+    const ids = OPPONENTS.map((o) => arenaForOpponent(o.id).id);
+    expect(ids).toEqual(['capua', 'capua', 'pompeii', 'pompeii', 'verona', 'verona', 'leptis', 'leptis', 'rome']);
+    expect(new Set(ids).size).toBe(ARENAS.length);
+  });
+});
+
+describe('dia e noite', () => {
+  it('ciclo acelerado percorre o dia inteiro em 10 minutos', () => {
+    expect(timeOfDay('cycle', 0.2 * CYCLE_MS)).toBeCloseTo(0.5);
+    expect(phaseName(timeOfDay('cycle', 0.2 * CYCLE_MS))).toBe('Dia');
+    expect(phaseName(timeOfDay('cycle', 0.7 * CYCLE_MS))).toBe('Noite');
+    expect(clockLabel(0.5)).toBe('12:00');
+  });
+  it('modo hora do PC usa o relógio local', () => {
+    const d = new Date(2026, 0, 1, 18, 0, 0).getTime();
+    expect(timeOfDay('real', d)).toBeCloseTo(0.75);
+    expect(phaseName(0.75)).toBe('Entardecer');
+  });
+});
+
+describe('configurações salvas', () => {
+  it('saves antigos ganham volume, som e dia/noite padrão', () => {
+    const p = fresh() as unknown as { settings: Record<string, unknown> };
+    delete p.settings.volume;
+    delete p.settings.muted;
+    delete p.settings.dayNight;
+    const r = parseSave(JSON.stringify({ format: 'colosseum-save', version: 1, savedAt: 0, player: p }));
+    expect(r.ok && r.player.settings).toMatchObject({ volume: 0.7, muted: false, dayNight: 'cycle' });
+  });
+});

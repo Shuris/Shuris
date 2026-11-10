@@ -6,29 +6,17 @@ export const IPC = {
   saveWriteSync: 'save:write-sync',
   saveDelete: 'save:delete',
   winGetState: 'win:get-state',
-  winSetMode: 'win:set-mode',
-  winSetAlwaysOnTop: 'win:set-always-on-top',
-  winSetOpacity: 'win:set-opacity',
-  winSetClickThrough: 'win:set-click-through',
   winMinimize: 'win:minimize',
-  winHide: 'win:hide',
   winClose: 'win:close',
   winToggleMaximize: 'win:toggle-maximize',
+  winSetFullscreen: 'win:set-fullscreen',
   appInfo: 'app:info',
   evtWindowState: 'evt:window-state',
 } as const;
 
-export type WindowMode = 'full' | 'companion';
-
 export interface WindowState {
-  mode: WindowMode;
-  alwaysOnTop: boolean;
-  opacity: number;
-  clickThrough: boolean;
   maximized: boolean;
-  opacitySupported: boolean;
-  shortcuts: { clickThrough: string; toggleMode: string; toggleVisible: string };
-  shortcutErrors: string[];
+  fullscreen: boolean;
 }
 
 export interface SaveReadResult {
@@ -60,12 +48,8 @@ export interface ColosseumBridge {
   };
   win: {
     getState(): Promise<WindowState>;
-    setMode(mode: WindowMode): Promise<WindowState>;
-    setAlwaysOnTop(on: boolean): Promise<WindowState>;
-    setOpacity(value: number): Promise<WindowState>;
-    setClickThrough(on: boolean): Promise<WindowState>;
+    setFullscreen(on: boolean): Promise<WindowState>;
     minimize(): void;
-    hide(): void;
     close(): void;
     toggleMaximize(): void;
     onState(cb: (s: WindowState) => void): () => void;
@@ -74,4 +58,3 @@ export interface ColosseumBridge {
 }
 
 export const MAX_SAVE_BYTES = 5 * 1024 * 1024;
-export const MIN_OPACITY = 0.3;

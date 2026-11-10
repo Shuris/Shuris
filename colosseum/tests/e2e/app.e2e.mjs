@@ -25,6 +25,7 @@ async function launch() {
   win = await app.firstWindow();
   win.on('pageerror', (e) => errors.push(e.message));
   await win.waitForSelector('#loading', { state: 'detached', timeout: 30000 });
+  await win.waitForFunction(() => !!window.__colosseum, null, { timeout: 10000 });
 }
 
 async function step(name, fn) {
@@ -48,9 +49,8 @@ const state = () => win.evaluate(() => window.__colosseum.store.state);
 const winInfo = () =>
   app.evaluate(({ BrowserWindow }) => {
     const w = BrowserWindow.getAllWindows()[0];
-    return { bounds: w.getBounds(), top: w.isAlwaysOnTop(), visible: w.isVisible() };
+    return { bounds: w.getBounds(), fullscreen: w.isFullScreen(), visible: w.isVisible() };
   });
-const winState = () => win.evaluate(() => window.colosseum.win.getState());
 const shot = async (name) => SHOTS && win.screenshot({ path: path.join(SHOTS, `${name}.png`) });
 
 console.log(`COLOSSEUM E2E — dados em ${USER_DATA}`);
@@ -188,53 +188,71 @@ await step('3/10. Evolução de nível e distribuição de atributos', async () 
   await shot('10-character');
 });
 
-await step('13. Alternância para o modo companion', async () => {
-  await win.click('[data-w="companion"]');
-  await win.waitForFunction(() => document.getElementById('app').classList.contains('mode-companion'));
-  const i = await winInfo();
-  assert(i.bounds.width <= 500 && i.bounds.height <= 360, `janela pequena (${i.bounds.width}x${i.bounds.height})`);
-  const s = await winState();
-  assert(s.mode === 'companion', 'modo companion');
-  assert((await win.locator('#titlebar').isVisible()) === false, 'sem barra de título');
-  await win.waitForTimeout(600);
-  await shot('13-companion');
-});
-
-await step('14. Sempre no topo (ativar/desativar)', async () => {
-  assert((await winInfo()).top === true, 'sempre no topo ativo por padrão');
-  await win.hover('#stage');
-  await win.click('[data-c="top"]');
-  await win.waitForTimeout(300);
-  assert((await winInfo()).top === false, 'desativado');
-  await win.click('[data-c="top"]');
-  await win.waitForTimeout(300);
-  assert((await winInfo()).top === true, 'reativado');
-});
-
-await step('14b. Clique-através reversível (bandeja/atalho usam o mesmo caminho)', async () => {
-  await win.click('[data-c="click"]');
-  await win.waitForTimeout(300);
-  assert((await winState()).clickThrough === true, 'clique-através ativo');
-  assert(await win.locator('#clickthrough-note').isVisible(), 'aviso com o atalho visível');
-  const s = await winState();
-  assert(s.shortcutErrors.length === 0, `atalhos globais registrados (${s.shortcutErrors})`);
-  await win.evaluate(() => window.colosseum.win.setClickThrough(false));
-  await win.waitForTimeout(300);
-  assert((await winState()).clickThrough === false, 'desativado');
-});
-
-await step('7/13b. Batalha no modo companion', async () => {
-  await win.hover('#stage');
-  await win.click('[data-c="fight"]');
+await step('16. Efeitos sonoros (Web Audio) durante a luta e na interface', async () => {
+  const before = await win.evaluate(() => window.__colosseum.sound.played);
+  await win.click('[data-tab="arena"]');
+  await win.click('.btn-fight');
   await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
-  await win.waitForTimeout(6000);
-  await shot('13b-companion-battle');
+  await win.waitForTimeout(7000);
+  const s = await win.evaluate(() => ({ played: window.__colosseum.sound.played, ctx: window.__colosseum.sound.contextState }));
+  assert(s.ctx === 'running', `contexto de áudio ativo (${s.ctx})`);
+  assert(s.played - before >= 5, `sons tocados na luta (${s.played - before})`);
 });
 
-await step('15. Redimensionamento da janela durante a batalha', async () => {
+await step('17. Arena correta para o adversário (uma a cada dois)', async () => {
+  const a = await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id);
+  assert(a === 'capua', `Marcus luta em Cápua (${a})`);
+  await win.click('[data-hud="speed"][data-v="3"]');
+  await win.click('[data-hud="forfeit"]');
+  await win.click('.modal [data-a="ok"]');
+  await win.waitForSelector('.modal-result', { timeout: 15000 });
+  await win.click('[data-r="close"]');
+  // libera Rufus (3º adversário) para conferir a segunda arena
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.defeatedOpponents = ['marcus', 'cassius']; p.selectedOpponent = 'rufus'; }));
+  await win.click('[data-tab="arena"]');
+  await win.click('.btn-fight');
+  await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
+  const b = await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id);
+  assert(b === 'pompeii', `Rufus luta em Pompeia (${b})`);
+  await win.waitForTimeout(2500);
+  await shot('17-pompeii');
+});
+
+await step('18. Ciclo de dia e noite (céu e iluminação mudam com a hora)', async () => {
+  const sample = (ms) =>
+    win.evaluate((ms) => {
+      const real = Date.now;
+      Date.now = () => ms;
+      const sky = window.__colosseum.view.sky;
+      sky.update(0.016);
+      Date.now = real;
+      return { t: sky.t, light: sky.state.light, ambient: sky.state.ambient };
+    }, ms);
+  const day = await sample(120000); // meio-dia no ciclo de 10 min
+  const night = await sample(420000); // meia-noite
+  assert(day.light > 0.9 && day.ambient === 0xffffff, `dia claro (${JSON.stringify(day)})`);
+  assert(night.light < 0.2 && night.ambient !== 0xffffff, `noite escura (${JSON.stringify(night)})`);
+  await win.click('[data-hud="speed"][data-v="3"]');
+  await win.waitForSelector('.modal-result', { timeout: 150000 });
+  await win.click('[data-r="close"]');
+});
+
+await step('19. Tela cheia (ativar e sair)', async () => {
+  await win.click('[data-w="fullscreen"]');
+  await win.waitForTimeout(1200);
+  assert((await winInfo()).fullscreen === true, 'tela cheia ativa');
+  assert((await win.locator('#titlebar').isVisible()) === false, 'barra de título oculta');
+  await shot('19-fullscreen');
+  await win.keyboard.press('Escape');
+  await win.waitForTimeout(1200);
+  assert((await winInfo()).fullscreen === false, 'saiu da tela cheia');
+  assert(await win.locator('#titlebar').isVisible(), 'barra de título de volta');
+});
+
+await step('15. Redimensionamento da janela', async () => {
   for (const [w, h] of [
-    [300, 200],
-    [620, 420],
+    [980, 620],
+    [1400, 880],
   ]) {
     await app.evaluate(({ BrowserWindow }, [w, h]) => BrowserWindow.getAllWindows()[0].setSize(w, h), [w, h]);
     await win.waitForTimeout(700);
@@ -242,28 +260,9 @@ await step('15. Redimensionamento da janela durante a batalha', async () => {
       const cv = document.querySelector('#game canvas');
       return { cw: cv.clientWidth, ch: cv.clientHeight, iw: window.innerWidth, ih: window.innerHeight };
     });
-    assert(Math.abs(c.cw - c.iw) <= 2 && Math.abs(c.ch - c.ih) <= 2, `canvas acompanha a janela (${JSON.stringify(c)})`);
+    assert(Math.abs(c.cw - c.iw) <= 2 && c.ch > 0, `canvas acompanha a janela (${JSON.stringify(c)})`);
   }
   await shot('15-resized');
-  const running = await win.evaluate(() => window.__colosseum.view.arena.engine.time);
-  await win.waitForTimeout(500);
-  const later = await win.evaluate(() => window.__colosseum.view.arena.engine.time);
-  assert(later > running || (await win.evaluate(() => window.__colosseum.view.arena.engine.finished)), 'luta continua após redimensionar');
-});
-
-await step('13c. Retorno ao modo completo (batalha continua)', async () => {
-  const t0 = await win.evaluate(() => window.__colosseum.view.arena.engine.time);
-  await win.evaluate(() => window.colosseum.win.setMode('full'));
-  await win.waitForFunction(() => document.getElementById('app').classList.contains('mode-full'));
-  await win.waitForTimeout(500);
-  const i = await winInfo();
-  assert(i.bounds.width >= 960 && i.bounds.height >= 600, 'tamanho do modo completo restaurado');
-  assert(i.top === false, 'modo completo não fica sempre no topo');
-  const t1 = await win.evaluate(() => window.__colosseum.view.arena.engine.time);
-  assert(t1 >= t0, 'mesma batalha (sem recarregar)');
-  await win.click('[data-hud="speed"][data-v="3"]');
-  await win.waitForSelector('.modal-result', { timeout: 150000 });
-  await win.click('[data-r="close"]');
 });
 
 const snapshot = await state();

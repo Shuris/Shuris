@@ -4,13 +4,11 @@
 
 ```
 ┌────────────── Processo principal (Node/Electron) ──────────────┐
-│ main.ts           protocolo app://, instância única, atalhos    │
-│ windowManager.ts  janela única, modos completo/companion,       │
-│                   sempre no topo, opacidade, clique-através     │
+│ main.ts           protocolo app://, instância única             │
+│ windowManager.ts  janela única, maximizar, tela cheia (F11)     │
 │ ipcHandlers.ts    IPC validado (remetente + argumentos)         │
 │ saveStore.ts      gravação atômica + backup em userData/saves   │
 │ settingsStore.ts  preferências da janela                        │
-│ tray.ts           ícone na bandeja (saída de emergência)        │
 └───────────────▲─────────────────────────────────────────────────┘
                 │ IPC (contrato em src/shared/ipc.ts)
 ┌───────────────┴──── preload.ts (contextBridge) ─────────────────┐
@@ -29,6 +27,8 @@
 │ game/   renderização Phaser                                     │
 │   Game.ts             fachada usada pela UI                     │
 │   scenes/             Boot, Hub (ludus/treino), Arena (batalha) │
+│   DayNight.ts         céu dinâmico e luz ambiente               │
+│ audio/SoundManager    efeitos sonoros sintetizados (Web Audio)  │
 │   entities/Gladiator  sprite em camadas (paper doll)            │
 │   assets.ts, layout.ts (câmera responsiva), fx.ts               │
 │ ui/     interface HTML/CSS                                      │
@@ -119,12 +119,37 @@ versão válida anterior para `gladiador.backup.json`. Na leitura, `SaveSystem.p
 formato, descarta itens/equipamentos inexistentes e limita valores fora da faixa; se o arquivo
 principal estiver corrompido, o backup é usado.
 
-## Janela e modo companion
+## Janela
 
-Há uma única janela sem moldura (barra de título própria no modo completo). Alternar o modo
-apenas muda tamanho, tamanho mínimo, "sempre no topo" e opacidade — **sem recriar a janela**,
-então uma batalha em andamento continua. Clique-através usa `setIgnoreMouseEvents(true,
-{ forward: true })` e só é permitido no modo companion; é desligado automaticamente ao voltar
-ao modo completo, pode ser revertido pelo atalho global Ctrl+Shift+X e pelo menu da bandeja, e
-nunca é restaurado ao reiniciar. Posições salvas são verificadas contra os monitores
+Uma única janela sem moldura (barra de título própria). Tela cheia por botão, F11 (tratado no
+processo principal, funciona mesmo antes da interface carregar) ou Esc para sair; o estado é
+lembrado em `window-settings.json`. Posições salvas são verificadas contra os monitores
 conectados para a janela nunca abrir fora da tela.
+
+## Armas rígidas
+
+As armas não fazem parte das folhas de quadros. O gerador desenha cada arma **uma única vez**
+(`weapon_*.png`, apontando para a direita, com o ponto de empunhadura conhecido) e grava no
+manifesto, para cada quadro, a posição da mão e o ângulo da arma (`hands`). O `GladiatorView`
+posiciona e gira essa imagem a cada quadro, então a lâmina nunca muda de forma.
+
+## Arenas
+
+`core/data/arenas.ts` define 5 anfiteatros; `arenaForOpponent` escolhe o da dupla de
+adversários (índice ÷ 2). Os fundos e camadas de público são gerados por
+`tools/gen_arenas.py` a partir de temas (madeira, pedra, cores, velário, cenário ao fundo) e
+compartilham a mesma geometria do pódio/areia, então o combate não muda.
+
+## Dia e noite
+
+`core/systems/TimeOfDay.ts` (lógica pura e testada) dá a hora do jogo: ciclo rápido de 10
+minutos ou relógio do computador. `game/DayNight.ts` desenha o céu atrás dos cenários (que têm
+o céu transparente), move sol/lua, mostra estrelas e aplica uma camada de luz ambiente em modo
+*multiply* sobre cenário e gladiadores; os brilhos dos braseiros ficam por cima, em modo
+*add*, e aumentam à noite.
+
+## Som
+
+`audio/SoundManager.ts` sintetiza todos os efeitos com osciladores, ruído filtrado e envelopes
+(sem arquivos de áudio). A `ArenaScene` toca sons a partir dos eventos do motor de combate; a
+interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam no salvamento.

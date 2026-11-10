@@ -1,87 +1,49 @@
-# Funcionalidades — versão 0.1.0
+# Funcionalidades — versão 0.2.0
 
-## Implementadas
+## Novidades da 0.2.0
 
-### Aplicativo desktop
-- [x] Aplicativo Electron independente, offline, com janela sem moldura e barra de título própria.
-- [x] Instalador NSIS (`.exe`) com ícone próprio, atalhos na área de trabalho e no menu Iniciar,
-      escolha da pasta e desinstalador; versão portátil (`.exe`).
-- [x] Instância única; ícone na bandeja com menu (mostrar, trocar modo, sempre no topo,
-      clique-através, sair).
-- [x] Segurança: contextIsolation, sem nodeIntegration, sandbox, IPC validado, CSP, protocolo `app://`.
+- [x] **Efeitos sonoros** sintetizados em tempo real (Web Audio): golpes, críticos, metal dos
+      escudos, lâminas no ar, esquivas, passos na areia, habilidades, cansaço, corneta de
+      início, murmúrio e explosões do público, fanfarra de vitória/derrota e sons da interface
+      (cliques, moedas, equipar, subir de nível). Volume ajustável e botão de mudo.
+- [x] **Armas rígidas:** cada arma é uma única imagem que apenas gira na mão do gladiador — a
+      lâmina não muda mais de forma ou tamanho entre os quadros.
+- [x] **Tela cheia** (botão, F11, Esc para sair), lembrada ao reabrir.
+- [x] **Interface mais legível:** fontes maiores (texto base 24 px), mais contraste e textos
+      muito mais curtos; descrições longas ficam em dicas ao passar o mouse.
+- [x] **Ciclo de dia e noite:** céu em gradiente, sol e lua com trajetória, estrelas, nuvens,
+      luz ambiente sobre cenário e gladiadores, braseiros que iluminam à noite. Modo rápido
+      (dia completo em 10 min) ou hora real do computador. Relógio do jogo na barra de status.
+- [x] **5 anfiteatros**, um a cada dois adversários: Arena de Cápua (madeira), Anfiteatro de
+      Pompeia (com o Vesúvio), Arena de Verona (pedra rosa), Anfiteatro de Leptis Magna
+      (palmeiras e mar) e Coliseu de Roma (para o campeão).
+- [x] **Removido:** modo companion (janela flutuante, clique-através, atalhos globais e ícone na bandeja).
 
-### Fluxo de jogo
-- [x] Tela de apresentação → criação (nome validado, 4 origens com bônus, aparência) → introdução → arena.
-- [x] Dicas para iniciantes em cada tela (dispensáveis) e narração da luta no HUD.
-- [x] Tela de resultado com vitória/derrota, estatísticas da luta, XP, moedas, reputação,
-      item recebido, evolução de nível e adversário desbloqueado.
+## Jogo
 
-### Gladiador e progressão
-- [x] Nome, nível (1–30), experiência, moedas, reputação (com títulos), atributos, pontos,
-      equipamentos, inventário, habilidades e histórico.
-- [x] 6 atributos; 3 pontos por nível com planejamento (+/−) e confirmação; sem valores negativos.
-- [x] Vitória: XP, moedas, reputação, chance de item (garantido na 1ª vitória contra cada adversário).
-- [x] Derrota: pouca XP e moedas, sem perder itens ou níveis. Desistência disponível.
-- [x] Recompensas reduzidas contra adversários muito abaixo do nível (evita progressão rápida).
-- [x] Histórico das últimas 50 lutas.
+- [x] Criação do gladiador (nome validado, 4 origens, aparência) e introdução curta.
+- [x] 6 atributos, 3 pontos por nível, nível máximo 30, experiência, moedas e fama.
+- [x] Combate automático determinístico, separado da renderização: distância e alcance,
+      preparação/impacto/recuperação, acerto, esquiva (máx. 35%), bloqueio, críticos,
+      atordoamento, cansaço/exaustão, 4 habilidades automáticas, 3 estratégias, fim por
+      nocaute, decisão (120 s) ou desistência. Lutas de ~45–90 s.
+- [x] 27 equipamentos em 5 espaços e 4 raridades, visíveis no personagem; mercado, inventário,
+      comparação, equipar/desequipar/vender.
+- [x] Treinamento com custo progressivo (+1 atributo a cada 4 treinos).
+- [x] 9 adversários com dificuldade crescente e chance de vitória estimada por simulação.
+- [x] Histórico das últimas 50 lutas, revanche automática, velocidade 1x/2x/3x.
+- [x] Salvamento automático (gravação atômica, backup, validação).
+- [x] Instalador NSIS e versão portátil para Windows.
 
-### Combate
-- [x] Motor determinístico independente da renderização (passos fixos de 50 ms).
-- [x] Distância e alcance por arma, aproximação, recuo para manter distância, espera estratégica.
-- [x] Preparação, impacto e recuperação de cada golpe; intervalo de ataque.
-- [x] Acerto, esquiva (ativa/passiva, limite 35%), bloqueio com escudo ou aparando, críticos,
-      atordoamento, recuo por impacto.
-- [x] Resistência: custo das ações, recuperação, fadiga e exaustão (quebra de guarda).
-- [x] 4 habilidades automáticas: Golpe poderoso, Defesa reforçada, Ataque rápido, Contra-ataque.
-- [x] 3 estratégias com efeito real (frequência de ataque, reações, gasto de fôlego, cautela).
-- [x] Fim por nocaute, por decisão (limite de 120 s) ou desistência.
-- [x] Lutas de ~45–90 s (verificado por simulação), velocidade 1x/2x/3x, lutas contínuas.
-- [x] Animações: espera, movimento, ataque, defesa, dano, esquiva, vitória, derrota; números de
-      dano, faíscas, poeira, tremor de câmera, aura da Defesa reforçada, torcida animada.
+## Limitações conhecidas
 
-### Equipamentos e treino
-- [x] 5 espaços; 27 itens (Gládio, Espada curta, Tridente, Lança, Scutum, Escudo pequeno,
-      Capacete de gladiador, Armadura leve, Armadura média, Proteção de pernas e variantes) com
-      nome, descrição, categoria, modificadores, preço e raridade (Comum/Incomum/Raro/Épico).
-- [x] Equipamentos visíveis no personagem; mercado; inventário com comparação de estatísticas;
-      equipar, desequipar e vender.
-- [x] 4 treinamentos com custo progressivo, animação no palus e conversão de progresso em +1 atributo.
+- Instalador sem assinatura digital (aviso do SmartScreen).
+- Arte procedural (gerada pelo script do projeto); a estrutura permite trocar por arte feita à mão.
+- Sem música de fundo (apenas efeitos e ambiente do público).
 
-### Arena e adversários
-- [x] Arena romana em pixel art: velário, arcadas, arquibancadas com público animado, camarote
-      imperial, pódio decorado, portões, estandartes, braseiros com luz, areia com sombras.
-- [x] Pátio de treino (ludus) com colunata, celas, poste de treino e suporte de armas.
-- [x] 9 adversários (níveis 1 a 27) com aparência, atributos, equipamentos e estratégias próprios,
-      desbloqueados em sequência, com estimativa de chance de vitória.
+## Pendentes
 
-### Salvamento
-- [x] Salvamento automático em `%APPDATA%\Colosseum\saves`, gravação atômica, backup, validação e correção.
-
-### Desktop companion
-- [x] Modo completo e modo companion sem recarregar (a luta continua).
-- [x] Companion: pequeno, sem bordas, sempre no topo (desativável), redimensionável, arrastável,
-      arena + barras de vida/resistência + informações essenciais; câmera que acompanha a luta.
-- [x] Minimizar, ocultar, opacidade (Windows/macOS), clique-através.
-- [x] Atalhos globais: Ctrl+Shift+M (modo), Ctrl+Shift+X (clique-através), Ctrl+Shift+H (mostrar/ocultar).
-
-## Limitações conhecidas / não verificadas
-
-- O instalador foi **gerado por compilação cruzada no Linux** (Electron Builder + Wine). Os testes
-  automatizados rodaram no Linux (Electron real sob Xvfb). **O `.exe` ainda não foi executado
-  num Windows real** neste ambiente — recomenda-se o teste manual no Windows 10/11 ou usar o
-  workflow do GitHub Actions, que compila num runner Windows.
-- Opacidade da janela: suportada pelo Electron apenas no Windows/macOS (no Linux o controle é ocultado).
-- O instalador não é assinado digitalmente (o SmartScreen mostrará um aviso).
-- A arte é procedural (gerada pelo script do projeto): coerente e própria, mas mais simples do
-  que spritesheets desenhadas à mão; a estrutura já permite substituí-las.
-- Sem áudio nesta versão.
-
-## Pendentes (próximas versões)
-
-- [ ] Efeitos sonoros e música.
-- [ ] Spritesheets desenhadas à mão e mais quadros de animação (ex.: golpes diferentes por arma).
-- [ ] Novas arenas e eventos (torneios, desafios diários).
-- [ ] Mais habilidades e opção de escolher quais habilidades levar para a luta.
-- [ ] Vários espaços de salvamento e exportação/importação do save.
-- [ ] Assinatura de código e atualização automática.
-- [ ] Opções de acessibilidade (tamanho de fonte, desativar tremor de tela).
+- [ ] Música de fundo.
+- [ ] Spritesheets desenhadas à mão e golpes diferentes por arma.
+- [ ] Torneios e eventos; mais habilidades.
+- [ ] Vários espaços de salvamento; assinatura de código e atualização automática.

@@ -38,7 +38,7 @@ def shifted(p, dx=0, dy=0, keys=("neck", "bha", "fha")):
 def build_animations():
     anims = []
     # IDLE
-    idle = [P(), shifted(P(hip=(56, 47), wang=-28), 0, 1), shifted(P(hip=(56, 47), wang=-27), 0, 1), P(wang=-29)]
+    idle = [P(), shifted(P(hip=(56, 47)), 0, 1), shifted(P(hip=(56, 47)), 0, 1), P()]
     anims.append(("idle", idle, 5, True))
     # WALK
     walk = []
@@ -48,7 +48,7 @@ def build_animations():
         bob = -1 if i % 3 == 0 else 0
         fft = (58 + 7 * s, 67 - 3 * max(0.0, c))
         bft = (53 - 7 * s, 67 - 3 * max(0.0, -c))
-        p = P(hip=(56, 46 + bob), fft=fft, bft=bft, wang=-30 + 4 * s)
+        p = P(hip=(56, 46 + bob), fft=fft, bft=bft, wang=-30)
         p = shifted(p, 0, bob)
         p["bha"] = (p["bha"][0] - 2 * s, p["bha"][1])
         walk.append(p)
@@ -303,11 +303,6 @@ def draw_weapon(d, hand, ang, kind):
             px(d, a(31 if sd == 0 else 30, sd), STEEL)
 
 
-def layer_weapon(s, kind):
-    img, d = draw_canvas(FW, FH)
-    draw_weapon(d, s["bha"], s["wang"], kind)
-    return finish(img, light=0.35)
-
 
 def draw_shield(d, center, kind):
     cx, cy = R(center)
@@ -426,8 +421,17 @@ SHEETS["belt"] = ("belt", layer_belt)
 for st in range(3):
     SHEETS[f"hair_{st}"] = ("hair", lambda s, st=st: layer_hair(s, st))
 SHEETS["beard"] = ("beard", layer_beard)
-for w in ("rudis", "gladius", "shortsword", "spear", "trident"):
-    SHEETS[f"weapon_{w}"] = ("weapon", lambda s, w=w: layer_weapon(s, w))
+WEAPON_KINDS = ("rudis", "gladius", "shortsword", "spear", "trident")
+WEAPON_CANVAS = (56, 14)
+WEAPON_GRIP = (12, 7)
+
+
+def weapon_image(kind):
+    """Arma desenhada UMA vez, apontando para a direita. O jogo apenas a gira na
+    mão do gladiador, então a lâmina é sempre rígida (não muda de forma)."""
+    img, d = draw_canvas(*WEAPON_CANVAS)
+    draw_weapon(d, WEAPON_GRIP, 0, kind)
+    return finish(img, light=0.35)
 for sh in ("parmula", "scutum"):
     SHEETS[f"shield_{sh}"] = ("shield", lambda s, sh=sh: layer_shield(s, sh))
 for h in ("cap", "galea", "murmillo"):
@@ -451,6 +455,8 @@ def generate(outdir):
         for i, s in enumerate(skels):
             sheet.alpha_composite(fn(s), (i * FW, 0))
         sheet.save(os.path.join(outdir, key + ".png"))
+    for w in WEAPON_KINDS:
+        weapon_image(w).save(os.path.join(outdir, f"weapon_{w}.png"))
     anims, start = {}, 0
     for name, frames, fps, loop in ANIMS:
         anims[name] = {"start": start, "count": len(frames), "fps": fps, "loop": loop}
@@ -459,6 +465,10 @@ def generate(outdir):
         "frameWidth": FW, "frameHeight": FH, "originX": ORIGIN[0], "originY": ORIGIN[1],
         "frameCount": len(skels), "animations": anims, "layerOrder": LAYER_ORDER,
         "sheets": {k: {"file": f"sprites/gladiator/{k}.png", "layer": v[0]} for k, v in SHEETS.items()},
+        "weapons": {w: {"file": f"sprites/gladiator/weapon_{w}.png", "gripX": WEAPON_GRIP[0], "gripY": WEAPON_GRIP[1]}
+                    for w in WEAPON_KINDS},
+        # posição da mão (no quadro) e ângulo da arma em graus, para cada quadro
+        "hands": [[round(s["bha"][0], 2), round(s["bha"][1], 2), s["wang"]] for s in skels],
     }
     with open(os.path.join(outdir, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

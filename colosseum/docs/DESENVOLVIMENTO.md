@@ -40,12 +40,12 @@ npm run dist:win
 
 Saída em `release/`:
 
-- `Colosseum-Setup-0.1.0.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
-- `Colosseum-Portatil-0.1.0.exe` — versão portátil.
+- `Colosseum-Setup-0.2.0.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
+- `Colosseum-Portatil-0.2.0.exe` — versão portátil.
 - `win-unpacked/` — aplicativo descompactado (útil para testes).
 
 No Linux é possível gerar o mesmo instalador com Wine (`wine64` + `wine32:i386`); foi assim que a
-versão 0.1.0 foi produzida. Configuração em `electron-builder.yml`; ícone em `build/icon.ico`.
+versão 0.1.0 foi produzida (a 0.2.0 é gerada pelo GitHub Actions). Configuração em `electron-builder.yml`; ícone em `build/icon.ico`.
 
 Também há um workflow do GitHub Actions (`.github/workflows/colosseum-windows.yml` na raiz do
 repositório) que roda os testes e gera o instalador num runner Windows real, disponibilizando os
@@ -65,11 +65,12 @@ Toda a arte é gerada por `tools/generate_assets.py` (+ `tools/pixel.py`, `gen_g
 
 ## Testes
 
-- **Unitários (36):** fórmulas de atributos, limites (esquiva 35%, intervalo 0,8 s, redução 70%),
+- **Unitários (40):** fórmulas de atributos, limites (esquiva 35%, intervalo 0,8 s, redução 70%),
   equipamentos, progressão, treinamento, salvamento/validação, GameStore, motor de combate
   (determinismo, limites físicos, todos os eventos/habilidades, efeito das estratégias,
-  duração média) e balanceamento (150 lutas × 3 estratégias × 9 adversários).
-- **E2E (15 etapas):** inicialização, criação, compra/equipamento, treino, batalha completa,
-  vitória/derrota e recompensas, evolução de nível e distribuição de pontos, modo companion,
-  sempre no topo, clique-através, batalha no companion, redimensionamento, volta ao modo
-  completo sem recarregar, salvamento/fechamento/reabertura e recuperação por backup.
+  duração média), arenas, hora do dia, configurações salvas e balanceamento (150 lutas × 3
+  estratégias × 9 adversários).
+- **E2E (14 etapas):** inicialização, criação, compra/equipamento, treino, batalha completa,
+  vitória/derrota e recompensas, evolução de nível e distribuição de pontos, efeitos sonoros,
+  arena correta por adversário, ciclo de dia e noite, tela cheia, redimensionamento,
+  salvamento/fechamento/reabertura e recuperação por backup.

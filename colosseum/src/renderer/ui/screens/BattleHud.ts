@@ -1,7 +1,7 @@
 // HUD da batalha (HTML sobre o canvas): barras de vida/resistência, tempo e narração.
 import type { CombatEngine } from '../../core/combat/CombatEngine';
 import type { CombatEvent, FighterState } from '../../core/combat/CombatTypes';
-import { SKILLS, STRATEGIES } from '../../core/data/skills';
+import { SKILLS } from '../../core/data/skills';
 import { esc, fmtDuration } from '../dom';
 
 export interface HudCallbacks {
@@ -32,7 +32,6 @@ export class BattleHud {
         <div class="plate-name"><span>${esc(f.spec.name)}</span><span class="lvl">Nv ${levels[side]}</span></div>
         <div class="bar hp"><div class="bar-fill" data-hp="${side}"></div><span class="bar-label" data-hpt="${side}"></span></div>
         <div class="bar st"><div class="bar-fill" data-st="${side}"></div></div>
-        <div class="plate-tags" data-tags="${side}"><span class="tag dim">${esc(STRATEGIES[f.spec.strategy].name)}</span></div>
       </div>`;
     this.root.innerHTML = `
       <div class="hud-top">${plate(engine.fighters[0], 0)}<div class="hud-timer" data-timer>2:00</div>${plate(engine.fighters[1], 1)}</div>
@@ -40,11 +39,11 @@ export class BattleHud {
         <div class="hud-log" data-log></div>
         <div class="hud-controls">
           <span class="speed">${[1, 2, 3].map((s) => `<button class="btn sm ${s === speed ? 'active' : ''}" data-hud="speed" data-v="${s}">${s}x</button>`).join('')}</span>
-          <button class="btn sm btn-dark" data-hud="forfeit" title="Desistir desta luta (conta como derrota)">Render-se</button>
+          <button class="btn sm btn-dark" data-hud="forfeit" title="Desistir (conta como derrota)">Desistir</button>
         </div>
       </div>`;
     this.root.hidden = false;
-    this.push(`${esc(engine.fighters[0].spec.name)} e ${esc(engine.fighters[1].spec.name)} entram na arena!`);
+    this.push('Os gladiadores entram na arena!');
     this.update(engine);
   }
 
@@ -67,7 +66,7 @@ export class BattleHud {
       if (st) st.style.width = `${(f.stamina / f.spec.stats.maxStamina) * 100}%`;
       if (ht) ht.textContent = `${Math.ceil(f.hp)} / ${f.spec.stats.maxHp}`;
     }
-    const t = engine.started ? fmtDuration(Math.ceil(engine.timeRemaining)) : 'Apresentação';
+    const t = engine.started ? fmtDuration(Math.ceil(engine.timeRemaining)) : '—';
     if (t !== this.lastTime) {
       this.lastTime = t;
       const el = this.root.querySelector('[data-timer]');
@@ -77,7 +76,7 @@ export class BattleHud {
 
   private push(html: string): void {
     this.log.push(html);
-    if (this.log.length > 4) this.log.shift();
+    if (this.log.length > 2) this.log.shift();
     const el = this.root.querySelector('[data-log]');
     if (el) el.innerHTML = this.log.map((l, i) => `<div class="${i === this.log.length - 1 ? 'new' : ''}">${l}</div>`).join('');
   }
@@ -86,21 +85,19 @@ export class BattleHud {
     const name = (s: 0 | 1) => `<b class="side-${s}">${esc(engine.fighters[s].spec.name.split(',')[0])}</b>`;
     switch (e.type) {
       case 'start':
-        this.push('O editor dá o sinal: <b>lutem!</b>');
+        this.push('<b>Lutem!</b>');
         break;
       case 'skill':
-        this.push(`${name(e.side)} usa <span class="gold">${esc(SKILLS[e.skill].name)}</span>`);
+        this.push(`${name(e.side)}: <span class="gold">${esc(SKILLS[e.skill].name)}</span>`);
         break;
       case 'impact':
-        if (e.crit && e.outcome === 'hit') this.push(`Golpe crítico de ${name(e.side)}! (${e.damage})`);
-        else if (e.outcome === 'dodge' && Math.random() < 0.5) this.push(`${name(e.target)} esquiva com agilidade.`);
-        else if (e.outcome === 'block' && e.damage > 0 && Math.random() < 0.3) this.push(`${name(e.target)} apara o golpe com o escudo.`);
+        if (e.crit && e.outcome === 'hit') this.push(`Crítico de ${name(e.side)}!`);
         break;
       case 'exhausted':
-        this.push(`${name(e.side)} está exausto e precisa recuperar o fôlego!`);
+        this.push(`${name(e.side)} está cansado!`);
         break;
       case 'end':
-        this.push(e.reason === 'ko' ? `${name(e.winner)} vence por nocaute!` : e.reason === 'forfeit' ? `${name(e.winner)} vence: o adversário se rendeu.` : `Tempo esgotado! ${name(e.winner)} vence por decisão.`);
+        this.push(`${name(e.winner)} vence!`);
         break;
     }
   }

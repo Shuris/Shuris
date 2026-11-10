@@ -1,6 +1,6 @@
 // Preload: expõe ao renderer apenas uma API mínima e validada (contextIsolation).
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC, type ColosseumBridge, type WindowMode, type WindowState } from '../shared/ipc';
+import { IPC, type ColosseumBridge, type WindowState } from '../shared/ipc';
 
 const api: ColosseumBridge = {
   save: {
@@ -11,12 +11,8 @@ const api: ColosseumBridge = {
   },
   win: {
     getState: () => ipcRenderer.invoke(IPC.winGetState),
-    setMode: (mode: WindowMode) => ipcRenderer.invoke(IPC.winSetMode, mode),
-    setAlwaysOnTop: (on: boolean) => ipcRenderer.invoke(IPC.winSetAlwaysOnTop, !!on),
-    setOpacity: (value: number) => ipcRenderer.invoke(IPC.winSetOpacity, Number(value)),
-    setClickThrough: (on: boolean) => ipcRenderer.invoke(IPC.winSetClickThrough, !!on),
+    setFullscreen: (on: boolean) => ipcRenderer.invoke(IPC.winSetFullscreen, !!on),
     minimize: () => ipcRenderer.send(IPC.winMinimize),
-    hide: () => ipcRenderer.send(IPC.winHide),
     close: () => ipcRenderer.send(IPC.winClose),
     toggleMaximize: () => ipcRenderer.send(IPC.winToggleMaximize),
     onState: (cb: (s: WindowState) => void) => {

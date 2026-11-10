@@ -84,10 +84,17 @@ export interface BattleRecord {
   levelUps: number;
 }
 
+export type DayNightMode = 'cycle' | 'real';
+
 export interface GameSettings {
   battleSpeed: number; // 1, 2 ou 3
   autoContinue: boolean;
   tipsSeen: string[];
+  /** volume geral dos efeitos sonoros (0..1) */
+  volume: number;
+  muted: boolean;
+  /** ciclo acelerado (10 min) ou horário real do computador */
+  dayNight: DayNightMode;
 }
 
 export interface PlayerState {

@@ -1,6 +1,6 @@
 // Handlers de IPC: validam remetente e argumentos antes de agir.
 import { app, ipcMain, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron';
-import { IPC, type WindowMode } from '../shared/ipc';
+import { IPC } from '../shared/ipc';
 import type { SaveStore } from './saveStore';
 import type { WindowManager } from './windowManager';
 
@@ -24,16 +24,7 @@ export function registerIpc(wm: WindowManager, saves: SaveStore): void {
   });
 
   ipcMain.handle(IPC.winGetState, guard(() => wm.state()));
-  ipcMain.handle(
-    IPC.winSetMode,
-    guard((mode: unknown) => {
-      if (mode === 'full' || mode === 'companion') wm.setMode(mode as WindowMode);
-      return wm.state();
-    }),
-  );
-  ipcMain.handle(IPC.winSetAlwaysOnTop, guard((on: unknown) => (wm.setAlwaysOnTop(on === true), wm.state())));
-  ipcMain.handle(IPC.winSetOpacity, guard((v: unknown) => (typeof v === 'number' && wm.setOpacity(v), wm.state())));
-  ipcMain.handle(IPC.winSetClickThrough, guard((on: unknown) => (wm.setClickThrough(on === true), wm.state())));
+  ipcMain.handle(IPC.winSetFullscreen, guard((on: unknown) => (wm.setFullscreen(on === true), wm.state())));
   ipcMain.handle(
     IPC.appInfo,
     guard(() => ({ version: app.getVersion(), platform: process.platform, savePath: saves.file, isPackaged: app.isPackaged })),
@@ -44,11 +35,10 @@ export function registerIpc(wm: WindowManager, saves: SaveStore): void {
       if (trusted(e)) fn();
     });
   onWin(IPC.winMinimize, () => wm.win?.minimize());
-  onWin(IPC.winHide, () => wm.win?.hide());
   onWin(IPC.winClose, () => wm.win?.close());
   onWin(IPC.winToggleMaximize, () => {
     const w = wm.win;
-    if (!w || wm.mode !== 'full') return;
+    if (!w || w.isFullScreen()) return;
     if (w.isMaximized()) w.unmaximize();
     else w.maximize();
   });

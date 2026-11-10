@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { MANIFEST_KEY, getManifest, queueGladiatorSheets } from '../assets';
+import { ARENAS } from '../../core/data/arenas';
 
 /** Carrega o manifesto e, em seguida, todas as folhas e cenários. */
 export class BootScene extends Phaser.Scene {
@@ -14,9 +15,12 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     const m = getManifest(this);
     queueGladiatorSheets(this, m);
-    this.load.image('bg:arena', 'assets/backgrounds/arena.png');
+    for (const a of ARENAS) {
+      this.load.image(a.bg, `assets/backgrounds/arena_${a.id}.png`);
+      this.load.spritesheet(a.crowd, `assets/backgrounds/crowd_${a.id}.png`, { frameWidth: 640, frameHeight: 360 });
+    }
     this.load.image('bg:ludus', 'assets/backgrounds/ludus.png');
-    this.load.spritesheet('bg:crowd', 'assets/backgrounds/crowd.png', { frameWidth: 640, frameHeight: 360 });
+    for (const k of ['sun', 'moon', 'cloud']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');

@@ -47,7 +47,7 @@ export function createPlayer(name: string, originId: string, appearance: Appeara
     strategy: 'balanced',
     defeatedOpponents: [],
     selectedOpponent: OPPONENTS[0].id,
-    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [] },
+    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [], volume: 0.7, muted: false, dayNight: 'cycle' },
     nextUid: 2,
     createdAt: now,
     updatedAt: now,

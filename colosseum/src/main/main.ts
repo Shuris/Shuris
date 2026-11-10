@@ -1,12 +1,11 @@
 // Processo principal do Electron — ponto de entrada do aplicativo desktop.
-import { app, BrowserWindow, globalShortcut, net, protocol } from 'electron';
+import { app, BrowserWindow, net, protocol } from 'electron';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { registerIpc } from './ipcHandlers';
 import { SaveStore } from './saveStore';
 import { SettingsStore } from './settingsStore';
-import { createTray } from './tray';
-import { SHORTCUTS, WindowManager } from './windowManager';
+import { WindowManager } from './windowManager';
 
 // Permite isolar os dados em testes automatizados.
 if (process.env.COLOSSEUM_USER_DATA) app.setPath('userData', path.resolve(process.env.COLOSSEUM_USER_DATA));
@@ -33,7 +32,13 @@ if (!app.requestSingleInstanceLock()) {
 } else {
   let wm: WindowManager;
 
-  app.on('second-instance', () => wm?.show());
+  app.on('second-instance', () => {
+    const w = wm?.win;
+    if (!w) return;
+    if (w.isMinimized()) w.restore();
+    w.show();
+    w.focus();
+  });
 
   app.whenReady().then(() => {
     registerAppProtocol();
@@ -44,24 +49,10 @@ if (!app.requestSingleInstanceLock()) {
     wm = new WindowManager(settings, devUrl ? { url: devUrl } : { protocolUrl: 'app://colosseum/index.html' });
     registerIpc(wm, saves);
     wm.create();
-    createTray(wm);
-
-    const reg = (accel: string, fn: () => void, label: string) => {
-      try {
-        if (!globalShortcut.register(accel, fn)) wm.shortcutErrors.push(label);
-      } catch {
-        wm.shortcutErrors.push(label);
-      }
-    };
-    reg(SHORTCUTS.clickThrough, () => wm.toggleClickThrough(), 'Ctrl+Shift+X');
-    reg(SHORTCUTS.toggleMode, () => wm.toggleMode(), 'Ctrl+Shift+M');
-    reg(SHORTCUTS.toggleVisible, () => wm.toggleVisible(), 'Ctrl+Shift+H');
-
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) wm.create();
     });
   });
 
-  app.on('will-quit', () => globalShortcut.unregisterAll());
   app.on('window-all-closed', () => app.quit());
 }

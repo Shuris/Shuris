@@ -1,7 +1,7 @@
 // Fachada da camada Phaser usada pela interface. A UI nunca manipula cenas diretamente.
 import * as Phaser from 'phaser';
 import type { FighterVisual } from '../core/combat/CombatantFactory';
-import type { TrainingId } from '../core/model/types';
+import type { DayNightMode, TrainingId } from '../core/model/types';
 import { ArenaScene, type BattleHandlers, type BattleSetup } from './scenes/ArenaScene';
 import { BootScene } from './scenes/BootScene';
 import { HubScene } from './scenes/HubScene';
@@ -11,8 +11,9 @@ export class GameView {
   readonly game: Phaser.Game;
   readonly ready: Promise<void>;
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
-  private compact = false;
   private current: 'hub' | 'arena' | null = null;
+  /** modo do ciclo de dia e noite (lido continuamente pelas cenas) */
+  dayNight: DayNightMode = 'cycle';
 
   constructor(parent: HTMLElement) {
     this.game = new Phaser.Game({
@@ -39,21 +40,27 @@ export class GameView {
     return this.game.scene.getScene('arena') as ArenaScene;
   }
 
+  /** Céu da cena ativa (usado pela interface e pelos testes). */
+  get sky() {
+    if (this.current === 'arena') return this.arena.sky;
+    if (this.current === 'hub') return this.hub.sky;
+    return null;
+  }
+
   get inBattle(): boolean {
     return this.current === 'arena';
   }
 
-  setLayout(insets: Insets, compact: boolean): void {
+  setLayout(insets: Insets): void {
     this.insets = insets;
-    this.compact = compact;
     if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.setInsets(insets);
-    if (this.current === 'arena' && this.arena.scene.isActive()) this.arena.setInsets(insets, compact);
+    if (this.current === 'arena' && this.arena.scene.isActive()) this.arena.setInsets(insets);
   }
 
   showHub(visual: FighterVisual): void {
     this.game.scene.stop('arena');
     this.game.scene.stop('boot');
-    this.game.scene.start('hub', { visual, insets: this.insets });
+    this.game.scene.start('hub', { visual, insets: this.insets, dayNight: () => this.dayNight });
     this.current = 'hub';
   }
 
@@ -61,9 +68,9 @@ export class GameView {
     if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.setVisual(visual);
   }
 
-  startBattle(setup: Omit<BattleSetup, 'insets' | 'compact'>, handlers: BattleHandlers): void {
+  startBattle(setup: Omit<BattleSetup, 'insets' | 'dayNight'>, handlers: BattleHandlers): void {
     this.game.scene.stop('hub');
-    this.game.scene.start('arena', { setup: { ...setup, insets: this.insets, compact: this.compact }, handlers });
+    this.game.scene.start('arena', { setup: { ...setup, insets: this.insets, dayNight: () => this.dayNight }, handlers });
     this.current = 'arena';
   }
 

@@ -1,26 +1,34 @@
-// Tela do gladiador: atributos, distribuição de pontos, estatísticas derivadas e habilidades.
-import type { AttributeKey, PlayerState } from '../../core/model/types';
+// Tela do gladiador: atributos (com distribuição de pontos), estatísticas e habilidades.
+import type { AttributeKey, PlayerState, SkillId } from '../../core/model/types';
 import { ATTRIBUTE_KEYS } from '../../core/model/types';
-import { ATTRIBUTE_INFO, MAX_ATTRIBUTE, getOrigin } from '../../core/data/gladiators';
+import { ATTRIBUTE_INFO, MAX_ATTRIBUTE, MAX_LEVEL } from '../../core/data/gladiators';
 import { SKILLS, SKILL_ORDER } from '../../core/data/skills';
-import {
-  allocatePoints,
-  computeCombatStats,
-  equippedItems,
-  finalAttributes,
-  gearAttributeBonus,
-  naturalAttributes,
-} from '../../core/systems/AttributeSystem';
-import { reputationTitle, xpToNext } from '../../core/systems/ProgressionSystem';
-import { MAX_LEVEL } from '../../core/data/gladiators';
+import { allocatePoints, computeCombatStats, equippedItems, finalAttributes, gearAttributeBonus, naturalAttributes } from '../../core/systems/AttributeSystem';
+import { xpToNext } from '../../core/systems/ProgressionSystem';
 import { bar, esc, icon } from '../dom';
 import { toast } from '../components/feedback';
 import type { Screen, ScreenDeps } from './Screen';
 
+const ATTR_HINT: Record<AttributeKey, string> = {
+  str: 'mais dano',
+  vit: 'mais vida',
+  res: 'menos dano e cansaço',
+  agi: 'ataca mais rápido, esquiva',
+  prec: 'acerta mais, críticos',
+  tech: 'habilidades e defesa',
+};
+
+const SKILL_HINT: Record<SkillId, string> = {
+  power_strike: 'Golpe muito forte.',
+  iron_guard: 'Reduz o dano por alguns segundos.',
+  quick_strike: 'Golpe veloz quando o rival se abre.',
+  counter: 'Revida após defender ou esquivar.',
+};
+
 export class CharacterScreen implements Screen {
   readonly id = 'gladiator' as const;
   readonly title = 'Gladiador';
-  readonly tip = 'A cada nível você recebe 3 pontos de atributo. Use + e − para planejar e confirme a distribuição. Os valores entre parênteses mostram bônus de treino e de equipamentos.';
+  readonly tip = 'Ao subir de nível você ganha 3 pontos. Use + e confirme.';
   private pending: Record<AttributeKey, number> = { str: 0, vit: 0, res: 0, agi: 0, prec: 0, tech: 0 };
 
   constructor(private readonly d: ScreenDeps) {}
@@ -41,53 +49,43 @@ export class CharacterScreen implements Screen {
     const left = p.unspentPoints - this.pendingTotal();
     const rows = ATTRIBUTE_KEYS.map((k) => {
       const info = ATTRIBUTE_INFO[k];
-      const extra: string[] = [];
-      if (p.trainedBonus[k]) extra.push(`treino +${p.trainedBonus[k]}`);
-      if (gb[k]) extra.push(`equip. ${gb[k] > 0 ? '+' : ''}${gb[k]}`);
       const value = p.baseAttributes[k] + p.trainedBonus[k];
       const canAdd = left > 0 && value + this.pending[k] < MAX_ATTRIBUTE;
+      const extra = gb[k] ? ` <em class="${gb[k] > 0 ? 'up' : 'down'}">${gb[k] > 0 ? '+' : ''}${gb[k]}</em>` : '';
       return `<div class="attr-row" title="${esc(info.description)}">
-        ${icon(info.icon)}<span class="attr-name">${esc(info.name)}</span>
-        <span class="attr-val">${value + this.pending[k]}${this.pending[k] ? ` <em class="up">+${this.pending[k]}</em>` : ''}</span>
-        <span class="attr-extra">${extra.length ? `(${esc(extra.join(', '))})` : ''}</span>
-        ${p.unspentPoints > 0 ? `<button class="btn sq" data-action="minus" data-id="${k}" ${this.pending[k] ? '' : 'disabled'}>−</button><button class="btn sq" data-action="plus" data-id="${k}" ${canAdd ? '' : 'disabled'}>+</button>` : ''}
+        ${icon(info.icon)}
+        <span class="attr-name">${esc(info.name)}<small>${ATTR_HINT[k]}</small></span>
+        <span class="attr-val">${value + this.pending[k]}${this.pending[k] ? `<em class="up"> +${this.pending[k]}</em>` : ''}${extra}</span>
+        ${p.unspentPoints > 0 ? `<button class="btn sq" data-action="minus" data-id="${k}" ${this.pending[k] ? '' : 'disabled'}>−</button><button class="btn sq btn-gold" data-action="plus" data-id="${k}" ${canAdd ? '' : 'disabled'}>+</button>` : ''}
       </div>`;
     }).join('');
     const stat = (label: string, a: number, b: number, fmt: (v: number) => string, betterHigh = true) => {
       const diff = b - a;
-      const show = Math.abs(diff) > 1e-6;
       const good = betterHigh ? diff > 0 : diff < 0;
-      return `<div class="stat"><span>${label}</span><b>${fmt(b)}</b>${show ? `<em class="${good ? 'up' : 'down'}">${fmt(a)}→</em>` : ''}</div>`;
+      return `<div class="stat"><span>${label}</span><b>${fmt(b)}</b>${Math.abs(diff) > 1e-6 ? `<em class="${good ? 'up' : 'down'}">▲</em>` : ''}</div>`;
     };
     const pct = (v: number) => `${Math.round(v * 100)}%`;
     const skills = SKILL_ORDER.map((id) => {
       const s = SKILLS[id];
       const unlocked = p.level >= s.unlockLevel;
-      return `<div class="skill ${unlocked ? '' : 'locked'}">${icon(s.icon)}<div><b>${esc(s.name)}</b>${unlocked ? '' : ` <span class="tag">Nível ${s.unlockLevel}</span>`}
-        <p>${esc(s.description)}</p><p class="hint">${esc(s.trigger)}</p></div></div>`;
+      return `<div class="skill ${unlocked ? '' : 'locked'}" title="${esc(s.description)}">${icon(s.icon)}<div><b>${esc(s.name)}</b>${unlocked ? '' : ` <span class="tag">Nv ${s.unlockLevel}</span>`}<p>${SKILL_HINT[id]}</p></div></div>`;
     }).join('');
-    const need = xpToNext(p.level);
     return `
       <div class="card">
-        <div class="row between"><h2>${esc(p.name)}</h2><span class="lvl big">Nível ${p.level}${p.level >= MAX_LEVEL ? ' (máx.)' : ''}</span></div>
-        <div class="subtitle">${esc(getOrigin(p.origin).name)} · ${esc(reputationTitle(p.reputation))} · Reputação ${p.reputation}</div>
-        ${p.level < MAX_LEVEL ? bar(p.xp, need, 'xp') : ''}
+        <div class="row between"><span class="hero-name">${esc(p.name)}</span><span class="lvl big">Nível ${p.level}</span></div>
+        ${p.level < MAX_LEVEL ? bar(p.xp, xpToNext(p.level), 'xp') : ''}
       </div>
-      <h3>Atributos ${p.unspentPoints > 0 ? `<span class="tag gold">${left} ponto(s) disponível(is)</span>` : ''}</h3>
+      <h3>Atributos ${p.unspentPoints > 0 ? `<span class="tag gold">${left} pontos</span>` : ''}</h3>
       <div class="attrs">${rows}</div>
-      ${this.pendingTotal() > 0 ? `<div class="row end"><button class="btn" data-action="cancel">Cancelar</button><button class="btn btn-gold" data-action="confirm">Confirmar distribuição</button></div>` : ''}
-      <h3>Estatísticas de combate</h3>
+      ${this.pendingTotal() > 0 ? `<div class="row end"><button class="btn" data-action="cancel">Cancelar</button><button class="btn btn-gold" data-action="confirm">Confirmar</button></div>` : ''}
+      <h3>Em combate</h3>
       <div class="stats-grid">
-        ${stat('Vida máxima', before.maxHp, after.maxHp, (v) => String(Math.round(v)))}
-        ${stat('Resistência máx.', before.maxStamina, after.maxStamina, (v) => String(Math.round(v)))}
-        ${stat('Dano básico', before.baseDamage, after.baseDamage, (v) => v.toFixed(1))}
-        ${stat('Redução de dano', before.damageReduction, after.damageReduction, pct)}
+        ${stat('Vida', before.maxHp, after.maxHp, (v) => String(Math.round(v)))}
+        ${stat('Dano', before.baseDamage, after.baseDamage, (v) => v.toFixed(0))}
+        ${stat('Defesa', before.damageReduction, after.damageReduction, pct)}
         ${stat('Esquiva', before.dodgeChance, after.dodgeChance, pct)}
-        ${stat('Intervalo de ataque', before.attackInterval, after.attackInterval, (v) => `${v.toFixed(2)}s`, false)}
+        ${stat('Ataque a cada', before.attackInterval, after.attackInterval, (v) => `${v.toFixed(1)}s`, false)}
         ${stat('Crítico', before.critChance, after.critChance, pct)}
-        ${stat('Bloqueio', before.blockPower, after.blockPower, pct)}
-        ${stat('Alcance', before.reach, after.reach, (v) => String(v))}
-        ${stat('Recuperação de fôlego', before.staminaRegen, after.staminaRegen, (v) => `${v.toFixed(1)}/s`)}
       </div>
       <h3>Habilidades</h3>
       <div class="skills">${skills}</div>`;
@@ -107,11 +105,9 @@ export class CharacterScreen implements Screen {
       const err = this.d.store.update((pl) => allocatePoints(pl, alloc));
       if (err) toast(err, 'bad');
       else {
-        toast('Atributos atualizados!', 'good');
+        toast('Atributos melhorados!', 'good');
         this.reset();
       }
-      this.d.actions.rerender();
-      return;
     }
     this.d.actions.rerender();
   }

@@ -1,8 +1,6 @@
-// Preferências da janela (modo, posição, sempre no topo, opacidade).
+// Preferências da janela (posição, tamanho, maximizada, tela cheia).
 import fs from 'node:fs';
 import path from 'node:path';
-import type { WindowMode } from '../shared/ipc';
-import { MIN_OPACITY } from '../shared/ipc';
 
 export interface Bounds {
   x: number;
@@ -12,22 +10,10 @@ export interface Bounds {
 }
 
 export interface WindowSettings {
-  mode: WindowMode;
-  fullBounds: Bounds | null;
-  fullMaximized: boolean;
-  companionBounds: Bounds | null;
-  alwaysOnTop: boolean;
-  opacity: number;
+  bounds: Bounds | null;
+  maximized: boolean;
+  fullscreen: boolean;
 }
-
-const DEFAULTS: WindowSettings = {
-  mode: 'full',
-  fullBounds: null,
-  fullMaximized: false,
-  companionBounds: null,
-  alwaysOnTop: true,
-  opacity: 1,
-};
 
 function validBounds(b: unknown): Bounds | null {
   if (!b || typeof b !== 'object') return null;
@@ -51,16 +37,12 @@ export class SettingsStore {
     try {
       const raw = JSON.parse(fs.readFileSync(this.file, 'utf8')) as Record<string, unknown>;
       return {
-        // sempre inicia no modo completo para não "prender" o usuário em uma janela pequena
-        mode: 'full',
-        fullBounds: validBounds(raw.fullBounds),
-        fullMaximized: raw.fullMaximized === true,
-        companionBounds: validBounds(raw.companionBounds),
-        alwaysOnTop: raw.alwaysOnTop !== false,
-        opacity: typeof raw.opacity === 'number' ? Math.min(1, Math.max(MIN_OPACITY, raw.opacity)) : 1,
+        bounds: validBounds(raw.bounds ?? raw.fullBounds),
+        maximized: raw.maximized === true || raw.fullMaximized === true,
+        fullscreen: raw.fullscreen === true,
       };
     } catch {
-      return { ...DEFAULTS };
+      return { bounds: null, maximized: false, fullscreen: false };
     }
   }
 

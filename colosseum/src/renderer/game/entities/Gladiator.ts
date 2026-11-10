@@ -3,7 +3,7 @@
 import * as Phaser from 'phaser';
 import type { FighterVisual } from '../../core/combat/CombatantFactory';
 import { CLOTH_COLORS, HAIR_COLORS } from '../../core/data/gladiators';
-import { getManifest, sheetKey, type GladiatorManifest } from '../assets';
+import { getManifest, sheetKey, weaponKey, type GladiatorManifest } from '../assets';
 
 interface Step {
   frame: number;
@@ -13,6 +13,9 @@ interface Step {
 export class GladiatorView extends Phaser.GameObjects.Container {
   private manifest: GladiatorManifest;
   private layers: Phaser.GameObjects.Sprite[] = [];
+  /** arma: imagem rígida posicionada na mão a cada quadro */
+  private weapon: Phaser.GameObjects.Image | null = null;
+  private weaponTint: number | null = null;
   private baseTints: number[] = [];
   private shadow: Phaser.GameObjects.Ellipse;
   private anim = 'idle';
@@ -42,13 +45,16 @@ export class GladiatorView extends Phaser.GameObjects.Container {
 
   setVisual(v: FighterVisual): void {
     for (const l of this.layers) l.destroy();
+    this.weapon?.destroy();
+    this.weapon = null;
     this.layers = [];
     this.baseTints = [];
     const m = this.manifest;
     const a = v.appearance;
-    const entries: Array<{ sheet: string; tint: number }> = [];
+    const entries: Array<{ sheet: string; tint: number; layer: string; weapon?: string }> = [];
     const push = (sheet: string, tint = 0xffffff) => {
-      if (m.sheets[sheet]) entries.push({ sheet, tint });
+      if (m.sheets[sheet]) entries.push({ sheet, tint, layer: m.sheets[sheet].layer });
+      else if (sheet.startsWith('weapon_') && m.weapons[sheet.slice(7)]) entries.push({ sheet, tint, layer: 'weapon', weapon: sheet.slice(7) });
     };
     push(`body_back_${a.skin}`);
     push(`body_main_${a.skin}`);
@@ -63,10 +69,19 @@ export class GladiatorView extends Phaser.GameObjects.Container {
       for (const s of item.visual.sheets) push(s, item.visual.tint ?? 0xffffff);
     }
     const order = new Map(m.layerOrder.map((l, i) => [l, i]));
-    entries.sort((x, y) => (order.get(m.sheets[x.sheet].layer) ?? 0) - (order.get(m.sheets[y.sheet].layer) ?? 0));
+    entries.sort((x, y) => (order.get(x.layer) ?? 0) - (order.get(y.layer) ?? 0));
     const ox = m.originX / m.frameWidth;
     const oy = m.originY / m.frameHeight;
     for (const e of entries) {
+      if (e.weapon) {
+        const def = m.weapons[e.weapon];
+        const img = this.scene.add.image(0, 0, weaponKey(e.weapon));
+        img.setOrigin(def.gripX / img.width, def.gripY / img.height).setTint(e.tint);
+        this.weaponTint = e.tint;
+        this.weapon = img;
+        this.add(img);
+        continue;
+      }
       const s = this.scene.add.sprite(0, 0, sheetKey(e.sheet), 0).setOrigin(ox, oy);
       s.setTint(e.tint);
       this.layers.push(s);
@@ -120,6 +135,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   flash(duration = 0.08): void {
     this.flashTime = duration;
     for (const l of this.layers) l.setTintFill(0xffffff);
+    this.weapon?.setTintFill(0xffffff);
   }
 
   setAura(on: boolean): void {
@@ -141,12 +157,24 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   private applyFrame(): void {
     const f = this.currentFrame();
     for (const l of this.layers) l.setFrame(f);
+    const hand = this.manifest.hands[f];
+    if (this.weapon && hand) {
+      this.weapon.setPosition(Math.round(hand[0] - this.manifest.originX), Math.round(hand[1] - this.manifest.originY));
+      this.weapon.setAngle(hand[2]);
+    }
   }
 
   tick(dt: number): void {
     if (this.flashTime > 0) {
       this.flashTime -= dt;
-      if (this.flashTime <= 0) this.layers.forEach((l, i) => (l.clearTint(), l.setTint(this.baseTints[i])));
+      if (this.flashTime <= 0) {
+        this.layers.forEach((l, i) => (l.clearTint(), l.setTint(this.baseTints[i])));
+        if (this.weapon) {
+          const t = this.weapon.tintTopLeft;
+          this.weapon.clearTint();
+          this.weapon.setTint(this.weaponTint ?? t);
+        }
+      }
     }
     this.frameTime += dt * this.speedMul;
     if (this.seq) {

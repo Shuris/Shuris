@@ -11,17 +11,9 @@ declare global {
 const LS_KEY = 'colosseum.save';
 
 function browserFallback(): ColosseumBridge {
-  let state: WindowState = {
-    mode: 'full', alwaysOnTop: false, opacity: 1, clickThrough: false, maximized: false, opacitySupported: false,
-    shortcuts: { clickThrough: 'Ctrl+Shift+X', toggleMode: 'Ctrl+Shift+M', toggleVisible: 'Ctrl+Shift+H' },
-    shortcutErrors: [],
-  };
   const listeners = new Set<(s: WindowState) => void>();
-  const update = (patch: Partial<WindowState>) => {
-    state = { ...state, ...patch };
-    listeners.forEach((l) => l(state));
-    return Promise.resolve(state);
-  };
+  const state = (): WindowState => ({ maximized: false, fullscreen: !!document.fullscreenElement });
+  document.addEventListener('fullscreenchange', () => listeners.forEach((l) => l(state())));
   const write = (data: string) => {
     try {
       localStorage.setItem(LS_KEY, data);
@@ -41,13 +33,17 @@ function browserFallback(): ColosseumBridge {
       remove: async () => (localStorage.removeItem(LS_KEY), { ok: true }),
     },
     win: {
-      getState: async () => state,
-      setMode: (mode) => update({ mode }),
-      setAlwaysOnTop: (alwaysOnTop) => update({ alwaysOnTop }),
-      setOpacity: (opacity) => update({ opacity }),
-      setClickThrough: () => update({ clickThrough: false }),
+      getState: async () => state(),
+      setFullscreen: async (on) => {
+        try {
+          if (on) await document.documentElement.requestFullscreen();
+          else if (document.fullscreenElement) await document.exitFullscreen();
+        } catch {
+          /* ignorado */
+        }
+        return state();
+      },
       minimize: () => undefined,
-      hide: () => undefined,
       close: () => window.close(),
       toggleMaximize: () => undefined,
       onState: (cb) => (listeners.add(cb), () => listeners.delete(cb)),
