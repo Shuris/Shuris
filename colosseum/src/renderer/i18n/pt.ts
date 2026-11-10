@@ -1,6 +1,7 @@
 // Textos em português (idioma original do jogo).
 // Variantes de uma mesma fala são separadas por "|". Parâmetros: {nome}.
-export const PT = {
+import { PT06 } from './pt06';
+export const PT_BASE = {
   // ---------------------------------------------------------------- comuns
   'common.back': 'Voltar',
   'common.cancel': 'Cancelar',
@@ -579,3 +580,5 @@ export const PT = {
   'talk.flamma.hurt': 'Ha! O público adora um drama!|Agora sim está emocionante!',
   'talk.flamma.crit': 'Aplaudam!|Para a primeira fila!',
 } as const;
+
+export const PT = { ...PT_BASE, ...PT06 } as const;

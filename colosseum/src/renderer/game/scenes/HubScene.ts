@@ -14,6 +14,7 @@ import { t } from '../../i18n';
 import { getItem } from '../../core/data/equipment';
 import { npcLine } from '../../core/data/dialogue';
 import { speech } from '../speech';
+import type { PlayerLook } from '../portraits';
 
 export interface HubData {
   visual: FighterVisual;
@@ -34,6 +35,8 @@ export interface HubData {
   merchant?: boolean;
   armNight?: boolean;
   injured?: boolean;
+  /** aparência do jogador para o retrato nos balões */
+  heroLook?: PlayerLook;
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */
@@ -91,7 +94,12 @@ export class HubScene extends Phaser.Scene {
     this.palus = null;
     this.sky = new SkyLayer(this, data.time, 150, data.outdoor, !data.outdoor);
     this.add.image(0, 0, data.bg).setOrigin(0);
-    if (data.crowd) this.add.sprite(0, 0, data.crowd, 0).setOrigin(0);
+    if (data.crowd) {
+      const fest = data.festival && data.location === 'arena';
+      const id = data.crowd.replace('bg:crowd_', '');
+      this.add.sprite(0, 0, fest ? `bg:crowdfest_${id}` : data.crowd, 0).setOrigin(0);
+      if (fest) this.add.image(0, 0, 'fx:festival').setOrigin(0).setDepth(1);
+    }
     for (const [x, y, brazier] of LIGHTS[data.location] ?? []) {
       if (brazier) this.add.sprite(x, y, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(3);
       this.glows.push(this.add.image(x, y - 16, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
@@ -112,6 +120,7 @@ export class HubScene extends Phaser.Scene {
     this.hero = new GladiatorView(this, this.heroX, GROUND, data.visual);
     this.hero.setDepth(10);
     this.hero.play('idle');
+    if (data.hideHero) this.hero.setVisible(false);
     const cam = this.cameras.main;
     cam.setBounds(0, 0, WORLD.width, WORLD.height);
     cam.setBackgroundColor('#1a110c');
@@ -131,6 +140,7 @@ export class HubScene extends Phaser.Scene {
     this.drills = [];
     const ups = new Set(data.upgrades ?? []);
     if (data.location === 'market' && data.busy) this.spawnTownsfolk();
+    if (data.location === 'market') this.spawnMarketExtras(!!data.busy, !!data.merchant);
     if (data.location === 'ludus') this.spawnLudus(ups);
     if (data.location === 'tavern') this.spawnTavern(!!data.busy);
     if (data.location === 'home') this.spawnHome(ups);
@@ -185,6 +195,13 @@ export class HubScene extends Phaser.Scene {
     const palus2 = this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(5).setScale(0.92);
     // na chuva, os outros gladiadores e o instrutor treinam lá dentro
     if (this.raining) return;
+    // o médico do ludus (Galeno), perto da entrada
+    const medic = new GladiatorView(this, 196, GROUND - 6, { ...this.person({ long: true, old: true, tint: 0xe8e0cc }), gear: {} });
+    medic.setDepth(7);
+    medic.setFacing(1);
+    medic.play('idle', { fps: 2 });
+    this.npcs.push({ v: medic, speed: 0, min: medic.x, max: medic.x, pause: 0 });
+    this.talkers.push({ who: medic, line: this.data_.injured ? 'medicInjured' : 'medic', head: 46 });
     // dupla treinando com rúdis e escudo
     const a = new GladiatorView(this, 226, backY, this.person({ gladiator: true }));
     const b = new GladiatorView(this, 258, backY, this.person({ gladiator: true }));
@@ -257,6 +274,7 @@ export class HubScene extends Phaser.Scene {
     this.npcs.push({ v: quintus, speed: 0, min: quintus.x, max: quintus.x, pause: 0 });
     this.talkers.push({ who: quintus, line: 'quintus', head: 46 });
     if (!open) return;
+    if (this.data_.armNight) this.spawnArmWrestling();
     const spots: Array<[number, number, 1 | -1, boolean]> = [
       [204, GROUND - 16, 1, true],
       [290, GROUND - 14, -1, false],
@@ -269,6 +287,67 @@ export class HubScene extends Phaser.Scene {
       v.play('idle', { fps: 3 + Math.random() * 2 });
       this.npcs.push({ v, speed: 0, min: x, max: x, pause: 0 });
       this.talkers.push({ who: v, line: 'patron', head: 46 });
+    }
+  }
+
+  /** Domingo à noite: dois fregueses na queda de braço e a torcida em volta. */
+  private spawnArmWrestling(): void {
+    this.add.image(340, GROUND + 6, 'fx:arm_table').setOrigin(0.5, 1).setDepth(12);
+    const a = new GladiatorView(this, 322, GROUND + 2, { ...this.person({ gladiator: true }), gear: {} });
+    const b = new GladiatorView(this, 358, GROUND + 2, { ...this.person({ gladiator: true }), gear: {} });
+    b.setFacing(-1);
+    for (const v of [a, b]) {
+      v.setDepth(11);
+      v.hold('block', 0);
+      this.npcs.push({ v, speed: 0, min: v.x, max: v.x, pause: 0 });
+    }
+    this.talkers.push({ who: a, line: 'armCheer', head: 46 });
+    this.drills.push({
+      t: 0.5,
+      period: 0.9,
+      run: () => {
+        const push = Math.random() < 0.5 ? a : b;
+        this.tweens.add({ targets: push, x: push.x + (push === a ? 2 : -2), duration: 200, yoyo: true });
+      },
+    });
+  }
+
+  /** Mercado: a forja do ferreiro e, em dia de visita, a carroça do mercador viajante. */
+  private spawnMarketExtras(open: boolean, merchant: boolean): void {
+    this.add.image(536, GROUND + 2, 'fx:forge').setOrigin(0.5, 1).setDepth(4);
+    const glow = this.add.image(526, GROUND - 14, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501).setScale(0.6);
+    this.glows.push(glow);
+    if (open && !this.raining) {
+      const smith = new GladiatorView(this, 506, GROUND - 2, { ...this.person({ tint: 0x6a4a30 }), gear: {} });
+      smith.setDepth(8);
+      smith.setFacing(1);
+      smith.play('idle', { fps: 3 });
+      this.npcs.push({ v: smith, speed: 0, min: smith.x, max: smith.x, pause: 0 });
+      this.talkers.push({ who: smith, line: 'smith', head: 46 });
+      // marteladas na bigorna de vez em quando
+      this.drills.push({
+        t: 1.4,
+        period: 2.6,
+        run: () => {
+          smith.sequence([['attack', 0, 0.2], ['attack', 2, 0.15], ['attack', 3, 0.3], ['idle', 0, 9]]);
+          this.time.delayedCall(330, () => {
+            for (let i = 0; i < 4; i++) {
+              const sp = this.add.rectangle(530, GROUND - 22, 1, 1, 0xffd070).setDepth(9);
+              this.tweens.add({ targets: sp, x: 530 + (Math.random() - 0.5) * 16, y: GROUND - 26 - Math.random() * 8, alpha: 0, duration: 300, onComplete: () => sp.destroy() });
+            }
+          });
+        },
+      });
+    }
+    if (merchant && open) {
+      // a carroça tem toldo: o mercador fica nela mesmo com chuva
+      this.add.image(226, GROUND + 4, 'fx:merchant_cart').setOrigin(0.5, 1).setDepth(6);
+      const m = new GladiatorView(this, 262, GROUND - 4, { ...this.person({ long: true, tint: 0x7a3a8a }), gear: {} });
+      m.setDepth(7);
+      m.setFacing(-1);
+      m.play('idle', { fps: 3 });
+      this.npcs.push({ v: m, speed: 0, min: m.x, max: m.x, pause: 0 });
+      this.talkers.push({ who: m, line: 'merchant', head: 46 });
     }
   }
 
@@ -291,7 +370,7 @@ export class HubScene extends Phaser.Scene {
 
   /** Fala de um figurante agora (usado pela interface: taverna, templo). */
   say(kind: string, text: string): boolean {
-    const tk = this.talkers.find((x) => x.line === kind);
+    const tk = this.talkers.find((x) => x.line === kind || (kind === 'medic' && x.line === 'medicInjured') || (kind === 'patron' && x.line === 'armCheer'));
     if (!tk) return false;
     speech(this, tk.who, text, { head: tk.head, ms: 5200, insetRight: () => this.insets.right });
     return true;

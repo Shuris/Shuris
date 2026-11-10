@@ -12,6 +12,15 @@ export interface Speaker {
 
 const active = new WeakMap<Speaker, Phaser.GameObjects.Container>();
 
+/** Balões visíveis (retângulo no mundo), para um não cobrir o outro. */
+interface Placed {
+  scene: Phaser.Scene;
+  id: number;
+  rect: { x: number; y: number; w: number; h: number } | null;
+}
+const placed = new Set<Placed>();
+let nextId = 0;
+
 /** Retângulos (em pixels da tela) das janelas da interface que o balão deve evitar. */
 let obstacles: () => DOMRect[] = () => [];
 let cache: { at: number; rects: DOMRect[] } = { at: -1, rects: [] };
@@ -31,7 +40,12 @@ function obstacleRects(): DOMRect[] {
  * Mostra um balão acima de `who` (posição dos pés) por `ms` milissegundos.
  * @param head altura da cabeça acima dos pés (px do mundo)
  */
-export function speech(scene: Phaser.Scene, who: Speaker, text: string, opts: { head?: number; ms?: number; color?: string; maxW?: number; insetRight?: () => number } = {}): void {
+export function speech(
+  scene: Phaser.Scene,
+  who: Speaker,
+  text: string,
+  opts: { head?: number; ms?: number; color?: string; maxW?: number; insetRight?: () => number } = {},
+): void {
   const head = opts.head ?? 50;
   const ms = opts.ms ?? Math.min(5200, 1800 + text.length * 45);
   active.get(who)?.destroy();
@@ -57,6 +71,8 @@ export function speech(scene: Phaser.Scene, who: Speaker, text: string, opts: { 
   tail.fillStyle(0xfff6dc, 1);
   tail.fillTriangle(-3, -5.5, 2, -5.5, -2, -1.5);
   const c = scene.add.container(who.x, who.y - head, [tail, box]).setDepth(1200).setScale(0.6).setAlpha(0);
+  const me: Placed = { scene, id: nextId++, rect: null };
+  placed.add(me);
   active.set(who, c);
   scene.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 140, ease: 'Back.easeOut' });
   const follow = () => {
@@ -74,13 +90,29 @@ export function speech(scene: Phaser.Scene, who: Speaker, text: string, opts: { 
     const s = c.scale;
     const boxScreen = { left: toScreenX(x - (w / 2 + 1) * s), right: toScreenX(x + (w / 2 + 1) * s), top: toScreenY(y - (h + 6) * s), bottom: toScreenY(y - 4 * s) };
     const off = avoidOffset(boxScreen, obstacleRects(), { left: canvas.left, right: canvas.right, bottom: canvas.bottom });
-    box.setPosition(Math.round(off.dx / cam.zoom / s), Math.round(off.dy / cam.zoom / s));
-    // empurrado para baixo, o rabicho deixaria de apontar para a boca: esconde
-    tail.setVisible(off.dy === 0);
+    const bx = Math.round(off.dx / cam.zoom / s);
+    let by = Math.round(off.dy / cam.zoom / s);
+    // não cobre um balão mais antigo: sobe acima dele
+    const bw = w + 2;
+    const bh = h + 2;
+    for (let k = 0; k < 3; k++) {
+      const left = x + (bx - bw / 2) * s;
+      const top = y + (by - h - 6) * s;
+      const hit = [...placed].find(
+        (o) => o !== me && o.scene === scene && o.id < me.id && o.rect && left < o.rect.x + o.rect.w && left + bw * s > o.rect.x && top < o.rect.y + o.rect.h && top + bh * s > o.rect.y,
+      );
+      if (!hit?.rect) break;
+      by -= Math.ceil((top + bh * s - hit.rect.y) / s) + 2;
+    }
+    box.setPosition(bx, by);
+    me.rect = { x: x + (bx - bw / 2) * s, y: y + (by - h - 6) * s, w: bw * s, h: bh * s };
+    // empurrado, o rabicho deixaria de apontar para a boca: esconde
+    tail.setVisible(off.dy === 0 && by === Math.round(off.dy / cam.zoom / s));
   };
   follow();
   scene.events.on(Phaser.Scenes.Events.UPDATE, follow);
   const done = () => {
+    placed.delete(me);
     scene.events.off(Phaser.Scenes.Events.UPDATE, follow);
     if (active.get(who) === c) active.delete(who);
     c.destroy();
@@ -89,5 +121,8 @@ export function speech(scene: Phaser.Scene, who: Speaker, text: string, opts: { 
     if (!c.active) return done();
     scene.tweens.add({ targets: c, alpha: 0, duration: 200, onComplete: done });
   });
-  c.once(Phaser.GameObjects.Events.DESTROY, () => scene.events.off(Phaser.Scenes.Events.UPDATE, follow));
+  c.once(Phaser.GameObjects.Events.DESTROY, () => {
+    placed.delete(me);
+    scene.events.off(Phaser.Scenes.Events.UPDATE, follow);
+  });
 }

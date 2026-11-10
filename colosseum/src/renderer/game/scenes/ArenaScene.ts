@@ -14,6 +14,7 @@ import { GladiatorView } from '../entities/Gladiator';
 import { bigText, dust, floatText, sparks } from '../fx';
 import { frameCamera, type Insets } from '../layout';
 import { speech } from '../speech';
+import type { PlayerLook } from '../portraits';
 import { talk, type TalkMoment } from '../../core/data/dialogue';
 
 export const GROUND_Y = 318;
@@ -44,8 +45,10 @@ export interface BattleSetup {
   speed: number;
   insets: Insets;
   time: () => number;
-  /** diálogo: id do adversário (personalidade) e nome do jogador */
-  talk?: { opponentId: string; playerName: string };
+  /** diálogo: voz do adversário (personalidade), nome do jogador, tipo de entrada e retratos */
+  talk?: { opponentId: string; playerName: string; intro?: TalkMoment; portrait?: string; player?: PlayerLook };
+  /** dia de festival: arquibancada lotada e enfeitada */
+  festival?: boolean;
 }
 
 export interface BattleHandlers {
@@ -83,6 +86,15 @@ export class ArenaScene extends Phaser.Scene {
   private choreoTweens = new Map<string, Phaser.Tweens.Tween[]>();
   /** direção de cada lutador para o adversário */
   private dirTo: Array<1 | -1> = [1, -1];
+  /** câmera lenta e aproximação no golpe final */
+  private slow = 1;
+  private slowTimer = 0;
+  private zoomBoost = 1;
+  private zoomTarget = 1;
+  private cineFocus: { x: number; y: number } | null = null;
+  /** público de pé (ovação) */
+  private standing = 0;
+  private festival = false;
 
   constructor() {
     super('arena');
@@ -103,7 +115,18 @@ export class ArenaScene extends Phaser.Scene {
 
     this.sky = new SkyLayer(this, setup.time, 150);
     this.add.image(0, 0, setup.arena.bg).setOrigin(0);
-    this.crowd = this.add.sprite(0, 0, setup.arena.crowd, 0).setOrigin(0);
+    this.festival = !!setup.festival;
+    this.crowd = this.add.sprite(0, 0, this.festival ? `bg:crowdfest_${setup.arena.id}` : setup.arena.crowd, 0).setOrigin(0);
+    if (this.festival) {
+      this.add.image(0, 0, 'fx:festival').setOrigin(0).setDepth(1);
+      this.time.addEvent({ delay: 260, loop: true, callback: () => this.petal() });
+    }
+    this.slow = 1;
+    this.slowTimer = 0;
+    this.zoomBoost = 1;
+    this.zoomTarget = 1;
+    this.cineFocus = null;
+    this.standing = 0;
     this.glows = [];
     for (const x of [112, 528]) {
       this.add.sprite(x, 200, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(2);
@@ -139,7 +162,7 @@ export class ArenaScene extends Phaser.Scene {
     this.talkInfo = setup.talk;
     this.hurtSaid = [false, false];
     this.lastQuip = -99;
-    this.time.delayedCall(900, () => this.say(1, 'intro'));
+    this.time.delayedCall(900, () => this.say(1, setup.talk?.intro ?? 'intro'));
     this.time.delayedCall(2500, () => this.say(0, 'reply'));
     bigText(this, 320, 230, arenaName(this.arenaDef), '#f4dc8a', 22);
   }
@@ -162,7 +185,11 @@ export class ArenaScene extends Phaser.Scene {
 
   layout(): void {
     if (!this.cameras?.main) return;
-    frameCamera(this.cameras.main, { x: 0, y: 160, w: 460, h: 175 }, this.insets, { x: this.camX, y: 252 }, 6);
+    const b = this.zoomBoost;
+    const c = this.cineFocus;
+    const cx = c ? this.camX + (c.x - this.camX) * Math.min(1, (b - 1) / 0.6) : this.camX;
+    const cy = c ? 252 + (c.y - 252) * Math.min(1, (b - 1) / 0.6) : 252;
+    frameCamera(this.cameras.main, { x: 0, y: 160, w: 460 / b, h: 175 / b }, this.insets, { x: cx, y: cy }, 6 * b);
   }
 
   forfeit(): void {
@@ -173,7 +200,15 @@ export class ArenaScene extends Phaser.Scene {
 
   update(_t: number, delta: number): void {
     const realDt = Math.min(0.1, delta / 1000);
-    let dt = realDt * this.speed;
+    // câmera lenta do nocaute (volta ao normal aos poucos)
+    if (this.slowTimer > 0) {
+      this.slowTimer -= realDt;
+      if (this.slowTimer <= 0) this.slow = 1;
+    }
+    this.zoomBoost += (this.zoomTarget - this.zoomBoost) * Math.min(1, realDt * 4);
+    let dt = realDt * this.speed * this.slow;
+    const ts = this.speed * this.slow;
+    if (this.tweens.timeScale !== ts) this.tweens.timeScale = ts;
     if (this.freeze > 0) {
       this.freeze -= realDt;
       dt = 0;
@@ -199,7 +234,8 @@ export class ArenaScene extends Phaser.Scene {
       if (Math.abs(x - v.x) > 0.01 && (f.action === 'advance' || f.action === 'retreat' || f.action === 'intro')) {
         this.dustTimer[i] -= dt;
         if (this.dustTimer[i] <= 0) {
-          dust(this, x, GROUND_Y, 1);
+          if (this.sky.weather.rain > 0.15) this.sky.splash(x, GROUND_Y, 1.2);
+          else dust(this, x, GROUND_Y, 1);
           sound.play('step', 0.6);
           this.dustTimer[i] = 0.3;
         }
@@ -218,7 +254,7 @@ export class ArenaScene extends Phaser.Scene {
     this.handlers.onFrame(this.engine);
 
     if (this.engine.finished && !this.ended) {
-      if (this.endTimer < 0) this.endTimer = 3.8;
+      if (this.endTimer < 0) this.endTimer = 4.6;
       this.endTimer -= realDt;
       if (this.endTimer <= 0) {
         this.ended = true;
@@ -231,11 +267,37 @@ export class ArenaScene extends Phaser.Scene {
     this.crowdExcite = Math.max(0, this.crowdExcite - dt);
     this.crowdTimer -= dt;
     if (this.crowdTimer <= 0) {
+      if (this.standing > 0) {
+        // ovação: o público inteiro de pé, braços para cima
+        this.crowdFrame = this.crowdFrame === 3 ? 4 : 3;
+        this.crowd.setFrame(this.crowdFrame);
+        this.crowdTimer = 0.22;
+        return;
+      }
       const excited = this.crowdExcite > 0;
       this.crowdFrame = excited ? (this.crowdFrame + 1) % 3 : this.crowdFrame === 0 ? 1 : 0;
       this.crowd.setFrame(this.crowdFrame);
       this.crowdTimer = excited ? 0.15 : 0.7;
     }
+  }
+
+  /** Pétalas de flores caindo da arquibancada (festival e vitória). */
+  private petal(x = Math.random() * 640, y = 150 + Math.random() * 30): void {
+    const colors = [0xe84a5a, 0xf4d06a, 0xf0f0e0, 0xd86ab0];
+    const p = this.add.rectangle(x, y, 2, 2, colors[Math.floor(Math.random() * colors.length)]).setDepth(30);
+    this.tweens.add({ targets: p, y: GROUND_Y - 2 + Math.random() * 30, x: x + (Math.random() - 0.5) * 60, angle: 360, duration: 2600 + Math.random() * 1600, ease: 'Sine.easeIn', onComplete: () => p.destroy() });
+  }
+
+  /** Golpe final: congela, câmera lenta e aproximação no lutador que cai. */
+  private finalBlow(target: Side): void {
+    this.hitStop(0.22);
+    this.slow = 0.3;
+    this.slowTimer = 1.7;
+    this.zoomTarget = 1.55;
+    const v = this.views[target];
+    this.cineFocus = { x: (v.x + this.views[1 - target].x) / 2 + (v.x - this.views[1 - target].x) * 0.2, y: GROUND_Y - 34 };
+    this.cameras.main.flash(120, 255, 240, 200);
+    this.time.delayedCall(1900, () => (this.zoomTarget = 1.25));
   }
 
   private viewOf(side: Side): GladiatorView {
@@ -362,6 +424,7 @@ export class ArenaScene extends Phaser.Scene {
         this.move(f.side, 'lift', 7, duration * 250, duration * 300, 0, 'Quad.easeOut');
         this.move(f.side, 'tilt', 8, duration * 300, 260, 60);
         dust(this, v.x, GROUND_Y, 4);
+        this.sky.splash(v.x, GROUND_Y, 2);
         break;
       case 'hitstun':
         v.sequence([
@@ -454,6 +517,7 @@ export class ArenaScene extends Phaser.Scene {
             sound.cheer(0.8);
           }
         }
+        if (e.outcome === 'hit' && this.engine.fighters[e.target].hp <= 0) this.finalBlow(e.target);
         if (e.outcome === 'hit') {
           const tf = this.engine.fighters[e.target];
           if (!this.hurtSaid[e.target] && tf.hp > 0 && tf.hp < tf.spec.stats.maxHp * 0.3) {
@@ -490,6 +554,13 @@ export class ArenaScene extends Phaser.Scene {
       case 'end':
         this.views.forEach((v) => v.setAura(false));
         this.crowdExcite = 4;
+        // o público se levanta (ovação maior quando o jogador vence)
+        this.standing = 1;
+        if (e.winner === 0) for (let i = 0; i < 40; i++) this.time.delayedCall(i * 60, () => this.petal(this.views[0].x + (Math.random() - 0.5) * 160, 150 + Math.random() * 20));
+        if (this.zoomTarget === 1) {
+          this.zoomTarget = 1.25;
+          this.cineFocus = { x: this.views[e.winner].x, y: GROUND_Y - 34 };
+        }
         sound.cheer(1.5);
         sound.play(e.winner === 0 ? 'victory' : 'defeat');
         this.time.delayedCall(1100, () => this.say(e.winner, 'win'));

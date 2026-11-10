@@ -18,7 +18,7 @@ import { nextRival, onEvent, publish, unreadCount } from '../core/systems/NewsSy
 import { recordFightOnly } from '../core/systems/ProgressionSystem';
 import { abandonTournament, checkNoShow, closeTournament, playerMatch, recordPlayerFight, register, startTournament, timeForFight, TOURNAMENT_ENERGY } from '../core/systems/TournamentSystem';
 import { expireRematch, fightDef, introMoment, ladderCheck, rematchActive, seeMedic } from '../core/systems/RivalSystem';
-import { armSetup, canArmWrestle, finishArmWrestle, isFestival } from '../core/systems/EventSystem';
+import { armSetup, canArmWrestle, finishArmWrestle, isArmNight, isFestival, isMerchantDay } from '../core/systems/EventSystem';
 import type { TalkMoment } from '../core/data/dialogue';
 import { bracketHtml } from './screens/TournamentView';
 import { playArmWrestle } from './components/ArmWrestle';
@@ -33,7 +33,7 @@ import { worldWeather } from '../game/DayNight';
 import { setSpeechObstacles } from '../game/speech';
 import { createRng, randomSeed } from '../core/systems/rng';
 import { MAX_LEVEL } from '../core/data/gladiators';
-import { bridge, isElectron } from '../platform/bridge';
+import { bridge } from '../platform/bridge';
 import { sound } from '../audio/SoundManager';
 import { GameView } from '../game/Game';
 import { $, bar, esc, icon } from './dom';
@@ -81,8 +81,11 @@ export class App implements AppActions {
   private title!: TitleScreen;
   private paused = false;
   readonly sound = sound;
+  readonly music = music;
   /** previsão do tempo de um dia (usada pelos testes E2E) */
   readonly weatherOfDay = (day: number) => weatherOfDay(this.store.state.createdAt, day);
+  /** dia de visita do mercador (testes E2E) */
+  readonly isMerchantDay = (day: number) => isMerchantDay(this.store.state.createdAt, day);
   private view!: GameView;
   private screens: Record<ScreenId, Screen>;
   private screen: ScreenId = 'home';
@@ -153,7 +156,9 @@ export class App implements AppActions {
         if (hasModal()) closeModal();
         else if (this.store.hasPlayer && !this.title.visible && !this.intro) this.openPause();
       }
-      if (e.key === 'F11' && !isElectron) {
+      // no Electron o processo principal já trata o F11 (antes de chegar aqui);
+      // este caminho cobre o navegador e eventos sintéticos
+      if (e.key === 'F11') {
         e.preventDefault();
         void this.setFullscreen(!this.win.fullscreen);
       }
@@ -287,8 +292,10 @@ export class App implements AppActions {
         <div class="opt-row"><span>${t('opt.screen')}</span><button class="btn sm" data-o="fullscreen">${this.win.fullscreen ? t('opt.windowed') : t('opt.fullscreenF11')}</button></div>
         <p class="tiny dim">${t('opt.savedAt', { path: esc(info.savePath), version: esc(info.version) })}</p>
         <div class="row end"><button class="btn" data-o="close">${back ? t('common.back') : t('common.close')}</button></div>`,
-        { onClose: () => back?.() });
+        { onClose: () => !reopening && back?.() });
+      let reopening = false;
       const reopen = () => {
+        reopening = true;
         closeModal();
         this.openOptions(back);
       };
@@ -478,9 +485,21 @@ export class App implements AppActions {
     const visual = playerCombatant(p).visual;
     if (loc.id === 'arena') {
       const arena = arenaForOpponent(p.selectedOpponent);
-      this.view.showLocation({ visual, location: 'arena', bg: arena.bg, crowd: arena.crowd, outdoor: true });
+      this.view.showLocation({ visual, location: 'arena', bg: arena.bg, crowd: arena.crowd, outdoor: true, festival: isFestival(p.day), heroLook: playerPortraitKey(p) });
     } else {
-      this.view.showLocation({ visual, location: loc.id, bg: loc.bg, outdoor: loc.outdoor, busy: isOpen(loc, p.minutes, p.day), upgrades: p.upgrades });
+      this.view.showLocation({
+        visual,
+        location: loc.id,
+        bg: loc.bg,
+        outdoor: loc.outdoor,
+        busy: isOpen(loc, p.minutes, p.day),
+        upgrades: p.upgrades,
+        festival: isFestival(p.day),
+        merchant: isMerchantDay(p.createdAt, p.day),
+        armNight: isArmNight(p.day, p.minutes),
+        injured: !!p.injury,
+        heroLook: playerPortraitKey(p),
+      });
     }
     $('#side').hidden = false;
     $('#statusbar').hidden = false;

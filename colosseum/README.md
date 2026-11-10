@@ -5,14 +5,22 @@ Você desenvolve **um único gladiador** numa carreira permanente: treina, distr
 compra e equipa armas e proteções, escolhe a estratégia — e assiste às lutas, que acontecem
 **automaticamente**, em tempo real, com animações e efeitos sonoros.
 
-> Versão: **0.5.0** · Windows 10/11 · Português (Brasil) e inglês · Funciona offline.
+> Versão: **0.6.0** · Windows 10/11 · Português (Brasil) e inglês · Funciona offline.
 
 ![Arena](docs/img/arena.png)
 
 ## Destaques
 
+- **Menu principal com 3 espaços de salvamento** separados e arte própria; o jogo abre em tela cheia e **Esc pausa**.
+- **Eventos da cidade**: mercador viajante (a cada 6 a 10 dias), queda de braço na taverna (domingo à noite) e festival a cada 14 dias (arquibancada lotada, fama em dobro).
+- **Torneio de sábado** às 14h, com inscrição antecipada e janela com a chave de 8 lutadores.
+- **Rivais que lembram de você**: quem perdeu às vezes pede revanche e treina para ela; as falas mudam conforme a história de vocês.
+- **Novos tipos de gladiador** (sempre corpo a corpo): dimachaerus, scissor, provocator e crupellarius, entre os desafiantes do dia.
+- **Ferimentos** depois de nocaute ou desistência, curados dormindo, nas termas ou com o médico do ludus; **ferreiro** que melhora equipamentos até +3.
+- **Chuva forte** com poças, respingos e relâmpagos; **luta cinematográfica** (câmera lenta e zoom no golpe final, público de pé); **retratos em pixel art** na arena, no torneio e no menu; balões de fala que não se sobrepõem.
+- **Música** sintetizada (cidade, noite, taverna, arena e menu), com volume próprio e opção de desligar.
 - **Cidade de Cápua com mapa**: Ludus, Alojamento, Mercado, Arena, Templo de Marte, Fórum, Termas e Taverna.
-- **Dois idiomas**: português e inglês (botão PT/EN na barra de título ou em Opções).
+- **Dois idiomas**: português e inglês (no menu principal ou em Opções).
 - **Sistema de dias**: dias da semana, relógio, energia, horários (mercado fecha à noite e aos domingos); durma para recuperar.
 - **Clima**: dias de chuva com céu fechado, gotas caindo e som de chuva.
 - **Árvore de habilidades** com três caminhos (Marte, Mercúrio e Minerva).
@@ -24,15 +32,15 @@ compra e equipa armas e proteções, escolhe a estratégia — e assiste às lut
 - **5 anfiteatros** (um a cada dois adversários): Cápua, Pompeia, Verona, Leptis Magna e o Coliseu de Roma.
 - **Ciclo de dia e noite** com céu, sol, lua, estrelas e braseiros que iluminam a arena à noite.
 - **Efeitos sonoros** sintetizados: golpes, metal dos escudos, esquivas, corneta, público e fanfarras.
-- **Tela cheia** (botão ou F11), interface com textos grandes e curtos.
+- **Tela cheia** ao abrir (F11 alterna para janela), interface com textos grandes e curtos.
 - Salvamento automático com backup.
 
 Detalhes em [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
 
 ## Instalação (jogador)
 
-Execute `Colosseum-Setup-0.5.0.exe` e abra o jogo pelo atalho. Há também a versão portátil
-`Colosseum-Portatil-0.5.0.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
+Execute `Colosseum-Setup-0.6.0.exe` e abra o jogo pelo atalho. Há também a versão portátil
+`Colosseum-Portatil-0.6.0.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 ## Desenvolvimento
 

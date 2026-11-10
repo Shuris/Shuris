@@ -6,12 +6,12 @@
 
 ## Instalar
 
-1. Execute **`Colosseum-Setup-0.5.0.exe`**.
+1. Execute **`Colosseum-Setup-0.6.0.exe`**.
 2. Se o SmartScreen avisar "editor desconhecido" (o instalador ainda não tem assinatura
    digital), clique em **Mais informações → Executar assim mesmo**.
 3. Conclua o assistente. São criados atalhos na **área de trabalho** e no **menu Iniciar**.
 
-**Versão portátil:** `Colosseum-Portatil-0.5.0.exe` roda sem instalar.
+**Versão portátil:** `Colosseum-Portatil-0.6.0.exe` roda sem instalar.
 
 ## Desinstalar
 
@@ -20,8 +20,8 @@ Configurações → Aplicativos → Colosseum → Desinstalar. O progresso salvo
 ## Progresso salvo
 
 ```
-%APPDATA%\Colosseum\saves\gladiador.json         (principal)
-%APPDATA%\Colosseum\saves\gladiador.backup.json  (cópia de segurança)
+%APPDATA%\Colosseum\saves\slot1.json           (espaço 1; slot2 e slot3 para os outros)
+%APPDATA%\Colosseum\saves\slot1.backup.json    (cópia de segurança de cada espaço)
 %APPDATA%\Colosseum\window-settings.json         (tamanho da janela, tela cheia)
 ```
 
@@ -53,4 +53,4 @@ Cada par de adversários luta num anfiteatro diferente. Derrotas nunca tiram ní
 ## Reportar problemas
 
 Abra uma *issue* no repositório com a versão (em **Opções**), os passos, uma captura de tela
-e, se possível, uma cópia de `gladiador.json`.
+e, se possível, uma cópia do `slotN.json` do espaço com problema. Saves da versão 0.5 (`gladiador.json`) viram o espaço 1 automaticamente.

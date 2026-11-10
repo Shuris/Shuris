@@ -203,3 +203,17 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
   balanceamento não mudaram. O manifesto lista em `weaponTop` os quadros em que a arma e o
   braço (folha `arm_top_*`) passam à frente do escudo.
 - Salvamento versão 3: `upgrades`, `tavern`, `settings.language` e notícias com `tpl/v/img`.
+
+## Menu, saves, eventos, torneio e rivais (0.6.0)
+
+- **Saves**: `SaveStore` (processo principal) grava `saves/slot1..3.json` (+ backup de cada um); o IPC recebe o número do espaço e o valida (`isSlot`). `TitleScreen` lê os três espaços e mostra um resumo; `App` guarda o espaço em uso e o `GameStore` grava nele. Save versão 4 (`SaveSystem.v4Fields`): `rivals`, `rematch`, `lastRematchDay`, `injury`, `tournament`, `events` e `plus` nos itens.
+- **Janela**: moldura do sistema, sem barra própria; sempre abre em tela cheia. `App.openPause` pausa a cena Phaser ativa (`GameView.setPaused`).
+- **Eventos** (`core/systems/EventSystem.ts`): festival (`day % 14 === 10`), dias do mercador (sequência com intervalos de 6 a 10 dias, semeada pelo `createdAt`), estoque do mercador e queda de braço. Tudo determinístico por gladiador e dia.
+- **Lutadores avulsos** (`core/data/fighters.ts`): 9 tipos (`CLASSES`, com equipamento por faixa de nível) e 16 lutadores (`POOL`). `poolOpponent` gera um `OpponentDef` com `cls`; `freeChallenger` escolhe o desafiante de cada luta do dia.
+- **Torneio** (`TournamentSystem.ts`): inscrição, `buildBracket`, rodadas (`roundPairs`, `playerMatch`), simulação das outras lutas com o `CombatEngine` e prêmios (`closeTournament`). A janela da chave é `ui/screens/TournamentView.ts`.
+- **Rivais e ferimentos** (`RivalSystem.ts`): memória por adversário, pedido de revanche (raro, com treino), `ladderCheck` (derrotado só luta com revanche ativa), `introMoment` (intro/gloat/rematch), ferimento e médico. O ferimento reduz vida e dano em `playerCombatant`.
+- **Lutas por modo**: `FightMode = 'ladder' | 'free' | 'rematch' | 'tournament'`; `App.prepareFight` monta adversário, arena e voz; `applyBattleResult` recebe o modo (desbloqueio só na escada, revanche rende mais, festival dobra a fama).
+- **Ferreiro** (`ForgeSystem.ts`, `equipment.forged`): o item do inventário tem `plus` (0 a 3); `equippedItems` devolve a versão melhorada.
+- **Arte** (`tools/gen_v06.py`): retratos 48×48 (adversários, avulsos, moradores e camadas do jogador tingidas no jogo), arte do menu, enfeites do festival, carroça, forja, mesa e ilustrações do jornal. O público ganhou os quadros 3 e 4 (de pé) e uma versão lotada (`crowdfest_*`).
+- **Cenas**: `ArenaScene` tem câmera lenta/zoom no golpe final (`finalBlow`), ovação (`standing`) e pétalas; `SkyLayer` faz poças, respingos, ondinhas e relâmpagos; os balões ficam só com texto e não se cobrem: `speech.ts` guarda os balões visíveis e o mais novo sobe acima do anterior. Os retratos aparecem na interface HTML (`ui/components/portraits.ts`).
+- **Música** (`audio/Music.ts`): sequenciador Web Audio com 5 faixas, usando o contexto do `SoundManager` mas com volume próprio (preferência no `localStorage`). `App.updateMusic` escolhe a faixa pelo lugar e pela hora.

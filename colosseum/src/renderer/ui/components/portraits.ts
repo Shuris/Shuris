@@ -5,7 +5,7 @@ import type { Appearance } from '../../core/model/types';
 import { HAIR_COLORS } from '../../core/data/gladiators';
 import { esc } from '../dom';
 
-export type PortraitSize = 'sm' | 'md' | 'lg' | 'xl';
+export type PortraitSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 export function portraitSrc(id: string): string {
   return `assets/portraits/${id}.png`;

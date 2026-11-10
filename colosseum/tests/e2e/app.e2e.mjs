@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const USER_DATA = fs.mkdtempSync(path.join(os.tmpdir(), 'colosseum-e2e-'));
-const SAVE = path.join(USER_DATA, 'saves', 'gladiador.json');
-const BACKUP = path.join(USER_DATA, 'saves', 'gladiador.backup.json');
+const SAVE = path.join(USER_DATA, 'saves', 'slot1.json');
+const BACKUP = path.join(USER_DATA, 'saves', 'slot1.backup.json');
 const SHOTS = process.env.E2E_SHOTS ? path.resolve(process.env.E2E_SHOTS) : null;
 if (SHOTS) fs.mkdirSync(SHOTS, { recursive: true });
 
@@ -32,6 +32,8 @@ async function launch() {
 async function step(name, fn) {
   const t0 = Date.now();
   try {
+    // uma etapa anterior que falhou pode ter deixado uma janela aberta
+    if (win && !win.isClosed()) await win.evaluate(() => document.querySelector('.modal-result [data-r="close"]')?.click()).catch(() => {});
     await fn();
     results.push({ name, ok: true });
     console.log(`  ✓ ${name} (${Date.now() - t0} ms)`);
@@ -66,6 +68,28 @@ async function closeNewspaper() {
   await win.click('[data-np="close"]');
 }
 
+/** Abre o menu de pausa (Esc) e as opções. */
+async function openOptions() {
+  await win.keyboard.press('Escape');
+  await win.waitForSelector('.modal-pause');
+  await win.click('[data-p="options"]');
+  await win.waitForSelector('[data-o="lang-en"]');
+}
+
+/** Continua o gladiador de um espaço do menu principal. */
+async function playSlot(n) {
+  await win.waitForSelector(`#title [data-ts="play"][data-slot="${n}"]`, { timeout: 10000 });
+  await win.click(`#title [data-ts="play"][data-slot="${n}"]`);
+}
+
+/** Desiste da luta atual (rápido) e espera o fim. */
+async function forfeitNow() {
+  await win.waitForSelector('#hud [data-hud="forfeit"]', { timeout: 10000 });
+  await win.waitForTimeout(3000);
+  await win.click('[data-hud="forfeit"]');
+  await win.click('.modal [data-a="ok"]');
+}
+
 async function fightToEnd() {
   await win.click('.btn-fight');
   await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
@@ -76,9 +100,17 @@ async function fightToEnd() {
 console.log(`COLOSSEUM E2E — dados em ${USER_DATA}`);
 await launch();
 
-await step('1. Inicialização (tela de apresentação)', async () => {
-  await win.waitForSelector('.title-screen', { timeout: 10000 });
+await step('1. Inicialização: tela cheia e menu principal com 3 espaços de save', async () => {
+  await win.waitForSelector('#title .slot-card', { timeout: 10000 });
   assert((await win.title()) === 'Colosseum', 'título da janela');
+  assert((await win.locator('#title .slot-card').count()) === 3, 'três espaços de salvamento');
+  assert((await win.locator('#titlebar').count()) === 0, 'sem barra de opções em cima do jogo');
+  await win.waitForTimeout(1200);
+  assert((await winInfo()).fullscreen, 'abre em tela cheia');
+  assert((await win.evaluate(() => window.__colosseum.music.track)) === 'menu', 'música do menu');
+  await shot('01-title');
+  await playSlot(1);
+  await win.waitForSelector('.title-screen', { timeout: 10000 });
 });
 
 await step('2. Criação do gladiador e jornal de estreia', async () => {
@@ -183,6 +215,7 @@ await step('10. Sem energia não luta; dormir inicia o dia seguinte com o jornal
 });
 
 await step('11. Derrota (desistência) não tira nada', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => (p.injury = null)));
   await goTo('arena');
   const before = await state();
   await win.click('.btn-fight');
@@ -193,6 +226,8 @@ await step('11. Derrota (desistência) não tira nada', async () => {
   await win.waitForSelector('.modal-result', { timeout: 15000 });
   const after = await state();
   assert(after.history[0].result === 'loss' && after.inventory.length === before.inventory.length, 'derrota sem perdas');
+  assert(after.injury && after.injury.days === 1, 'desistência deixa ferido por 1 dia');
+  assert(await win.locator('.modal-result .injury-note').count(), 'ferimento avisado no resultado');
   await win.click('[data-r="close"]');
 });
 
@@ -213,6 +248,13 @@ await step('12. Subir de nível: pontos de atributo e de habilidade', async () =
 });
 
 await step('13. Templo: árvore de habilidades', async () => {
+  // dia seco: na chuva o monge medita lá dentro
+  await win.evaluate(() => {
+    const app = window.__colosseum;
+    let d = app.store.state.day;
+    while (app.weatherOfDay(d).rainy) d++;
+    app.store.update((p) => { p.day = d; p.minutes = 10 * 60; });
+  });
   await goTo('temple');
   await win.click('[data-action="select"][data-id="m2"]');
   assert(await win.locator('[data-action="learn"][disabled]').count(), 'pré-requisito bloqueia');
@@ -238,7 +280,7 @@ await step('15. Arena certa a cada dois adversários', async () => {
     const app = window.__colosseum;
     let d = app.store.state.day;
     while (app.weatherOfDay(d).rainy) d++;
-    app.store.update((p) => { p.day = d; p.defeatedOpponents = ['marcus', 'cassius']; p.selectedOpponent = 'rufus'; p.energy = 100; p.minutes = 9 * 60; p.reputation += 30; });
+    app.store.update((p) => { p.day = d; p.defeatedOpponents = ['marcus', 'cassius']; p.selectedOpponent = 'rufus'; p.energy = 100; p.minutes = 9 * 60; p.reputation += 30; p.injury = null; });
   });
   await goTo('arena');
   await win.click('.btn-fight');
@@ -268,6 +310,9 @@ await step('16. Dia e noite seguem o relógio do jogo', async () => {
   assert(day.light > 0.9 && day.ambient === 0xffffff, `dia claro (${JSON.stringify(day)})`);
   assert(night.light < 0.3, `noite escura (${JSON.stringify(night)})`);
   await win.waitForSelector('.modal-result', { timeout: 150000 });
+  const cine = await win.evaluate(() => ({ standing: window.__colosseum.view.arena.standing, music: window.__colosseum.music.track }));
+  assert(cine.standing === 1, 'público de pé no fim da luta');
+  assert(cine.music === 'arena', 'música da arena');
   await win.click('[data-r="close"]');
 });
 
@@ -316,13 +361,17 @@ await step('21. Chuva: céu fechado e gotas caindo', async () => {
   await win.evaluate((b) => window.__colosseum.store.update((p) => { p.day = b.day; p.minutes = b.minutes; }), before);
 });
 
-await step('17. Tela cheia (ativar e sair)', async () => {
-  await win.click('[data-w="fullscreen"]');
-  await win.waitForTimeout(1200);
-  assert((await winInfo()).fullscreen, 'tela cheia ativa');
+await step('17. Esc pausa o jogo; F11 alterna tela cheia', async () => {
   await win.keyboard.press('Escape');
-  await win.waitForTimeout(1200);
-  assert(!(await winInfo()).fullscreen, 'saiu da tela cheia');
+  await win.waitForSelector('.modal-pause');
+  const paused = await win.evaluate(() => window.__colosseum.view.game.scene.isPaused('hub'));
+  assert(paused, 'cena pausada');
+  await shot('17-pause');
+  await win.click('[data-p="resume"]');
+  assert(!(await win.evaluate(() => window.__colosseum.view.game.scene.isPaused('hub'))), 'jogo retomado');
+  await win.keyboard.press('F11');
+  await win.waitForTimeout(1500);
+  assert(!(await winInfo()).fullscreen, 'F11 sai da tela cheia');
 });
 
 await step('18. Redimensionamento da janela', async () => {
@@ -338,7 +387,12 @@ await step('18. Redimensionamento da janela', async () => {
 });
 
 await step('22. Melhorias do mercado: cama e equipamentos do ludus', async () => {
-  await win.evaluate(() => window.__colosseum.store.update((p) => { p.coins += 1000; p.minutes = 10 * 60; p.energy = 60; p.day = p.day % 7 === 0 ? p.day + 1 : p.day; }));
+  await win.evaluate(() => {
+    const app = window.__colosseum;
+    let d = app.store.state.day;
+    while (d % 7 === 0 || app.weatherOfDay(d).rainy) d++;
+    app.store.update((p) => { p.coins += 1000; p.minutes = 10 * 60; p.energy = 60; p.day = d; });
+  });
   await goTo('market');
   await win.click('[data-action="tab"][data-id="upgrades"]');
   await win.click('[data-action="upgrade"][data-id="bed_wool"]');
@@ -377,17 +431,129 @@ await step('23. Taverna: comer, ouvir boatos e conversar', async () => {
   await shot('23-tavern');
 });
 
-await step('24. Idioma: inglês e português', async () => {
-  await win.click('[data-w="lang"]');
+await step('24. Idioma: inglês e português (pelas opções do menu de pausa)', async () => {
+  await openOptions();
+  await win.click('[data-o="lang-en"]');
   await win.waitForTimeout(400);
+  await win.keyboard.press('Escape'); // fecha as opções e volta à pausa
+  await win.waitForSelector('.modal-pause');
+  await win.keyboard.press('Escape'); // retoma o jogo
+  await win.waitForTimeout(300);
   assert((await win.textContent('[data-nav="map"]')) === 'Map', 'abas em inglês');
   assert(((await win.textContent('#panel')) ?? '').includes('The Boar Tavern'), 'painel em inglês');
   assert(((await win.textContent('#statusbar')) ?? '').match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday/), 'dia da semana em inglês');
   assert((await state()).settings.language === 'en', 'idioma salvo');
   await shot('24-english');
-  await win.click('[data-w="lang"]');
+  await win.evaluate(() => window.__colosseum.changeLang('pt'));
   await win.waitForTimeout(400);
   assert((await win.textContent('[data-nav="map"]')) === 'Mapa', 'de volta ao português');
+});
+
+await step('25. Festival: arquibancada lotada e fama em dobro', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 10; p.minutes = 9 * 60; p.energy = 100; p.injury = null; }));
+  await goTo('arena');
+  assert(((await win.textContent('#panel')) ?? '').includes('festival'), 'aviso de festival na arena');
+  await win.click('[data-action="fight-free"]');
+  await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
+  await win.waitForTimeout(2500);
+  const fest = await win.evaluate(() => {
+    const sc = window.__colosseum.view.arena;
+    return { crowd: sc.crowd.texture.key, deco: sc.children.list.some((o) => o.texture && o.texture.key === 'fx:festival') };
+  });
+  assert(fest.crowd === 'bg:crowdfest_' + (await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id)) && fest.deco, `arena enfeitada e lotada (${JSON.stringify(fest)})`);
+  await shot('25-festival');
+  await win.click('[data-hud="speed"][data-v="3"]');
+  await win.waitForSelector('.modal-result', { timeout: 150000 });
+  const p = await state();
+  if (p.history[0].result === 'win') assert(await win.locator('.unlock.festival').count(), 'fama em dobro indicada');
+  assert(p.events.freeCount === 1, 'desafiante avulso contado');
+  await win.click('[data-r="close"]');
+});
+
+await step('26. Rivais: derrotado só luta de novo se pedir revanche', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 12; p.minutes = 9 * 60; p.energy = 100; p.injury = null; p.selectedOpponent = 'marcus'; p.rematch = null; }));
+  await goTo('arena');
+  assert(await win.locator('.btn-fight[disabled]').count(), 'luta contra derrotado bloqueada');
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.rematch = { opponentId: 'marcus', askedDay: 11, expires: 18 }; }));
+  await win.waitForSelector('.rematch-card');
+  const losses0 = (await state()).rivals.marcus?.losses ?? 0;
+  assert(((await win.textContent('#panel')) ?? '').includes('Treinou para a revanche'), 'adversário treinou');
+  await shot('26-rematch');
+  await win.click('[data-action="fight-rematch"]');
+  await forfeitNow();
+  await win.waitForSelector('.modal-result', { timeout: 15000 });
+  const p = await state();
+  assert(p.rematch === null && p.rivals.marcus.losses === losses0 + 1, 'revanche registrada na memória do rival');
+  assert(!(await win.locator('[data-r="again"]').count()), 'sem botão de revanche instantânea');
+  await win.click('[data-r="close"]');
+});
+
+await step('27. Ferimento: médico do ludus cura', async () => {
+  assert((await state()).injury, 'ferido após desistir');
+  await goTo('ludus');
+  await win.waitForSelector('.medic-card');
+  await win.click('[data-action="medic"]');
+  assert((await state()).injury === null, 'médico tratou o ferimento');
+});
+
+await step('28. Ferreiro e mercador viajante', async () => {
+  const md = await win.evaluate(() => {
+    const p = window.__colosseum.store.state;
+    for (let d = p.day; d < p.day + 40; d++) if (window.__colosseum.isMerchantDay(d)) return d;
+    return 0;
+  });
+  assert(md, 'mercador aparece em até 40 dias');
+  await win.evaluate((d) => window.__colosseum.store.update((p) => { p.day = d; p.minutes = 10 * 60; p.coins += 3000; p.level = Math.max(p.level, 16); }), md);
+  await goTo('market');
+  await win.waitForTimeout(1200);
+  const cart = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').children.list.some((o) => o.texture && o.texture.key === 'fx:merchant_cart'));
+  assert(cart, 'carroça do mercador na praça');
+  await win.click('[data-action="tab"][data-id="merchant"]');
+  const n0 = (await state()).inventory.length;
+  await win.click('[data-action="merchant-buy"]:not([disabled])');
+  assert((await state()).inventory.length === n0 + 1, 'comprou do mercador');
+  await shot('28-merchant');
+  await win.click('[data-action="tab"][data-id="forge"]');
+  await win.click('[data-action="forge"]:not([disabled])');
+  assert((await state()).inventory.some((i) => i.plus === 1), 'item melhorado no ferreiro (+1)');
+  await shot('28-forge');
+});
+
+await step('29. Queda de braço na taverna (domingo à noite)', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 14; p.minutes = 20 * 60; p.energy = 80; }));
+  await goTo('tavern');
+  await win.waitForSelector('[data-action="arm"]:not([disabled])');
+  await win.click('[data-action="arm"]');
+  await win.waitForSelector('.modal-arm');
+  await shot('29-arm');
+  await win.keyboard.press('Space');
+  await win.waitForTimeout(500);
+  await win.keyboard.press('Escape');
+  await win.waitForTimeout(500);
+  const p = await state();
+  assert(p.events.armDay === 14, 'disputa registrada (uma por domingo)');
+  assert(await win.locator('[data-action="arm"][disabled]').count(), 'só uma vez por domingo');
+});
+
+await step('30. Torneio de sábado: inscrição, chave e prêmio', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 15; p.minutes = 10 * 60; p.energy = 100; p.injury = null; }));
+  await goTo('arena');
+  await win.click('[data-action="tour-register"]');
+  assert((await state()).tournament.registered === 20, 'inscrito para o sábado (dia 20)');
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 20; p.minutes = 14 * 60; p.energy = 100; p.location = 'arena'; }));
+  await win.click('[data-action="tour-start"]');
+  await win.waitForSelector('.modal-bracket');
+  assert((await win.locator('.bracket .bk-f').count()) >= 8, 'chave com 8 lutadores');
+  await shot('30-bracket');
+  await win.click('[data-t="fight"]');
+  await forfeitNow();
+  await win.waitForSelector('.modal-bracket [data-t="claim"]', { timeout: 15000 });
+  const run = (await state()).tournament.run;
+  assert(run.done && run.winners.length === 7, 'torneio simulado até a final');
+  const fame0 = (await state()).reputation;
+  await win.click('[data-t="claim"]');
+  const p = await state();
+  assert(p.tournament.run === null && p.reputation === fame0 + 1, 'prêmio de participação');
 });
 
 const snapshot = await state();
@@ -396,6 +562,7 @@ await step('19. Salvamento, fechamento e reabertura', async () => {
   await win.waitForTimeout(800);
   await app.close();
   await launch();
+  await playSlot(1);
   await win.waitForSelector('#panel .panel-head', { timeout: 10000 });
   const p = await state();
   for (const k of ['name', 'level', 'xp', 'coins', 'reputation', 'day', 'minutes', 'energy', 'location', 'skillPoints'])
@@ -410,8 +577,22 @@ await step('20. Recuperação de salvamento corrompido via backup', async () => 
   assert(fs.existsSync(BACKUP), 'backup existe');
   fs.writeFileSync(SAVE, '{ corrompido');
   await launch();
+  await playSlot(1);
   await win.waitForSelector('#panel .panel-head', { timeout: 10000 });
   assert((await state()).name === snapshot.name, 'recuperado do backup');
+});
+
+await step('31. Menu principal: voltar e saves separados', async () => {
+  await win.keyboard.press('Escape');
+  await win.click('[data-p="menu"]');
+  await win.waitForSelector('#title .slot-card');
+  const txt = (await win.textContent('#title')) ?? '';
+  assert(txt.includes(snapshot.name), 'espaço 1 mostra o gladiador');
+  assert((await win.locator('#title .slot-card.empty').count()) === 2, 'espaços 2 e 3 vazios');
+  await playSlot(2);
+  await win.waitForSelector('.title-screen', { timeout: 10000 });
+  assert(!fs.existsSync(path.join(USER_DATA, 'saves', 'slot2.json')), 'slot 2 só é criado ao terminar a criação');
+  await shot('31-slots');
 });
 
 await app.close();

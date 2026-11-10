@@ -184,8 +184,8 @@ em.down { color: var(--red-hi); }
 .skill.locked { opacity: 0.5; }
 
 /* Itens */
-.subtabs { display: flex; gap: 6px; margin: 4px 0 8px; }
-.subtabs .btn { flex: 1; }
+.subtabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.subtabs .btn { flex: 1 1 30%; min-width: 0; padding-left: 6px; padding-right: 6px; }
 .slots { display: flex; flex-direction: column; gap: 6px; }
 .slot-row { display: flex; align-items: center; gap: 8px; min-height: 36px; font-size: 23px; }
 .slot-label { width: 110px; color: var(--dim); }
@@ -379,3 +379,82 @@ em.down { color: var(--red-hi); }
 .weather { color: #a8c8f0; font-size: 21px; }
 .monk-say { display: flex; gap: 10px; align-items: center; background: rgba(0, 0, 0, 0.35); border: 2px solid #8e2b23; padding: 6px 10px; margin: 6px 0; font-size: 22px; }
 .monk-say b { color: #e0584a; white-space: nowrap; }
+
+/* ===================================================================== 0.6 */
+/* ---- menu principal */
+#title { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.title-art { position: absolute; inset: 0; background: center / cover no-repeat; image-rendering: pixelated; }
+.title-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(16, 10, 6, 0.25) 0%, rgba(16, 10, 6, 0.75) 80%); }
+.title-box { position: relative; text-align: center; max-width: 1100px; width: calc(100% - 40px); }
+.title-box .logo { font-family: var(--font-title); font-weight: 700; font-size: clamp(64px, 9vw, 128px); margin: 0; }
+.logo-sub { font-size: 30px; color: var(--cream); text-shadow: 2px 2px 0 #1a110c; margin: 0 0 22px; letter-spacing: 2px; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 auto 18px; }
+.slot-card { background: rgba(20, 13, 9, 0.88); border: 3px solid var(--bronze); box-shadow: 0 0 0 3px #1a110c, 6px 6px 0 rgba(0, 0, 0, 0.5); padding: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; min-height: 210px; }
+.slot-card.empty { border-style: dashed; justify-content: space-between; text-align: center; }
+.slot-label { color: var(--gold); font-size: 22px; letter-spacing: 1px; border-bottom: 1px solid #5a4430; }
+.slot-hero { display: flex; gap: 10px; align-items: center; flex: 1; }
+.slot-name { font-size: 30px; color: var(--gold-hi); font-weight: 400; }
+.title-actions { display: flex; gap: 12px; justify-content: center; }
+.title-foot { margin-top: 12px; text-shadow: 1px 1px 0 #000; }
+@media (max-width: 900px) { .slots { grid-template-columns: 1fr; } }
+
+/* ---- pausa */
+.modal-pause { min-width: 420px; }
+.pause-menu { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+
+/* ---- retratos */
+.portrait { display: inline-block; flex: none; border: 2px solid #1a110c; box-shadow: 0 0 0 2px var(--bronze); background: #2a1a10; line-height: 0; }
+.portrait img { width: 100%; height: 100%; image-rendering: pixelated; }
+.portrait-xs { width: 32px; height: 32px; }
+.portrait-sm { width: 48px; height: 48px; }
+.portrait-md { width: 72px; height: 72px; }
+.portrait-lg { width: 120px; height: 120px; box-shadow: 0 0 0 3px var(--gold); }
+.portrait-xl { width: 168px; height: 168px; }
+.opp .portrait { margin-right: 2px; }
+.opp.beaten { opacity: 0.75; }
+.opp.rematch { border-color: var(--red-hi); background: rgba(156, 42, 34, 0.3); }
+.opp-detail { display: flex; gap: 14px; align-items: flex-start; background: rgba(0, 0, 0, 0.35); border: 2px solid #4a3828; padding: 10px; margin-bottom: 8px; }
+.opp-title { font-size: 28px; color: var(--gold-hi); }
+
+/* ---- desafiante, revanche, torneio */
+.challenger-card, .rematch-card { display: flex; gap: 12px; align-items: center; }
+.challenger-card .ch-info { flex: 1; min-width: 0; }
+.rematch-card { border-color: var(--red-hi) !important; background: rgba(156, 42, 34, 0.25) !important; }
+.rematch-card > div { flex: 1; }
+.tour-card { border-color: var(--gold) !important; }
+.festival-banner { padding: 8px 10px; margin-bottom: 8px; text-align: center; color: #1a110c; font-size: 25px; background: repeating-linear-gradient(45deg, #f4d06a 0 14px, #e8b84a 14px 28px); border: 2px solid #8a5a1a; }
+.injury-note { padding: 6px 10px; margin: 6px 0; color: #ffd0c8; background: rgba(156, 42, 34, 0.35); border: 2px solid var(--red-hi); font-size: 22px; }
+.unlock.festival { border-color: #f4d06a; }
+.unlock.red { border-color: var(--red-hi); color: #ffc8c0; background: rgba(156, 42, 34, 0.25); }
+.medic-card { border-color: var(--red-hi) !important; }
+.arm-card { border-color: var(--red-hi) !important; }
+.dim-card { opacity: 0.7; }
+.btn-merchant { background: linear-gradient(#8a4a9a, #5a2a6a); box-shadow: inset 0 2px 0 #c890d8, inset 0 -2px 0 #3a1a44; color: #fff; }
+.item-name .plus { color: #8ad8ff; font-weight: 400; }
+
+/* ---- chave do torneio */
+.modal-bracket { width: min(1100px, 94vw); }
+.bracket { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 10px 0 14px; align-items: center; }
+.bk-col { display: flex; flex-direction: column; justify-content: space-around; gap: 12px; height: 100%; }
+.bk-round { text-align: center; color: var(--gold); font-size: 22px; border-bottom: 1px solid #5a4430; }
+.bk-match { border: 2px solid #4a3828; background: rgba(0, 0, 0, 0.35); }
+.bk-f { display: flex; align-items: center; gap: 6px; padding: 3px 6px; font-size: 21px; min-height: 40px; }
+.bk-f + .bk-f { border-top: 1px solid #3a2a1e; }
+.bk-f.me { color: var(--gold-hi); background: rgba(140, 100, 30, 0.3); }
+.bk-f.won .bk-name { color: var(--green); }
+.bk-f.lost { opacity: 0.45; text-decoration: line-through; }
+.bk-f.empty { justify-content: center; color: var(--dim); }
+.bk-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bk-lv { font-size: 18px; color: var(--dim); }
+.bk-champ .bk-match { border-color: var(--gold); box-shadow: 0 0 12px rgba(224, 184, 80, 0.4); }
+
+/* ---- queda de braço */
+.modal-arm { width: min(620px, 92vw); }
+.arm-names { display: flex; justify-content: space-between; font-size: 26px; color: var(--gold-hi); margin-top: 10px; }
+.arm-rope { position: relative; height: 26px; background: #6a1e18; border: 3px solid #1a110c; box-shadow: 0 0 0 2px var(--bronze); margin: 6px 0 16px; }
+.arm-fill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(#e8c060, #a87a20); }
+.arm-knot { position: absolute; top: -8px; width: 10px; height: 36px; margin-left: -5px; background: var(--cream); border: 2px solid #1a110c; }
+.arm-meter { position: relative; height: 22px; background: #2a1a10; border: 3px solid #1a110c; box-shadow: 0 0 0 2px #5a4430; }
+.arm-zone { position: absolute; top: 0; bottom: 0; background: rgba(244, 208, 106, 0.75); }
+.arm-marker { position: absolute; top: -6px; width: 6px; height: 28px; margin-left: -3px; background: #fff; border: 1px solid #000; }
+.arm-msg { font-size: 28px; min-height: 34px; margin: 10px 0; }

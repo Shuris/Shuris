@@ -65,7 +65,7 @@ export class TitleScreen {
     if (this.root.hidden) return;
     const cards = this.slots.map((s) => this.slotCard(s)).join('');
     this.root.innerHTML = `
-      <div class="title-art"></div>
+      <div class="title-art" style="background-image:url(assets/ui/title.png)"></div>
       <div class="title-shade"></div>
       <div class="title-box">
         <h1 class="logo">COLOSSEUM</h1>

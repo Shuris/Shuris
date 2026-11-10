@@ -164,6 +164,10 @@
       "file": "sprites/gladiator/shield_scutum.png",
       "layer": "shield"
     },
+    "offhand_gladius": {
+      "file": "sprites/gladiator/offhand_gladius.png",
+      "layer": "shield"
+    },
     "helmet_cap": {
       "file": "sprites/gladiator/helmet_cap.png",
       "layer": "helmet"
@@ -176,6 +180,18 @@
       "file": "sprites/gladiator/helmet_murmillo.png",
       "layer": "helmet"
     },
+    "helmet_provocator": {
+      "file": "sprites/gladiator/helmet_provocator.png",
+      "layer": "helmet"
+    },
+    "helmet_secutor": {
+      "file": "sprites/gladiator/helmet_secutor.png",
+      "layer": "helmet"
+    },
+    "helmet_crupellarius": {
+      "file": "sprites/gladiator/helmet_crupellarius.png",
+      "layer": "helmet"
+    },
     "armor_light": {
       "file": "sprites/gladiator/armor_light.png",
       "layer": "armor"
@@ -186,6 +202,14 @@
     },
     "armor_heavy": {
       "file": "sprites/gladiator/armor_heavy.png",
+      "layer": "armor"
+    },
+    "armor_cardio": {
+      "file": "sprites/gladiator/armor_cardio.png",
+      "layer": "armor"
+    },
+    "armor_scale": {
+      "file": "sprites/gladiator/armor_scale.png",
       "layer": "armor"
     },
     "legsb_iron": {
@@ -233,6 +257,11 @@
     },
     "trident": {
       "file": "sprites/gladiator/weapon_trident.png",
+      "gripX": 12,
+      "gripY": 7
+    },
+    "arbelas": {
+      "file": "sprites/gladiator/weapon_arbelas.png",
       "gripX": 12,
       "gripY": 7
     }

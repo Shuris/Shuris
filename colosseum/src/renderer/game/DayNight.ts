@@ -106,9 +106,32 @@ export class SkyLayer {
     for (let i = 0; i < 9; i++) {
       this.extraClouds.push(scene.add.image((i / 9) * WORLD.width + Math.random() * 40, 6 + Math.random() * 46, 'fx:cloud').setDepth(-27).setScale(1.6 + Math.random()).setVisible(false));
     }
-    for (let i = 0; i < 240; i++) {
-      const r = scene.add.rectangle(Math.random() * WORLD.width, Math.random() * WORLD.height, 1, 8, 0xd0e2f6, 0.8).setDepth(rainBehind ? -26 : 450).setVisible(false);
-      this.drops.push({ r, vy: 260 + Math.random() * 90, vx: -40 - Math.random() * 20 });
+    // chuva forte: gotas longas em duas camadas (perto e longe)
+    for (let i = 0; i < 420; i++) {
+      const near = i % 3 === 0;
+      const r = scene.add
+        .rectangle(Math.random() * WORLD.width, Math.random() * WORLD.height, 1, near ? 11 : 7, near ? 0xdde9f8 : 0xb8cce4, near ? 0.85 : 0.55)
+        .setAngle(8)
+        .setDepth(rainBehind ? -26 : 450)
+        .setVisible(false);
+      this.drops.push({ r, vy: (near ? 380 : 290) + Math.random() * 90, vx: -55 - Math.random() * 20 });
+    }
+    this.outdoorGround = withSky && !rainBehind;
+    if (this.outdoorGround) {
+      // poças no chão (aparecem aos poucos com a chuva) e respingos
+      this.puddles = scene.add.graphics().setDepth(2).setAlpha(0);
+      for (let i = 0; i < 9; i++) {
+        const x = 40 + ((i * 167) % 560) + Math.random() * 20;
+        const y = 318 + ((i * 37) % 36);
+        const w = 22 + Math.random() * 30;
+        this.puddleSpots.push({ x, y, w });
+        this.puddles.fillStyle(0x5a6e84, 0.55).fillEllipse(x, y, w, w * 0.22);
+        this.puddles.fillStyle(0xb8cce0, 0.35).fillEllipse(x - w * 0.15, y - 1, w * 0.45, w * 0.06);
+      }
+      this.flash = scene.add.rectangle(0, 0, WORLD.width, WORLD.height, 0xeef4ff, 0).setOrigin(0).setDepth(520).setBlendMode(Phaser.BlendModes.ADD);
+      this.bolt = scene.add.graphics().setDepth(-26);
+    } else {
+      this.flash = scene.add.rectangle(0, 0, WORLD.width, WORLD.height, 0xeef4ff, 0).setOrigin(0).setDepth(520).setBlendMode(Phaser.BlendModes.ADD);
     }
     if (!withSky) {
       for (const o of [this.gfx, this.stars, this.sun, this.moon, ...this.clouds, ...this.extraClouds]) o.setVisible(false).setActive(false);
@@ -118,6 +141,13 @@ export class SkyLayer {
   }
 
   private skyless = false;
+  private outdoorGround = false;
+  private puddles: Phaser.GameObjects.Graphics | null = null;
+  private puddleSpots: Array<{ x: number; y: number; w: number }> = [];
+  private splashTimer = 0;
+  private flash!: Phaser.GameObjects.Rectangle;
+  private bolt: Phaser.GameObjects.Graphics | null = null;
+  private lightningTimer = 6 + Math.random() * 8;
 
   update(dt: number): void {
     const target = this.timeFn();
@@ -174,7 +204,72 @@ export class SkyLayer {
     }
   }
 
+  /** Respingo de água (gota no chão, poça ou pés de quem anda na chuva). */
+  splash(x: number, y: number, size = 1): void {
+    if (this.weather.rain < 0.15) return;
+    const n = 2 + Math.round(size * 2);
+    for (let i = 0; i < n; i++) {
+      const d = this.scene.add.rectangle(x, y, 1, 1, 0xd8e6f6, 0.9).setDepth(451);
+      const dir = (Math.random() - 0.5) * 2;
+      this.scene.tweens.add({ targets: d, x: x + dir * 5 * size, y: y - 3 - Math.random() * 4 * size, alpha: 0, duration: 240, ease: 'Quad.easeOut', onComplete: () => d.destroy() });
+    }
+  }
+
+  private ripple(x: number, y: number): void {
+    const r = this.scene.add.ellipse(x, y, 2, 1).setStrokeStyle(1, 0xd8e6f6, 0.7).setDepth(3);
+    this.scene.tweens.add({ targets: r, scaleX: 5, scaleY: 3, alpha: 0, duration: 520, onComplete: () => r.destroy() });
+  }
+
+  /** Relâmpago: clarão duplo, raio no céu e trovão logo depois. */
+  private lightning(): void {
+    const strong = this.outdoorGround;
+    const peak = strong ? 0.75 : 0.25;
+    this.flash.setFillStyle(0xeef4ff, 1);
+    this.flash.setAlpha(peak);
+    this.scene.tweens.add({ targets: this.flash, alpha: 0, duration: 140, onComplete: () => {
+      this.flash.setAlpha(peak * 0.7);
+      this.scene.tweens.add({ targets: this.flash, alpha: 0, duration: 380 });
+    } });
+    if (this.bolt && !this.skyless) {
+      const g = this.bolt;
+      g.clear();
+      let x = 60 + Math.random() * 520;
+      let y = 0;
+      g.lineStyle(2, 0xffffff, 1);
+      g.beginPath();
+      g.moveTo(x, y);
+      while (y < this.horizon - 10) {
+        x += (Math.random() - 0.5) * 22;
+        y += 8 + Math.random() * 12;
+        g.lineTo(x, y);
+      }
+      g.strokePath();
+      g.setAlpha(1);
+      this.scene.tweens.add({ targets: g, alpha: 0, duration: 420 });
+    }
+    this.scene.time.delayedCall(400 + Math.random() * 1100, () => sound.play('thunder', 0.7 + Math.random() * 0.6));
+  }
+
   private updateRain(dt: number, w: WeatherNow): void {
+    // poças crescem com a chuva; respingos e ondinhas
+    if (this.puddles) this.puddles.setAlpha(Math.min(1, w.rain * 1.4));
+    if (this.outdoorGround && w.rain > 0.1) {
+      this.splashTimer -= dt;
+      while (this.splashTimer <= 0) {
+        this.splashTimer += 0.06 / w.rain;
+        if (Math.random() < 0.35 && this.puddleSpots.length) {
+          const p = this.puddleSpots[Math.floor(Math.random() * this.puddleSpots.length)];
+          this.ripple(p.x + (Math.random() - 0.5) * p.w * 0.6, p.y);
+        } else this.splash(Math.random() * WORLD.width, 300 + Math.random() * 58, 0.6);
+      }
+    }
+    if (w.rain > 0.6) {
+      this.lightningTimer -= dt;
+      if (this.lightningTimer <= 0) {
+        this.lightningTimer = 8 + Math.random() * 14;
+        this.lightning();
+      }
+    }
     const active = Math.round(this.drops.length * w.rain);
     this.drops.forEach((d, i) => {
       const on = i < active;

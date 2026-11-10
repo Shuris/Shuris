@@ -286,6 +286,169 @@ Linha de data: `dia da semana, Dia N` (ex.: “Quinta, Dia 4” / “Thursday, D
    **Texto:** O mercado fecha no dia do sol. Os comerciantes reclamam, os escravos agradecem.  
    *EN:* Aedile bans trading on Sundays — The market closes on the day of the sun. Merchants complain; slaves are grateful.
 
+## Novidades da versão 0.6
+
+As notícias abaixo vieram com os eventos da cidade, o torneio e os rivais. Valem as mesmas regras de variáveis.
+
+### Pedido de revanche (`rematchAsk`)
+
+**Quando sai:** Na manhã seguinte a uma vitória sobre um adversário da escada, se ele pedir revanche (chance de 35%, no máximo um pedido a cada 7 dias).
+
+**Ilustração possível:** rival
+
+1. **Manchete:** {opp} quer revanche contra {name}  
+   **Texto:** "Foi sorte", diz o derrotado, que promete treinar todos os dias até a nova luta.  
+   *EN:* {opp} wants a rematch against {name} — "It was luck," says the loser, who promises to train every day until the new fight.
+
+2. **Manchete:** Orgulho ferido: {opp} desafia {name} outra vez  
+   **Texto:** O desafio está feito. Resta saber se {name} vai aceitar.  
+   *EN:* Wounded pride: {opp} challenges {name} again — The challenge is made. Will {name} accept?
+
+### Revanche vencida (`rematchWin`)
+
+**Quando sai:** Depois de vencer uma revanche.
+
+**Ilustração possível:** victory
+
+1. **Manchete:** {name} vence a revanche contra {opp}  
+   **Texto:** Nem o treino extra salvou o rival. A questão está encerrada.  
+   *EN:* {name} wins the rematch against {opp} — Not even extra training saved the rival. The matter is settled.
+
+### Revanche perdida (`rematchLose`)
+
+**Quando sai:** Depois de perder uma revanche.
+
+**Ilustração possível:** defeat
+
+1. **Manchete:** {opp} se vinga de {name}  
+   **Texto:** O treino deu resultado: o rival saiu da arena de cabeça erguida.  
+   *EN:* {opp} takes revenge on {name} — The training paid off: the rival left the arena with his head held high.
+
+### Revanche esquecida (`rematchFled`)
+
+**Quando sai:** Quando o pedido de revanche expira sem resposta (7 dias). Custa 2 de fama.
+
+**Ilustração possível:** rival
+
+1. **Manchete:** {opp}: "{name} fugiu da revanche"  
+   **Texto:** O pedido de revanche ficou sem resposta, e a cidade comenta.  
+   *EN:* {opp}: "{name} ran from the rematch" — The challenge went unanswered, and the city is talking.
+
+### Véspera de festival (`festivalSoon`)
+
+**Quando sai:** Na edição do dia anterior ao festival (a cada 14 dias: dias 10, 24, 38...).
+
+**Ilustração possível:** festival
+
+1. **Manchete:** Amanhã é dia de festival em {city}!  
+   **Texto:** As arquibancadas devem lotar: a fama de cada vitória valerá em dobro.  
+   *EN:* Tomorrow is festival day in {city}! — The stands should be packed: fame from every victory will count double.
+
+### Dia de festival (`festival`)
+
+**Quando sai:** Na edição do dia do festival.
+
+**Ilustração possível:** festival
+
+1. **Manchete:** Hoje é festival: a cidade vai à arena  
+   **Texto:** Flores, flâmulas e arquibancadas cheias. Quem lutar hoje ganha fama em dobro.  
+   *EN:* Festival today: the city goes to the arena — Flowers, pennants and full stands. Whoever fights today earns double fame.
+
+2. **Manchete:** Festa nas ruas e na arena  
+   **Texto:** O povo de {city} celebra os deuses e quer ver grandes lutas.  
+   *EN:* Celebrations in the streets and in the arena — The people of {city} honor the gods and want to see great fights.
+
+### Mercador viajante (`merchant`)
+
+**Quando sai:** Na edição dos dias em que o mercador viajante está na praça (a cada 6 a 10 dias).
+
+**Ilustração possível:** merchant
+
+1. **Manchete:** Mercador viajante chega à praça  
+   **Texto:** Só hoje: armas e armaduras raras vindas de longe, no mercado.  
+   *EN:* Travelling merchant arrives in the square — Today only: rare weapons and armor from distant lands, at the market.
+
+2. **Manchete:** Carroça exótica no mercado  
+   **Texto:** O mercador fica até o fim do dia. Quem tiver moedas deve se apressar.  
+   *EN:* Exotic cart at the market — The merchant stays until the end of the day. Those with coins should hurry.
+
+### Queda de braço (`armWin`)
+
+**Quando sai:** Depois de vencer a queda de braço na taverna (domingo à noite).
+
+**Ilustração possível:** armwrestle
+
+1. **Manchete:** {name} vence a queda de braço da taverna  
+   **Texto:** Os fregueses da Taverna do Javali juram que a mesa quase quebrou.  
+   *EN:* {name} wins the tavern arm wrestling — The Boar Tavern regulars swear the table almost broke.
+
+2. **Manchete:** Braço de ferro: {name} derruba o campeão da taverna  
+   **Texto:** Na noite de domingo, a força de {name} rendeu moedas e aplausos.  
+   *EN:* Iron arm: {name} topples the tavern champion — On Sunday night, {name}’s strength earned coins and applause.
+
+### Torneio: últimas inscrições (`tourneySoon`)
+
+**Quando sai:** Toda sexta-feira.
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** Torneio de sábado: inscrições até hoje  
+   **Texto:** Oito lutadores, três rodadas, a partir das 14h. Inscrições na arena.  
+   *EN:* Saturday tournament: last day to sign up — Eight fighters, three rounds, from 14:00. Sign up at the arena.
+
+### Campeão do torneio (`tourneyWin`)
+
+**Quando sai:** Depois de ganhar o torneio de sábado.
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** {name} é campeão do torneio de sábado!  
+   **Texto:** Três lutas, três vitórias. {city} tem um novo favorito.  
+   *EN:* {name} wins the Saturday tournament! — Three fights, three wins. {city} has a new favorite.
+
+2. **Manchete:** Torneio: ninguém para {name}  
+   **Texto:** O troféu e a coroa de louros ficaram com {name}.  
+   *EN:* Tournament: no one can stop {name} — The trophy and the laurel crown went to {name}.
+
+### Vice no torneio (`tourneyFinal`)
+
+**Quando sai:** Depois de perder a final do torneio.
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** {name} cai na final do torneio  
+   **Texto:** {opp} ficou com o título, mas {name} saiu aplaudido.  
+   *EN:* {name} falls in the tournament final — {opp} took the title, but {name} left to applause.
+
+### Eliminado do torneio (`tourneyOut`)
+
+**Quando sai:** Depois de cair nas quartas ou na semifinal ({opp} = campeão).
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** Torneio de sábado termina com {opp} campeão  
+   **Texto:** {name} lutou, mas não foi desta vez.  
+   *EN:* Saturday tournament ends with {opp} as champion — {name} fought, but not this time.
+
+### Faltou ao torneio (`tourneyNoShow`)
+
+**Quando sai:** Quando se inscreveu e não apareceu no sábado.
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** {name} não aparece no torneio  
+   **Texto:** A vaga ficou vazia e a inscrição foi perdida.  
+   *EN:* {name} misses the tournament — The spot stayed empty and the sign-up was lost.
+
+### Legendas das novas ilustrações
+
+| Ilustração | Português | Inglês |
+| --- | --- | --- |
+| festival | Guirlandas e flâmulas no dia de festival. | Garlands and pennants on festival day. |
+| merchant | A carroça do mercador viajante. | The travelling merchant’s cart. |
+| armwrestle | Queda de braço na Taverna do Javali. | Arm wrestling at the Boar Tavern. |
+| tournament | O campeão do torneio de sábado. | The Saturday tournament champion. |
+
 ## Legendas das ilustrações
 
 | Ilustração | Português | Inglês |

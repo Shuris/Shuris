@@ -28,6 +28,7 @@ import gen_arenas  # noqa: E402
 import sky  # noqa: E402
 import gen_locations  # noqa: E402
 import gen_v05  # noqa: E402
+import gen_v06  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -49,6 +50,8 @@ def main():
         img, shadow = gen_arenas.arena(tid, rng)
         img.save(os.path.join(bg, f"arena_{tid}.png"))
         gen_arenas.crowd(tid, rng, shadow).save(os.path.join(bg, f"crowd_{tid}.png"))
+        # dia de festival: arquibancada lotada
+        gen_arenas.crowd(tid, random.Random(tid), shadow, density=0.99).save(os.path.join(bg, f"crowdfest_{tid}.png"))
     gen_scenes.ludus(rng).save(os.path.join(bg, "ludus.png"))
     for loc in ("home", "market", "temple", "forum", "baths"):
         getattr(gen_locations, loc)(rng).save(os.path.join(bg, f"loc_{loc}.png"))
@@ -91,6 +94,16 @@ def main():
         fn().save(os.path.join(icons, name + ".png"))
     pics = gen_v05.news_images(ASSETS, os.path.join(ASSETS, "news"))
     print(f"jornal: {len(pics)} ilustrações")
+    # versão 0.6: festival, mercador, forja, queda de braço, retratos, menu e jornal
+    gen_v06.festival_overlay().save(os.path.join(fx, "festival.png"))
+    gen_v06.merchant_cart().save(os.path.join(fx, "merchant_cart.png"))
+    gen_v06.forge().save(os.path.join(fx, "forge.png"))
+    gen_v06.arm_table().save(os.path.join(fx, "arm_table.png"))
+    people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))
+    print(f"retratos: {len(people)}")
+    gen_v06.title_art(ASSETS).save(os.path.join(ASSETS, "ui", "title.png"))
+    more = gen_v06.news_images_v06(ASSETS, os.path.join(ASSETS, "news"))
+    print(f"jornal 0.6: {len(more)} ilustrações")
     print("assets gerados em", ASSETS)
 
 

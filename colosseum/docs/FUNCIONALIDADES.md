@@ -1,6 +1,48 @@
-# Funcionalidades — versão 0.5.0
+# Funcionalidades — versão 0.6.0
 
-## Novidades da 0.5.0
+## Novidades da 0.6.0
+
+### Menu, saves e janela
+- Menu principal com a arte do jogo (o Coliseu, o público de pé e dois gladiadores) e **3 espaços de salvamento** separados. Cada espaço mostra retrato, nível, título, dia, vitórias/derrotas e a data em que foi jogado; dá para apagar um espaço sem mexer nos outros. O save único das versões antigas vira o espaço 1.
+- A barra que ficava em cima do jogo foi removida. O jogo **abre em tela cheia**; F11 alterna para janela (com a moldura normal do Windows).
+- **Esc pausa o jogo** (a luta congela): continuar, opções, salvar e voltar ao menu, salvar e sair.
+
+### Eventos da cidade
+- **Mercador viajante**: aparece no mercado a cada 6 a 10 dias (nunca no domingo), com uma carroça na praça. Vende duas peças raras que não existem nas bancas e uma com 25% de desconto; cada peça uma vez por visita.
+- **Queda de braço**: domingo das 19h às 23h na taverna. Minijogo de tempo (apertar quando o marcador está na faixa dourada); a Força aumenta a faixa e o empurrão. Inscrição em moedas, uma disputa por domingo; quem vence leva moedas, +3 de fama e vira notícia. O campeão da taverna fica mais forte a cada vitória sua.
+- **Festival** a cada 14 dias (dias 10, 24, 38...): arquibancadas lotadas e enfeitadas com guirlandas, flâmulas e pétalas; **a fama das lutas vale em dobro**. O jornal avisa na véspera.
+
+### Torneio de sábado
+- Inscrição antecipada na arena, de domingo a sexta. No sábado, das 14h às 16h, o torneio começa: **chave com 8 lutadores** (você e 7 competidores novos perto do seu nível), quartas, semifinal e final seguidas (15 de energia e 40 minutos por luta). As outras lutas são simuladas pelo próprio motor de combate.
+- Janela com a chave atualizada a cada rodada. Prêmios por rodada alcançada; o campeão ganha moedas, fama, experiência e um troféu (equipamento raro ou épico). Quem se inscreve e não aparece perde a inscrição.
+
+### Rivais e revanche
+- Cada adversário da escada lembra das lutas contra você (vitórias, derrotas, último resultado).
+- **Revanche só quando o adversário pede**: depois de perder, às vezes (35%, no máximo um pedido a cada 7 dias) ele pede revanche no jornal. Enquanto espera, **treina** (até 3 níveis a mais). Vencer a revanche rende 50% mais; ignorar o pedido por 7 dias custa 2 de fama.
+- Adversários já derrotados não lutam de novo sem pedido. O botão de revanche instantânea saiu; ficou "Tentar de novo" contra quem você ainda não venceu.
+- **Desafiante do dia**: cada luta avulsa é contra um lutador novo da cidade, do seu nível, para continuar ganhando experiência.
+- As falas mudam: provocação de quem venceu você da última vez, falas de revanche próprias de cada adversário.
+
+### Novos tipos de gladiador (corpo a corpo)
+- Dimachaerus (uma espada em cada mão, sem escudo), Scissor (arbelas, lâmina em meia-lua no braço), Provocator (cardiophylax, gládio e scutum) e Crupellarius (todo coberto de ferro), além de mirmilão, trácio, hoplômaco, secutor e retiário entre os 16 lutadores avulsos.
+- 7 equipamentos novos no mercado: arbelas, segundo gládio, elmos de provocator, secutor e crupellarius, cardiophylax e lorica squamata.
+
+### Ferimentos, médico e ferreiro
+- Derrota por **nocaute** deixa ferido por 1 ou 2 dias; **desistência**, por 1 dia. Ferido luta com 15% menos vida e 10% menos dano (o jogo avisa antes).
+- Cura: cada noite de sono tira um dia; as termas tiram um dia; **Galeno, o médico do ludus**, cura na hora por moedas.
+- **Ferreiro** (aba no mercado): melhora armas, escudos e armaduras de +1 a +3 (custo e nível crescentes). Item melhorado vende por mais.
+
+### Visual e som
+- **Chuva forte**: gotas mais longas em duas camadas, poças que crescem no chão, respingos e ondinhas, respingos nos pés de quem anda, relâmpagos com clarão e trovão.
+- **Luta cinematográfica**: no golpe final a cena congela, entra em câmera lenta e a câmera aproxima; no fim o público fica de pé (ovação) e chovem pétalas quando você vence.
+- **Retratos em pixel art** (36 personagens + o seu, montado com sua aparência e capacete) na lista de adversários, na ficha do adversário, no desafiante do dia, na chave do torneio e no menu. Os balões de fala continuam só com texto.
+- **Balões de fala não se sobrepõem**: quando dois personagens falam ao mesmo tempo, o balão mais novo sobe acima do anterior.
+- **Enfeites do festival** posicionados entre os estandartes da arena (nunca por cima deles).
+- **Música** sintetizada em tempo real: cidade (lira e flauta), noite, taverna, arena (tambores e metais) e menu. Volume próprio e liga/desliga em Opções.
+- Oito novas manchetes e quatro ilustrações em preto e branco no jornal (festival, mercador, queda de braço e torneio).
+
+
+## Da versão 0.5.0
 
 - [x] **Idiomas:** português e inglês. Botão PT/EN na barra de título, na tela inicial e em
       Opções. Tudo é traduzido: interface, itens, adversários, habilidades, jornal, falas e
