@@ -1,8 +1,8 @@
 import type { Appearance, ItemDef, PlayerState, Slot } from '../model/types';
 import { SLOTS } from '../model/types';
 import type { CombatantSpec } from './CombatTypes';
-import { computeCombatStats, equippedItems, finalAttributes, naturalAttributes } from '../systems/AttributeSystem';
-import { skillsForLevel } from '../data/skills';
+import { computeCombatStats, equippedItems, finalAttributes, naturalAttributes, DODGE_CAP, MIN_ATTACK_INTERVAL, type CombatStats } from '../systems/AttributeSystem';
+import { autoPerks, combinedMods, skillsFromPerks } from '../systems/SkillTreeSystem';
 import { getItem } from '../data/equipment';
 import { opponentAttributes, type OpponentDef } from '../data/opponents';
 
@@ -12,11 +12,30 @@ export interface FighterVisual {
   gear: Partial<Record<Slot, ItemDef>>;
 }
 
+/** Aplica os efeitos da árvore de habilidades sobre as estatísticas base. */
+export function applyPerks(base: CombatStats, perks: string[]): CombatStats {
+  const m = combinedMods(perks);
+  const s = { ...base };
+  s.maxHp = Math.round(s.maxHp * (1 + m.hpMul));
+  s.critChance = Math.min(0.45, s.critChance + m.critAdd);
+  s.dodgeChance = Math.min(DODGE_CAP, s.dodgeChance + m.dodgeAdd);
+  s.attackInterval = Math.max(MIN_ATTACK_INTERVAL, s.attackInterval * (1 - m.intervalMul));
+  s.staminaRegen *= 1 + m.regenMul;
+  s.blockPower = Math.min(0.85, s.blockPower + m.blockAdd);
+  s.damageMul = 1 + m.damageMul;
+  s.damageTakenMul = 1 - m.damageTakenMul;
+  s.hitBonus = m.hitAdd;
+  s.blockPierce = m.blockPierce;
+  s.powerStrikeBonus = m.powerStrikeBonus;
+  s.secondWind = m.secondWind;
+  return s;
+}
+
 export function playerCombatant(p: PlayerState): { spec: CombatantSpec; visual: FighterVisual } {
   const gear = equippedItems(p);
   const attrs = finalAttributes(naturalAttributes(p), gear);
   return {
-    spec: { name: p.name, level: p.level, stats: computeCombatStats(attrs, gear), skills: skillsForLevel(p.level), strategy: p.strategy },
+    spec: { name: p.name, level: p.level, stats: applyPerks(computeCombatStats(attrs, gear), p.perks), skills: skillsFromPerks(p.perks), strategy: p.strategy },
     visual: { appearance: p.appearance, gear },
   };
 }
@@ -31,11 +50,16 @@ export function opponentGear(def: OpponentDef): Partial<Record<Slot, ItemDef>> {
   return gear;
 }
 
+export function opponentPerks(def: OpponentDef): string[] {
+  return autoPerks(def.level, def.paths, true);
+}
+
 export function opponentCombatant(def: OpponentDef): { spec: CombatantSpec; visual: FighterVisual } {
   const gear = opponentGear(def);
   const attrs = finalAttributes(opponentAttributes(def), gear);
+  const perks = opponentPerks(def);
   return {
-    spec: { name: `${def.name}, ${def.epithet}`, level: def.level, stats: computeCombatStats(attrs, gear), skills: def.skills, strategy: def.strategy },
+    spec: { name: `${def.name}, ${def.epithet}`, level: def.level, stats: applyPerks(computeCombatStats(attrs, gear), perks), skills: skillsFromPerks(perks), strategy: def.strategy },
     visual: { appearance: def.appearance, gear },
   };
 }

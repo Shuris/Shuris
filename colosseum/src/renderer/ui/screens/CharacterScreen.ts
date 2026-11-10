@@ -1,8 +1,13 @@
 // Tela do gladiador: atributos (com distribuição de pontos), estatísticas e habilidades.
-import type { AttributeKey, PlayerState, SkillId } from '../../core/model/types';
+import type { AttributeKey, PlayerState, SkillId, Slot } from '../../core/model/types';
 import { ATTRIBUTE_KEYS } from '../../core/model/types';
 import { ATTRIBUTE_INFO, MAX_ATTRIBUTE, MAX_LEVEL } from '../../core/data/gladiators';
-import { SKILLS, SKILL_ORDER } from '../../core/data/skills';
+import { SKILLS } from '../../core/data/skills';
+import { getItem } from '../../core/data/equipment';
+import { equipItem, isEquipped, unequipSlot } from '../../core/systems/EquipmentSystem';
+import { skillsFromPerks } from '../../core/systems/SkillTreeSystem';
+import { equippedSlots, itemRow } from '../components/items';
+import { sound } from '../../audio/SoundManager';
 import { allocatePoints, computeCombatStats, equippedItems, finalAttributes, gearAttributeBonus, naturalAttributes } from '../../core/systems/AttributeSystem';
 import { xpToNext } from '../../core/systems/ProgressionSystem';
 import { bar, esc, icon } from '../dom';
@@ -29,6 +34,7 @@ export class CharacterScreen implements Screen {
   readonly id = 'gladiator' as const;
   readonly title = 'Gladiador';
   readonly tip = 'Ao subir de nível você ganha 3 pontos. Use + e confirme.';
+  private tab: 'attrs' | 'gear' = 'attrs';
   private pending: Record<AttributeKey, number> = { str: 0, vit: 0, res: 0, agi: 0, prec: 0, tech: 0 };
 
   constructor(private readonly d: ScreenDeps) {}
@@ -37,7 +43,29 @@ export class CharacterScreen implements Screen {
     return ATTRIBUTE_KEYS.reduce((s, k) => s + this.pending[k], 0);
   }
 
+  onOpen(p: PlayerState): void {
+    if (p.unspentPoints > 0) this.tab = 'attrs';
+  }
+
   render(p: PlayerState): string {
+    const tabs = `<div class="subtabs"><button class="btn ${this.tab === 'attrs' ? 'active' : ''}" data-action="tab" data-id="attrs">Atributos</button><button class="btn ${this.tab === 'gear' ? 'active' : ''}" data-action="tab" data-id="gear">Equipamento</button></div>`;
+    return tabs + (this.tab === 'gear' ? this.renderGear(p) : this.renderAttrs(p));
+  }
+
+  private renderGear(p: PlayerState): string {
+    const items = p.inventory
+      .filter((i) => !isEquipped(p, i.uid))
+      .map((inv) => {
+        const item = getItem(inv.itemId);
+        return item ? itemRow(p, item, `<button class="btn btn-gold sm" data-action="equip" data-id="${inv.uid}" ${p.level < item.minLevel ? 'disabled' : ''}>Equipar</button>`) : '';
+      })
+      .join('');
+    return `<div class="slots card">${equippedSlots(p, true)}</div>
+      <h3>Guardados</h3>
+      <div class="items">${items || '<p class="dim">Nada guardado. Compre no Mercado.</p>'}</div>`;
+  }
+
+  private renderAttrs(p: PlayerState): string {
     if (this.pendingTotal() > p.unspentPoints) this.reset();
     const gear = equippedItems(p);
     const nat = naturalAttributes(p);
@@ -65,11 +93,15 @@ export class CharacterScreen implements Screen {
       return `<div class="stat"><span>${label}</span><b>${fmt(b)}</b>${Math.abs(diff) > 1e-6 ? `<em class="${good ? 'up' : 'down'}">▲</em>` : ''}</div>`;
     };
     const pct = (v: number) => `${Math.round(v * 100)}%`;
-    const skills = SKILL_ORDER.map((id) => {
-      const s = SKILLS[id];
-      const unlocked = p.level >= s.unlockLevel;
-      return `<div class="skill ${unlocked ? '' : 'locked'}" title="${esc(s.description)}">${icon(s.icon)}<div><b>${esc(s.name)}</b>${unlocked ? '' : ` <span class="tag">Nv ${s.unlockLevel}</span>`}<p>${SKILL_HINT[id]}</p></div></div>`;
-    }).join('');
+    const learned = skillsFromPerks(p.perks);
+    const skills = learned.length
+      ? learned
+          .map((id) => {
+            const s = SKILLS[id];
+            return `<div class="skill" title="${esc(s.description)}">${icon(s.icon)}<div><b>${esc(s.name)}</b><p>${SKILL_HINT[id]}</p></div></div>`;
+          })
+          .join('')
+      : '<p class="dim">Nenhuma ainda. Aprenda no Templo de Marte.</p>';
     return `
       <div class="card">
         <div class="row between"><span class="hero-name">${esc(p.name)}</span><span class="lvl big">Nível ${p.level}</span></div>
@@ -87,7 +119,7 @@ export class CharacterScreen implements Screen {
         ${stat('Ataque a cada', before.attackInterval, after.attackInterval, (v) => `${v.toFixed(1)}s`, false)}
         ${stat('Crítico', before.critChance, after.critChance, pct)}
       </div>
-      <h3>Habilidades</h3>
+      <h3>Habilidades ${p.skillPoints ? `<span class="tag gold">${p.skillPoints} p/ o Templo</span>` : ''}</h3>
       <div class="skills">${skills}</div>`;
   }
 
@@ -96,6 +128,18 @@ export class CharacterScreen implements Screen {
   }
 
   onAction(action: string, el: HTMLElement, p: PlayerState): void {
+    if (action === 'tab') {
+      this.tab = el.dataset.id === 'gear' ? 'gear' : 'attrs';
+      return this.d.actions.rerender();
+    }
+    if (action === 'equip' || action === 'unequip') {
+      const id = el.dataset.id ?? '';
+      const r = this.d.store.update((pl) => (action === 'equip' ? equipItem(pl, id) : unequipSlot(pl, id as Slot)));
+      toast(r.message, r.ok ? 'good' : 'bad');
+      sound.play(r.ok ? 'equip' : 'error');
+      this.d.actions.refreshVisual();
+      return;
+    }
     const k = el.dataset.id as AttributeKey;
     if (action === 'plus' && this.pendingTotal() < p.unspentPoints) this.pending[k]++;
     else if (action === 'minus' && this.pending[k] > 0) this.pending[k]--;

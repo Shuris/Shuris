@@ -7,6 +7,7 @@ import { isUnlocked } from '../../core/systems/ProgressionSystem';
 import { playerCombatStats } from '../../core/systems/AttributeSystem';
 import { opponentGear } from '../../core/combat/CombatantFactory';
 import { esc, icon, itemIcon } from '../dom';
+import { FIGHT_ENERGY, canFight } from '../../core/systems/CalendarSystem';
 import type { Screen, ScreenDeps } from './Screen';
 
 const STRAT_HINT: Record<StrategyId, string> = {
@@ -35,6 +36,7 @@ export class MainMenu implements Screen {
     const selUnlocked = isUnlocked(p, sel.id);
     const chance = selUnlocked ? this.d.actions.winChance(sel.id) : 0;
     const diff = difficulty(chance);
+    const fightErr = canFight(p);
     const strategies = (Object.keys(STRATEGIES) as StrategyId[])
       .map((s) => `<button class="btn strat ${p.strategy === s ? 'active' : ''}" data-action="strategy" data-id="${s}">${esc(STRATEGIES[s].name)}</button>`)
       .join('');
@@ -70,7 +72,8 @@ export class MainMenu implements Screen {
         ${p.unspentPoints > 0 ? `<button class="btn btn-gold wide" data-action="goto">+${p.unspentPoints} pontos para usar</button>` : ''}
       </div>
       <div class="fight-box">
-        <button class="btn btn-red btn-fight" data-action="fight" ${selUnlocked ? '' : 'disabled'}>LUTAR</button>
+        <button class="btn btn-red btn-fight" data-action="fight" ${selUnlocked && !fightErr ? '' : 'disabled'}>LUTAR</button>
+        <p class="hint center ${fightErr ? 'red' : ''}">${fightErr ?? `Gasta ${FIGHT_ENERGY} de energia e 2 horas.`}</p>
         <div class="row between fight-info">
           <span>vs <b>${esc(sel.name)}</b> · ${esc(arenaForOpponent(sel.id).name)}</span>
           ${selUnlocked ? `<span class="diff ${diff.cls}" title="Chance estimada de vitória">${diff.label} ${Math.round(chance * 100)}%</span>` : ''}
@@ -100,7 +103,7 @@ export class MainMenu implements Screen {
         this.d.store.update((p) => (p.settings.autoContinue = (el as HTMLInputElement).checked));
         break;
       case 'goto':
-        this.d.actions.goTab('gladiator');
+        this.d.actions.open('gladiator');
         break;
     }
   }

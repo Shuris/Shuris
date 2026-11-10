@@ -102,9 +102,9 @@ export class IntroScreen {
       <div class="story panel">
         <h2>Bem-vindo, ${esc(this.name.trim())}!</h2>
         <ul class="howto">
-          <li><b>Arena</b> — escolha o rival e clique em LUTAR. A luta é automática.</li>
-          <li><b>Gladiador</b> — use os pontos ganhos ao subir de nível.</li>
-          <li><b>Treino</b> e <b>Equipamentos</b> — fique mais forte com suas moedas.</li>
+          <li>Use o <b>Mapa</b> para ir ao Ludus (treino), Mercado, Arena, Templo e outros locais.</li>
+          <li>Treinar e lutar gastam <b>energia</b>. À noite, durma no <b>Alojamento</b>.</li>
+          <li>Fique famoso e saia no jornal <b>Acta Diurna</b>!</li>
         </ul>
         <p class="hint">Derrotas não tiram nada. Dica: compre um escudo antes da primeira luta.</p>
         <div class="row end"><button class="btn" data-i="back">Voltar</button><button class="btn btn-red" data-i="finish">Começar</button></div>

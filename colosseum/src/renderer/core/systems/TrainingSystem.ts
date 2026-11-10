@@ -1,6 +1,8 @@
 import type { PlayerState, TrainingId } from '../model/types';
 import { MAX_ATTRIBUTE } from '../data/gladiators';
 import { grantXp } from './ProgressionSystem';
+import { onLevel } from './NewsSystem';
+import { createRng, type Rng } from './rng';
 
 export const TRAINING_THRESHOLD = 100;
 export const TRAINING_PROGRESS = 25;
@@ -35,7 +37,7 @@ export interface TrainingResult {
   levelUps: number;
 }
 
-export function train(p: PlayerState, id: TrainingId): TrainingResult {
+export function train(p: PlayerState, id: TrainingId, rng: Rng = createRng(Date.now())): TrainingResult {
   const cost = trainingCost(p, id);
   if (p.coins < cost) return { ok: false, message: 'Moedas insuficientes para este treinamento.', attributeGained: false, xp: 0, levelUps: 0 };
   if (p.baseAttributes[id] + p.trainedBonus[id] >= MAX_ATTRIBUTE)
@@ -52,6 +54,7 @@ export function train(p: PlayerState, id: TrainingId): TrainingResult {
   }
   const xp = trainingXp(p);
   const levelUps = grantXp(p, xp);
+  if (levelUps) onLevel(p, rng);
   return {
     ok: true,
     message: gained ? 'O treino rendeu frutos: +1 ponto de atributo!' : `Progresso de treino +${TRAINING_PROGRESS}.`,

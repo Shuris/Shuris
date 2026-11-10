@@ -20,6 +20,8 @@ export class BootScene extends Phaser.Scene {
       this.load.spritesheet(a.crowd, `assets/backgrounds/crowd_${a.id}.png`, { frameWidth: 640, frameHeight: 360 });
     }
     this.load.image('bg:ludus', 'assets/backgrounds/ludus.png');
+    for (const k of ['home', 'market', 'temple', 'forum', 'baths']) this.load.image(`bg:loc_${k}`, `assets/backgrounds/loc_${k}.png`);
+    this.load.image('bg:map', 'assets/backgrounds/map.png');
     for (const k of ['sun', 'moon', 'cloud']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });

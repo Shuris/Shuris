@@ -4,6 +4,7 @@ import { ITEMS } from '../data/equipment';
 import { OPPONENTS, opponentIndex, type OpponentDef } from '../data/opponents';
 import { addItem } from './EquipmentSystem';
 import { pick, type Rng } from './rng';
+import { onBattle } from './NewsSystem';
 
 export const HISTORY_LIMIT = 50;
 
@@ -89,6 +90,7 @@ export function grantXp(p: PlayerState, amount: number): number {
     p.xp -= xpToNext(p.level);
     p.level++;
     p.unspentPoints += POINTS_PER_LEVEL;
+    p.skillPoints += 1;
     ups++;
   }
   if (p.level >= MAX_LEVEL) p.xp = 0;
@@ -126,6 +128,8 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
   p.stats.battles++;
   if (won) p.stats.wins++;
   else p.stats.losses++;
+  p.streak = won ? Math.max(0, p.streak) + 1 : Math.min(0, p.streak) - 1;
+  onBattle(p, opp, won, r.firstVictory, rng);
   const rec: BattleRecord = {
     id: `b${p.stats.battles}-${input.now ?? Date.now()}`,
     date: input.now ?? Date.now(),

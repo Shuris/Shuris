@@ -1,6 +1,30 @@
-# Funcionalidades — versão 0.2.0
+# Funcionalidades — versão 0.3.0
 
-## Novidades da 0.2.0
+## Novidades da 0.3.0
+
+- [x] **Mapa da cidade (Cápua)** com 7 locais, cada um com cenário próprio em pixel art:
+      Ludus (treino), Alojamento (dormir), Mercado (comprar/vender), Arena (lutar),
+      Templo de Marte (árvore de habilidades), Fórum (jornal) e Termas (recuperar energia).
+      Viajar leva 20 minutos; locais têm horário de funcionamento.
+- [x] **Sistema de dias:** calendário (Dia N), relógio e **energia**. Treinar (−12, 1h) e lutar
+      (−35, 2h) cansam; nenhuma ação passa da meia-noite. Dormir no Alojamento leva ao dia
+      seguinte às 7h com energia cheia; cochilo (+20) e termas (+40, pago) recuperam durante
+      o dia. O céu (dia/noite) segue o relógio do jogo, com transição suave.
+- [x] **Árvore de habilidades** (Templo de Marte): 3 caminhos — Marte (ataque), Mercúrio
+      (velocidade) e Minerva (defesa) —, 18 habilidades com pré-requisitos e custos de 1 a 3
+      pontos. 2 pontos no início + 1 por nível; não dá para aprender tudo. As 4 habilidades de
+      combate agora são aprendidas na árvore; há bônus passivos (dano, crítico, esquiva,
+      velocidade, acerto, vida, fôlego, bloqueio, quebra-guarda, redução de dano) e o
+      "Segundo fôlego" (recupera vida uma vez por luta). Recomeçar a árvore custa moedas.
+      Os adversários também seguem a árvore.
+- [x] **Jornal Acta Diurna:** sai toda manhã. Manchetes geradas pelos acontecimentos: estreia,
+      marcos de fama (citando o próximo rival: "é melhor Brutus tomar cuidado!"), primeiras
+      vitórias, chegada a novas arenas, sequências de vitórias/derrotas, evolução nos treinos,
+      provocações dos rivais e notícias da cidade. Edições antigas ficam no Fórum.
+- [x] Saves da versão anterior são convertidos automaticamente (recebem os pontos de habilidade do nível).
+
+
+## Da versão 0.2.0
 
 - [x] **Efeitos sonoros** sintetizados em tempo real (Web Audio): golpes, críticos, metal dos
       escudos, lâminas no ar, esquivas, passos na areia, habilidades, cansaço, corneta de

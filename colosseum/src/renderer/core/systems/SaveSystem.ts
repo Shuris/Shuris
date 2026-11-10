@@ -1,6 +1,9 @@
 // Serialização e validação dos dados salvos. Dados corrompidos ou adulterados
 // são rejeitados ou corrigidos (valores fora da faixa são limitados).
-import type { Attributes, BattleRecord, PlayerState, Slot, StrategyId, TrainingId } from '../model/types';
+import type { Attributes, BattleRecord, Edition, LocationId, NewsItem, PlayerState, Slot, StrategyId, TrainingId } from '../model/types';
+import { getPerk } from '../data/skillTree';
+import { LOCATIONS } from '../data/locations';
+import { skillPointsForLevel } from './SkillTreeSystem';
 import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
 import { MAX_ATTRIBUTE, MAX_LEVEL, ORIGINS } from '../data/gladiators';
 import { getItem } from '../data/equipment';
@@ -166,9 +169,9 @@ export function validatePlayer(p: Obj): ParseResult {
       tipsSeen: Array.isArray(settings.tipsSeen) ? settings.tipsSeen.filter((s): s is string => typeof s === 'string').slice(0, 50) : [],
       volume: typeof settings.volume === 'number' && Number.isFinite(settings.volume) ? clamp(settings.volume, 0, 1) : 0.7,
       muted: settings.muted === true,
-      dayNight: settings.dayNight === 'real' ? 'real' : 'cycle',
     },
     nextUid: Math.max(int(p.nextUid, maxUid + 1, 1, 1e9, w, 'nextUid'), maxUid + 1),
+    ...calendarAndTree(p, w),
     createdAt: int(p.createdAt, Date.now(), 0, 8.64e15, w, 'createdAt'),
     updatedAt: int(p.updatedAt, Date.now(), 0, 8.64e15, w, 'updatedAt'),
   };
@@ -177,6 +180,52 @@ export function validatePlayer(p: Obj): ParseResult {
     player.equipment.mainHand = `i${player.nextUid++}`;
   }
   return { ok: true, player, warnings: w };
+}
+
+const NEWS_KINDS = ['fame', 'victory', 'defeat', 'streak', 'level', 'arena', 'rival', 'champion', 'debut', 'city'];
+
+function newsItems(v: unknown): NewsItem[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((n): n is Obj => isObj(n) && typeof n.headline === 'string' && typeof n.body === 'string')
+    .slice(0, 12)
+    .map((n, i) => ({
+      id: typeof n.id === 'string' ? n.id.slice(0, 40) : `n${i}`,
+      kind: (NEWS_KINDS.includes(n.kind as string) ? n.kind : 'city') as NewsItem['kind'],
+      headline: (n.headline as string).slice(0, 140),
+      body: (n.body as string).slice(0, 400),
+    }));
+}
+
+/** Campos da versão 2 (calendário, energia, árvore, jornal). Saves v1 recebem valores iniciais. */
+function calendarAndTree(p: Obj, w: string[]) {
+  const level = int(p.level, 1, 1, MAX_LEVEL, w, 'level');
+  const v1 = p.skillPoints === undefined && p.perks === undefined;
+  const perks = Array.isArray(p.perks) ? [...new Set(p.perks.filter((id): id is string => typeof id === 'string' && !!getPerk(id)))] : [];
+  const spent = perks.reduce((s, id) => s + (getPerk(id)?.cost ?? 0), 0);
+  const maxPoints = skillPointsForLevel(level);
+  const news = isObj(p.news) ? p.news : {};
+  const editions: Edition[] = Array.isArray(news.editions)
+    ? news.editions
+        .filter((e): e is Obj => isObj(e))
+        .slice(0, 30)
+        .map((e) => ({ day: int(e.day, 1, 1, 1e7, w, 'news.day'), items: newsItems(e.items), read: e.read === true }))
+    : [];
+  return {
+    day: v1 ? 1 : int(p.day, 1, 1, 1e7, w, 'day'),
+    minutes: v1 ? 8 * 60 : int(p.minutes, 8 * 60, 0, 26 * 60, w, 'minutes'),
+    energy: v1 ? 100 : int(p.energy, 100, 0, 100, w, 'energy'),
+    location: (LOCATIONS.some((l) => l.id === p.location) ? p.location : 'home') as LocationId,
+    perks,
+    skillPoints: v1 ? maxPoints : clamp(int(p.skillPoints, 0, 0, 100, w, 'skillPoints'), 0, Math.max(0, maxPoints - spent)),
+    respecs: v1 ? 0 : int(p.respecs, 0, 0, 1000, w, 'respecs'),
+    streak: v1 ? 0 : int(p.streak, 0, -1000, 1000, w, 'streak'),
+    news: {
+      editions,
+      pending: isObj(p.news) ? newsItems(news.pending) : [],
+      milestones: Array.isArray(news.milestones) ? news.milestones.filter((m): m is string => typeof m === 'string').slice(0, 100) : [],
+    },
+  };
 }
 
 function isStrategy(v: unknown): v is StrategyId {

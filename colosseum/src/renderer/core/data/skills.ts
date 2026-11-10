@@ -5,7 +5,6 @@ export interface SkillDef {
   name: string;
   description: string;
   trigger: string;
-  unlockLevel: number;
   cooldown: number; // segundos
   staminaCost: number;
   icon: string;
@@ -13,25 +12,25 @@ export interface SkillDef {
 
 export const SKILLS: Record<SkillId, SkillDef> = {
   power_strike: {
-    id: 'power_strike', name: 'Golpe poderoso', unlockLevel: 1, cooldown: 9, staminaCost: 24,
+    id: 'power_strike', name: 'Golpe poderoso', cooldown: 9, staminaCost: 24,
     description: 'Ataque preparado com o peso do corpo. Causa muito mais dano e consome mais resistência. A Técnica aumenta o dano.',
     trigger: 'Usado quando há fôlego de sobra (resistência acima de 45%).',
     icon: 'skill_power_strike',
   },
   iron_guard: {
-    id: 'iron_guard', name: 'Defesa reforçada', unlockLevel: 1, cooldown: 18, staminaCost: 14,
+    id: 'iron_guard', name: 'Defesa reforçada', cooldown: 18, staminaCost: 14,
     description: 'Fecha a guarda e reduz o dano recebido por alguns segundos. A Técnica aumenta a redução e a duração.',
     trigger: 'Usado quando a vida cai abaixo de 65% e o adversário está próximo.',
     icon: 'skill_iron_guard',
   },
   quick_strike: {
-    id: 'quick_strike', name: 'Ataque rápido', unlockLevel: 3, cooldown: 5, staminaCost: 8,
+    id: 'quick_strike', name: 'Ataque rápido', cooldown: 5, staminaCost: 8,
     description: 'Estocada veloz com preparação e recuperação curtas. Dano um pouco menor.',
     trigger: 'Usado quando o adversário se recupera de um golpe, está atordoado ou exausto.',
     icon: 'skill_quick_strike',
   },
   counter: {
-    id: 'counter', name: 'Contra-ataque', unlockLevel: 6, cooldown: 7, staminaCost: 8,
+    id: 'counter', name: 'Contra-ataque', cooldown: 7, staminaCost: 8,
     description: 'Após bloquear ou esquivar, responde imediatamente com dano adicional. Não pode ser bloqueado nem esquivado.',
     trigger: 'Chance após um bloqueio ou esquiva bem-sucedidos (maior com Técnica).',
     icon: 'skill_counter',
@@ -39,10 +38,6 @@ export const SKILLS: Record<SkillId, SkillDef> = {
 };
 
 export const SKILL_ORDER: SkillId[] = ['power_strike', 'iron_guard', 'quick_strike', 'counter'];
-
-export function skillsForLevel(level: number): SkillId[] {
-  return SKILL_ORDER.filter((s) => SKILLS[s].unlockLevel <= level);
-}
 
 export interface StrategyDef {
   id: StrategyId;

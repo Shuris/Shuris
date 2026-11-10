@@ -15,7 +15,7 @@ export const MIN_HIT = 0.5;
 export const MAX_HIT = 0.98;
 
 export function hitChance(attacker: CombatStats, defender: CombatStats, fatigued: boolean, defenderExhausted: boolean): number {
-  let c = 0.85 + (attacker.precision - defender.precision) * 0.005;
+  let c = 0.85 + (attacker.precision - defender.precision) * 0.005 + attacker.hitBonus;
   if (fatigued) c -= 0.05;
   if (defenderExhausted) c += 0.1;
   return clamp(c, MIN_HIT, MAX_HIT);
@@ -27,9 +27,10 @@ export function dodgeChance(defender: CombatStats, strategy: StrategyDef, active
   return Math.min(DODGE_CAP, defender.dodgeChance * 0.5);
 }
 
-export function blockEfficiency(defender: CombatStats, strategy: StrategyDef, vsPowerStrike: boolean): number {
+export function blockEfficiency(defender: CombatStats, strategy: StrategyDef, vsPowerStrike: boolean, pierce = 0): number {
   let b = defender.blockPower + strategy.blockBonus;
   if (vsPowerStrike) b *= 0.6;
+  b *= 1 - pierce;
   return clamp(b, 0, 0.85);
 }
 
@@ -48,13 +49,14 @@ export interface DamageInput {
 export function computeDamage(i: DamageInput): number {
   let d = i.attacker.baseDamage * DAMAGE_PACE;
   d *= 0.88 + i.variance * 0.24;
-  d *= i.damageMul * i.attackerStrategy.damageMul;
+  d *= i.damageMul * i.attackerStrategy.damageMul * i.attacker.damageMul;
   if (i.fatigued) d *= 0.85;
   if (i.crit) d *= CRIT_MULTIPLIER;
   const def = Math.max(0, i.defender.defense - i.attacker.armorPierce);
   d *= 1 - Math.min(0.7, def / (def + 100));
   d *= 1 - i.blockEff;
   d *= i.fortifyMul;
+  d *= i.defender.damageTakenMul;
   return Math.max(1, Math.round(d));
 }
 

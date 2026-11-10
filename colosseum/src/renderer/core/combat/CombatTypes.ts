@@ -74,6 +74,7 @@ export interface FighterState {
   fortifyMul: number;
   passiveTime: number;
   counterQueued: boolean;
+  secondWindUsed: boolean;
   counters: FighterCounters;
 }
 
@@ -97,6 +98,7 @@ export type CombatEvent =
   | { type: 'skill'; t: number; side: Side; skill: SkillId }
   | { type: 'buffEnd'; t: number; side: Side }
   | { type: 'exhausted'; t: number; side: Side }
+  | { type: 'secondWind'; t: number; side: Side; heal: number }
   | { type: 'end'; t: number; winner: Side; reason: 'ko' | 'decision' | 'forfeit' };
 
 export interface FighterSummary {

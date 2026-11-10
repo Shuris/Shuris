@@ -5,12 +5,16 @@ Você desenvolve **um único gladiador** numa carreira permanente: treina, distr
 compra e equipa armas e proteções, escolhe a estratégia — e assiste às lutas, que acontecem
 **automaticamente**, em tempo real, com animações e efeitos sonoros.
 
-> Versão: **0.2.0** · Windows 10/11 · Português (Brasil) · Funciona offline.
+> Versão: **0.3.0** · Windows 10/11 · Português (Brasil) · Funciona offline.
 
 ![Arena](docs/img/arena.png)
 
 ## Destaques
 
+- **Cidade de Cápua com mapa**: Ludus, Alojamento, Mercado, Arena, Templo de Marte, Fórum e Termas.
+- **Sistema de dias**: relógio, energia, horários de funcionamento; durma para recuperar e lutar no dia seguinte.
+- **Árvore de habilidades** com três caminhos (Marte, Mercúrio e Minerva).
+- **Jornal Acta Diurna**: manchetes sobre sua carreira, fama e rivais toda manhã.
 - Combate automático com distância, alcance, acerto, esquiva, bloqueio, cansaço, críticos e 4 habilidades.
 - 3 estratégias, 6 atributos, nível até 30, 27 equipamentos visíveis no personagem.
 - **5 anfiteatros** (um a cada dois adversários): Cápua, Pompeia, Verona, Leptis Magna e o Coliseu de Roma.
@@ -23,8 +27,8 @@ Detalhes em [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
 
 ## Instalação (jogador)
 
-Execute `Colosseum-Setup-0.2.0.exe` e abra o jogo pelo atalho. Há também a versão portátil
-`Colosseum-Portatil-0.2.0.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
+Execute `Colosseum-Setup-0.3.0.exe` e abra o jogo pelo atalho. Há também a versão portátil
+`Colosseum-Portatil-0.3.0.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 ## Desenvolvimento
 

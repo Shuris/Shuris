@@ -2,17 +2,20 @@
 // a camada visual (Phaser), o som e a janela desktop (bridge/IPC).
 import type { WindowState } from '../../shared/ipc';
 import { GameStore } from '../core/GameStore';
-import type { Appearance, PlayerState, TrainingId } from '../core/model/types';
+import type { Appearance, LocationId, PlayerState, TrainingId } from '../core/model/types';
 import { CombatEngine } from '../core/combat/CombatEngine';
 import type { CombatResult } from '../core/combat/CombatTypes';
 import { opponentCombatant, playerCombatant, type FighterVisual } from '../core/combat/CombatantFactory';
 import { getOpponent, type OpponentDef } from '../core/data/opponents';
 import { arenaForOpponent } from '../core/data/arenas';
+import { getLocation, isOpen } from '../core/data/locations';
 import { getItem } from '../core/data/equipment';
 import { applyBattleResult, isUnlocked, xpToNext } from '../core/systems/ProgressionSystem';
 import { createPlayer } from '../core/systems/PlayerFactory';
 import { train as doTrain, trainingCost } from '../core/systems/TrainingSystem';
-import { clockLabel, phaseName, timeOfDay } from '../core/systems/TimeOfDay';
+import { applyFight, applyTraining, bathe, canFight, canTrain, canTravel, nap, sleep, travel } from '../core/systems/CalendarSystem';
+import { publish, unreadCount } from '../core/systems/NewsSystem';
+import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
 import { createRng, randomSeed } from '../core/systems/rng';
 import { MAX_LEVEL } from '../core/data/gladiators';
 import { bridge, isElectron } from '../platform/bridge';
@@ -22,19 +25,26 @@ import { $, bar, esc, icon } from './dom';
 import { closeModal, confirmModal, hasModal, openModal, toast } from './components/feedback';
 import { BattleHud } from './screens/BattleHud';
 import { resultHtml } from './screens/BattleResultScreen';
+import { BathsScreen } from './screens/BathsScreen';
 import { CharacterScreen } from './screens/CharacterScreen';
+import { ForumScreen, newspaperHtml } from './screens/ForumScreen';
 import { HistoryScreen } from './screens/HistoryScreen';
+import { HomeScreen } from './screens/HomeScreen';
 import { IntroScreen } from './screens/IntroScreen';
-import { InventoryScreen } from './screens/InventoryScreen';
 import { MainMenu } from './screens/MainMenu';
+import { MapScreen } from './screens/MapScreen';
+import { MarketScreen } from './screens/MarketScreen';
+import { TempleScreen } from './screens/TempleScreen';
 import { TrainingScreen } from './screens/TrainingScreen';
-import type { AppActions, Screen, TabId } from './screens/Screen';
+import type { AppActions, Screen, ScreenId } from './screens/Screen';
 
 interface BattleCtx {
   opponent: OpponentDef;
   strategy: PlayerState['strategy'];
   engine: CombatEngine | null;
 }
+
+const LOCATION_IDS: LocationId[] = ['ludus', 'home', 'market', 'arena', 'temple', 'forum', 'baths'];
 
 export class App implements AppActions {
   readonly store = new GameStore({
@@ -44,13 +54,13 @@ export class App implements AppActions {
   });
   readonly sound = sound;
   private view!: GameView;
-  private screens: Record<TabId, Screen>;
-  private tab: TabId = 'arena';
+  private screens: Record<ScreenId, Screen>;
+  private screen: ScreenId = 'home';
   private win: WindowState = { maximized: false, fullscreen: false };
   private battle: BattleCtx | null = null;
   private hud!: BattleHud;
   private intro: IntroScreen | null = null;
-  private trainingBusy = false;
+  private busy = false;
   private autoTimer: ReturnType<typeof setInterval> | null = null;
   private autoPending = false;
   private chanceCache = new Map<string, number>();
@@ -59,9 +69,14 @@ export class App implements AppActions {
     const deps = { store: this.store, actions: this as AppActions };
     this.screens = {
       arena: new MainMenu(deps),
+      ludus: new TrainingScreen(deps),
+      market: new MarketScreen(deps),
+      home: new HomeScreen(deps),
+      temple: new TempleScreen(deps),
+      forum: new ForumScreen(deps),
+      baths: new BathsScreen(deps),
+      map: new MapScreen(deps),
       gladiator: new CharacterScreen(deps),
-      training: new TrainingScreen(deps),
-      equipment: new InventoryScreen(deps),
       history: new HistoryScreen(),
     };
   }
@@ -75,6 +90,8 @@ export class App implements AppActions {
     });
     this.bindShell();
     this.view = new GameView($('#game'));
+    this.view.time = () => (this.store.hasPlayer ? dayFraction(this.store.state.minutes) : 0.4);
+    this.view.minutes = () => (this.store.hasPlayer ? this.store.state.minutes : 480);
     this.store.onSaveError = (msg) => toast(`Falha ao salvar: ${msg}`, 'bad', 6000);
     this.store.subscribe(() => this.onStateChange());
 
@@ -85,7 +102,7 @@ export class App implements AppActions {
 
     if (loaded.player) {
       this.applySettings();
-      this.enterHub();
+      this.enterLocation();
       toast(loaded.notice ?? `Bem-vindo de volta, ${loaded.player.name}!`, loaded.notice ? 'info' : 'gold', 5000);
     } else {
       if (loaded.notice) toast(loaded.notice, 'bad', 8000);
@@ -102,24 +119,15 @@ export class App implements AppActions {
         void this.setFullscreen(!this.win.fullscreen);
       }
     });
-    // som de clique em todos os botões
     document.addEventListener('click', (e) => {
       const b = (e.target as HTMLElement).closest('button');
       if (b && !b.disabled) sound.play('click');
     });
     new ResizeObserver(() => this.updateLayout()).observe($('#stage'));
-    setInterval(() => this.renderClock(), 1000);
     (window as unknown as { __colosseum: App }).__colosseum = this; // usado pelos testes E2E
   }
 
   private shellHtml(): string {
-    const tabs: Array<[TabId, string]> = [
-      ['arena', 'Arena'],
-      ['gladiator', 'Gladiador'],
-      ['training', 'Treino'],
-      ['equipment', 'Itens'],
-      ['history', 'Histórico'],
-    ];
     return `
       <header id="titlebar">
         <img src="assets/ui/app-icon.png" alt="" class="tb-icon"><span class="tb-title">COLOSSEUM</span>
@@ -135,7 +143,11 @@ export class App implements AppActions {
         <div id="game"></div>
         <div id="statusbar" hidden></div>
         <aside id="side" hidden>
-          <nav id="tabs">${tabs.map(([id, n]) => `<button class="tab" data-tab="${id}">${n}</button>`).join('')}</nav>
+          <nav id="nav">
+            <button class="tab" data-nav="map">Mapa</button>
+            <button class="tab" data-nav="gladiator">Gladiador</button>
+            <button class="tab" data-nav="history">Histórico</button>
+          </nav>
           <section id="panel" class="panel"></section>
         </aside>
         <div id="hud" hidden></div>
@@ -163,9 +175,12 @@ export class App implements AppActions {
       if (!(e.target as HTMLElement).closest('button')) bridge.win.toggleMaximize();
     });
     $('#exit-fullscreen').addEventListener('click', () => void this.setFullscreen(false));
-    $('#tabs').addEventListener('click', (e) => {
-      const t = (e.target as HTMLElement).closest('[data-tab]')?.getAttribute('data-tab') as TabId | null;
-      if (t) this.goTab(t);
+    $('#nav').addEventListener('click', (e) => {
+      const t = (e.target as HTMLElement).closest('[data-nav]')?.getAttribute('data-nav') as ScreenId | null;
+      if (!t) return;
+      // clicar de novo na ficha aberta volta para o local atual
+      if (t === this.screen && t !== 'map') this.open(this.store.state.location);
+      else this.open(t);
     });
     const panel = $('#panel');
     const handle = (e: Event) => {
@@ -178,7 +193,8 @@ export class App implements AppActions {
         this.store.update((p) => p.settings.tipsSeen.push(id));
         return;
       }
-      this.screens[this.tab].onAction(el.dataset.action ?? '', el, this.store.state);
+      if (el.dataset.action === 'back') return this.open(this.store.state.location);
+      this.screens[this.screen].onAction(el.dataset.action ?? '', el, this.store.state);
     };
     panel.addEventListener('click', handle);
     panel.addEventListener('change', handle);
@@ -205,7 +221,6 @@ export class App implements AppActions {
     const st = this.store.state.settings;
     sound.setVolume(st.volume);
     sound.setMuted(st.muted);
-    this.view.dayNight = st.dayNight;
     const btn = this.root.querySelector('[data-w="sound"]');
     if (btn) {
       btn.textContent = st.muted ? 'Som: não' : 'Som: sim';
@@ -214,10 +229,7 @@ export class App implements AppActions {
   }
 
   private toggleMute(): void {
-    if (!this.store.hasPlayer) {
-      sound.setMuted(false);
-      return;
-    }
+    if (!this.store.hasPlayer) return;
     this.store.update((p) => (p.settings.muted = !p.settings.muted));
     toast(this.store.state.settings.muted ? 'Som desligado' : 'Som ligado', 'info', 1500);
   }
@@ -230,9 +242,7 @@ export class App implements AppActions {
     const create = this.root.querySelector('.intro-create .create, .intro-story .story') as HTMLElement | null;
     if (!this.battle && !side.hidden) right = stage.right - side.getBoundingClientRect().left + 8;
     else if (create) right = stage.right - create.getBoundingClientRect().left + 8;
-    const top = this.battle ? 80 : 0;
-    const bottom = this.battle ? 60 : 0;
-    this.view.setLayout({ right, top, bottom });
+    this.view.setLayout({ right, top: this.battle ? 80 : 0, bottom: this.battle ? 60 : 0 });
   }
 
   private openOptions(): void {
@@ -243,8 +253,7 @@ export class App implements AppActions {
         ${
           st
             ? `<div class="opt-row"><span>Volume</span><input type="range" min="0" max="100" step="5" value="${Math.round(st.volume * 100)}" data-o="volume"></div>
-        <div class="opt-row"><span>Som</span><button class="btn sm ${st.muted ? '' : 'active'}" data-o="unmute">Ligado</button><button class="btn sm ${st.muted ? 'active' : ''}" data-o="mute">Desligado</button></div>
-        <div class="opt-row"><span>Dia e noite</span><button class="btn sm ${st.dayNight === 'cycle' ? 'active' : ''}" data-o="cycle">Rápido (10 min)</button><button class="btn sm ${st.dayNight === 'real' ? 'active' : ''}" data-o="real">Hora do PC</button></div>`
+        <div class="opt-row"><span>Som</span><button class="btn sm ${st.muted ? '' : 'active'}" data-o="unmute">Ligado</button><button class="btn sm ${st.muted ? 'active' : ''}" data-o="mute">Desligado</button></div>`
             : ''
         }
         <div class="opt-row"><span>Tela</span><button class="btn sm" data-o="fullscreen">${this.win.fullscreen ? 'Sair da tela cheia' : 'Tela cheia (F11)'}</button></div>
@@ -271,8 +280,11 @@ export class App implements AppActions {
           closeModal();
           return void this.setFullscreen(!this.win.fullscreen);
         }
-        if (a === 'mute' || a === 'unmute') this.store.update((p) => (p.settings.muted = a === 'mute'));
-        if (a === 'cycle' || a === 'real') this.store.update((p) => (p.settings.dayNight = a));
+        if (a === 'mute' || a === 'unmute') {
+          this.store.update((p) => (p.settings.muted = a === 'mute'));
+          closeModal();
+          return this.openOptions();
+        }
         if (a === 'reset') {
           const ok = await confirmModal('Apagar tudo?', 'O gladiador e todo o progresso serão apagados.', 'Apagar');
           if (!ok) return;
@@ -283,11 +295,6 @@ export class App implements AppActions {
           $('#side').hidden = true;
           $('#statusbar').hidden = true;
           this.startIntro();
-          return;
-        }
-        if (a !== 'reset') {
-          closeModal();
-          this.openOptions();
         }
       });
     });
@@ -309,34 +316,129 @@ export class App implements AppActions {
         this.intro?.close();
         this.intro = null;
         this.applySettings();
-        this.enterHub();
+        this.enterLocation();
         sound.play('levelup');
-        toast(`${p.name} chegou ao ludus!`, 'gold');
+        toast(`${p.name} chegou a Cápua!`, 'gold');
+        setTimeout(() => this.readEdition(p.day), 900);
       },
     );
-    this.view.showHub(preview({ skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 }));
+    this.view.showLocation({ visual: preview({ skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 }), location: 'ludus', bg: 'bg:ludus', outdoor: true });
     this.intro.start();
   }
 
-  private enterHub(): void {
-    this.view.showHub(playerCombatant(this.store.state).visual);
+  // ---------------------------------------------------------------- locais e mapa
+  /** Mostra o local atual do gladiador (cena + painel). */
+  private enterLocation(): void {
+    const p = this.store.state;
+    const loc = getLocation(p.location);
+    const visual = playerCombatant(p).visual;
+    if (loc.id === 'arena') {
+      const arena = arenaForOpponent(p.selectedOpponent);
+      this.view.showLocation({ visual, location: 'arena', bg: arena.bg, crowd: arena.crowd, outdoor: true });
+    } else {
+      this.view.showLocation({ visual, location: loc.id, bg: loc.bg, outdoor: loc.outdoor });
+    }
     $('#side').hidden = false;
     $('#statusbar').hidden = false;
     this.root.classList.remove('in-battle');
-    this.goTab(this.tab);
+    this.setScreen(loc.id);
     this.renderStatus();
     requestAnimationFrame(() => this.updateLayout());
   }
 
-  // ---------------------------------------------------------------- AppActions
-  get training(): boolean {
-    return this.trainingBusy;
+  private setScreen(id: ScreenId): void {
+    this.screen = id;
+    this.root.classList.toggle('on-map', id === 'map');
+    if (this.store.hasPlayer) this.screens[id].onOpen?.(this.store.state);
+    this.root.querySelectorAll('[data-nav]').forEach((t) => t.classList.toggle('active', t.getAttribute('data-nav') === id));
+    this.renderPanel(true);
   }
 
-  goTab(id: TabId): void {
-    this.tab = id;
-    this.root.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.getAttribute('data-tab') === id));
-    this.renderPanel(true);
+  open(id: ScreenId): void {
+    if (!this.store.hasPlayer || this.battle) return;
+    const p = this.store.state;
+    if (id === 'map') {
+      this.view.showMap(p.location, (to) => this.travel(to));
+      this.setScreen('map');
+      return;
+    }
+    if ((LOCATION_IDS as string[]).includes(id)) {
+      if (id !== p.location) return this.travel(id as LocationId);
+      if (this.view.scene !== 'hub') return this.enterLocation();
+      return this.setScreen(id);
+    }
+    this.setScreen(id);
+  }
+
+  travel(to: LocationId): void {
+    if (this.busy || this.battle) return;
+    const p = this.store.state;
+    if (to === p.location) return this.enterLocation();
+    const err = canTravel(p, to);
+    if (err) {
+      sound.play('error');
+      return toast(err, 'bad');
+    }
+    this.busy = true;
+    if (this.view.scene !== 'map') this.view.showMap(p.location, (t) => this.travel(t));
+    sound.play('step');
+    this.view.travelOnMap(to, () => {
+      this.busy = false;
+      this.store.update((pl) => travel(pl, to));
+      const loc = getLocation(to);
+      if (!isOpen(loc, this.store.state.minutes)) toast(`${loc.name} está fechado agora.`, 'info');
+      this.enterLocation();
+    });
+  }
+
+  sleep(): void {
+    if (this.busy || this.store.state.location !== 'home') return;
+    this.busy = true;
+    const apply = () => {
+      const edition = this.store.update((p) => {
+        sleep(p);
+        return publish(p, createRng(randomSeed()));
+      });
+      void this.store.flush();
+      this.busy = false;
+      this.renderPanel();
+      if (edition) setTimeout(() => this.readEdition(edition.day), 1800);
+    };
+    if (!this.view.playSleep(this.store.state.day + 1, apply)) apply();
+  }
+
+  nap(): void {
+    const err = this.store.update((p) => nap(p));
+    if (err) toast(err, 'bad');
+    else toast('Você cochilou e recuperou energia.', 'good');
+  }
+
+  bathe(): void {
+    const err = this.store.update((p) => bathe(p));
+    if (err) {
+      sound.play('error');
+      toast(err, 'bad');
+    } else {
+      sound.play('coin');
+      toast('Banho relaxante: energia recuperada!', 'good');
+    }
+  }
+
+  readEdition(day: number): void {
+    if (!this.store.hasPlayer) return;
+    const ed = this.store.state.news.editions.find((e) => e.day === day);
+    if (!ed) return;
+    if (!ed.read) this.store.update(() => (ed.read = true));
+    sound.play('equip');
+    const m = openModal(newspaperHtml(ed), { cls: 'modal-news' });
+    m.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('[data-np="close"]')) closeModal();
+    });
+  }
+
+  // ---------------------------------------------------------------- AppActions
+  get training(): boolean {
+    return this.busy;
   }
 
   rerender(): void {
@@ -365,10 +467,20 @@ export class App implements AppActions {
   }
 
   train(id: TrainingId): void {
-    if (this.trainingBusy || this.battle) return;
+    if (this.busy || this.battle) return;
+    const p = this.store.state;
+    const err = canTrain(p) ?? (p.coins < trainingCost(p, id) ? 'Moedas insuficientes.' : null);
+    if (err) {
+      sound.play('error');
+      return toast(err, 'bad');
+    }
     const apply = () => {
-      this.trainingBusy = false;
-      const r = this.store.update((p) => doTrain(p, id));
+      this.busy = false;
+      const r = this.store.update((pl) => {
+        const res = doTrain(pl, id);
+        if (res.ok) applyTraining(pl);
+        return res;
+      });
       if (!r.ok) {
         toast(r.message, 'bad');
         sound.play('error');
@@ -380,26 +492,24 @@ export class App implements AppActions {
       if (r.attributeGained) sound.play('levelup');
       if (r.levelUps) {
         sound.play('levelup');
-        toast(`Nível ${this.store.state.level}! +${r.levelUps * 3} pontos`, 'gold', 5000);
+        toast(`Nível ${this.store.state.level}! +${r.levelUps * 3} pontos e +${r.levelUps} p/ o Templo`, 'gold', 5000);
       }
     };
-    if (this.store.state.coins < trainingCost(this.store.state, id)) {
-      sound.play('error');
-      return toast('Moedas insuficientes.', 'bad');
-    }
-    this.trainingBusy = true;
+    this.busy = true;
     this.renderPanel();
     if (!this.view.playTraining(id, apply)) apply();
   }
 
   // ---------------------------------------------------------------- batalha
   startBattle(opponentId?: string): void {
-    if (this.battle || this.trainingBusy || !this.store.hasPlayer) return;
+    if (this.battle || this.busy || !this.store.hasPlayer) return;
     const p = this.store.state;
     const def = getOpponent(opponentId ?? p.selectedOpponent);
-    if (!def || !isUnlocked(p, def.id)) {
-      toast('Adversário indisponível.', 'bad');
-      return;
+    if (!def || !isUnlocked(p, def.id)) return toast('Adversário indisponível.', 'bad');
+    const err = canFight(p);
+    if (err) {
+      sound.play('error');
+      return toast(err, 'bad', 5000);
     }
     this.cancelAuto();
     closeModal();
@@ -443,15 +553,17 @@ export class App implements AppActions {
     if (!ctx) return;
     const won = res.winner === 0;
     const rng = createRng(randomSeed());
-    const rw = this.store.update((p) =>
-      applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng }),
-    );
+    const rw = this.store.update((p) => {
+      applyFight(p);
+      return applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng });
+    });
     this.chanceCache.clear();
     void this.store.flush();
     if (rw.levelUps) setTimeout(() => sound.play('levelup'), 600);
     if (rw.coins) sound.play('coin');
-    const auto = this.store.state.settings.autoContinue;
-    const m = openModal(resultHtml(res, rw, ctx.opponent, auto), {
+    const p = this.store.state;
+    const auto = p.settings.autoContinue && !canFight(p);
+    const m = openModal(resultHtml(res, rw, ctx.opponent, auto, p.energy), {
       cls: 'modal-result',
       onClose: () => {
         if (this.battle && !this.autoPending) this.exitBattle();
@@ -463,13 +575,19 @@ export class App implements AppActions {
       if (a === 'again') this.rematch(ctx.opponent.id);
       else if (a === 'points') {
         closeModal();
-        this.goTab('gladiator');
+        this.open('gladiator');
       } else closeModal();
     });
     if (auto) this.scheduleAuto(m, ctx.opponent.id);
+    else if (p.settings.autoContinue) toast(canFight(p) ?? '', 'info', 5000);
   }
 
   private rematch(opponentId: string): void {
+    const err = canFight(this.store.state);
+    if (err) {
+      sound.play('error');
+      return toast(err, 'bad', 5000);
+    }
     this.cancelAuto();
     this.autoPending = true;
     closeModal();
@@ -485,8 +603,8 @@ export class App implements AppActions {
     const tick = () => {
       if (label) label.textContent = `Próxima luta em ${left}s`;
       if (left-- <= 0) {
+        this.cancelAuto();
         if (this.store.state.settings.autoContinue) this.rematch(opponentId);
-        else this.cancelAuto();
       }
     };
     tick();
@@ -502,38 +620,42 @@ export class App implements AppActions {
     this.cancelAuto();
     this.battle = null;
     this.hud.hide();
-    if (this.store.hasPlayer) this.enterHub();
+    if (this.store.hasPlayer) this.enterLocation();
   }
 
   // ---------------------------------------------------------------- renderização
   private onStateChange(): void {
     this.applySettings();
     this.renderStatus();
+    this.view?.refreshMap();
     if (!this.battle) this.renderPanel();
   }
 
   private renderStatus(): void {
     if (!this.store.hasPlayer) return;
     const p = this.store.state;
+    const t = dayFraction(p.minutes);
+    const unread = unreadCount(p);
+    const late = p.minutes >= 22 * 60;
     $('#statusbar').innerHTML = `
       <div class="status panel">
         <div class="row between"><b class="st-name">${esc(p.name)}</b><span class="lvl">Nível ${p.level}</span></div>
         ${p.level < MAX_LEVEL ? bar(p.xp, xpToNext(p.level), 'xp') : '<div class="tiny gold">Nível máximo</div>'}
-        <div class="row st-res"><span title="Moedas">${icon('coin')} ${p.coins}</span><span title="Fama">${icon('laurel')} ${p.reputation}</span>
-        <span class="clock" id="clock"></span></div>
-        ${p.unspentPoints ? `<button class="btn btn-gold wide pts" data-goto="gladiator">+${p.unspentPoints} pontos</button>` : ''}
+        <div class="row between st-day"><span>Dia ${p.day}</span><span id="clock">${phaseName(t)} ${clockLabel(t)}</span></div>
+        <div class="energy-row"><span>Energia</span>${bar(p.energy, 100, 'energy')}</div>
+        <div class="row st-res"><span title="Moedas">${icon('coin')} ${p.coins}</span><span title="Fama">${icon('laurel')} ${p.reputation}</span></div>
+        ${late ? '<div class="late">Está tarde: vá dormir no Alojamento.</div>' : ''}
+        ${unread ? '<button class="btn btn-dark wide sm" data-st="news">Jornal novo!</button>' : ''}
+        ${p.unspentPoints ? `<button class="btn btn-gold wide sm" data-st="points">+${p.unspentPoints} pontos de atributo</button>` : ''}
+        ${p.skillPoints ? `<button class="btn btn-gold wide sm" data-st="temple">${p.skillPoints} ponto(s) de habilidade</button>` : ''}
       </div>`;
-    $('#statusbar')
-      .querySelector('[data-goto]')
-      ?.addEventListener('click', () => this.goTab('gladiator'));
-    this.renderClock();
-  }
-
-  private renderClock(): void {
-    const el = this.root.querySelector('#clock');
-    if (!el || !this.store.hasPlayer) return;
-    const t = timeOfDay(this.store.state.settings.dayNight);
-    el.textContent = `${phaseName(t)} ${clockLabel(t)}`;
+    const sb = $('#statusbar');
+    sb.querySelector('[data-st="points"]')?.addEventListener('click', () => this.open('gladiator'));
+    sb.querySelector('[data-st="temple"]')?.addEventListener('click', () => this.open('temple'));
+    sb.querySelector('[data-st="news"]')?.addEventListener('click', () => {
+      const ed = p.news.editions.find((e) => !e.read);
+      if (ed) this.readEdition(ed.day);
+    });
   }
 
   private renderPanel(resetScroll = false): void {
@@ -541,11 +663,15 @@ export class App implements AppActions {
     const panel = $('#panel');
     const scroll = resetScroll ? 0 : panel.scrollTop;
     const p = this.store.state;
-    const screen = this.screens[this.tab];
+    const screen = this.screens[this.screen];
+    const isSheet = this.screen === 'gladiator' || this.screen === 'history';
     const tip = p.settings.tipsSeen.includes(screen.id)
       ? ''
       : `<div class="tip">${esc(screen.tip)} <button class="btn sm" data-action="tip-ok" data-id="${screen.id}">OK</button></div>`;
-    panel.innerHTML = `${tip}${screen.render(p)}`;
+    const loc = (LOCATION_IDS as string[]).includes(this.screen) ? getLocation(this.screen as LocationId) : null;
+    const closed = loc && !isOpen(loc, p.minutes) ? '<div class="closed-note">Fechado agora. Volte mais tarde.</div>' : '';
+    const head = `<div class="panel-head"><h2>${esc(screen.title)}</h2>${isSheet ? '<button class="btn sm" data-action="back">Voltar</button>' : ''}</div>`;
+    panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}`;
     panel.scrollTop = scroll;
   }
 }

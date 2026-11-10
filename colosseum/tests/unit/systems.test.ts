@@ -215,7 +215,7 @@ describe('salvamento', () => {
 });
 
 import { ARENAS, arenaForOpponent } from '../../src/renderer/core/data/arenas';
-import { clockLabel, phaseName, timeOfDay, CYCLE_MS } from '../../src/renderer/core/systems/TimeOfDay';
+import { clockLabel, dayFraction, phaseName } from '../../src/renderer/core/systems/TimeOfDay';
 
 describe('arenas', () => {
   it('uma arena diferente a cada dois adversários', () => {
@@ -225,17 +225,14 @@ describe('arenas', () => {
   });
 });
 
-describe('dia e noite', () => {
-  it('ciclo acelerado percorre o dia inteiro em 10 minutos', () => {
-    expect(timeOfDay('cycle', 0.2 * CYCLE_MS)).toBeCloseTo(0.5);
-    expect(phaseName(timeOfDay('cycle', 0.2 * CYCLE_MS))).toBe('Dia');
-    expect(phaseName(timeOfDay('cycle', 0.7 * CYCLE_MS))).toBe('Noite');
-    expect(clockLabel(0.5)).toBe('12:00');
-  });
-  it('modo hora do PC usa o relógio local', () => {
-    const d = new Date(2026, 0, 1, 18, 0, 0).getTime();
-    expect(timeOfDay('real', d)).toBeCloseTo(0.75);
+describe('relógio do jogo', () => {
+  it('fases e relógio', () => {
+    expect(dayFraction(12 * 60)).toBeCloseTo(0.5);
+    expect(phaseName(dayFraction(12 * 60))).toBe('Tarde');
+    expect(phaseName(dayFraction(9 * 60))).toBe('Manhã');
+    expect(phaseName(dayFraction(23 * 60))).toBe('Noite');
     expect(phaseName(0.75)).toBe('Entardecer');
+    expect(clockLabel(0.5)).toBe('12:00');
   });
 });
 
@@ -244,8 +241,7 @@ describe('configurações salvas', () => {
     const p = fresh() as unknown as { settings: Record<string, unknown> };
     delete p.settings.volume;
     delete p.settings.muted;
-    delete p.settings.dayNight;
     const r = parseSave(JSON.stringify({ format: 'colosseum-save', version: 1, savedAt: 0, player: p }));
-    expect(r.ok && r.player.settings).toMatchObject({ volume: 0.7, muted: false, dayNight: 'cycle' });
+    expect(r.ok && r.player.settings).toMatchObject({ volume: 0.7, muted: false });
   });
 });

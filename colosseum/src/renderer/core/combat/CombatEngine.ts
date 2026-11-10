@@ -97,6 +97,7 @@ export class CombatEngine {
       fortifyMul: 1,
       passiveTime: 0,
       counterQueued: false,
+      secondWindUsed: false,
       counters: { attacks: 0, hits: 0, misses: 0, dodged: 0, blocked: 0, crits: 0, damageDealt: 0, skillsUsed: 0 },
     };
   }
@@ -356,7 +357,7 @@ export class CombatEngine {
     this.spend(f, this.costOf(kind));
     const windup = p.windup + (kind === 'normal' && st.reach > 30 ? 0.06 : 0);
     let damageMul = 1;
-    if (kind === 'power_strike') damageMul = powerStrikeMul(st.technique);
+    if (kind === 'power_strike') damageMul = powerStrikeMul(st.technique) + st.powerStrikeBonus;
     else if (kind === 'quick_strike') damageMul = quickStrikeMul(st.technique);
     else if (kind === 'counter') damageMul = counterMul(st.technique);
     f.attack = {
@@ -429,7 +430,7 @@ export class CombatEngine {
       outcome = 'dodge';
     } else {
       const blocking = atk.defendable && d.action === 'block';
-      const blockEff = blocking ? blockEfficiency(ds, this.strategy(d), atk.kind === 'power_strike') : 0;
+      const blockEff = blocking ? blockEfficiency(ds, this.strategy(d), atk.kind === 'power_strike', as.blockPierce) : 0;
       crit = this.rng() < as.critChance;
       damage = computeDamage({
         attacker: as,
@@ -451,6 +452,13 @@ export class CombatEngine {
       d.hp = Math.max(0, d.hp - damage);
       a.counters.damageDealt += damage;
       if (crit) a.counters.crits++;
+      // Segundo fôlego (árvore de Minerva): recupera vida uma vez por luta
+      if (ds.secondWind && !d.secondWindUsed && d.hp > 0 && d.hp < ds.maxHp * 0.25) {
+        d.secondWindUsed = true;
+        const heal = Math.round(ds.maxHp * 0.12);
+        d.hp = Math.min(ds.maxHp, d.hp + heal);
+        this.emit({ type: 'secondWind', t: this.time, side: d.side, heal });
+      }
     }
 
     if (outcome === 'hit') {

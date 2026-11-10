@@ -7,7 +7,7 @@ import { esc, fmtDuration, icon, itemIcon, rarityName } from '../dom';
 
 const REASON = { ko: 'nocaute', decision: 'decisão', forfeit: 'desistência' } as const;
 
-export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, auto: boolean): string {
+export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, auto: boolean, energy: number): string {
   const won = rw.result === 'win';
   const item = rw.itemId ? getItem(rw.itemId) : undefined;
   return `
@@ -20,9 +20,10 @@ export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDe
         ${rw.reputation ? `<div class="reward">${icon('laurel')} <b>+${rw.reputation}</b> fama</div>` : ''}
         ${item ? `<div class="reward">${itemIcon(item)} ${rarityName(item)}</div>` : ''}
       </div>
-      ${rw.levelUps ? `<div class="levelup">Nível ${rw.newLevel}! +${rw.pointsGained} pontos</div>` : ''}
+      ${rw.levelUps ? `<div class="levelup">Nível ${rw.newLevel}! +${rw.pointsGained} pontos e +${rw.levelUps} p/ o Templo</div>` : ''}
       ${rw.unlockedOpponent ? `<div class="unlock">Novo rival: <b>${esc(rw.unlockedOpponent.name)}</b></div>` : ''}
       ${won ? '' : '<p class="hint">Você não perde nada. Treine e tente de novo!</p>'}
+      <p class="hint">Energia restante: <b>${Math.round(energy)}</b>${energy < 35 ? ' — hora de descansar.' : ''}</p>
       ${auto ? '<p class="tiny" data-countdown></p>' : ''}
       <div class="row center">
         ${rw.levelUps ? '<button class="btn btn-gold" data-r="points">Usar pontos</button>' : ''}

@@ -26,6 +26,13 @@ export interface CombatStats {
   staminaRegen: number;
   /** multiplicador aplicado aos custos de resistência (menor = menos fadiga) */
   fatigueMul: number;
+  /** efeitos da árvore de habilidades */
+  damageMul: number;
+  damageTakenMul: number;
+  hitBonus: number;
+  blockPierce: number;
+  powerStrikeBonus: number;
+  secondWind: boolean;
 }
 
 export const DODGE_CAP = 0.35;
@@ -105,6 +112,12 @@ export function computeCombatStats(attrs: Attributes, gear: Partial<Record<Slot,
     moveSpeed: 34 + attrs.agi * 0.5,
     staminaRegen: 3 + attrs.res * 0.1,
     fatigueMul: 1 / (1 + attrs.res * 0.015),
+    damageMul: 1,
+    damageTakenMul: 1,
+    hitBonus: 0,
+    blockPierce: 0,
+    powerStrikeBonus: 0,
+    secondWind: false,
   };
 }
 

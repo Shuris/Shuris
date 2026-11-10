@@ -1,9 +1,7 @@
 // Ciclo de dia e noite: céu dinâmico (gradiente, sol, lua, estrelas, nuvens),
 // iluminação ambiente sobre o cenário e braseiros mais fortes à noite.
 import * as Phaser from 'phaser';
-import type { DayNightMode } from '../core/model/types';
 import { WORLD } from './assets';
-import { timeOfDay } from '../core/systems/TimeOfDay';
 
 export interface SkyState {
   top: number;
@@ -62,7 +60,13 @@ export class SkyLayer {
   state: SkyState = KEYS[3][1];
   t = 0.5;
 
-  constructor(private readonly scene: Phaser.Scene, private readonly mode: () => DayNightMode, private readonly horizon = 150) {
+  private shown = -1;
+
+  /**
+   * @param timeFn hora do jogo (0..1); a transição é suave quando o relógio avança
+   * @param withSky false para interiores e para o mapa (só a luz ambiente)
+   */
+  constructor(private readonly scene: Phaser.Scene, private readonly timeFn: () => number, private readonly horizon = 150, withSky = true) {
     this.gfx = scene.add.graphics().setDepth(-30);
     this.stars = scene.add.graphics().setDepth(-29);
     for (let i = 0; i < 90; i++) {
@@ -82,12 +86,30 @@ export class SkyLayer {
       .setOrigin(0)
       .setDepth(500)
       .setBlendMode(Phaser.BlendModes.MULTIPLY);
+    if (!withSky) {
+      for (const o of [this.gfx, this.stars, this.sun, this.moon, ...this.clouds]) o.setVisible(false).setActive(false);
+      this.skyless = true;
+    }
     this.update(0);
   }
 
+  private skyless = false;
+
   update(dt: number): void {
-    this.t = timeOfDay(this.mode());
+    const target = this.timeFn();
+    if (this.shown < 0) this.shown = target;
+    else {
+      // aproxima a hora exibida da hora real do jogo pelo caminho mais curto (efeito de passagem do tempo)
+      let diff = target - this.shown;
+      if (diff > 0.5) diff -= 1;
+      if (diff < -0.5) diff += 1;
+      this.shown = (this.shown + diff * Math.min(1, dt * 2.5) + 1) % 1;
+      if (Math.abs(diff) < 0.0005) this.shown = target;
+    }
+    this.t = this.shown;
     const s = (this.state = skyAt(this.t));
+    this.overlay.setFillStyle(s.ambient, 1);
+    if (this.skyless) return;
     const now = this.scene.time.now;
     if (now - this.lastDraw > 400 || this.lastDraw < 0) {
       this.lastDraw = now;
@@ -96,7 +118,6 @@ export class SkyLayer {
       this.gfx.fillRect(0, 0, WORLD.width, this.horizon);
     }
     this.stars.setAlpha(s.stars);
-    this.overlay.setFillStyle(s.ambient, 1);
     // trajetórias do sol (dia) e da lua (noite)
     const arc = (p: number) => ({ x: 40 + p * (WORLD.width - 80), y: this.horizon - Math.sin(Math.PI * p) * (this.horizon - 18) });
     const dayP = (this.t - 0.24) / 0.54;

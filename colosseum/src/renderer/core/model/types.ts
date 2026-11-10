@@ -84,7 +84,28 @@ export interface BattleRecord {
   levelUps: number;
 }
 
-export type DayNightMode = 'cycle' | 'real';
+export type LocationId = 'ludus' | 'home' | 'market' | 'arena' | 'temple' | 'forum' | 'baths';
+
+export interface NewsItem {
+  id: string;
+  kind: 'fame' | 'victory' | 'defeat' | 'streak' | 'level' | 'arena' | 'rival' | 'champion' | 'debut' | 'city';
+  headline: string;
+  body: string;
+}
+
+export interface Edition {
+  day: number;
+  items: NewsItem[];
+  read: boolean;
+}
+
+export interface NewsState {
+  editions: Edition[];
+  /** notícias que sairão na próxima edição (manhã seguinte) */
+  pending: NewsItem[];
+  /** marcos já noticiados (fama, níveis, sequências) */
+  milestones: string[];
+}
 
 export interface GameSettings {
   battleSpeed: number; // 1, 2 ou 3
@@ -93,8 +114,6 @@ export interface GameSettings {
   /** volume geral dos efeitos sonoros (0..1) */
   volume: number;
   muted: boolean;
-  /** ciclo acelerado (10 min) ou horário real do computador */
-  dayNight: DayNightMode;
 }
 
 export interface PlayerState {
@@ -119,6 +138,19 @@ export interface PlayerState {
   selectedOpponent: string;
   settings: GameSettings;
   nextUid: number;
+  /** calendário: dia atual (começa em 1) e minutos desde a meia-noite */
+  day: number;
+  minutes: number;
+  /** energia do gladiador (0..100): treinar e lutar cansam; dormir recupera */
+  energy: number;
+  location: LocationId;
+  /** árvore de habilidades */
+  skillPoints: number;
+  perks: string[];
+  respecs: number;
+  /** sequência atual: positiva = vitórias seguidas, negativa = derrotas seguidas */
+  streak: number;
+  news: NewsState;
   createdAt: number;
   updatedAt: number;
 }

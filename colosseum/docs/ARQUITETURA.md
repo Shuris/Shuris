@@ -153,3 +153,19 @@ o céu transparente), move sol/lua, mostra estrelas e aplica uma camada de luz a
 `audio/SoundManager.ts` sintetiza todos os efeitos com osciladores, ruído filtrado e envelopes
 (sem arquivos de áudio). A `ArenaScene` toca sons a partir dos eventos do motor de combate; a
 interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam no salvamento.
+
+## Cidade, dias, árvore e jornal (0.3.0)
+
+- `core/data/locations.ts` — locais, horários e posição no mapa. `game/scenes/MapScene.ts`
+  desenha o mapa e anima o marcador; `game/scenes/HubScene.ts` é a cena genérica de local
+  (cenário, luzes, poste de treino no ludus, animação de dormir).
+- `core/systems/CalendarSystem.ts` — relógio (minutos do dia), energia, custos de cada ação,
+  horários, viagens, sono, cochilo e termas. Regras puras e testadas.
+- `core/data/skillTree.ts` + `core/systems/SkillTreeSystem.ts` — nós, pré-requisitos, custos,
+  aprender/recomeçar, soma dos efeitos e escolha automática para adversários.
+  `CombatantFactory.applyPerks` aplica os efeitos sobre as estatísticas; o motor de combate usa
+  os novos campos (`damageMul`, `damageTakenMul`, `hitBonus`, `blockPierce`,
+  `powerStrikeBonus`, `secondWind`).
+- `core/systems/NewsSystem.ts` — gera notícias a partir de eventos (fama, vitórias,
+  sequências, níveis) com modelos de texto e publica a edição ao acordar.
+- Salvamento versão 2 (`SaveSystem`): novos campos validados; saves v1 migrados.

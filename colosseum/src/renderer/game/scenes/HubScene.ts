@@ -1,28 +1,45 @@
-// Pátio do ludus: mostra o gladiador do jogador e as animações de treino.
+// Cena de local da cidade (ludus, alojamento, mercado, templo, fórum, termas, arena):
+// mostra o gladiador no cenário do local. O ludus tem o poste de treino.
 import * as Phaser from 'phaser';
 import type { FighterVisual } from '../../core/combat/CombatantFactory';
-import type { DayNightMode, TrainingId } from '../../core/model/types';
+import type { LocationId, TrainingId } from '../../core/model/types';
 import { sound } from '../../audio/SoundManager';
-import { SkyLayer } from '../DayNight';
 import { WORLD } from '../assets';
+import { SkyLayer } from '../DayNight';
 import { GladiatorView } from '../entities/Gladiator';
-import { dust, floatText } from '../fx';
+import { dust, floatText, bigText } from '../fx';
 import { frameCamera, type Insets } from '../layout';
 
 export interface HubData {
   visual: FighterVisual;
   insets: Insets;
-  dayNight: () => DayNightMode;
+  time: () => number;
+  location: LocationId;
+  bg: string;
+  crowd?: string;
+  outdoor: boolean;
 }
+
+const GROUND = 312;
+/** fontes de luz de cada local (braseiros/lamparinas) */
+const LIGHTS: Partial<Record<LocationId, Array<[number, number, boolean]>>> = {
+  ludus: [[430, 240, true]],
+  home: [[276, 262, false]],
+  temple: [[320, 258, true]],
+  arena: [[112, 200, true], [528, 200, true]],
+  forum: [[300, 240, true]],
+  market: [[170, 240, true], [470, 240, true]],
+};
 
 export class HubScene extends Phaser.Scene {
   private hero!: GladiatorView;
-  private palus!: Phaser.GameObjects.Sprite;
+  private palus: Phaser.GameObjects.Sprite | null = null;
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
-  private training = false;
-  private elapsed = 0;
+  private busy = false;
+  private heroX = 300;
+  location: LocationId = 'home';
   sky!: SkyLayer;
-  private torch!: Phaser.GameObjects.Image;
+  private glows: Phaser.GameObjects.Image[] = [];
 
   constructor() {
     super('hub');
@@ -30,14 +47,23 @@ export class HubScene extends Phaser.Scene {
 
   create(data: HubData): void {
     this.insets = data.insets;
-    this.training = false;
-    this.sky = new SkyLayer(this, data.dayNight, 130);
-    this.add.image(0, 0, 'bg:ludus').setOrigin(0);
-    this.add.sprite(430, 240, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(3);
-    this.torch = this.add.image(430, 224, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501);
-    this.palus = this.add.sprite(352, 312, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(4);
-    this.add.ellipse(352, 312, 18, 5, 0x000000, 0.25).setDepth(3);
-    this.hero = new GladiatorView(this, 318, 312, data.visual);
+    this.location = data.location;
+    this.busy = false;
+    this.glows = [];
+    this.palus = null;
+    this.sky = new SkyLayer(this, data.time, 150, data.outdoor);
+    this.add.image(0, 0, data.bg).setOrigin(0);
+    if (data.crowd) this.add.sprite(0, 0, data.crowd, 0).setOrigin(0);
+    for (const [x, y, brazier] of LIGHTS[data.location] ?? []) {
+      if (brazier) this.add.sprite(x, y, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(3);
+      this.glows.push(this.add.image(x, y - 16, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
+    }
+    this.heroX = data.location === 'ludus' ? 318 : data.location === 'home' ? 340 : 300;
+    if (data.location === 'ludus') {
+      this.palus = this.add.sprite(352, GROUND, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(4);
+      this.add.ellipse(352, GROUND, 18, 5, 0x000000, 0.25).setDepth(3);
+    }
+    this.hero = new GladiatorView(this, this.heroX, GROUND, data.visual);
     this.hero.setDepth(10);
     this.hero.play('idle');
     const cam = this.cameras.main;
@@ -64,13 +90,13 @@ export class HubScene extends Phaser.Scene {
 
   /** Animação de treino (~1,8 s); `done` é chamado ao final. */
   playTraining(kind: TrainingId, done: () => void): void {
-    if (this.training) return;
-    this.training = true;
+    if (this.busy) return;
+    this.busy = true;
     const h = this.hero;
     const hitPalus = () => {
-      this.palus.setFrame(1);
-      this.time.delayedCall(120, () => this.palus.setFrame(0));
-      dust(this, 352, 312, 2);
+      this.palus?.setFrame(1);
+      this.time.delayedCall(120, () => this.palus?.setFrame(0));
+      dust(this, 352, GROUND, 2);
       sound.play('train');
     };
     const steps: Array<() => void> = [];
@@ -81,7 +107,7 @@ export class HubScene extends Phaser.Scene {
         if (kind === 'tech') steps.push(() => h.sequence([['block', 0, 0.3]]));
       }
     } else if (kind === 'agi') {
-      for (let i = 0; i < 3; i++) steps.push(() => (h.sequence([['dodge', 0, 0.1], ['dodge', 1, 0.15], ['dodge', 2, 0.15]]), dust(this, h.x, 312, 3), sound.play('dodge')));
+      for (let i = 0; i < 3; i++) steps.push(() => (h.sequence([['dodge', 0, 0.1], ['dodge', 1, 0.15], ['dodge', 2, 0.15]]), dust(this, h.x, GROUND, 3), sound.play('dodge')));
     } else {
       steps.push(() => {
         h.play('walk', { fps: 12 });
@@ -92,9 +118,25 @@ export class HubScene extends Phaser.Scene {
     steps.forEach((fn, i) => this.time.delayedCall(i * interval, fn));
     this.time.delayedCall(1800, () => {
       h.play('idle', { restart: true });
-      h.x = 318;
-      this.training = false;
+      h.x = this.heroX;
+      this.busy = false;
       done();
+    });
+  }
+
+  /** Dormir: escurece a tela, mostra o novo dia e clareia de novo. */
+  playSleep(day: number, done: () => void): void {
+    if (this.busy) return;
+    this.busy = true;
+    const cam = this.cameras.main;
+    cam.fadeOut(700, 0, 0, 0);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      done();
+      this.time.delayedCall(500, () => {
+        cam.fadeIn(900, 0, 0, 0);
+        bigText(this, cam.midPoint.x, 200, `Dia ${day}`, '#ffe49a', 26);
+        this.busy = false;
+      });
     });
   }
 
@@ -104,11 +146,11 @@ export class HubScene extends Phaser.Scene {
 
   update(_t: number, delta: number): void {
     const dt = Math.min(0.1, delta / 1000);
-    this.elapsed += dt;
     this.hero?.tick(dt);
     if (this.sky) {
       this.sky.update(dt);
-      this.torch.setAlpha(this.sky.lampStrength * (0.8 + Math.random() * 0.2)).setScale(0.9 + this.sky.lampStrength * 0.8);
+      const lamp = this.sky.lampStrength;
+      for (const g of this.glows) g.setAlpha(lamp * (0.8 + Math.random() * 0.2)).setScale(0.9 + lamp * 0.8);
     }
   }
 }

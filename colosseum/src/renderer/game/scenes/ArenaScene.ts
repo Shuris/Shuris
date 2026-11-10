@@ -5,7 +5,6 @@ import { CombatEngine, TICK } from '../../core/combat/CombatEngine';
 import type { FighterVisual } from '../../core/combat/CombatantFactory';
 import type { ActionKind, CombatantSpec, CombatEvent, CombatResult, FighterState, Side } from '../../core/combat/CombatTypes';
 import type { ArenaDef } from '../../core/data/arenas';
-import type { DayNightMode } from '../../core/model/types';
 import { SKILLS } from '../../core/data/skills';
 import { sound } from '../../audio/SoundManager';
 import { WORLD } from '../assets';
@@ -22,7 +21,7 @@ export interface BattleSetup {
   seed: number;
   speed: number;
   insets: Insets;
-  dayNight: () => DayNightMode;
+  time: () => number;
 }
 
 export interface BattleHandlers {
@@ -68,7 +67,7 @@ export class ArenaScene extends Phaser.Scene {
     this.crowdExcite = 1.5;
     this.engine = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed });
 
-    this.sky = new SkyLayer(this, setup.dayNight, 150);
+    this.sky = new SkyLayer(this, setup.time, 150);
     this.add.image(0, 0, setup.arena.bg).setOrigin(0);
     this.crowd = this.add.sprite(0, 0, setup.arena.crowd, 0).setOrigin(0);
     this.glows = [];
@@ -312,6 +311,10 @@ export class ArenaScene extends Phaser.Scene {
       }
       case 'buffEnd':
         this.viewOf(e.side).setAura(false);
+        break;
+      case 'secondWind':
+        floatText(this, this.viewOf(e.side).x, GROUND_Y - 62, `segundo fôlego +${e.heal}`, '#8ad866', 12, 14, 1200);
+        sound.play('guard');
         break;
       case 'exhausted':
         floatText(this, this.viewOf(e.side).x, GROUND_Y - 58, 'cansado', '#c8c0b0', 12, 10, 1200);

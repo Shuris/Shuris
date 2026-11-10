@@ -26,6 +26,7 @@ import gen_scenes  # noqa: E402
 import gen_ui  # noqa: E402
 import gen_arenas  # noqa: E402
 import sky  # noqa: E402
+import gen_locations  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -48,6 +49,9 @@ def main():
         img.save(os.path.join(bg, f"arena_{tid}.png"))
         gen_arenas.crowd(tid, rng, shadow).save(os.path.join(bg, f"crowd_{tid}.png"))
     gen_scenes.ludus(rng).save(os.path.join(bg, "ludus.png"))
+    for loc in ("home", "market", "temple", "forum", "baths"):
+        getattr(gen_locations, loc)(rng).save(os.path.join(bg, f"loc_{loc}.png"))
+    gen_locations.city_map(rng).save(os.path.join(bg, "map.png"))
     fx = os.path.join(ASSETS, "sprites", "fx")
     os.makedirs(fx, exist_ok=True)
     gen_scenes.brazier_sheet().save(os.path.join(fx, "brazier.png"))

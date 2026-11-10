@@ -1,28 +1,21 @@
-// Hora do dia do jogo (lógica pura, sem renderização).
-import type { DayNightMode } from '../model/types';
+// Hora do dia do jogo (lógica pura). O relógio avança com as ações do jogador.
 
-/** Duração de um dia completo no modo acelerado. */
-export const CYCLE_MS = 10 * 60 * 1000;
-
-/** Hora do dia normalizada: 0 = meia-noite, 0,5 = meio-dia. */
-export function timeOfDay(mode: DayNightMode, now = Date.now()): number {
-  if (mode === 'real') {
-    const d = new Date(now);
-    return (d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()) / 86400;
-  }
-  return ((now % CYCLE_MS) / CYCLE_MS + 0.3) % 1;
+/** Fração do dia: 0 = meia-noite, 0,5 = meio-dia. */
+export function dayFraction(minutes: number): number {
+  return (((minutes % 1440) + 1440) % 1440) / 1440;
 }
 
 export function phaseName(t: number): string {
   if (t < 0.22) return 'Noite';
   if (t < 0.3) return 'Amanhecer';
-  if (t < 0.72) return 'Dia';
+  if (t < 0.5) return 'Manhã';
+  if (t < 0.72) return 'Tarde';
   if (t < 0.8) return 'Entardecer';
   return 'Noite';
 }
 
-/** Relógio do jogo no formato HH:MM. */
+/** Relógio no formato HH:MM. */
 export function clockLabel(t: number): string {
-  const mins = Math.floor(t * 24 * 60);
-  return `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+  const mins = Math.floor(t * 24 * 60 + 1e-6);
+  return `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
 }

@@ -7,9 +7,9 @@ import { typicalPlayer } from './helpers';
 
 const opp = OPPONENTS[3];
 
-function run(seed: number, strategy: 'aggressive' | 'balanced' | 'defensive' = 'balanced') {
-  const p = typicalPlayer(opp, strategy);
-  const eng = new CombatEngine(playerCombatant(p).spec, opponentCombatant(opp).spec, { seed });
+function run(seed: number, strategy: 'aggressive' | 'balanced' | 'defensive' = 'balanced', o = opp) {
+  const p = typicalPlayer(o, strategy);
+  const eng = new CombatEngine(playerCombatant(p).spec, opponentCombatant(o).spec, { seed });
   const events: CombatEvent[] = [];
   let minGap = Infinity;
   let bounds = true;
@@ -47,7 +47,7 @@ describe('motor de combate', () => {
     const outcomes = new Set<string>();
     const skills = new Set<string>();
     for (let s = 0; s < 30; s++) {
-      for (const e of run(s).events) {
+      for (const e of run(s, 'balanced', OPPONENTS[8]).events) {
         if (e.type === 'action') kinds.add(e.action);
         if (e.type === 'impact') outcomes.add(e.outcome);
         if (e.type === 'skill') skills.add(e.skill);

@@ -4,6 +4,7 @@ import { createPlayer } from '../../src/renderer/core/systems/PlayerFactory';
 import { addItem } from '../../src/renderer/core/systems/EquipmentSystem';
 import type { OpponentDef } from '../../src/renderer/core/data/opponents';
 import { getItem } from '../../src/renderer/core/data/equipment';
+import { autoPerks } from '../../src/renderer/core/systems/SkillTreeSystem';
 
 export const APPEARANCE = { skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 };
 
@@ -25,5 +26,7 @@ export function typicalPlayer(opp: OpponentDef, strategy: PlayerState['strategy'
     p.equipment[slot as keyof PlayerState['equipment']] = inv.uid;
   }
   p.strategy = strategy;
+  p.perks = autoPerks(opp.level, ['mars', 'minerva', 'mercury'], true);
+  p.skillPoints = 0;
   return p;
 }

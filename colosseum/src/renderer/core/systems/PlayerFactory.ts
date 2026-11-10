@@ -2,8 +2,11 @@ import type { Appearance, PlayerState } from '../model/types';
 import { ATTRIBUTE_KEYS } from '../model/types';
 import { BASE_ATTRIBUTE, emptyAttributes, getOrigin } from '../data/gladiators';
 import { OPPONENTS } from '../data/opponents';
+import { skillPointsForLevel } from './SkillTreeSystem';
+import { debutEdition } from './NewsSystem';
+import { createRng } from './rng';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const STARTING_COINS = 150;
 export const MAX_NAME_LENGTH = 20;
 
@@ -19,6 +22,12 @@ export function validateName(raw: string): string | null {
 }
 
 export function createPlayer(name: string, originId: string, appearance: Appearance, now = Date.now()): PlayerState {
+  const p = buildPlayer(name, originId, appearance, now);
+  debutEdition(p, createRng(now));
+  return p;
+}
+
+function buildPlayer(name: string, originId: string, appearance: Appearance, now: number): PlayerState {
   const origin = getOrigin(originId);
   const base = emptyAttributes(BASE_ATTRIBUTE);
   for (const k of ATTRIBUTE_KEYS) base[k] += origin.bonus[k] ?? 0;
@@ -47,8 +56,17 @@ export function createPlayer(name: string, originId: string, appearance: Appeara
     strategy: 'balanced',
     defeatedOpponents: [],
     selectedOpponent: OPPONENTS[0].id,
-    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [], volume: 0.7, muted: false, dayNight: 'cycle' },
+    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [], volume: 0.7, muted: false },
     nextUid: 2,
+    day: 1,
+    minutes: 8 * 60,
+    energy: 100,
+    location: 'home',
+    skillPoints: skillPointsForLevel(1),
+    perks: [],
+    respecs: 0,
+    streak: 0,
+    news: { editions: [], pending: [], milestones: [] },
     createdAt: now,
     updatedAt: now,
   };

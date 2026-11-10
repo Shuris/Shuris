@@ -1,23 +1,31 @@
 import type { GameStore } from '../../core/GameStore';
-import type { PlayerState, TrainingId } from '../../core/model/types';
+import type { LocationId, PlayerState, TrainingId } from '../../core/model/types';
 
-export type TabId = 'arena' | 'gladiator' | 'training' | 'equipment' | 'history';
+/** Locais da cidade + o mapa + as fichas que podem ser abertas em qualquer lugar. */
+export type ScreenId = LocationId | 'map' | 'gladiator' | 'history';
 
 export interface AppActions {
   startBattle(): void;
   train(id: TrainingId): void;
   readonly training: boolean;
-  goTab(id: TabId): void;
+  open(id: ScreenId): void;
+  travel(to: LocationId): void;
+  sleep(): void;
+  nap(): void;
+  bathe(): void;
+  readEdition(day: number): void;
   winChance(opponentId: string): number;
   refreshVisual(): void;
   rerender(): void;
 }
 
 export interface Screen {
-  readonly id: TabId;
+  readonly id: ScreenId;
   readonly title: string;
   readonly tip: string;
   render(p: PlayerState): string;
+  /** chamado ao abrir a tela */
+  onOpen?(p: PlayerState): void;
   onAction(action: string, el: HTMLElement, p: PlayerState): void;
 }
 
