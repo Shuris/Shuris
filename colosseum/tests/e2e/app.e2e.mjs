@@ -227,7 +227,13 @@ await step('13. Templo: árvore de habilidades', async () => {
 
 await step('15. Arena certa a cada dois adversários', async () => {
   // libera Rufus e dá fama suficiente para virar manchete após a próxima luta
-  await win.evaluate(() => window.__colosseum.store.update((p) => { p.defeatedOpponents = ['marcus', 'cassius']; p.selectedOpponent = 'rufus'; p.energy = 100; p.minutes = 9 * 60; p.reputation += 30; }));
+  // escolhe um dia sem chuva (a etapa seguinte verifica o céu limpo de dia)
+  await win.evaluate(() => {
+    const app = window.__colosseum;
+    let d = app.store.state.day;
+    while (app.weatherOfDay(d).rainy) d++;
+    app.store.update((p) => { p.day = d; p.defeatedOpponents = ['marcus', 'cassius']; p.selectedOpponent = 'rufus'; p.energy = 100; p.minutes = 9 * 60; p.reputation += 30; });
+  });
   await goTo('arena');
   await win.click('.btn-fight');
   await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
