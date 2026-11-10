@@ -327,86 +327,8 @@ def baths(rng):
 
 
 # ------------------------------------------------------------------ mapa da cidade
-MAP_POS = {
-    "home": (86, 138), "baths": (232, 86), "forum": (340, 168), "temple": (500, 78),
-    "ludus": (140, 270), "market": (326, 286), "arena": (530, 250), "tavern": (440, 150),
-}
-
-
-def city_map(rng):
-    a = _arr()
-    gradient(a, 0, H, hexc("6e9a52"), hexc("648e4a"))
-    noise(a, 0, H, [hexc("5e8a46"), hexc("7aa65c")], 0.12, rng)
-    img = to_img(np.clip(a, 0, 255))
-    d = ImageDraw.Draw(img)
-    # rio
-    pts = [(0, 200), (80, 196), (160, 214), (240, 206), (300, 222), (390, 214), (460, 226), (640, 214)]
-    d.line(pts, fill=hexc("3a7ab0"), width=16)
-    d.line(pts, fill=hexc("5a9ad0"), width=8)
-    # estradas
-    road = hexc("d8c08a")
-    hub = MAP_POS["forum"]
-    for k, p in MAP_POS.items():
-        if k != "forum":
-            d.line([p, (hub[0], p[1]), hub], fill=road, width=7)
-    d.line([MAP_POS["ludus"], MAP_POS["market"]], fill=road, width=7)
-    d.line([MAP_POS["market"], MAP_POS["arena"]], fill=road, width=7)
-    # ponte
-    d.rectangle([330, 204, 352, 232], fill=hexc("8a7a62"))
-    d.rectangle([330, 204, 352, 207], fill=hexc("6a5a4a"))
-    d.rectangle([330, 229, 352, 232], fill=hexc("6a5a4a"))
-    # árvores
-    for _ in range(70):
-        x, y = rng.randint(0, W), rng.randint(0, H)
-        if any(abs(x - px) < 50 and abs(y - py) < 40 for px, py in MAP_POS.values()) or 190 < y < 236:
-            continue
-        d.ellipse([x - 6, y - 2, x + 6, y + 4], fill=hexc("3e5a2c"))
-        d.ellipse([x - 6, y - 10, x + 6, y + 2], fill=hexc("2f6a34"))
-        d.ellipse([x - 3, y - 9, x + 1, y - 5], fill=hexc("4a8a44"))
-
-    def house(cx, cy, w, h, roof=TERRA, wall=PLASTER):
-        d.rectangle([cx - w // 2, cy - h // 2 + 6, cx + w // 2, cy + h // 2], fill=wall)
-        d.polygon([(cx - w // 2 - 4, cy - h // 2 + 8), (cx - w // 2 + 4, cy - h // 2 - 6), (cx + w // 2 - 4, cy - h // 2 - 6), (cx + w // 2 + 4, cy - h // 2 + 8)], fill=roof)
-        d.rectangle([cx - 4, cy + h // 2 - 10, cx + 4, cy + h // 2], fill=hexc("3b2a20"))
-        d.rectangle([cx - w // 2, cy + h // 2, cx + w // 2 + 3, cy + h // 2 + 3], fill=hexc("4a6a3a"))
-
-    hx, hy = MAP_POS["home"]
-    house(hx, hy, 40, 28)
-    house(hx - 30, hy + 10, 22, 20)
-    bx, by = MAP_POS["baths"]
-    house(bx, by, 64, 30, roof=hexc("8a8a9a"), wall=hexc("d8c8a8"))
-    d.ellipse([bx - 12, by - 26, bx + 12, by - 10], fill=hexc("8a8a9a"))
-    fx, fy = MAP_POS["forum"]
-    d.rectangle([fx - 40, fy - 22, fx + 40, fy + 18], fill=hexc("d8ccb4"))
-    for x in range(fx - 36, fx + 40, 10):
-        d.rectangle([x, fy - 20, x + 3, fy - 4], fill=MARBLE)
-    d.rectangle([fx - 10, fy - 2, fx + 10, fy + 10], fill=hexc("b0a890"))
-    tx, ty = MAP_POS["temple"]
-    d.rectangle([tx - 34, ty - 4, tx + 34, ty + 20], fill=MARBLE_D)
-    for x in range(tx - 30, tx + 32, 10):
-        d.rectangle([x, ty - 14, x + 4, ty + 10], fill=lighter(MARBLE, 0.3))
-    d.polygon([(tx - 38, ty - 14), (tx, ty - 32), (tx + 38, ty - 14)], fill=MARBLE)
-    lx, ly = MAP_POS["ludus"]
-    d.rectangle([lx - 44, ly - 26, lx + 44, ly + 22], fill=TERRA)
-    d.rectangle([lx - 36, ly - 18, lx + 36, ly + 14], fill=hexc("d9b97c"))
-    d.rectangle([lx - 4, ly + 14, lx + 4, ly + 22], fill=hexc("3b2a20"))
-    mx, my = MAP_POS["market"]
-    for i, col in enumerate((hexc("b8372e"), hexc("3d5c8c"), hexc("d8a64a"), hexc("5a8a4a"))):
-        x = mx - 44 + i * 23
-        d.rectangle([x, my - 10, x + 18, my + 8], fill=WOOD)
-        d.polygon([(x - 2, my - 8), (x + 9, my - 18), (x + 20, my - 8)], fill=col)
-    ax, ay = MAP_POS["arena"]
-    d.ellipse([ax - 60, ay - 40, ax + 60, ay + 40], fill=hexc("a8916a"))
-    d.ellipse([ax - 56, ay - 36, ax + 56, ay + 36], fill=hexc("d8c6a0"))
-    for k in range(36):
-        ang = k / 36 * math.tau
-        x, y = ax + 52 * math.cos(ang), ay + 33 * math.sin(ang)
-        d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=hexc("6a5a4a"))
-    d.ellipse([ax - 36, ay - 20, ax + 36, ay + 20], fill=hexc("a8916a"))
-    d.ellipse([ax - 32, ay - 17, ax + 32, ay + 17], fill=hexc("e0c890"))
-    from gen_v05 import map_tavern
-    map_tavern(img, MAP_POS["tavern"])
-    return img
+# (versão 0.6.2: o mapa fica em gen_map.py)
+from gen_map import MAP_POS, city_map  # noqa: E402,F401
 
 
 # ------------------------------------------------------------------ monge do templo

@@ -16,11 +16,23 @@ export interface MapData {
   onPick: (id: LocationId) => void;
 }
 
+/** Distância do nome abaixo do centro de cada prédio e tamanho da área clicável. */
+const LABEL: Partial<Record<LocationId, { dy: number; w: number; h: number }>> = {
+  arena: { dy: 46, w: 140, h: 90 },
+  ludus: { dy: 30, w: 104, h: 60 },
+  market: { dy: 24, w: 100, h: 48 },
+  forum: { dy: 29, w: 96, h: 64 },
+  temple: { dy: 34, w: 78, h: 64 },
+  baths: { dy: 24, w: 86, h: 60 },
+  home: { dy: 24, w: 74, h: 48 },
+  tavern: { dy: 18, w: 72, h: 40 },
+};
+
 export class MapScene extends Phaser.Scene {
   private token!: Phaser.GameObjects.Container;
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
   private data_!: MapData;
-  private labels: Array<{ id: LocationId; text: Phaser.GameObjects.Text; ring: Phaser.GameObjects.Ellipse }> = [];
+  private labels: Array<{ id: LocationId; text: Phaser.GameObjects.Text; ring: Phaser.GameObjects.Ellipse; plate: Phaser.GameObjects.Graphics }> = [];
   sky!: SkyLayer;
   traveling = false;
 
@@ -36,20 +48,22 @@ export class MapScene extends Phaser.Scene {
     this.add.image(0, 0, 'bg:map').setOrigin(0);
     for (const loc of LOCATIONS) {
       const [x, y] = loc.map;
-      const ring = this.add.ellipse(x, y, 96, 70, 0xffe49a, 0).setStrokeStyle(2, 0xffe49a, 0).setDepth(600);
+      const lb = LABEL[loc.id] ?? { dy: 30, w: 96, h: 70 };
+      const ring = this.add.ellipse(x, y, lb.w, lb.h, 0xffe49a, 0).setStrokeStyle(2, 0xffe49a, 0).setDepth(600);
+      const plate = this.add.graphics().setDepth(600.5);
       const text = this.add
-        .text(x, y + 34, locationName(loc.id), { fontFamily: FONT, fontSize: '16px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 4 })
+        .text(x, y + lb.dy, locationName(loc.id), { fontFamily: FONT, fontSize: '13px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 3 })
         .setOrigin(0.5, 0)
         .setDepth(601)
         // texto renderizado em alta resolução: continua nítido com qualquer zoom
         .setResolution(Math.max(4, Math.ceil(4 * (window.devicePixelRatio || 1))));
-      const zone = this.add.zone(x, y, 100, 76).setInteractive({ useHandCursor: true }).setDepth(602);
+      const zone = this.add.zone(x, y, lb.w, lb.h).setInteractive({ useHandCursor: true }).setDepth(602);
       zone.on('pointerover', () => ring.setStrokeStyle(2, 0xffe49a, 1).setFillStyle(0xffe49a, 0.12));
       zone.on('pointerout', () => ring.setStrokeStyle(2, 0xffe49a, 0).setFillStyle(0xffe49a, 0));
       zone.on('pointerdown', () => {
         if (!this.traveling) this.data_.onPick(loc.id);
       });
-      this.labels.push({ id: loc.id, text, ring });
+      this.labels.push({ id: loc.id, text, ring, plate });
     }
     const [cx, cy] = LOCATIONS.find((l) => l.id === data.current)!.map;
     const marker = this.add.triangle(0, -24, 0, 0, 12, 0, 6, 10, 0xe0584a).setStrokeStyle(1, 0x1a0e08);
@@ -82,8 +96,13 @@ export class MapScene extends Phaser.Scene {
     const day = this.data_.day();
     for (const l of this.labels) {
       const open = isOpen(LOCATIONS.find((x) => x.id === l.id)!, m, day);
-      l.text.setColor(open ? '#fff3d6' : '#9a8a70');
+      l.text.setColor(open ? '#fff3d6' : '#a89a80');
       l.text.setText(locationName(l.id));
+      // plaquinha de madeira atrás do nome (legível sobre ruas e telhados)
+      const b = l.text.getBounds();
+      l.plate.clear();
+      l.plate.fillStyle(0x1a0e08, 0.9).fillRoundedRect(b.x - 5, b.y, b.width + 10, b.height + 1, 3);
+      l.plate.lineStyle(1, open ? 0xd8b06a : 0x6a5a44, 1).strokeRoundedRect(b.x - 5, b.y, b.width + 10, b.height + 1, 3);
     }
   }
 

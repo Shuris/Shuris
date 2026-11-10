@@ -40,8 +40,8 @@ npm run dist:win
 
 Saída em `release/`:
 
-- `Colosseum-Setup-0.6.1.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
-- `Colosseum-Portatil-0.6.1.exe` — versão portátil.
+- `Colosseum-Setup-0.6.2.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
+- `Colosseum-Portatil-0.6.2.exe` — versão portátil.
 - `win-unpacked/` — aplicativo descompactado (útil para testes).
 
 No Linux é possível gerar o mesmo instalador com Wine (`wine64` + `wine32:i386`); foi assim que a

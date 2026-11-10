@@ -18,14 +18,14 @@ export interface LocationDef {
 }
 
 export const LOCATIONS: LocationDef[] = [
-  { id: 'home', name: 'Alojamento', short: 'Dormir e descansar', bg: 'bg:loc_home', outdoor: false, hours: null, map: [86, 138] },
-  { id: 'ludus', name: 'Ludus', short: 'Treinar', bg: 'bg:ludus', outdoor: true, hours: [6 * 60, 22 * 60], map: [140, 270] },
-  { id: 'market', name: 'Mercado', short: 'Comprar e vender', bg: 'bg:loc_market', outdoor: true, hours: [7 * 60, 20 * 60], closedSunday: true, map: [326, 286] },
-  { id: 'arena', name: 'Arena', short: 'Lutar', bg: 'bg:arena_capua', outdoor: true, hours: [7 * 60, 20 * 60], map: [530, 250] },
-  { id: 'temple', name: 'Templo de Marte', short: 'Árvore de habilidades', bg: 'bg:loc_temple', outdoor: true, hours: null, map: [500, 78] },
-  { id: 'forum', name: 'Fórum', short: 'Jornal (Capua Times)', bg: 'bg:loc_forum', outdoor: true, hours: null, map: [340, 168] },
-  { id: 'tavern', name: 'Taverna', short: 'Comida, vinho e boatos', bg: 'bg:loc_tavern', outdoor: false, hours: [11 * 60, 24 * 60], map: [430, 196] },
-  { id: 'baths', name: 'Termas', short: 'Recuperar energia', bg: 'bg:loc_baths', outdoor: true, hours: [8 * 60, 21 * 60], map: [232, 86] },
+  { id: 'home', name: 'Alojamento', short: 'Dormir e descansar', bg: 'bg:loc_home', outdoor: false, hours: null, map: [100, 112] },
+  { id: 'ludus', name: 'Ludus', short: 'Treinar', bg: 'bg:ludus', outdoor: true, hours: [6 * 60, 22 * 60], map: [122, 276] },
+  { id: 'market', name: 'Mercado', short: 'Comprar e vender', bg: 'bg:loc_market', outdoor: true, hours: [7 * 60, 20 * 60], closedSunday: true, map: [300, 280] },
+  { id: 'arena', name: 'Arena', short: 'Lutar', bg: 'bg:arena_capua', outdoor: true, hours: [7 * 60, 20 * 60], map: [562, 262] },
+  { id: 'temple', name: 'Templo de Marte', short: 'Árvore de habilidades', bg: 'bg:loc_temple', outdoor: true, hours: null, map: [414, 72] },
+  { id: 'forum', name: 'Fórum', short: 'Jornal (Capua Times)', bg: 'bg:loc_forum', outdoor: true, hours: null, map: [300, 150] },
+  { id: 'tavern', name: 'Taverna', short: 'Comida, vinho e boatos', bg: 'bg:loc_tavern', outdoor: false, hours: [11 * 60, 24 * 60], map: [404, 172] },
+  { id: 'baths', name: 'Termas', short: 'Recuperar energia', bg: 'bg:loc_baths', outdoor: true, hours: [8 * 60, 21 * 60], map: [212, 70] },
 ];
 
 export function getLocation(id: LocationId): LocationDef {

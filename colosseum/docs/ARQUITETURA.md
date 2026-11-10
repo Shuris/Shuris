@@ -217,3 +217,8 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 - **Arte** (`tools/gen_v06.py`): retratos 48×48 (adversários, avulsos, moradores e camadas do jogador tingidas no jogo), arte do menu, enfeites do festival, carroça, forja, mesa e ilustrações do jornal. O público ganhou os quadros 3 e 4 (de pé) e uma versão lotada (`crowdfest_*`).
 - **Cenas**: `ArenaScene` tem câmera lenta/zoom no golpe final (`finalBlow`), ovação (`standing`) e pétalas; `SkyLayer` faz poças, respingos, ondinhas e relâmpagos; os balões ficam só com texto e não se cobrem: `speech.ts` guarda os balões visíveis e o mais novo sobe acima do anterior. Os retratos aparecem na interface HTML (`ui/components/portraits.ts`).
 - **Música** (`audio/Music.ts`): sequenciador Web Audio com 5 faixas, usando o contexto do `SoundManager` mas com volume próprio (preferência no `localStorage`). `App.updateMusic` escolhe a faixa pelo lugar e pela hora.
+
+## Mapa e jornal (0.6.2)
+
+- `tools/gen_map.py` desenha o mapa (`MAP_POS` precisa bater com `map` em `core/data/locations.ts`). `MapScene` usa a tabela `LABEL` para a distância do nome e a área clicável de cada prédio, e desenha a plaquinha atrás do nome.
+- `tools/gen_news.py` monta as ilustrações do jornal (`Scene`: fundo, camada intermediária e personagens) e converte em gravura: o fundo clareado, os personagens com contorno e halo. As imagens saem com ampliação 2x e o jornal as mostra suavizadas (`image-rendering: auto`) para não criar moiré.

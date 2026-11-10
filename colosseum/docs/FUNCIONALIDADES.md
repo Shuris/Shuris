@@ -1,4 +1,8 @@
-# Funcionalidades — versão 0.6.1
+# Funcionalidades — versão 0.6.2
+
+## Novidades da 0.6.2
+- **Ilustrações do jornal refeitas** em estilo gravura: o cenário fica claro e com poucas hachuras, e os personagens ganham contraste cheio, contorno e um halo de papel em volta. Cada cena foi recomposta, com gente nas ruas do fórum e do mercado, nas termas e na taverna, o monge no templo, o anfiteatro visto de fora e o rival em close. A imagem principal não é mais cortada.
+- **Mapa de Cápua repaginado**: cidade murada com torres e portões, rio atravessando a cidade com duas pontes e barcos, ruas de pedra (cardo, decumano e rua do sul), quarteirões de casas, colina do templo, campos de trigo e vinhedos fora dos muros, o anfiteatro do lado de fora, rosa dos ventos e moldura. Os prédios estão maiores e detalhados, e os nomes ficam em plaquinhas legíveis.
 
 ## Correções da 0.6.1
 - Corrigido o travamento quando a chuva começava (ou parava) com figurantes em cena, por exemplo logo depois de falar com o médico do ludus: a animação congelava porque um golpe de treino agendado tentava animar um figurante que já tinha saído por causa da chuva.

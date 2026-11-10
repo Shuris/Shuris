@@ -364,8 +364,8 @@ em.down { color: var(--red-hi); }
 .newspaper .news-city h3 { font-size: 18px; }
 .np-cols { columns: 2; column-gap: 22px; column-rule: 1px solid rgba(30, 22, 16, 0.4); margin-top: 6px; }
 .np-fig { margin: 2px 0 6px; text-align: center; }
-.np-fig img { display: block; width: 100%; image-rendering: pixelated; border: 1px solid var(--ink); filter: contrast(1.05); }
-.np-fig.big img { max-height: 230px; object-fit: cover; }
+.np-fig img { display: block; width: 100%; image-rendering: auto; border: 1px solid var(--ink); }
+.np-fig.big img { width: auto; max-width: 100%; max-height: 300px; margin: 0 auto; }
 .np-fig.small { float: right; width: 46%; margin: 4px 0 4px 10px; }
 .np-fig figcaption { font-size: 13px; font-style: italic; color: #4a3a2a; margin-top: 2px; }
 .np-ad { break-inside: avoid; border: 2px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: 6px 8px; margin: 10px 2px 4px; text-align: center; }
