@@ -27,6 +27,13 @@ export interface HubData {
   busy?: boolean;
   /** melhorias compradas (aparecem no alojamento e no ludus) */
   upgrades?: string[];
+  /** cena sem o gladiador (fundo do menu principal) */
+  hideHero?: boolean;
+  /** eventos do dia: festival, mercador, queda de braço, ferido */
+  festival?: boolean;
+  merchant?: boolean;
+  armNight?: boolean;
+  injured?: boolean;
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */

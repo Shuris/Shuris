@@ -1,10 +1,13 @@
-import type { BattleRecord, PlayerState, Rarity, StrategyId } from '../model/types';
+import type { BattleRecord, FightMode, PlayerState, Rarity, StrategyId } from '../model/types';
 import { MAX_LEVEL, POINTS_PER_LEVEL } from '../data/gladiators';
 import { ITEMS } from '../data/equipment';
 import { OPPONENTS, opponentIndex, type OpponentDef } from '../data/opponents';
 import { addItem } from './EquipmentSystem';
 import { pick, type Rng } from './rng';
-import { onBattle } from './NewsSystem';
+import { onBattle, onRematchAsked } from './NewsSystem';
+import { applyInjury, maybeAskRematch, recordRival, REMATCH_REWARD_MUL } from './RivalSystem';
+import { FESTIVAL_FAME_MUL, isFestival } from './EventSystem';
+import { opponentFullName } from '../../i18n/data';
 import { t } from '../../i18n';
 
 export const HISTORY_LIMIT = 50;
@@ -66,19 +69,30 @@ export interface BattleRewards {
   pointsGained: number;
   unlockedOpponent: OpponentDef | null;
   firstVictory: boolean;
+  /** dias de ferimento causados pela derrota (0 = nenhum) */
+  injuryDays: number;
+  /** o adversário pediu revanche */
+  rematchAsked: boolean;
+  festival: boolean;
+  mode: FightMode;
 }
 
-export function computeRewards(p: PlayerState, opp: OpponentDef, won: boolean, rng: Rng) {
+export function computeRewards(p: PlayerState, opp: OpponentDef, won: boolean, rng: Rng, mode: FightMode = 'ladder') {
   const f = levelDiffFactor(p.level, opp.level);
-  const firstVictory = won && !p.defeatedOpponents.includes(opp.id);
+  const firstVictory = mode === 'ladder' && won && !p.defeatedOpponents.includes(opp.id);
+  // festival: a plateia lotada dobra a fama da luta
+  const fameMul = isFestival(p.day) ? FESTIVAL_FAME_MUL : 1;
   if (!won) {
     return { xp: Math.max(5, Math.round((30 + 12 * opp.level) * f * 0.2)), coins: 5 + opp.level, reputation: 0, itemId: null, firstVictory };
   }
-  const xp = Math.round((30 + 12 * opp.level) * f);
-  const coins = Math.round((20 + 8 * opp.level) * f) + (firstVictory ? 25 + opp.level * 10 : 0);
-  const reputation = Math.max(1, Math.round((2 + opp.level) * Math.min(1, f))) + (firstVictory ? 5 : 0);
-  const dropChance = firstVictory ? 1 : 0.2;
-  const itemId = rng() < dropChance ? rollDrop(opponentIndex(opp.id), rng) : null;
+  const mul = mode === 'rematch' ? REMATCH_REWARD_MUL : mode === 'free' ? 0.9 : 1;
+  const xp = Math.round((30 + 12 * opp.level) * f * mul);
+  const coins = Math.round((20 + 8 * opp.level) * f * mul) + (firstVictory ? 25 + opp.level * 10 : 0);
+  const fame = Math.max(1, Math.round((2 + opp.level) * Math.min(1, f))) + (firstVictory ? 5 : 0) + (mode === 'rematch' ? 4 : 0);
+  const reputation = fame * fameMul;
+  const dropChance = firstVictory ? 1 : mode === 'rematch' ? 0.5 : mode === 'free' ? 0.15 : 0.2;
+  const idx = mode === 'free' ? Math.min(OPPONENTS.length - 1, Math.floor(opp.level / 3)) : opponentIndex(opp.id);
+  const itemId = rng() < dropChance ? rollDrop(Math.max(0, idx), rng) : null;
   return { xp, coins, reputation, itemId, firstVictory };
 }
 
@@ -106,19 +120,23 @@ export interface BattleOutcomeInput {
   strategy: StrategyId;
   rng: Rng;
   now?: number;
+  /** tipo de luta (padrão: escada de adversários) */
+  mode?: FightMode;
 }
 
 /** Aplica o resultado de uma batalha ao jogador (vitória ou derrota — sem perdas). */
 export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): BattleRewards {
   const { opponent: opp, won, rng } = input;
+  const mode = input.mode ?? 'ladder';
   const playerLevelBefore = p.level;
-  const r = computeRewards(p, opp, won, rng);
+  const festival = isFestival(p.day);
+  const r = computeRewards(p, opp, won, rng, mode);
   const levelUps = grantXp(p, r.xp);
   p.coins += r.coins;
   p.reputation += r.reputation;
   if (r.itemId) addItem(p, r.itemId);
   let unlocked: OpponentDef | null = null;
-  if (won && !p.defeatedOpponents.includes(opp.id)) {
+  if (mode === 'ladder' && won && !p.defeatedOpponents.includes(opp.id)) {
     p.defeatedOpponents.push(opp.id);
     const next = OPPONENTS[opponentIndex(opp.id) + 1];
     if (next) {
@@ -131,12 +149,21 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
   else p.stats.losses++;
   const prevStreak = p.streak;
   p.streak = won ? Math.max(0, p.streak) + 1 : Math.min(0, p.streak) - 1;
-  onBattle(p, opp, won, r.firstVictory, rng, input.reason, prevStreak);
+  // rivais: lembram do resultado; quem perdeu pode pedir revanche (raramente)
+  let rematchAsked = false;
+  if (mode === 'ladder' || mode === 'rematch') {
+    recordRival(p, opp.id, won);
+    if (mode === 'rematch') p.rematch = null;
+    if (won) rematchAsked = maybeAskRematch(p, opp.id, rng);
+  }
+  const injuryDays = won ? 0 : applyInjury(p, input.reason, rng);
+  onBattle(p, opp, won, r.firstVictory, rng, input.reason, prevStreak, mode);
+  if (rematchAsked) onRematchAsked(p, opp.id, rng);
   const rec: BattleRecord = {
     id: `b${p.stats.battles}-${input.now ?? Date.now()}`,
     date: input.now ?? Date.now(),
     opponentId: opp.id,
-    opponentName: `${opp.name}, ${opp.epithet}`,
+    opponentName: opponentFullName(opp),
     opponentLevel: opp.level,
     playerLevel: playerLevelBefore,
     result: won ? 'win' : 'loss',
@@ -162,6 +189,10 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
     pointsGained: levelUps * POINTS_PER_LEVEL,
     unlockedOpponent: unlocked,
     firstVictory: r.firstVictory,
+    injuryDays,
+    rematchAsked,
+    festival,
+    mode,
   };
 }
 
@@ -172,4 +203,41 @@ export function reputationTitle(rep: number): string {
   if (rep >= 80) return t('rank.3');
   if (rep >= 25) return t('rank.2');
   return t('rank.1');
+}
+
+/** Luta de torneio: entra no histórico e nas estatísticas, sem prêmio imediato (o prêmio vem no fim). */
+export function recordFightOnly(
+  p: PlayerState,
+  opp: OpponentDef,
+  won: boolean,
+  reason: 'ko' | 'decision' | 'forfeit',
+  duration: number,
+  strategy: StrategyId,
+  rng: Rng,
+  now = Date.now(),
+): number {
+  p.stats.battles++;
+  if (won) p.stats.wins++;
+  else p.stats.losses++;
+  p.streak = won ? Math.max(0, p.streak) + 1 : Math.min(0, p.streak) - 1;
+  const injury = won ? 0 : applyInjury(p, reason, rng);
+  p.history.unshift({
+    id: `b${p.stats.battles}-${now}`,
+    date: now,
+    opponentId: opp.id,
+    opponentName: opponentFullName(opp),
+    opponentLevel: opp.level,
+    playerLevel: p.level,
+    result: won ? 'win' : 'loss',
+    reason,
+    duration: Math.round(duration),
+    strategy,
+    xp: 0,
+    coins: 0,
+    reputation: 0,
+    itemId: null,
+    levelUps: 0,
+  });
+  if (p.history.length > HISTORY_LIMIT) p.history.length = HISTORY_LIMIT;
+  return injury;
 }

@@ -108,7 +108,7 @@ export function bathsCost(p: PlayerState): number {
 
 export function canBathe(p: PlayerState): Check {
   if (!isOpen(getLocation('baths'), p.minutes, p.day)) return t('cal.bathsClosed');
-  if (p.energy >= MAX_ENERGY) return t('cal.rested');
+  if (p.energy >= MAX_ENERGY && !p.injury) return t('cal.rested');
   if (p.coins < bathsCost(p)) return t('err.noCoins');
   return timeLeft(p, BATHS_MINUTES);
 }
@@ -119,6 +119,8 @@ export function bathe(p: PlayerState): Check {
   p.coins -= bathsCost(p);
   advance(p, BATHS_MINUTES);
   p.energy = Math.min(MAX_ENERGY, p.energy + BATHS_ENERGY);
+  // a água quente das termas ajuda o ferimento a sarar (um dia a menos)
+  healInjuryDay(p);
   return null;
 }
 
@@ -128,4 +130,12 @@ export function sleep(p: PlayerState): void {
   p.minutes = WAKE_TIME;
   p.energy = MAX_ENERGY;
   p.location = 'home';
+  healInjuryDay(p);
+}
+
+/** O ferimento melhora um dia (uma noite de sono ou um banho nas termas). */
+export function healInjuryDay(p: PlayerState): void {
+  if (!p.injury) return;
+  p.injury.days--;
+  if (p.injury.days <= 0) p.injury = null;
 }

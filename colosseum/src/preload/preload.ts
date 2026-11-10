@@ -4,10 +4,10 @@ import { IPC, type ColosseumBridge, type WindowState } from '../shared/ipc';
 
 const api: ColosseumBridge = {
   save: {
-    read: () => ipcRenderer.invoke(IPC.saveRead),
-    write: (data: string) => ipcRenderer.invoke(IPC.saveWrite, String(data)),
-    writeSync: (data: string) => ipcRenderer.sendSync(IPC.saveWriteSync, String(data)),
-    remove: () => ipcRenderer.invoke(IPC.saveDelete),
+    read: (slot: number) => ipcRenderer.invoke(IPC.saveRead, Number(slot)),
+    write: (slot: number, data: string) => ipcRenderer.invoke(IPC.saveWrite, Number(slot), String(data)),
+    writeSync: (slot: number, data: string) => ipcRenderer.sendSync(IPC.saveWriteSync, Number(slot), String(data)),
+    remove: (slot: number) => ipcRenderer.invoke(IPC.saveDelete, Number(slot)),
   },
   win: {
     getState: () => ipcRenderer.invoke(IPC.winGetState),
@@ -21,7 +21,7 @@ const api: ColosseumBridge = {
       return () => ipcRenderer.removeListener(IPC.evtWindowState, listener);
     },
   },
-  app: { info: () => ipcRenderer.invoke(IPC.appInfo) },
+  app: { info: () => ipcRenderer.invoke(IPC.appInfo), quit: () => ipcRenderer.send(IPC.appQuit) },
 };
 
 contextBridge.exposeInMainWorld('colosseum', api);

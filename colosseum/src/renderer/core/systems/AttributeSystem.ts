@@ -1,7 +1,7 @@
 import type { Attributes, AttributeKey, ItemDef, PlayerState, Slot } from '../model/types';
 import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
 import { MAX_ATTRIBUTE, emptyAttributes } from '../data/gladiators';
-import { getItem } from '../data/equipment';
+import { forged, getItem } from '../data/equipment';
 import { clamp } from './rng';
 import { t } from '../../i18n';
 
@@ -49,7 +49,7 @@ export function equippedItems(player: Pick<PlayerState, 'equipment' | 'inventory
     if (!uid) continue;
     const inv = player.inventory.find((i) => i.uid === uid);
     const def = inv ? getItem(inv.itemId) : undefined;
-    if (def) out[slot] = def;
+    if (def) out[slot] = forged(def, inv?.plus ?? 0);
   }
   return out;
 }

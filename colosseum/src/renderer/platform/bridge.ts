@@ -8,15 +8,15 @@ declare global {
   }
 }
 
-const LS_KEY = 'colosseum.save';
+const LS_KEY = (slot: number) => `colosseum.save.${slot}`;
 
 function browserFallback(): ColosseumBridge {
   const listeners = new Set<(s: WindowState) => void>();
   const state = (): WindowState => ({ maximized: false, fullscreen: !!document.fullscreenElement });
   document.addEventListener('fullscreenchange', () => listeners.forEach((l) => l(state())));
-  const write = (data: string) => {
+  const write = (slot: number, data: string) => {
     try {
-      localStorage.setItem(LS_KEY, data);
+      localStorage.setItem(LS_KEY(slot), data);
       return { ok: true };
     } catch (e) {
       return { ok: false, error: String(e) };
@@ -24,13 +24,13 @@ function browserFallback(): ColosseumBridge {
   };
   return {
     save: {
-      read: async () => {
-        const data = localStorage.getItem(LS_KEY);
+      read: async (slot) => {
+        const data = localStorage.getItem(LS_KEY(slot)) ?? (slot === 1 ? localStorage.getItem('colosseum.save') : null);
         return { ok: true, data, source: data ? 'primary' : 'none' };
       },
-      write: async (d) => write(d),
-      writeSync: (d) => write(d),
-      remove: async () => (localStorage.removeItem(LS_KEY), { ok: true }),
+      write: async (slot, d) => write(slot, d),
+      writeSync: (slot, d) => write(slot, d),
+      remove: async (slot) => (localStorage.removeItem(LS_KEY(slot)), slot === 1 && localStorage.removeItem('colosseum.save'), { ok: true }),
     },
     win: {
       getState: async () => state(),
@@ -48,7 +48,7 @@ function browserFallback(): ColosseumBridge {
       toggleMaximize: () => undefined,
       onState: (cb) => (listeners.add(cb), () => listeners.delete(cb)),
     },
-    app: { info: async () => ({ version: 'dev', platform: 'browser', savePath: 'localStorage', isPackaged: false }) },
+    app: { info: async () => ({ version: 'dev', platform: 'browser', savePath: 'localStorage', isPackaged: false }), quit: () => window.close() },
   };
 }
 

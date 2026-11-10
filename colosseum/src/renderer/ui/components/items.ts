@@ -1,7 +1,7 @@
 // Linhas de item e comparação de estatísticas (usadas no Mercado e na ficha do gladiador).
 import type { ItemDef, PlayerState } from '../../core/model/types';
 import { SLOTS } from '../../core/model/types';
-import { getItem } from '../../core/data/equipment';
+import { invItem } from '../../core/data/equipment';
 import { t } from '../../i18n';
 import { itemDesc, rarityLabel, slotLabel } from '../../i18n/data';
 import { computeCombatStats, equippedItems, finalAttributes, naturalAttributes } from '../../core/systems/AttributeSystem';
@@ -47,7 +47,7 @@ export function equippedSlots(p: PlayerState, withButtons: boolean): string {
   return SLOTS.map((slot) => {
     const uid = p.equipment[slot];
     const inv = uid ? p.inventory.find((i) => i.uid === uid) : undefined;
-    const item = inv ? getItem(inv.itemId) : undefined;
+    const item = invItem(inv);
     return `<div class="slot-row"><span class="slot-label">${slotLabel(slot)}</span>
       ${item ? `${itemIcon(item, 'sm')} ${rarityName(item)}${withButtons ? ` <button class="btn sm" data-action="unequip" data-id="${slot}">${t('char.unequip')}</button>` : ''}` : `<span class="dim">${t('char.empty')}</span>`}</div>`;
   }).join('');

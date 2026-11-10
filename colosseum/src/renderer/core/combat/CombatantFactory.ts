@@ -7,6 +7,10 @@ import { getItem } from '../data/equipment';
 import { opponentAttributes, type OpponentDef } from '../data/opponents';
 import { opponentFullName } from '../../i18n/data';
 
+/** penalidades do ferimento (vida e dano) */
+export const INJURY_HP = 0.85;
+export const INJURY_DAMAGE = 0.9;
+
 /** Informação visual para a renderização (independente da lógica). */
 export interface FighterVisual {
   appearance: Appearance;
@@ -37,8 +41,14 @@ export function applyPerks(base: CombatStats, perks: string[]): CombatStats {
 export function playerCombatant(p: PlayerState): { spec: CombatantSpec; visual: FighterVisual } {
   const gear = equippedItems(p);
   const attrs = finalAttributes(naturalAttributes(p), gear);
+  const stats = applyPerks(computeCombatStats(attrs, gear), p.perks);
+  // ferido: menos vida e menos força nos golpes até sarar
+  if (p.injury) {
+    stats.maxHp = Math.round(stats.maxHp * INJURY_HP);
+    stats.damageMul *= INJURY_DAMAGE;
+  }
   return {
-    spec: { name: p.name, level: p.level, stats: applyPerks(computeCombatStats(attrs, gear), p.perks), skills: skillsFromPerks(p.perks), strategy: p.strategy },
+    spec: { name: p.name, level: p.level, stats, skills: skillsFromPerks(p.perks), strategy: p.strategy },
     visual: { appearance: p.appearance, gear },
   };
 }

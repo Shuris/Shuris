@@ -11,6 +11,7 @@ export const IPC = {
   winToggleMaximize: 'win:toggle-maximize',
   winSetFullscreen: 'win:set-fullscreen',
   appInfo: 'app:info',
+  appQuit: 'app:quit',
   evtWindowState: 'evt:window-state',
 } as const;
 
@@ -40,11 +41,12 @@ export interface AppInfo {
 
 /** API exposta ao renderer via contextBridge (window.colosseum). */
 export interface ColosseumBridge {
+  /** três espaços de salvamento separados (1 a 3) */
   save: {
-    read(): Promise<SaveReadResult>;
-    write(data: string): Promise<SaveWriteResult>;
-    writeSync(data: string): SaveWriteResult;
-    remove(): Promise<SaveWriteResult>;
+    read(slot: number): Promise<SaveReadResult>;
+    write(slot: number, data: string): Promise<SaveWriteResult>;
+    writeSync(slot: number, data: string): SaveWriteResult;
+    remove(slot: number): Promise<SaveWriteResult>;
   };
   win: {
     getState(): Promise<WindowState>;
@@ -54,7 +56,12 @@ export interface ColosseumBridge {
     toggleMaximize(): void;
     onState(cb: (s: WindowState) => void): () => void;
   };
-  app: { info(): Promise<AppInfo> };
+  app: { info(): Promise<AppInfo>; quit(): void };
 }
 
 export const MAX_SAVE_BYTES = 5 * 1024 * 1024;
+export const SAVE_SLOTS = [1, 2, 3] as const;
+
+export function isSlot(v: unknown): v is number {
+  return typeof v === 'number' && (SAVE_SLOTS as readonly number[]).includes(v);
+}

@@ -3,7 +3,7 @@
 // variantes separadas por "|". Aqui só ficam as regras de escolha.
 import { tk, variant, type Params } from '../../i18n';
 
-export type TalkMoment = 'intro' | 'reply' | 'win' | 'lose' | 'hurt' | 'crit';
+export type TalkMoment = 'intro' | 'reply' | 'win' | 'lose' | 'hurt' | 'crit' | 'rematch' | 'gloat';
 
 /** Traço de personalidade (aparece na ficha do adversário e no tom das falas). */
 export const PERSONALITY: Record<string, string> = {
@@ -18,9 +18,9 @@ export const PERSONALITY: Record<string, string> = {
   flamma: 'showman',
 };
 
-/** Fala de um adversário (ou do jogador, com who = 'player'). */
+/** Fala de um adversário (ou do jogador, com who = 'player'). Sem fala própria, usa a genérica. */
 export function talk(who: string, moment: TalkMoment, pick: number, params: Params = {}): string {
-  const raw = tk(`talk.${who}.${moment}`, params, '');
+  const raw = tk(`talk.${who}.${moment}`, params, '') || tk(`talk.any.${moment}`, params, '');
   return raw ? variant(raw, pick) : '';
 }
 

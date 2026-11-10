@@ -7,7 +7,9 @@ import { LOCATIONS } from '../data/locations';
 import { skillPointsForLevel } from './SkillTreeSystem';
 import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
 import { MAX_ATTRIBUTE, MAX_LEVEL, ORIGINS } from '../data/gladiators';
-import { getItem } from '../data/equipment';
+import { getItem, MAX_PLUS } from '../data/equipment';
+import { getPoolFighter } from '../data/fighters';
+import type { EventsState, RivalMemory, TournamentRun, TournamentState } from '../model/types';
 import { OPPONENTS, getOpponent } from '../data/opponents';
 import { HISTORY_LIMIT } from './ProgressionSystem';
 import { SAVE_VERSION, sanitizeName } from './PlayerFactory';
@@ -80,7 +82,8 @@ export function validatePlayer(p: Obj): ParseResult {
     for (const it of p.inventory) {
       if (isObj(it) && typeof it.uid === 'string' && typeof it.itemId === 'string' && getItem(it.itemId) && !seen.has(it.uid)) {
         seen.add(it.uid);
-        inventory.push({ uid: it.uid, itemId: it.itemId });
+        const plus = typeof it.plus === 'number' && Number.isFinite(it.plus) ? Math.round(clamp(it.plus, 0, MAX_PLUS)) : 0;
+        inventory.push(plus ? { uid: it.uid, itemId: it.itemId, plus } : { uid: it.uid, itemId: it.itemId });
       } else w.push('item de inventário inválido descartado');
     }
   }
@@ -181,6 +184,7 @@ export function validatePlayer(p: Obj): ParseResult {
       rumorDay: int(isObj(p.tavern) ? p.tavern.rumorDay : 0, 0, 0, 1e7, w, 'tavern.rumorDay'),
       heard: isObj(p.tavern) && Array.isArray(p.tavern.heard) ? p.tavern.heard.filter((h): h is string => typeof h === 'string').slice(0, 200) : [],
     },
+    ...v4Fields(p, w),
     createdAt: int(p.createdAt, Date.now(), 0, 8.64e15, w, 'createdAt'),
     updatedAt: int(p.updatedAt, Date.now(), 0, 8.64e15, w, 'updatedAt'),
   };
@@ -191,7 +195,7 @@ export function validatePlayer(p: Obj): ParseResult {
   return { ok: true, player, warnings: w };
 }
 
-const NEWS_KINDS = ['fame', 'victory', 'defeat', 'streak', 'level', 'arena', 'rival', 'champion', 'debut', 'city'];
+const NEWS_KINDS = ['fame', 'victory', 'defeat', 'streak', 'level', 'arena', 'rival', 'champion', 'debut', 'city', 'event', 'tournament'];
 
 function newsItems(v: unknown): NewsItem[] {
   if (!Array.isArray(v)) return [];
@@ -248,6 +252,62 @@ function calendarAndTree(p: Obj, w: string[]) {
       milestones: Array.isArray(news.milestones) ? news.milestones.filter((m): m is string => typeof m === 'string').slice(0, 100) : [],
     },
   };
+}
+
+/** Campos da versão 4 (rivais, revanche, ferimentos, torneio, eventos). Saves antigos recebem valores iniciais. */
+function v4Fields(p: Obj, w: string[]) {
+  const rivals: Record<string, RivalMemory> = {};
+  if (isObj(p.rivals)) {
+    for (const [id, m] of Object.entries(p.rivals)) {
+      if (!getOpponent(id) || !isObj(m)) continue;
+      rivals[id] = {
+        wins: int(m.wins, 0, 0, 1e6, w, 'rivals.wins'),
+        losses: int(m.losses, 0, 0, 1e6, w, 'rivals.losses'),
+        lastDay: int(m.lastDay, 0, 0, 1e7, w, 'rivals.lastDay'),
+        last: m.last === 'loss' ? 'loss' : 'win',
+      };
+    }
+  }
+  const rm = isObj(p.rematch) && typeof p.rematch.opponentId === 'string' && getOpponent(p.rematch.opponentId) ? p.rematch : null;
+  const inj = isObj(p.injury) ? int(p.injury.days, 0, 0, 3, w, 'injury.days') : 0;
+  const tr = isObj(p.tournament) ? p.tournament : {};
+  const ev = isObj(p.events) ? p.events : {};
+  const tournament: TournamentState = {
+    registered: int(tr.registered, 0, 0, 1e7, w, 'tournament.registered'),
+    run: tournamentRun(tr.run),
+    titles: int(tr.titles, 0, 0, 1e5, w, 'tournament.titles'),
+    best: int(tr.best, -1, -1, 3, w, 'tournament.best'),
+  };
+  const strList = (v: unknown, max: number) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string').slice(0, max) : []);
+  const events: EventsState = {
+    armDay: int(ev.armDay, 0, 0, 1e7, w, 'events.armDay'),
+    armWins: int(ev.armWins, 0, 0, 1e5, w, 'events.armWins'),
+    merchantDay: int(ev.merchantDay, 0, 0, 1e7, w, 'events.merchantDay'),
+    merchantBought: strList(ev.merchantBought, 10).filter((id) => !!getItem(id)),
+    freeDay: int(ev.freeDay, 0, 0, 1e7, w, 'events.freeDay'),
+    freeCount: int(ev.freeCount, 0, 0, 1000, w, 'events.freeCount'),
+  };
+  return {
+    rivals,
+    rematch: rm
+      ? { opponentId: rm.opponentId as string, askedDay: int(rm.askedDay, 1, 1, 1e7, w, 'rematch.askedDay'), expires: int(rm.expires, 1, 1, 1e7, w, 'rematch.expires') }
+      : null,
+    lastRematchDay: int(p.lastRematchDay, 0, 0, 1e7, w, 'lastRematchDay'),
+    injury: inj > 0 ? { days: inj } : null,
+    tournament,
+    events,
+  };
+}
+
+function tournamentRun(v: unknown): TournamentRun | null {
+  if (!isObj(v) || !Array.isArray(v.bracket) || !Array.isArray(v.levels) || !Array.isArray(v.winners)) return null;
+  const bracket = v.bracket.filter((id): id is string => typeof id === 'string');
+  if (bracket.length !== 8 || bracket.filter((id) => id === 'player').length !== 1) return null;
+  if (!bracket.every((id) => id === 'player' || getPoolFighter(id))) return null;
+  const levels = v.levels.map((n) => (typeof n === 'number' && Number.isFinite(n) ? Math.round(clamp(n, 1, MAX_LEVEL)) : 1));
+  const winners = v.winners.filter((n): n is number => Number.isInteger(n) && n >= 0 && n < 8).slice(0, 7);
+  if (levels.length !== 8) return null;
+  return { day: typeof v.day === 'number' ? Math.round(v.day) : 1, bracket, levels, winners, done: v.done === true };
 }
 
 function isStrategy(v: unknown): v is StrategyId {

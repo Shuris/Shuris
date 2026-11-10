@@ -106,6 +106,13 @@ export const ITEMS: ItemDef[] = [
     mods: { damage: 15, reach: 42, attackSpeed: 0.1, attrs: { agi: 3, tech: 3 } },
     visual: { sheets: ['weapon_trident'], tint: GOLD_TINT, icon: 'weapon_trident' },
   },
+  {
+    id: 'arbelas', name: 'Arbelas', category: 'weapon', slot: 'mainHand', rarity: 'rare',
+    description: 'Tubo de ferro que cobre o antebraço e termina numa lâmina em meia-lua. A arma do scissor.',
+    price: 420, minLevel: 8, shop: true,
+    mods: { damage: 9, reach: 22, attackSpeed: -0.05, attrs: { tech: 1 } },
+    visual: { sheets: ['weapon_arbelas'], icon: 'weapon_arbelas' },
+  },
   // ------------------------------------------------------------- ESCUDOS
   {
     id: 'parmula', name: 'Escudo pequeno', category: 'shield', slot: 'offHand', rarity: 'common',
@@ -142,6 +149,13 @@ export const ITEMS: ItemDef[] = [
     mods: { defense: 14, block: 0.72, attackSpeed: 0.05, attrs: { vit: 2 } },
     visual: { sheets: ['shield_scutum'], tint: GOLD_TINT, icon: 'shield_scutum' },
   },
+  {
+    id: 'twin_gladius', name: 'Segundo gládio', category: 'weapon', slot: 'offHand', rarity: 'uncommon',
+    description: 'Uma espada para cada mão, como os dimachaeri. Ataques mais rápidos, mas sem escudo para bloquear.',
+    price: 260, minLevel: 5, shop: true,
+    mods: { damage: 3, attackSpeed: -0.12, attrs: { agi: 1 } },
+    visual: { sheets: ['offhand_gladius'], icon: 'offhand_gladius' },
+  },
   // ------------------------------------------------------------- CAPACETES
   {
     id: 'leather_cap', name: 'Capacete de couro', category: 'helmet', slot: 'head', rarity: 'common',
@@ -171,6 +185,27 @@ export const ITEMS: ItemDef[] = [
     mods: { defense: 12, attrs: { tech: 2 } },
     visual: { sheets: ['helmet_galea'], tint: GOLD_TINT, icon: 'helmet_galea' },
   },
+  {
+    id: 'provocator_helm', name: 'Elmo do Provocator', category: 'helmet', slot: 'head', rarity: 'uncommon',
+    description: 'Elmo de legionário com viseira fechada e abas no pescoço, sem aba larga.',
+    price: 260, minLevel: 5, shop: true,
+    mods: { defense: 7 },
+    visual: { sheets: ['helmet_provocator'], icon: 'helmet_provocator' },
+  },
+  {
+    id: 'secutor_helm', name: 'Elmo do Secutor', category: 'helmet', slot: 'head', rarity: 'rare',
+    description: 'Elmo liso e arredondado, com dois furos pequenos para os olhos: a rede do retiário escorrega nele.',
+    price: 380, minLevel: 7, shop: true,
+    mods: { defense: 8, attrs: { prec: -1, res: 1 } },
+    visual: { sheets: ['helmet_secutor'], icon: 'helmet_secutor' },
+  },
+  {
+    id: 'crupellarius_helm', name: 'Elmo fechado de Crupellarius', category: 'helmet', slot: 'head', rarity: 'rare',
+    description: 'Elmo de ferro inteiriço dos crupellarii gauleses. Quase nada o atravessa, mas é pesado.',
+    price: 560, minLevel: 12, shop: true,
+    mods: { defense: 11, attrs: { agi: -1 } },
+    visual: { sheets: ['helmet_crupellarius'], icon: 'helmet_crupellarius' },
+  },
   // ------------------------------------------------------------- ARMADURAS
   {
     id: 'light_armor', name: 'Armadura leve', category: 'armor', slot: 'body', rarity: 'common',
@@ -199,6 +234,20 @@ export const ITEMS: ItemDef[] = [
     price: 1600, minLevel: 15, shop: false,
     mods: { defense: 18, attrs: { vit: 3 } },
     visual: { sheets: ['armor_heavy'], tint: GOLD_TINT, icon: 'armor_heavy' },
+  },
+  {
+    id: 'cardiophylax', name: 'Cardiophylax', category: 'armor', slot: 'body', rarity: 'uncommon',
+    description: 'Placa de bronze presa ao peito por correias, a proteção típica do provocator.',
+    price: 170, minLevel: 3, shop: true,
+    mods: { defense: 7 },
+    visual: { sheets: ['armor_cardio'], icon: 'armor_cardio' },
+  },
+  {
+    id: 'scale_armor', name: 'Lorica squamata', category: 'armor', slot: 'body', rarity: 'rare',
+    description: 'Couraça de escamas de ferro sobre couro, usada pelos crupellarii. Muito resistente e pesada.',
+    price: 640, minLevel: 12, shop: true,
+    mods: { defense: 16, attackSpeed: 0.08, attrs: { agi: -2 } },
+    visual: { sheets: ['armor_scale'], icon: 'armor_scale' },
   },
   // ------------------------------------------------------------- PERNAS
   {
@@ -243,6 +292,42 @@ export function requireItem(id: string): ItemDef {
   return it;
 }
 
-export function sellPrice(item: ItemDef): number {
-  return Math.max(1, Math.floor(item.price * 0.4));
+export function sellPrice(item: ItemDef, plus = 0): number {
+  return Math.max(1, Math.floor(item.price * 0.4 + forgeSpent(item, plus) * 0.3));
+}
+
+// ------------------------------------------------------------- FERREIRO
+export const MAX_PLUS = 3;
+
+/** Preço para levar o item de `plus` para `plus + 1`. */
+export function forgeCost(item: ItemDef, plus: number): number {
+  return Math.round(20 + item.price * [0.4, 0.7, 1.1][Math.max(0, Math.min(2, plus))]);
+}
+
+/** Nível mínimo do gladiador para a próxima melhoria. */
+export function forgeLevel(item: ItemDef, plus: number): number {
+  return item.minLevel + (plus + 1) * 3 - 2;
+}
+
+function forgeSpent(item: ItemDef, plus: number): number {
+  let s = 0;
+  for (let i = 0; i < plus; i++) s += forgeCost(item, i);
+  return s;
+}
+
+/** Item com as melhorias do ferreiro aplicadas (cópia; o original não muda). */
+export function forged(item: ItemDef, plus = 0): ItemDef {
+  const n = Math.max(0, Math.min(MAX_PLUS, Math.floor(plus)));
+  if (!n) return item;
+  const m = { ...item.mods };
+  if (item.category === 'weapon') m.damage = (m.damage ?? 0) + n * Math.max(1, Math.round((item.mods.damage ?? 0) * 0.15));
+  if (m.block) m.block = Math.min(0.85, m.block + 0.02 * n);
+  if (item.category !== 'weapon') m.defense = (m.defense ?? 0) + n * Math.max(1, Math.ceil((item.mods.defense ?? 0) * 0.15));
+  return { ...item, mods: m, plus: n };
+}
+
+/** Item do inventário com as melhorias do ferreiro. */
+export function invItem(inv: { itemId: string; plus?: number } | undefined): ItemDef | undefined {
+  const def = inv ? BY_ID.get(inv.itemId) : undefined;
+  return def ? forged(def, inv?.plus ?? 0) : undefined;
 }

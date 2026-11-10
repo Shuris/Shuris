@@ -5,7 +5,7 @@ import type { AttributeKey, ItemDef, LocationId, Rarity, SkillId, Slot, Strategy
 import type { OpponentDef } from '../core/data/opponents';
 import type { PerkDef, BranchId } from '../core/data/skillTree';
 import type { OriginDef } from '../core/data/gladiators';
-import { getLang } from './index';
+import { getLang, tk } from './index';
 
 type ND = { name: string; description: string };
 
@@ -38,6 +38,13 @@ export const EN_ITEMS: Record<string, ND> = {
   bronze_greaves: { name: 'Bronze greaves', description: 'Bronze ocreae with knee guards.' },
   ornate_greaves: { name: 'Ornate ocreae', description: 'Tall decorated greaves, light and tough.' },
   champion_greaves: { name: "Champion's greaves", description: "Golden greaves that match the champion's armor." },
+  arbelas: { name: 'Arbelas', description: 'An iron tube covering the forearm that ends in a crescent blade. The scissor’s weapon.' },
+  twin_gladius: { name: 'Second gladius', description: 'One sword for each hand, like the dimachaeri. Faster attacks, but no shield to block.' },
+  provocator_helm: { name: 'Provocator helmet', description: 'Legionary helmet with a closed visor and neck flaps, without a wide brim.' },
+  secutor_helm: { name: 'Secutor helmet', description: 'Smooth, rounded helmet with two small eye holes: the retiarius’ net slides off it.' },
+  crupellarius_helm: { name: 'Closed crupellarius helmet', description: 'One-piece iron helmet of the Gallic crupellarii. Almost nothing gets through, but it is heavy.' },
+  cardiophylax: { name: 'Cardiophylax', description: 'Bronze plate strapped to the chest, the typical protection of the provocator.' },
+  scale_armor: { name: 'Lorica squamata', description: 'Iron scales over leather, worn by the crupellarii. Very tough and heavy.' },
 };
 
 export const EN_OPPONENTS: Record<string, { epithet: string; description: string }> = {
@@ -164,12 +171,14 @@ export function itemDesc(item: ItemDef): string {
   return (en() && EN_ITEMS[item.id]?.description) || item.description;
 }
 export function opponentEpithet(o: OpponentDef): string {
+  if (o.cls) return tk(`class.${o.cls}.ep`);
   return (en() && EN_OPPONENTS[o.id]?.epithet) || o.epithet;
 }
 export function opponentFullName(o: OpponentDef): string {
   return `${o.name}, ${opponentEpithet(o)}`;
 }
 export function opponentDesc(o: OpponentDef): string {
+  if (o.cls) return tk(`class.${o.cls}.desc`);
   return (en() && EN_OPPONENTS[o.id]?.description) || o.description;
 }
 export function perkName(p: PerkDef): string {

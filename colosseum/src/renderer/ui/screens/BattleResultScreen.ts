@@ -7,7 +7,7 @@ import { esc, fmtDuration, icon, itemIcon, rarityName } from '../dom';
 import { t } from '../../i18n';
 
 
-export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, auto: boolean, energy: number): string {
+export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, again: 'free' | 'retry' | null, energy: number): string {
   const won = rw.result === 'win';
   const item = rw.itemId ? getItem(rw.itemId) : undefined;
   return `
@@ -22,13 +22,16 @@ export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDe
       </div>
       ${rw.levelUps ? `<div class="levelup">${t('app.levelUp', { level: rw.newLevel, points: rw.pointsGained, skill: rw.levelUps })}</div>` : ''}
       ${rw.unlockedOpponent ? `<div class="unlock">${t('result.newRival')} <b>${esc(rw.unlockedOpponent.name)}</b></div>` : ''}
-      ${won ? '' : `<p class="hint">${t('result.noLoss')}</p>`}
+      ${rw.festival && rw.reputation ? `<div class="unlock festival">${t('result.festival')}</div>` : ''}
+      ${rw.mode === 'rematch' && won ? `<div class="unlock">${t('result.rematchWon')}</div>` : ''}
+      ${rw.rematchAsked ? `<div class="unlock red">${t('result.rematchAsked', { name: esc(opp.name) })}</div>` : ''}
+      ${rw.injuryDays ? `<div class="injury-note">${t('injury.got', { n: rw.injuryDays })}</div>` : ''}
+      ${won || rw.injuryDays ? '' : `<p class="hint">${t('result.noLoss')}</p>`}
       <p class="hint">${t('result.energyLeft', { n: Math.round(energy) })}${energy < 35 ? t('result.rest') : ''}</p>
-      ${auto ? '<p class="tiny" data-countdown></p>' : ''}
       <div class="row center">
         ${rw.levelUps ? `<button class="btn btn-gold" data-r="points">${t('result.usePoints')}</button>` : ''}
         <button class="btn" data-r="close">${t('common.continue')}</button>
-        <button class="btn btn-red" data-r="again">${t('result.rematch')}</button>
+        ${again ? `<button class="btn btn-red" data-r="again">${again === 'free' ? t('result.nextChallenger') : t('result.retry')}</button>` : ''}
       </div>
     </div>`;
 }

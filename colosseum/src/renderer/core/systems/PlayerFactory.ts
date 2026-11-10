@@ -7,7 +7,7 @@ import { debutEdition } from './NewsSystem';
 import { createRng } from './rng';
 import { t } from '../../i18n';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const STARTING_COINS = 150;
 export const MAX_NAME_LENGTH = 20;
 
@@ -70,6 +70,12 @@ function buildPlayer(name: string, originId: string, appearance: Appearance, now
     news: { editions: [], pending: [], milestones: [] },
     upgrades: [],
     tavern: { rumorDay: 0, heard: [] },
+    rivals: {},
+    rematch: null,
+    lastRematchDay: 0,
+    injury: null,
+    tournament: { registered: 0, run: null, titles: 0, best: -1 },
+    events: { armDay: 0, armWins: 0, merchantDay: 0, merchantBought: [], freeDay: 0, freeCount: 0 },
     createdAt: now,
     updatedAt: now,
   };

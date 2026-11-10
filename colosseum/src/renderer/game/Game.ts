@@ -106,6 +106,16 @@ export class GameView {
     this.current = 'arena';
   }
 
+  /** Pausa (menu de pausa): congela a cena ativa. */
+  setPaused(on: boolean): void {
+    const key = this.current;
+    if (!key) return;
+    const sc = this.game.scene.getScene(key);
+    if (!sc || !this.game.scene.isActive(key) && !this.game.scene.isPaused(key)) return;
+    if (on && !this.game.scene.isPaused(key)) this.game.scene.pause(key);
+    if (!on && this.game.scene.isPaused(key)) this.game.scene.resume(key);
+  }
+
   setSpeed(s: number): void {
     if (this.current === 'arena') this.arena.setSpeed(s);
   }

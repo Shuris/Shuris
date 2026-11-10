@@ -42,11 +42,15 @@ export interface ItemDef {
   shop: boolean;
   mods: ItemMods;
   visual: ItemVisual;
+  /** melhorias do ferreiro já aplicadas (cópias criadas por forged()) */
+  plus?: number;
 }
 
 export interface InventoryItem {
   uid: string;
   itemId: string;
+  /** melhorias do ferreiro (+1 a +3) */
+  plus?: number;
 }
 
 export type StrategyId = 'aggressive' | 'balanced' | 'defensive';
@@ -86,9 +90,12 @@ export interface BattleRecord {
 
 export type LocationId = 'ludus' | 'home' | 'market' | 'arena' | 'temple' | 'forum' | 'baths' | 'tavern';
 
+/** Tipo de luta: escada de adversários, desafiante avulso, revanche ou torneio. */
+export type FightMode = 'ladder' | 'free' | 'rematch' | 'tournament';
+
 export interface NewsItem {
   id: string;
-  kind: 'fame' | 'victory' | 'defeat' | 'streak' | 'level' | 'arena' | 'rival' | 'champion' | 'debut' | 'city';
+  kind: 'fame' | 'victory' | 'defeat' | 'streak' | 'level' | 'arena' | 'rival' | 'champion' | 'debut' | 'city' | 'event' | 'tournament';
   headline: string;
   body: string;
   /** modelo de texto (traduzível): news.<tpl>.h / .b */
@@ -122,6 +129,58 @@ export interface GameSettings {
   muted: boolean;
   /** idioma da interface */
   language: 'pt' | 'en';
+}
+
+/** Lembrança de um adversário da escada (rivais reagem ao jogador). */
+export interface RivalMemory {
+  wins: number;
+  losses: number;
+  lastDay: number;
+  /** resultado da última luta, do ponto de vista do jogador */
+  last: 'win' | 'loss';
+}
+
+/** Pedido de revanche de um adversário derrotado (ele treina enquanto espera). */
+export interface RematchRequest {
+  opponentId: string;
+  /** dia em que o pedido foi feito (sai no jornal da manhã seguinte) */
+  askedDay: number;
+  /** último dia para aceitar */
+  expires: number;
+}
+
+/** Torneio em andamento (chave de 8 lutadores). */
+export interface TournamentRun {
+  day: number;
+  /** ids dos lutadores na ordem da chave ('player' = o jogador) */
+  bracket: string[];
+  /** níveis dos lutadores (mesma ordem) */
+  levels: number[];
+  /** vencedores já decididos: 4 das quartas, 2 das semis e 1 da final (índices da chave) */
+  winners: number[];
+  /** jogador eliminado (ou campeão) */
+  done: boolean;
+}
+
+export interface TournamentState {
+  /** sábado em que o jogador está inscrito (0 = nenhum) */
+  registered: number;
+  run: TournamentRun | null;
+  titles: number;
+  /** melhor rodada já alcançada (0 = quartas, 3 = campeão) */
+  best: number;
+}
+
+export interface EventsState {
+  /** último domingo em que disputou a queda de braço */
+  armDay: number;
+  armWins: number;
+  /** compras feitas na visita atual do mercador */
+  merchantDay: number;
+  merchantBought: string[];
+  /** lutas avulsas do dia (cada uma contra um desafiante novo) */
+  freeDay: number;
+  freeCount: number;
 }
 
 export interface PlayerState {
@@ -163,6 +222,15 @@ export interface PlayerState {
   upgrades: string[];
   /** taverna: último dia em que ouviu boatos e conversas já ouvidas */
   tavern: { rumorDay: number; heard: string[] };
+  /** versão 4: rivais, revanche, ferimentos, torneio e eventos da cidade */
+  rivals: Record<string, RivalMemory>;
+  rematch: RematchRequest | null;
+  /** dia do último pedido de revanche (evita pedidos frequentes) */
+  lastRematchDay: number;
+  /** ferimento: dias restantes até sarar (ou null) */
+  injury: { days: number } | null;
+  tournament: TournamentState;
+  events: EventsState;
   createdAt: number;
   updatedAt: number;
 }

@@ -2,7 +2,10 @@
 // geradas pelos acontecimentos (fama, vitórias, sequências...) e publicadas
 // na edição da manhã seguinte. Cada notícia guarda o modelo de texto e as
 // variáveis, então é exibida no idioma escolhido (e pode ter ilustração).
-import type { NewsItem, PlayerState } from '../model/types';
+import type { FightMode, NewsItem, PlayerState } from '../model/types';
+import { getPoolFighter } from '../data/fighters';
+import { isFestival, isMerchantDay } from './EventSystem';
+import { weekdayIndex } from '../data/locations';
 import { OPPONENTS, getOpponent, type OpponentDef } from '../data/opponents';
 import { ARENAS, arenaForOpponent } from '../data/arenas';
 import { getOrigin } from '../data/gladiators';
@@ -32,6 +35,19 @@ export const NEWS_TPL = {
   rival: 3,
   city: 8,
   tavern: 2,
+  rematchAsk: 2,
+  rematchWin: 1,
+  rematchLose: 1,
+  rematchFled: 1,
+  festivalSoon: 1,
+  festival: 2,
+  merchant: 2,
+  armWin: 2,
+  tourneySoon: 1,
+  tourneyWin: 2,
+  tourneyFinal: 1,
+  tourneyOut: 1,
+  tourneyNoShow: 1,
 } as const;
 export type NewsGroup = keyof typeof NEWS_TPL;
 
@@ -53,6 +69,19 @@ const IMAGES: Partial<Record<NewsGroup, string[]>> = {
   level: ['training'],
   rival: ['rival'],
   tavern: ['tavern'],
+  rematchAsk: ['rival'],
+  rematchWin: ['victory'],
+  rematchLose: ['defeat'],
+  rematchFled: ['rival'],
+  festivalSoon: ['festival'],
+  festival: ['festival'],
+  merchant: ['merchant'],
+  armWin: ['armwrestle'],
+  tourneySoon: ['tournament'],
+  tourneyWin: ['tournament'],
+  tourneyFinal: ['tournament'],
+  tourneyOut: ['tournament'],
+  tourneyNoShow: ['tournament'],
 };
 const CITY_IMAGES = ['market', 'forum', 'ship', 'baths', 'theater', 'rain', 'temple', 'market'];
 
@@ -70,7 +99,7 @@ function baseVars(p: PlayerState, extra: Vars = {}): Vars {
 
 /** Troca os ids das variáveis pelos nomes no idioma atual. */
 function resolve(v: Vars = {}): Vars {
-  const opp = (id: unknown) => getOpponent(String(id))?.name ?? String(id ?? '');
+  const opp = (id: unknown) => getOpponent(String(id))?.name ?? getPoolFighter(String(id))?.name ?? String(id ?? '');
   const arena = ARENAS.find((a) => a.id === v.arena);
   return {
     ...v,
@@ -155,8 +184,10 @@ export function onBattle(
   rng: Rng,
   reason: 'ko' | 'decision' | 'forfeit' = 'ko',
   prevStreak = 0,
+  mode: FightMode = 'ladder',
 ): void {
   const where = { opp: opp.id, arena: arenaForOpponent(opp.id).id };
+  if (mode === 'rematch') add(p, 'rival', won ? 'rematchWin' : 'rematchLose', rng, where);
   if (won) {
     if (firstVictory) {
       if (opp.id === OPPONENTS[OPPONENTS.length - 1].id) add(p, 'champion', 'champion', rng);
@@ -173,16 +204,37 @@ export function onBattle(
   } else {
     p.news.pending = p.news.pending.filter((n) => n.kind !== 'streak');
     if (p.streak === -3) add(p, 'defeat', 'slump', rng, where);
-    else add(p, 'defeat', reason === 'forfeit' ? 'lossForfeit' : reason === 'decision' ? 'lossDecision' : 'lossKo', rng, where);
+    else if (mode !== 'rematch') add(p, 'defeat', reason === 'forfeit' ? 'lossForfeit' : reason === 'decision' ? 'lossDecision' : 'lossKo', rng, where);
   }
   checkFame(p, rng);
   onLevel(p, rng);
+}
+
+/** Um adversário derrotado pede revanche (manchete da manhã seguinte). */
+export function onRematchAsked(p: PlayerState, opponentId: string, rng: Rng): void {
+  illustrate(add(p, 'rival', 'rematchAsk', rng, { opp: opponentId }), rng, 0.6);
+}
+
+/** Notícias de eventos (queda de braço, torneio, revanche esquecida). */
+export function onEvent(p: PlayerState, group: 'armWin' | 'tourneyWin' | 'tourneyFinal' | 'tourneyOut' | 'tourneyNoShow' | 'rematchFled', rng: Rng, extra: Vars = {}): void {
+  const item = add(p, group.startsWith('tourney') ? 'tournament' : 'event', group, rng, extra);
+  if (group === 'tourneyWin' || group === 'armWin') illustrate(item, rng, 0.8);
+}
+
+/** Avisos da cidade na edição da manhã: festival, mercador e torneio de sábado. */
+function cityEvents(p: PlayerState, rng: Rng): void {
+  if (isFestival(p.day)) illustrate(add(p, 'event', 'festival', rng), rng, 0.8);
+  else if (isFestival(p.day + 1)) add(p, 'event', 'festivalSoon', rng);
+  if (isMerchantDay(p.createdAt, p.day)) illustrate(add(p, 'event', 'merchant', rng), rng, 0.5);
+  if (weekdayIndex(p.day) === 5) add(p, 'event', 'tourneySoon', rng);
 }
 
 /** Publica a edição do dia (ao acordar). Retorna a edição se houver notícias do gladiador. */
 export function publish(p: PlayerState, rng: Rng) {
   const own = p.news.pending.splice(0, 5);
   p.news.pending = [];
+  cityEvents(p, rng);
+  own.push(...p.news.pending.splice(0));
   const items = [...own];
   add(p, 'city', 'city', rng);
   items.push(...p.news.pending.splice(0));

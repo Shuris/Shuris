@@ -2,6 +2,8 @@
 import type { PlayerState } from '../../core/model/types';
 import { MEAL_ENERGY, MEAL_MINUTES, RUMOR_COST, RUMOR_MINUTES, canEat, canHearRumor, canTalk, mealCost } from '../../core/systems/TavernSystem';
 import { nextRival } from '../../core/systems/NewsSystem';
+import { ARM_END, ARM_START, armFee, armPrize, canArmWrestle, isArmNight } from '../../core/systems/EventSystem';
+import { isSunday } from '../../core/data/locations';
 import { esc, icon } from '../dom';
 import { t } from '../../i18n';
 import type { Screen, ScreenDeps } from './Screen';
@@ -38,12 +40,28 @@ export class TavernScreen implements Screen {
     return `<div class="monk-say tavern-say"><b>${esc(say.who)}:</b><span>“${esc(say.text)}”</span></div>
       ${card('eat', t('tavern.meal'), t('tavern.mealDesc', { energy: MEAL_ENERGY, min: MEAL_MINUTES }), `${t('tavern.eat')} ${icon('coin', 'xs')} ${mealCost(p)}`, eatErr)}
       ${card('rumor', t('tavern.wine'), t('tavern.wineDesc', { rival: rival.name, min: RUMOR_MINUTES }), `${t('tavern.listen')} ${icon('coin', 'xs')} ${RUMOR_COST}`, rumorErr)}
-      ${card('talk', t('tavern.chat'), t('tavern.chatDesc'), t('tavern.talk'), talkErr)}`;
+      ${card('talk', t('tavern.chat'), t('tavern.chatDesc'), t('tavern.talk'), talkErr)}
+      ${this.armCard(p)}`;
+  }
+
+  /** Queda de braço: domingo à noite (19h–23h), uma vez por domingo. */
+  private armCard(p: PlayerState): string {
+    const night = isArmNight(p.day, p.minutes);
+    const err = canArmWrestle(p);
+    const when = t('event.armWhen', { from: ARM_START / 60, to: ARM_END / 60 });
+    if (!night) return `<div class="card tavern-card dim-card"><b>${t('event.armTitle')}</b><p class="tiny dim">${isSunday(p.day) ? when : t('event.armOnlySunday', { when })}</p></div>`;
+    return `<div class="card tavern-card arm-card">
+        <div class="row between"><b>${t('event.armTitle')}</b><span class="tag gold">${t('event.armTonight')}</span></div>
+        <p class="tiny dim">${t('event.armDesc', { prize: armPrize(p) })}</p>
+        <button class="btn btn-red wide" data-action="arm" ${err ? `disabled title="${esc(err)}"` : ''}>${t('event.armJoin')} ${icon('coin', 'xs')} ${armFee(p)}</button>
+        ${err ? `<p class="tiny red">${esc(err)}</p>` : ''}
+      </div>`;
   }
 
   onAction(action: string): void {
     if (action === 'eat') this.d.actions.tavern('eat');
     if (action === 'rumor') this.d.actions.tavern('rumor');
     if (action === 'talk') this.d.actions.tavern('talk');
+    if (action === 'arm') this.d.actions.armWrestle();
   }
 }

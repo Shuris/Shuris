@@ -1,4 +1,5 @@
-// Gerencia a janela única do jogo (moldura própria, maximizar e tela cheia).
+// Gerencia a janela única do jogo. O jogo sempre abre em tela cheia; F11 alterna
+// para janela (com a moldura normal do sistema, sem barra própria dentro do jogo).
 import { BrowserWindow, screen, shell } from 'electron';
 import path from 'node:path';
 import { IPC, type WindowState } from '../shared/ipc';
@@ -21,7 +22,9 @@ export class WindowManager {
       ...this.ensureVisible(s.bounds),
       minWidth: MIN.width,
       minHeight: MIN.height,
-      frame: false,
+      frame: true,
+      autoHideMenuBar: true,
+      fullscreen: true,
       show: false,
       backgroundColor: '#1a110c',
       title: 'Colosseum',
@@ -38,9 +41,10 @@ export class WindowManager {
       },
     });
     this.win = win;
+    win.setMenu(null);
     win.once('ready-to-show', () => {
       if (s.maximized) win.maximize();
-      if (s.fullscreen) win.setFullScreen(true);
+      win.setFullScreen(true);
       win.show();
     });
 

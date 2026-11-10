@@ -19,6 +19,8 @@ export type Sfx =
   | 'exhausted'
   | 'step'
   | 'equip'
+  | 'forge'
+  | 'thunder'
   | 'error';
 
 export class SoundManager {
@@ -50,8 +52,21 @@ export class SoundManager {
     return this.ctx;
   }
 
+  /** Contexto de áudio compartilhado com a música (que tem volume próprio). */
+  audioContext(): AudioContext | null {
+    return this.ensure();
+  }
+
   get contextState(): string {
     return this.ctx?.state ?? 'none';
+  }
+
+  get currentVolume(): number {
+    return this.volume;
+  }
+
+  get isMuted(): boolean {
+    return this.muted;
   }
 
   setVolume(v: number): void {
@@ -192,6 +207,19 @@ export class SoundManager {
         break;
       case 'error':
         this.tone(200, 0.14, 'square', 0.08);
+        break;
+      case 'forge':
+        // martelo na bigorna: três batidas metálicas
+        for (let i = 0; i < 3; i++) {
+          this.tone(1650 * r(), 0.25, 'square', 0.06, i * 0.22, 1600);
+          this.tone(2480 * r(), 0.18, 'square', 0.035, i * 0.22);
+          this.noise(0.05, 'highpass', 2600, 0.25, i * 0.22);
+        }
+        break;
+      case 'thunder':
+        this.noise(2.6 * k, 'lowpass', 260, 0.7 * k, 0, 70, 0.7);
+        this.noise(0.4, 'lowpass', 900, 0.4 * k, 0.05, 200);
+        this.tone(48, 1.8, 'sine', 0.35 * k, 0.05, 30, 0.08);
         break;
     }
   }

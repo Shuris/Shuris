@@ -296,8 +296,12 @@ def arena(theme_id, rng):
     return to_img(np.clip(a, 0, 255)), shadow
 
 
-def crowd(theme_id, rng, shadow, frames=3):
-    t = THEMES[theme_id]
+def crowd(theme_id, rng, shadow, frames=5, density=None):
+    """Público: quadros 0-2 = sentados/torcendo; 3-4 = de pé, braços para cima
+    (ovação). `density` lota a arquibancada (dia de festival)."""
+    t = dict(THEMES[theme_id])
+    if density is not None:
+        t["crowd"] = density
     people = []
     y = t["seat_top"] + 3
     vom = []
@@ -323,15 +327,20 @@ def crowd(theme_id, rng, shadow, frames=3):
     for f in range(frames):
         a = np.zeros((H, W, 4), dtype=np.int32)
         for (x, y, skin, hair, tunic, ph) in people:
-            cheer = (f == 1 and ph < 0.35) or (f == 2 and 0.35 <= ph < 0.6)
-            by = y - 4 + (-1 if cheer else 0)
+            standing = f >= 3
+            cheer = standing and ((f == 3) == (ph < 0.5) or ph > 0.85) or (f == 1 and ph < 0.35) or (f == 2 and 0.35 <= ph < 0.6)
+            by = y - 4 + (-1 if cheer else 0) + (-1 if standing else 0)
             fill_rect(a, x, by + 2, x + 3, by + 5, tunic)
             fill_rect(a, x, by + 4, x + 3, by + 5, darker(tunic, 0.75))
             fill_rect(a, x, by, x + 2, by + 2, skin)
             fill_rect(a, x, by, x + 2, by + 1, hair)
             if cheer:
-                fill_rect(a, x - 1, by - 1, x, by + 2, skin)
-                fill_rect(a, x + 3, by - 1, x + 4, by + 2, skin)
+                lift = 2 if standing else 1
+                fill_rect(a, x - 1, by - lift, x, by + 2, skin)
+                fill_rect(a, x + 3, by - lift, x + 4, by + 2, skin)
+            if standing and ph < 0.08:
+                # alguns acenam com panos coloridos
+                fill_rect(a, x + 3, by - 4, x + 6, by - 2, (230, 220, 200) if ph < 0.04 else (200, 60, 50))
         m = shadow & (a[..., 3] > 0)
         a[m, :3] = (a[m, :3] * 0.8).astype(np.int32)
         sheet.alpha_composite(to_img(np.clip(a, 0, 255)), (f * W, 0))

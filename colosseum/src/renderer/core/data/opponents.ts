@@ -16,6 +16,8 @@ export interface OpponentDef {
   /** ordem de preferência dos caminhos da árvore de habilidades */
   paths: BranchId[];
   appearance: Appearance;
+  /** tipo de gladiador (lutadores avulsos) */
+  cls?: string;
 }
 
 export const OPPONENTS: OpponentDef[] = [
@@ -94,6 +96,15 @@ export const OPPONENTS: OpponentDef[] = [
 
 export function getOpponent(id: string): OpponentDef | undefined {
   return OPPONENTS.find((o) => o.id === id);
+}
+
+/** Adversário de revanche: treinou enquanto esperava (até 3 níveis a mais). */
+export function rematchBoost(askedDay: number, day: number): number {
+  return Math.min(3, 1 + Math.floor(Math.max(0, day - askedDay) / 2));
+}
+
+export function withLevel(def: OpponentDef, level: number): OpponentDef {
+  return { ...def, level };
 }
 
 export function opponentIndex(id: string): number {

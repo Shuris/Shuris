@@ -3,7 +3,7 @@ import type { AttributeKey, PlayerState, SkillId, Slot } from '../../core/model/
 import { ATTRIBUTE_KEYS } from '../../core/model/types';
 import { ATTRIBUTE_INFO, MAX_ATTRIBUTE, MAX_LEVEL } from '../../core/data/gladiators';
 import { SKILLS } from '../../core/data/skills';
-import { getItem } from '../../core/data/equipment';
+import { invItem } from '../../core/data/equipment';
 import { equipItem, isEquipped, unequipSlot } from '../../core/systems/EquipmentSystem';
 import { skillsFromPerks } from '../../core/systems/SkillTreeSystem';
 import { equippedSlots, itemRow } from '../components/items';
@@ -49,7 +49,7 @@ export class CharacterScreen implements Screen {
     const items = p.inventory
       .filter((i) => !isEquipped(p, i.uid))
       .map((inv) => {
-        const item = getItem(inv.itemId);
+        const item = invItem(inv);
         return item ? itemRow(p, item, `<button class="btn btn-gold sm" data-action="equip" data-id="${inv.uid}" ${p.level < item.minLevel ? 'disabled' : ''}>${t('char.equip')}</button>`) : '';
       })
       .join('');

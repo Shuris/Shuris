@@ -58,7 +58,7 @@ export function sellItem(p: PlayerState, uid: string): Result {
   if (isEquipped(p, uid)) return fail(t('err.unequipFirst'));
   const item = getItem(p.inventory[idx].itemId);
   if (!item) return fail(t('err.itemInvalid'));
-  const price = sellPrice(item);
+  const price = sellPrice(item, p.inventory[idx].plus ?? 0);
   p.inventory.splice(idx, 1);
   p.coins += price;
   return ok(t('market.sold', { name: itemName(item), n: price }));

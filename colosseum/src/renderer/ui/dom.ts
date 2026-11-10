@@ -30,7 +30,7 @@ export function itemIcon(item: ItemDef, cls = ''): string {
 }
 
 export function rarityName(item: ItemDef): string {
-  return `<span class="item-name" style="color:${RARITY_COLOR[item.rarity]}">${esc(itemName(item))}</span>`;
+  return `<span class="item-name" style="color:${RARITY_COLOR[item.rarity]}">${esc(itemName(item))}${item.plus ? ` <b class="plus">+${item.plus}</b>` : ''}</span>`;
 }
 
 export function bar(value: number, max: number, cls: string, label = true): string {

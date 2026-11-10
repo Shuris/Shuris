@@ -359,6 +359,20 @@ def draw_weapon(d, hand, ang, kind, detail=False):
         for t in range(3, blade - 3):
             px(d, a(t, 0), darker(STEEL, 0.72))
         px(d, a(blade, 0), (255, 255, 255))
+    elif kind == "arbelas":
+        # tubo de ferro sobre o antebraço e lâmina em meia-lua na ponta
+        if not detail:
+            limb(d, a(-7), a(3), 4, IRON)
+            limb(d, a(3), a(5), 2, darker(IRON, 0.8))
+            pts = [a(5, -5.5), a(7.5, -5), a(9.5, -3), a(10.5, 0), a(9.5, 3), a(7.5, 5), a(5, 5.5),
+                   a(6.5, 3.2), a(7.6, 0), a(6.5, -3.2)]
+            poly(d, pts, STEEL)
+            return
+        for t in (-5, -2, 1):
+            px(d, a(t, -1.5), lighter(IRON, 0.45))
+            px(d, a(t, 1.5), darker(IRON, 0.6))
+        for (t, sd) in ((8.5, -4), (9.8, -2), (10.3, 0), (9.8, 2), (8.5, 4)):
+            px(d, a(t, sd), (244, 247, 252))
     elif kind == "spear":
         if not detail:
             limb(d, a(-10), a(25), 2, WOOD)
@@ -458,6 +472,9 @@ def draw_helmet(d, head, kind, detail=False):
         for x in (hx - 2, hx + 1, hx + 3):
             px(d, (x, hy - 4), lighter(LEATHER, 0.35))
         return
+    if kind in ("provocator", "secutor", "crupellarius"):
+        draw_helmet_v06(d, hx, hy, kind, detail)
+        return
     metal = BRONZE if kind in ("galea",) else IRON
     if not detail:
         d.ellipse([hx - 4, hy - 6, hx + 5, hy + 3], fill=metal)          # cúpula
@@ -490,6 +507,44 @@ def draw_helmet(d, head, kind, detail=False):
         px(d, (hx - 2, hy - 9), lighter(metal, 0.5))
 
 
+def draw_helmet_v06(d, hx, hy, kind, detail):
+    """Elmos novos: provocator (viseira e abas no pescoço), secutor (liso, olhos
+    pequenos, crista baixa) e crupellarius (balde de ferro fechado)."""
+    if kind == "provocator":
+        if not detail:
+            d.ellipse([hx - 4, hy - 6, hx + 5, hy + 2], fill=BRONZE)
+            d.rectangle([hx - 5, hy - 1, hx - 3, hy + 4], fill=BRONZE)       # abas do pescoço
+            d.rectangle([hx + 1, hy - 3, hx + 5, hy + 3], fill=darker(BRONZE, 0.55))  # viseira
+            return
+        for yy in (hy - 2, hy, hy + 2):
+            px(d, (hx + 3, yy), (20, 16, 14))
+            px(d, (hx + 4, yy), (20, 16, 14))
+        d.line([(hx - 3, hy - 5), (hx + 3, hy - 5)], fill=lighter(BRONZE, 0.5))
+        px(d, (hx - 4, hy + 1), darker(BRONZE, 0.6))
+        px(d, (hx - 4, hy + 3), darker(BRONZE, 0.6))
+    elif kind == "secutor":
+        if not detail:
+            d.ellipse([hx - 4, hy - 6, hx + 5, hy + 4], fill=IRON)
+            poly(d, [(hx - 3, hy - 6), (hx, hy - 8), (hx + 3, hy - 6)], darker(IRON, 0.85))  # crista baixa
+            return
+        px(d, (hx + 3, hy - 1), (16, 12, 10))
+        px(d, (hx + 3, hy + 1), (16, 12, 10))
+        px(d, (hx - 2, hy - 4), lighter(IRON, 0.7))
+        px(d, (hx - 1, hy - 5), lighter(IRON, 0.6))
+        d.line([(hx - 3, hy + 3), (hx + 4, hy + 3)], fill=darker(IRON, 0.6))
+    else:  # crupellarius
+        if not detail:
+            d.rectangle([hx - 4, hy - 6, hx + 5, hy + 4], fill=darker(IRON, 0.9))
+            d.ellipse([hx - 4, hy - 8, hx + 5, hy - 4], fill=darker(IRON, 0.9))
+            return
+        for yy in (hy - 1, hy + 1):
+            d.line([(hx + 1, yy), (hx + 5, yy)], fill=(18, 14, 12))
+        for xx in (hx - 3, hx, hx + 3):
+            px(d, (xx, hy - 4), lighter(IRON, 0.4))
+            px(d, (xx, hy + 3), lighter(IRON, 0.4))
+        d.line([(hx - 4, hy - 3), (hx + 5, hy - 3)], fill=darker(IRON, 0.6))
+
+
 def layer_helmet(s, kind):
     img, d = draw_canvas(FW, FH)
     draw_helmet(d, s["head"], kind)
@@ -499,6 +554,8 @@ def layer_helmet(s, kind):
 
 
 def layer_armor(s, kind):
+    if kind in ("cardio", "scale"):
+        return layer_armor_v06(s, kind)
     img, d = draw_canvas(FW, FH)
     col = {"light": LEATHER, "medium": IRON, "heavy": BRONZE}[kind]
     if kind == "light":
@@ -556,6 +613,62 @@ def layer_armor(s, kind):
     return img
 
 
+def layer_armor_v06(s, kind):
+    img, d = draw_canvas(FW, FH)
+    nx, ny = s["neck"]
+    hx, hy = s["hip"]
+    lerp = lambda t, o=0.0: (nx + (hx - nx) * t + o, ny + (hy - ny) * t)
+    if kind == "cardio":
+        # cintas cruzadas de couro e a placa de bronze (meia-lua) no peito
+        d.line([R(lerp(0.1, -3)), R(lerp(0.55, 3))], fill=LEATHER, width=1)
+        d.line([R(lerp(0.1, 3)), R(lerp(0.55, -3))], fill=LEATHER, width=1)
+        c = R(lerp(0.32, 1))
+        d.ellipse([c[0] - 3, c[1] - 2, c[0] + 3, c[1] + 3], fill=BRONZE)
+        img = finish(img, light=0.3)
+        d = ImageDraw.Draw(img)
+        px(d, (c[0] - 1, c[1] - 1), lighter(BRONZE, 0.6))
+        px(d, (c[0] + 1, c[1] + 1), darker(BRONZE, 0.65))
+        return img
+    # lorica squamata: escamas de ferro sobre couro, com ptéruges
+    poly(d, torso_poly(s, 5.4, 4.6, top=0.5, bottom=0.3), IRON)
+    for k in (-3, -1, 1, 3):
+        x = hx + k
+        d.rectangle([R((x - 0.5, hy))[0], R((x, hy))[1], R((x + 0.5, hy))[0], R((x, hy + 5))[1]], fill=LEATHER)
+    sh = R(s["bsh"])
+    d.ellipse([sh[0] - 3, sh[1] - 2, sh[0] + 2, sh[1] + 2], fill=IRON)
+    img = finish(img, light=0.25)
+    d = ImageDraw.Draw(img)
+    for i, t in enumerate((0.2, 0.32, 0.44, 0.56, 0.68, 0.8, 0.92)):
+        for o in range(-4 + (i % 2), 5, 2):
+            p = R(lerp(t, o))
+            px(d, p, darker(IRON, 0.6))
+            px(d, (p[0], p[1] - 1), lighter(IRON, 0.35))
+    return img
+
+
+def offhand_anim_angle(idx):
+    """Ângulo do segundo gládio por quadro (guarda, golpe e bloqueio)."""
+    start = 0
+    for name, frames, _, _ in ANIMS:
+        if start <= idx < start + len(frames):
+            i = idx - start
+            return {"block": -80, "attack": (-55, -40, -10, -25)[min(i, 3)], "hit": -110, "dodge": -60,
+                    "victory": -60, "defeat": 40}.get(name, -35)
+        start += len(frames)
+    return -35
+
+
+def layer_offhand_sword(s):
+    """Segundo gládio na mão da frente (dimachaerus): sem escudo, uma lâmina em cada mão."""
+    img, d = draw_canvas(FW, FH)
+    ang = offhand_anim_angle(s.get("_idx", 0))
+    hand = s["fha"]
+    draw_weapon(d, hand, ang, "gladius")
+    img = finish(img, light=0.35)
+    draw_weapon(ImageDraw.Draw(img), hand, ang, "gladius", True)
+    return img
+
+
 def layer_greave(s, side, kind):
     img, d = draw_canvas(FW, FH)
     kn, ft = s[side + "kn"], s[side + "ft"]
@@ -596,7 +709,7 @@ SHEETS["belt"] = ("belt", layer_belt)
 for st in range(3):
     SHEETS[f"hair_{st}"] = ("hair", lambda s, st=st: layer_hair(s, st))
 SHEETS["beard"] = ("beard", layer_beard)
-WEAPON_KINDS = ("rudis", "gladius", "shortsword", "sica", "spear", "trident")
+WEAPON_KINDS = ("rudis", "gladius", "shortsword", "sica", "spear", "trident", "arbelas")
 WEAPON_CANVAS = (56, 14)
 WEAPON_GRIP = (12, 7)
 
@@ -611,9 +724,10 @@ def weapon_image(kind):
     return img
 for sh in ("parmula", "parma", "scutum"):
     SHEETS[f"shield_{sh}"] = ("shield", lambda s, sh=sh: layer_shield(s, sh))
-for h in ("cap", "galea", "murmillo"):
+SHEETS["offhand_gladius"] = ("shield", layer_offhand_sword)
+for h in ("cap", "galea", "murmillo", "provocator", "secutor", "crupellarius"):
     SHEETS[f"helmet_{h}"] = ("helmet", lambda s, h=h: layer_helmet(s, h))
-for a in ("light", "medium", "heavy"):
+for a in ("light", "medium", "heavy", "cardio", "scale"):
     SHEETS[f"armor_{a}"] = ("armor", lambda s, a=a: layer_armor(s, a))
 for g in ("iron", "bronze"):
     SHEETS[f"legsb_{g}"] = ("legs_back", lambda s, g=g: layer_greave(s, "b", g))
@@ -669,17 +783,20 @@ def icons(outdir):
         return img
 
     for w in WEAPON_KINDS:
-        if w in ("spear", "trident"):
+        if w == "arbelas":
+            result[f"weapon_{w}"] = two_pass((24, 24), lambda d, det, w=w: draw_weapon(d, (9, 15), -35, w, det))
+        elif w in ("spear", "trident"):
             big = two_pass((44, 44), lambda d, det, w=w: draw_weapon(d, (8, 36), -45, w, det))
             result[f"weapon_{w}"] = big.crop((18, 2, 42, 26))
         else:
             result[f"weapon_{w}"] = two_pass((24, 24), lambda d, det, w=w: draw_weapon(d, (7, 17), -45, w, det))
     for sh in ("parmula", "parma", "scutum"):
         result[f"shield_{sh}"] = two_pass((24, 24), lambda d, det, sh=sh: draw_shield(d, (12, 12), sh, det))
-    for h in ("cap", "galea", "murmillo"):
+    result["offhand_gladius"] = two_pass((24, 24), lambda d, det: draw_weapon(d, (7, 17), -45, "gladius", det))
+    for h in ("cap", "galea", "murmillo", "provocator", "secutor", "crupellarius"):
         result[f"helmet_{h}"] = two_pass((24, 24), lambda d, det, h=h: draw_helmet(d, (11, 15), h, det))
     s = skeleton(P(neck=(12, 4), hip=(12, 19)), oy=0)
-    for a in ("light", "medium", "heavy"):
+    for a in ("light", "medium", "heavy", "cardio", "scale"):
         full = layer_armor(s, a)
         img = full.crop((0, 0, 24, 24))
         result[f"armor_{a}"] = img

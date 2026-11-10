@@ -2,19 +2,31 @@
 // a camada visual (Phaser), o som e a janela desktop (bridge/IPC).
 import type { WindowState } from '../../shared/ipc';
 import { GameStore } from '../core/GameStore';
-import type { Appearance, LocationId, PlayerState, TrainingId } from '../core/model/types';
+import type { Appearance, FightMode, LocationId, PlayerState, TrainingId } from '../core/model/types';
 import { CombatEngine } from '../core/combat/CombatEngine';
 import type { CombatResult } from '../core/combat/CombatTypes';
 import { opponentCombatant, playerCombatant, type FighterVisual } from '../core/combat/CombatantFactory';
 import { getOpponent, type OpponentDef } from '../core/data/opponents';
-import { arenaForOpponent } from '../core/data/arenas';
+import { arenaForOpponent, type ArenaDef } from '../core/data/arenas';
 import { getLocation, hoursLabel, isOpen, weekdayName } from '../core/data/locations';
 import { getItem } from '../core/data/equipment';
-import { applyBattleResult, isUnlocked, xpToNext } from '../core/systems/ProgressionSystem';
+import { applyBattleResult, xpToNext } from '../core/systems/ProgressionSystem';
 import { createPlayer } from '../core/systems/PlayerFactory';
 import { train as doTrain } from '../core/systems/TrainingSystem';
 import { applyFight, applyTraining, bathe, canFight, canTrain, canTravel, nap, sleep, travel } from '../core/systems/CalendarSystem';
-import { publish, unreadCount } from '../core/systems/NewsSystem';
+import { nextRival, onEvent, publish, unreadCount } from '../core/systems/NewsSystem';
+import { recordFightOnly } from '../core/systems/ProgressionSystem';
+import { abandonTournament, checkNoShow, closeTournament, playerMatch, recordPlayerFight, register, startTournament, timeForFight, TOURNAMENT_ENERGY } from '../core/systems/TournamentSystem';
+import { expireRematch, fightDef, introMoment, ladderCheck, rematchActive, seeMedic } from '../core/systems/RivalSystem';
+import { armSetup, canArmWrestle, finishArmWrestle, isFestival } from '../core/systems/EventSystem';
+import type { TalkMoment } from '../core/data/dialogue';
+import { bracketHtml } from './screens/TournamentView';
+import { playArmWrestle } from './components/ArmWrestle';
+import { playerPortrait } from './components/portraits';
+import { playerHelmet, playerPortraitKey } from './components/playerLook';
+import { todaysChallenger } from './screens/MainMenu';
+import { music } from '../audio/Music';
+import { itemName } from '../i18n/data';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
 import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
 import { worldWeather } from '../game/DayNight';
@@ -35,6 +47,7 @@ import { HistoryScreen } from './screens/HistoryScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { IntroScreen } from './screens/IntroScreen';
 import { MainMenu } from './screens/MainMenu';
+import { TitleScreen, type SlotInfo } from './screens/TitleScreen';
 import { MapScreen } from './screens/MapScreen';
 import { MarketScreen } from './screens/MarketScreen';
 import { TempleScreen } from './screens/TempleScreen';
@@ -50,6 +63,7 @@ import { loadLang, saveLang } from '../i18n/prefs';
 
 interface BattleCtx {
   opponent: OpponentDef;
+  mode: FightMode;
   strategy: PlayerState['strategy'];
   engine: CombatEngine | null;
 }
@@ -57,11 +71,15 @@ interface BattleCtx {
 const LOCATION_IDS: LocationId[] = ['ludus', 'home', 'market', 'arena', 'temple', 'forum', 'baths', 'tavern'];
 
 export class App implements AppActions {
+  /** espaço de salvamento em uso (1 a 3) */
+  private slot = 1;
   readonly store = new GameStore({
-    read: () => bridge.save.read(),
-    write: (d) => bridge.save.write(d),
-    writeSync: (d) => bridge.save.writeSync(d),
+    read: () => bridge.save.read(this.slot),
+    write: (d) => bridge.save.write(this.slot, d),
+    writeSync: (d) => bridge.save.writeSync(this.slot, d),
   });
+  private title!: TitleScreen;
+  private paused = false;
   readonly sound = sound;
   /** previsão do tempo de um dia (usada pelos testes E2E) */
   readonly weatherOfDay = (day: number) => weatherOfDay(this.store.state.createdAt, day);
@@ -73,8 +91,6 @@ export class App implements AppActions {
   private hud!: BattleHud;
   private intro: IntroScreen | null = null;
   private busy = false;
-  private autoTimer: ReturnType<typeof setInterval> | null = null;
-  private autoPending = false;
   private chanceCache = new Map<string, number>();
 
   constructor(private readonly root: HTMLElement) {
@@ -113,31 +129,29 @@ export class App implements AppActions {
       return weatherAt(p.createdAt, p.day, p.minutes);
     };
     // balões de fala desviam das janelas da interface
-    const SPEECH_OBSTACLES = '#statusbar:not([hidden]) .status, #side:not([hidden]), #hud:not([hidden]) .plate, #hud:not([hidden]) .hud-timer, #hud:not([hidden]) .hud-log, #hud:not([hidden]) .hud-controls, #toast-root .toast, #exit-fullscreen:not([hidden])';
+    const SPEECH_OBSTACLES = '#statusbar:not([hidden]) .status, #side:not([hidden]), #hud:not([hidden]) .plate, #hud:not([hidden]) .hud-timer, #hud:not([hidden]) .hud-log, #hud:not([hidden]) .hud-controls, #toast-root .toast';
     setSpeechObstacles(() => Array.from(this.root.querySelectorAll<HTMLElement>(SPEECH_OBSTACLES), (el) => el.getBoundingClientRect()));
     this.store.onSaveError = (msg) => toast(t('app.saveFailed', { msg }), 'bad', 6000);
     this.store.subscribe(() => this.onStateChange());
 
-    const [, winState, loaded] = await Promise.all([this.view.ready, bridge.win.getState(), this.store.load()]);
+    const [, winState] = await Promise.all([this.view.ready, bridge.win.getState()]);
     this.applyWindowState(winState);
     bridge.win.onState((s) => this.applyWindowState(s));
     $('#loading').remove();
-
-    if (loaded.player) {
-      // idioma salvo no gladiador (saves antigos ficam com o idioma atual)
-      if (loaded.player.settings.language !== getLang()) this.store.update((p) => (p.settings.language = getLang()));
-      this.applySettings();
-      this.enterLocation();
-      toast(loaded.notice ?? t('app.welcomeBack', { name: loaded.player.name }), loaded.notice ? 'info' : 'gold', 5000);
-    } else {
-      if (loaded.notice) toast(loaded.notice, 'bad', 8000);
-      this.startIntro();
-    }
+    this.title = new TitleScreen($('#title'), {
+      onPlay: (slot, info) => void this.playSlot(slot, info),
+      onDelete: (slot) => this.deleteSlot(slot),
+      onOptions: () => this.openOptions(),
+      onQuit: () => this.quit(),
+      onLang: () => this.changeLang(getLang() === 'pt' ? 'en' : 'pt'),
+    });
+    await this.showTitle();
     window.addEventListener('beforeunload', () => this.store.flushSync());
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
+        // Esc: fecha a janela aberta ou pausa o jogo (menu de pausa)
         if (hasModal()) closeModal();
-        else if (this.win.fullscreen) void this.setFullscreen(false);
+        else if (this.store.hasPlayer && !this.title.visible && !this.intro) this.openPause();
       }
       if (e.key === 'F11' && !isElectron) {
         e.preventDefault();
@@ -154,17 +168,6 @@ export class App implements AppActions {
 
   private shellHtml(): string {
     return `
-      <header id="titlebar">
-        <img src="assets/ui/app-icon.png" alt="" class="tb-icon"><span class="tb-title">COLOSSEUM</span>
-        <span class="tb-space"></span>
-        <button class="tb-btn tb-text" data-w="lang" data-tt="app.langTitle">${getLang() === 'pt' ? 'EN' : 'PT'}</button>
-        <button class="tb-btn tb-text" data-w="sound" data-tt="app.soundTitle">${t('app.sound')}</button>
-        <button class="tb-btn tb-text" data-w="fullscreen" data-tt="app.fullscreenTitle" data-t="app.fullscreen">${t('app.fullscreen')}</button>
-        <button class="tb-btn tb-text" data-w="options" data-tt="app.options" data-t="app.options">${t('app.options')}</button>
-        <button class="tb-btn" data-w="min" data-tt="app.minimize">&#8211;</button>
-        <button class="tb-btn" data-w="max" data-tt="app.maximize">&#9633;</button>
-        <button class="tb-btn tb-close" data-w="close" data-tt="app.close">&#215;</button>
-      </header>
       <div id="stage">
         <div id="game"></div>
         <div id="statusbar" hidden></div>
@@ -177,8 +180,8 @@ export class App implements AppActions {
           <section id="panel" class="panel"></section>
         </aside>
         <div id="hud" hidden></div>
-        <button id="exit-fullscreen" class="btn btn-dark" hidden data-tt="app.exitFullscreenTitle" data-t="app.exitFullscreen">${t('app.exitFullscreen')}</button>
         <div id="intro" hidden></div>
+        <div id="title" hidden></div>
         <div id="modal-root"></div>
         <div id="toast-root"></div>
         <div id="loading"><div class="loading-box">${t('app.loading')}</div></div>
@@ -186,23 +189,7 @@ export class App implements AppActions {
   }
 
   private bindShell(): void {
-    $('#titlebar').addEventListener('click', (e) => {
-      const a = (e.target as HTMLElement).closest('[data-w]')?.getAttribute('data-w');
-      if (a === 'min') bridge.win.minimize();
-      else if (a === 'max') bridge.win.toggleMaximize();
-      else if (a === 'close') {
-        this.store.flushSync();
-        bridge.win.close();
-      } else if (a === 'fullscreen') void this.setFullscreen(true);
-      else if (a === 'sound') this.toggleMute();
-      else if (a === 'options') this.openOptions();
-      else if (a === 'lang') this.changeLang(getLang() === 'pt' ? 'en' : 'pt');
-    });
     this.applyShellText();
-    $('#titlebar').addEventListener('dblclick', (e) => {
-      if (!(e.target as HTMLElement).closest('button')) bridge.win.toggleMaximize();
-    });
-    $('#exit-fullscreen').addEventListener('click', () => void this.setFullscreen(false));
     $('#nav').addEventListener('click', (e) => {
       const t = (e.target as HTMLElement).closest('[data-nav]')?.getAttribute('data-nav') as ScreenId | null;
       if (!t) return;
@@ -239,8 +226,7 @@ export class App implements AppActions {
     this.win = s;
     this.root.classList.toggle('fullscreen', s.fullscreen);
     this.root.classList.toggle('maximized', s.maximized);
-    $('#exit-fullscreen').hidden = !s.fullscreen;
-    if (s.fullscreen && !wasFull) toast(t('app.fullscreenToast'), 'info', 3000);
+    if (!s.fullscreen && wasFull) toast(t('app.windowedToast'), 'info', 3000);
     requestAnimationFrame(() => this.updateLayout());
   }
 
@@ -249,17 +235,6 @@ export class App implements AppActions {
     const st = this.store.state.settings;
     sound.setVolume(st.volume);
     sound.setMuted(st.muted);
-    const btn = this.root.querySelector('[data-w="sound"]');
-    if (btn) {
-      btn.textContent = st.muted ? t('app.soundOff') : t('app.soundOn');
-      btn.classList.toggle('off', st.muted);
-    }
-  }
-
-  private toggleMute(): void {
-    if (!this.store.hasPlayer) return;
-    this.store.update((p) => (p.settings.muted = !p.settings.muted));
-    toast(this.store.state.settings.muted ? t('app.soundMuted') : t('app.soundUnmuted'), 'info', 1500);
   }
 
   private updateLayout(): void {
@@ -294,69 +269,177 @@ export class App implements AppActions {
   private applyShellText(): void {
     this.root.querySelectorAll<HTMLElement>('[data-t]').forEach((el) => (el.textContent = t(el.dataset.t as Parameters<typeof t>[0])));
     this.root.querySelectorAll<HTMLElement>('[data-tt]').forEach((el) => (el.title = t(el.dataset.tt as Parameters<typeof t>[0])));
-    const lb = this.root.querySelector('[data-w="lang"]');
-    if (lb) lb.textContent = getLang() === 'pt' ? 'EN' : 'PT';
+    this.title?.render();
   }
 
-  private openOptions(): void {
+  private openOptions(back?: () => void): void {
     void bridge.app.info().then((info) => {
       const st = this.store.hasPlayer ? this.store.state.settings : null;
+      const sfxVol = st ? st.volume : sound.currentVolume;
+      const sfxMuted = st ? st.muted : sound.isMuted;
       const m = openModal(`
         <h2>${t('app.options')}</h2>
         <div class="opt-row"><span>${t('opt.language')}</span><button class="btn sm ${getLang() === 'pt' ? 'active' : ''}" data-o="lang-pt">Português</button><button class="btn sm ${getLang() === 'en' ? 'active' : ''}" data-o="lang-en">English</button></div>
-        ${
-          st
-            ? `<div class="opt-row"><span>${t('opt.volume')}</span><input type="range" min="0" max="100" step="5" value="${Math.round(st.volume * 100)}" data-o="volume"></div>
-        <div class="opt-row"><span>${t('opt.sound')}</span><button class="btn sm ${st.muted ? '' : 'active'}" data-o="unmute">${t('opt.on')}</button><button class="btn sm ${st.muted ? 'active' : ''}" data-o="mute">${t('opt.off')}</button></div>`
-            : ''
-        }
-        <div class="opt-row"><span>${t('opt.screen')}</span><button class="btn sm" data-o="fullscreen">${this.win.fullscreen ? t('app.exitFullscreen') : t('opt.fullscreenF11')}</button></div>
+        <div class="opt-row"><span>${t('opt.music')}</span><button class="btn sm ${music.enabled ? 'active' : ''}" data-o="music-on">${t('opt.on')}</button><button class="btn sm ${music.enabled ? '' : 'active'}" data-o="music-off">${t('opt.off')}</button></div>
+        <div class="opt-row"><span>${t('opt.musicVolume')}</span><input type="range" min="0" max="100" step="5" value="${Math.round(music.volume * 100)}" data-o="music-volume"></div>
+        <div class="opt-row"><span>${t('opt.sound')}</span><button class="btn sm ${sfxMuted ? '' : 'active'}" data-o="unmute">${t('opt.on')}</button><button class="btn sm ${sfxMuted ? 'active' : ''}" data-o="mute">${t('opt.off')}</button></div>
+        <div class="opt-row"><span>${t('opt.volume')}</span><input type="range" min="0" max="100" step="5" value="${Math.round(sfxVol * 100)}" data-o="volume"></div>
+        <div class="opt-row"><span>${t('opt.screen')}</span><button class="btn sm" data-o="fullscreen">${this.win.fullscreen ? t('opt.windowed') : t('opt.fullscreenF11')}</button></div>
         <p class="tiny dim">${t('opt.savedAt', { path: esc(info.savePath), version: esc(info.version) })}</p>
-        <div class="row between"><button class="btn btn-dark sm" data-o="reset">${t('opt.reset')}</button><button class="btn" data-o="close">${t('common.close')}</button></div>`);
+        <div class="row end"><button class="btn" data-o="close">${back ? t('common.back') : t('common.close')}</button></div>`,
+        { onClose: () => back?.() });
+      const reopen = () => {
+        closeModal();
+        this.openOptions(back);
+      };
       m.addEventListener('input', (e) => {
         const el = e.target as HTMLInputElement;
-        if (el.dataset.o === 'volume' && this.store.hasPlayer) {
-          const v = Number(el.value) / 100;
-          this.store.update((p) => {
-            p.settings.volume = v;
-            p.settings.muted = false;
-          });
-        }
+        const v = Number(el.value) / 100;
+        if (el.dataset.o === 'music-volume') music.setVolume(v);
+        if (el.dataset.o === 'volume') this.setSfx(v, false);
       });
       m.addEventListener('change', (e) => {
         if ((e.target as HTMLElement).dataset.o === 'volume') sound.play('coin');
       });
-      m.addEventListener('click', async (e) => {
+      m.addEventListener('click', (e) => {
         const a = (e.target as HTMLElement).closest('[data-o]')?.getAttribute('data-o');
-        if (!a || a === 'volume') return;
+        if (!a || a === 'volume' || a === 'music-volume') return;
         if (a === 'close') return closeModal();
         if (a === 'lang-pt' || a === 'lang-en') {
-          closeModal();
           this.changeLang(a === 'lang-pt' ? 'pt' : 'en');
-          return this.openOptions();
+          return reopen();
         }
         if (a === 'fullscreen') {
-          closeModal();
-          return void this.setFullscreen(!this.win.fullscreen);
+          void this.setFullscreen(!this.win.fullscreen);
+          return reopen();
+        }
+        if (a === 'music-on' || a === 'music-off') {
+          music.setEnabled(a === 'music-on');
+          if (a === 'music-on') this.updateMusic();
+          return reopen();
         }
         if (a === 'mute' || a === 'unmute') {
-          this.store.update((p) => (p.settings.muted = a === 'mute'));
-          closeModal();
-          return this.openOptions();
-        }
-        if (a === 'reset') {
-          const ok = await confirmModal(t('opt.resetTitle'), t('opt.resetBody'), t('opt.resetConfirm'));
-          if (!ok) return;
-          await bridge.save.remove();
-          this.store.reset();
-          this.chanceCache.clear();
-          if (this.battle) this.exitBattle();
-          $('#side').hidden = true;
-          $('#statusbar').hidden = true;
-          this.startIntro();
+          this.setSfx(sfxVol, a === 'mute');
+          return reopen();
         }
       });
     });
+  }
+
+  /** Volume e mudo dos efeitos (no save do gladiador, ou só na sessão no menu). */
+  private setSfx(volume: number, muted: boolean): void {
+    if (this.store.hasPlayer)
+      this.store.update((p) => {
+        p.settings.volume = volume;
+        p.settings.muted = muted;
+      });
+    sound.setVolume(volume);
+    sound.setMuted(muted);
+  }
+
+  // ---------------------------------------------------------------- menu principal e pausa
+  private async showTitle(): Promise<void> {
+    this.paused = false;
+    this.view.setPaused(false);
+    $('#side').hidden = true;
+    $('#statusbar').hidden = true;
+    this.view.showLocation({ visual: { appearance: { skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 }, gear: {} }, location: 'arena', bg: 'bg:arena_rome', crowd: 'bg:crowd_rome', outdoor: true, hideHero: true });
+    music.play('menu');
+    await this.title.show();
+  }
+
+  private async playSlot(slot: number, info: SlotInfo): Promise<void> {
+    this.slot = slot;
+    this.chanceCache.clear();
+    if (!info.player) {
+      if (info.data === null && info.error) return;
+      this.title.hide();
+      this.startIntro();
+      return;
+    }
+    const loaded = await this.store.load();
+    if (!loaded.player) {
+      toast(loaded.notice ?? t('err.loadFailed', { error: '?' }), 'bad', 8000);
+      return;
+    }
+    this.title.hide();
+    if (loaded.player.settings.language !== getLang()) this.store.update((p) => (p.settings.language = getLang()));
+    this.applySettings();
+    this.enterLocation();
+    toast(loaded.notice ?? t('app.welcomeBack', { name: loaded.player.name }), loaded.notice ? 'info' : 'gold', 5000);
+  }
+
+  private async deleteSlot(slot: number): Promise<boolean> {
+    const ok = await confirmModal(t('opt.resetTitle'), t('title.deleteBody', { n: slot }), t('title.delete'));
+    if (!ok) return false;
+    await bridge.save.remove(slot);
+    return true;
+  }
+
+  private quit(): void {
+    if (this.store.hasPlayer) this.store.flushSync();
+    bridge.app.quit();
+  }
+
+  /** Esc: pausa o jogo (a luta congela) e mostra o menu de pausa. */
+  private openPause(): void {
+    if (this.paused) return;
+    this.paused = true;
+    this.view.setPaused(true);
+    const m = openModal(
+      `<h2 class="center">${t('pause.title')}</h2>
+      <div class="pause-menu">
+        <button class="btn btn-gold wide" data-p="resume">${t('pause.resume')}</button>
+        <button class="btn wide" data-p="options">${t('app.options')}</button>
+        <button class="btn wide" data-p="menu">${t('pause.toMenu')}</button>
+        <button class="btn btn-dark wide" data-p="quit">${t('pause.quit')}</button>
+      </div>
+      <p class="tiny dim center">${t('pause.hint')}</p>`,
+      { cls: 'modal-pause', onClose: () => this.resume() },
+    );
+    m.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('[data-p]')?.getAttribute('data-p');
+      if (a === 'resume') closeModal();
+      else if (a === 'options') {
+        this.paused = true;
+        closeModal();
+        this.paused = true;
+        this.view.setPaused(true);
+        this.openOptions(() => {
+          this.paused = false;
+          this.openPause();
+        });
+      } else if (a === 'menu') void this.backToMenu();
+      else if (a === 'quit') this.quit();
+    });
+  }
+
+  private resume(): void {
+    this.paused = false;
+    this.view.setPaused(false);
+  }
+
+  private async backToMenu(): Promise<void> {
+    closeModal();
+    await this.store.flush();
+    this.battle = null;
+    this.hud.hide();
+    this.root.classList.remove('in-battle');
+    this.store.reset();
+    this.intro?.close();
+    this.intro = null;
+    await this.showTitle();
+  }
+
+  /** Música conforme o lugar e a hora (arena, taverna, noite, cidade). */
+  private updateMusic(): void {
+    if (this.title?.visible) return music.play('menu');
+    if (this.battle) return music.play('arena');
+    if (!this.store.hasPlayer) return music.play('city');
+    const p = this.store.state;
+    if (p.location === 'tavern' && this.view.scene === 'hub') return music.play('tavern');
+    if (p.minutes >= 20 * 60 || p.minutes < 6 * 60) return music.play('night');
+    music.play('city');
   }
 
   // ---------------------------------------------------------------- intro
@@ -384,6 +467,7 @@ export class App implements AppActions {
     );
     this.view.showLocation({ visual: preview({ skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 }), location: 'ludus', bg: 'bg:ludus', outdoor: true });
     this.intro.start();
+    music.play('city');
   }
 
   // ---------------------------------------------------------------- locais e mapa
@@ -403,6 +487,7 @@ export class App implements AppActions {
     this.root.classList.remove('in-battle');
     this.setScreen(loc.id);
     this.renderStatus();
+    this.updateMusic();
     requestAnimationFrame(() => this.updateLayout());
   }
 
@@ -456,8 +541,18 @@ export class App implements AppActions {
     this.busy = true;
     const apply = () => {
       const edition = this.store.update((p) => {
+        const rng = createRng(randomSeed());
+        // torneio largado no meio e inscrição esquecida
+        if (p.tournament.run) {
+          abandonTournament(p);
+          const r = closeTournament(p, rng);
+          if (r) onEvent(p, r.reached === 3 ? 'tourneyWin' : 'tourneyOut', rng, { opp: r.champion === 'player' ? '' : r.champion });
+        }
         sleep(p);
-        return publish(p, createRng(randomSeed()));
+        if (checkNoShow(p)) onEvent(p, 'tourneyNoShow', rng);
+        const fled = expireRematch(p);
+        if (fled) onEvent(p, 'rematchFled', rng, { opp: fled });
+        return publish(p, rng);
       });
       void this.store.flush();
       this.busy = false;
@@ -545,12 +640,10 @@ export class App implements AppActions {
     if (this.store.hasPlayer && !this.battle) this.view.updateVisual(playerCombatant(this.store.state).visual);
   }
 
-  winChance(opponentId: string): number {
+  winChance(def: OpponentDef): number {
     const p = this.store.state;
-    const def = getOpponent(opponentId);
-    if (!def) return 0;
     const me = playerCombatant(p).spec;
-    const key = `${opponentId}|${JSON.stringify(me)}`;
+    const key = `${def.id}|${def.level}|${JSON.stringify(me)}`;
     const cached = this.chanceCache.get(key);
     if (cached !== undefined) return cached;
     const them = opponentCombatant(def).spec;
@@ -597,32 +690,65 @@ export class App implements AppActions {
   }
 
   // ---------------------------------------------------------------- batalha
-  startBattle(opponentId?: string): void {
+  /** Monta a luta conforme o modo (escada/revanche, desafiante avulso ou torneio). */
+  private prepareFight(p: PlayerState, opts: { mode?: FightMode; opponentId?: string }): { def: OpponentDef; mode: FightMode; arena: ArenaDef; voice: string; intro: TalkMoment } | string {
+    const cityArena = arenaForOpponent(nextRival(p).id);
+    if (opts.mode === 'tournament') {
+      const run = p.tournament.run;
+      const m = run ? playerMatch(run) : null;
+      if (!m) return t('tour.noMatch');
+      if (p.energy < TOURNAMENT_ENERGY) return t('cal.noEnergyFight', { n: TOURNAMENT_ENERGY });
+      if (!timeForFight(p)) return t('cal.tooLate');
+      return { def: m.opponent, mode: 'tournament', arena: cityArena, voice: 'pool', intro: 'intro' };
+    }
+    const err = canFight(p);
+    if (err) return err;
+    if (opts.mode === 'free') return { def: todaysChallenger(p), mode: 'free', arena: cityArena, voice: 'pool', intro: 'intro' };
+    const base = getOpponent(opts.opponentId ?? p.selectedOpponent);
+    if (!base) return t('arena.unavailable');
+    const lerr = ladderCheck(p, base.id);
+    if (lerr) return lerr;
+    return { def: fightDef(p, base), mode: rematchActive(p, base.id) ? 'rematch' : 'ladder', arena: arenaForOpponent(base.id), voice: base.id, intro: introMoment(p, base.id) };
+  }
+
+  startBattle(opts: { mode?: FightMode; opponentId?: string; injuredOk?: boolean } = {}): void {
     if (this.battle || this.busy || !this.store.hasPlayer) return;
     const p = this.store.state;
-    const def = getOpponent(opponentId ?? p.selectedOpponent);
-    if (!def || !isUnlocked(p, def.id)) return toast(t('arena.unavailable'), 'bad');
-    const err = canFight(p);
-    if (err) {
+    const fight = this.prepareFight(p, opts);
+    if (typeof fight === 'string') {
       sound.play('error');
-      return toast(err, 'bad', 5000);
+      return toast(fight, 'bad', 5000);
     }
-    this.cancelAuto();
+    // ferido: avisa antes (menos vida e menos dano)
+    if (p.injury && !opts.injuredOk) {
+      void confirmModal(t('injury.fightTitle'), t('injury.fightBody', { n: p.injury.days }), t('injury.fightAnyway')).then((ok) => {
+        if (ok) this.startBattle({ ...opts, injuredOk: true });
+      });
+      return;
+    }
     closeModal();
     const me = playerCombatant(p);
-    const them = opponentCombatant(def);
-    this.battle = { opponent: def, strategy: p.strategy, engine: null };
+    const them = opponentCombatant(fight.def);
+    this.battle = { opponent: fight.def, mode: fight.mode, strategy: p.strategy, engine: null };
     this.root.classList.add('in-battle');
     $('#side').hidden = true;
     $('#statusbar').hidden = true;
     this.updateLayout();
+    music.play('arena');
     this.view.startBattle(
-      { fighters: [me, them], arena: arenaForOpponent(def.id), seed: randomSeed(), speed: p.settings.battleSpeed, talk: { opponentId: def.id, playerName: p.name } },
+      {
+        fighters: [me, them],
+        arena: fight.arena,
+        seed: randomSeed(),
+        speed: p.settings.battleSpeed,
+        festival: isFestival(p.day),
+        talk: { opponentId: fight.voice, playerName: p.name, intro: fight.intro, portrait: fight.def.id, player: playerPortraitKey(p) },
+      },
       {
         onReady: (engine) => {
           if (!this.battle) return;
           this.battle.engine = engine;
-          this.hud.show(engine, this.store.state.settings.battleSpeed, [p.level, def.level]);
+          this.hud.show(engine, this.store.state.settings.battleSpeed, [p.level, fight.def.level]);
         },
         onEvent: (e, engine) => this.hud.event(e, engine),
         onFrame: (engine) => this.hud.update(engine),
@@ -649,79 +775,158 @@ export class App implements AppActions {
     if (!ctx) return;
     const won = res.winner === 0;
     const rng = createRng(randomSeed());
+    if (ctx.mode === 'tournament') {
+      const injury = this.store.update((p) => {
+        const inj = recordFightOnly(p, ctx.opponent, won, res.reason, res.duration, ctx.strategy, rng);
+        recordPlayerFight(p, won);
+        return inj;
+      });
+      void this.store.flush();
+      this.exitBattle();
+      if (injury) toast(t('injury.got', { n: injury }), 'bad', 5000);
+      setTimeout(() => this.showBracket(), 400);
+      return;
+    }
     const rw = this.store.update((p) => {
       applyFight(p);
-      return applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng });
+      if (ctx.mode === 'free') {
+        if (p.events.freeDay !== p.day) p.events = { ...p.events, freeDay: p.day, freeCount: 0 };
+        p.events.freeCount++;
+      }
+      return applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng, mode: ctx.mode });
     });
     this.chanceCache.clear();
     void this.store.flush();
     if (rw.levelUps) setTimeout(() => sound.play('levelup'), 600);
     if (rw.coins) sound.play('coin');
     const p = this.store.state;
-    const auto = p.settings.autoContinue && !canFight(p);
-    const m = openModal(resultHtml(res, rw, ctx.opponent, auto, p.energy), {
+    // revanche só quando o adversário pede: "lutar de novo" existe apenas para tentar
+    // de novo quem ainda não foi vencido, ou para enfrentar o próximo desafiante avulso
+    const again = ctx.mode === 'free' ? 'free' : ctx.mode === 'ladder' && !won ? 'retry' : null;
+    const m = openModal(resultHtml(res, rw, ctx.opponent, again, p.energy), {
       cls: 'modal-result',
       onClose: () => {
-        if (this.battle && !this.autoPending) this.exitBattle();
+        if (this.battle) this.exitBattle();
       },
     });
     m.addEventListener('click', (e) => {
       const a = (e.target as HTMLElement).closest('[data-r]')?.getAttribute('data-r');
       if (!a) return;
-      if (a === 'again') this.rematch(ctx.opponent.id);
+      if (a === 'again') this.fightAgain(ctx.mode === 'free' ? { mode: 'free' } : { mode: 'ladder', opponentId: ctx.opponent.id });
       else if (a === 'points') {
         closeModal();
         this.open('gladiator');
       } else closeModal();
     });
-    if (auto) this.scheduleAuto(m, ctx.opponent.id);
-    else if (p.settings.autoContinue) toast(canFight(p) ?? '', 'info', 5000);
   }
 
-  private rematch(opponentId: string): void {
+  private fightAgain(opts: { mode: FightMode; opponentId?: string }): void {
     const err = canFight(this.store.state);
     if (err) {
       sound.play('error');
       return toast(err, 'bad', 5000);
     }
-    this.cancelAuto();
-    this.autoPending = true;
-    closeModal();
-    this.autoPending = false;
     this.battle = null;
+    closeModal();
     this.hud.hide();
-    this.startBattle(opponentId);
-  }
-
-  private scheduleAuto(modal: HTMLElement, opponentId: string): void {
-    let left = 8;
-    const label = modal.querySelector('[data-countdown]');
-    const tick = () => {
-      if (label) label.textContent = t('result.nextIn', { s: left });
-      if (left-- <= 0) {
-        this.cancelAuto();
-        if (this.store.state.settings.autoContinue) this.rematch(opponentId);
-      }
-    };
-    tick();
-    this.autoTimer = setInterval(tick, 1000);
-  }
-
-  private cancelAuto(): void {
-    if (this.autoTimer) clearInterval(this.autoTimer);
-    this.autoTimer = null;
+    this.startBattle(opts);
   }
 
   private exitBattle(): void {
-    this.cancelAuto();
     this.battle = null;
     this.hud.hide();
     if (this.store.hasPlayer) this.enterLocation();
   }
 
+  // ---------------------------------------------------------------- torneio e eventos
+  tournament(action: 'register' | 'start' | 'bracket'): void {
+    if (!this.store.hasPlayer || this.battle) return;
+    if (action === 'register') {
+      const err = this.store.update((p) => register(p));
+      if (err) return (sound.play('error'), toast(err, 'bad'));
+      sound.play('coin');
+      toast(t('tour.registeredToast', { day: this.store.state.tournament.registered }), 'gold', 5000);
+      return;
+    }
+    if (action === 'start') {
+      const err = this.store.update((p) => startTournament(p));
+      if (err) return (sound.play('error'), toast(err, 'bad'));
+      sound.play('horn');
+    }
+    this.showBracket();
+  }
+
+  private showBracket(): void {
+    const p = this.store.state;
+    const run = p.tournament.run;
+    if (!run) return;
+    void playerPortrait(p.appearance, playerHelmet(p)).then((pic) => {
+      const m = openModal(bracketHtml(p, run, pic), { cls: 'modal-bracket' });
+      m.addEventListener('click', (e) => {
+        const a = (e.target as HTMLElement).closest('[data-t]')?.getAttribute('data-t');
+        if (a === 'close') closeModal();
+        if (a === 'fight') this.startBattle({ mode: 'tournament' });
+        if (a === 'claim') this.claimTournament();
+      });
+    });
+  }
+
+  private claimTournament(): void {
+    const rng = createRng(randomSeed());
+    const pr = this.store.update((p) => {
+      const r = closeTournament(p, rng);
+      if (r) onEvent(p, r.reached === 3 ? 'tourneyWin' : r.reached === 2 ? 'tourneyFinal' : 'tourneyOut', rng, { opp: r.champion === 'player' ? '' : r.champion });
+      return r;
+    });
+    closeModal();
+    if (!pr) return;
+    sound.play(pr.reached === 3 ? 'victory' : 'coin');
+    toast(t(`tour.toast${pr.reached}` as 'tour.toast0', { coins: pr.coins, fame: pr.fame }), pr.reached === 3 ? 'gold' : 'info', 6000);
+    if (pr.itemId) {
+      const item = getItem(pr.itemId);
+      if (item) toast(t('tour.trophy', { name: itemName(item) }), 'gold', 6000);
+    }
+    if (pr.levelUps) toast(t('app.levelUp', { level: this.store.state.level, points: pr.levelUps * 3, skill: pr.levelUps }), 'gold', 5000);
+    void this.store.flush();
+  }
+
+  async armWrestle(): Promise<void> {
+    if (this.busy || !this.store.hasPlayer) return;
+    const p = this.store.state;
+    const err = canArmWrestle(p);
+    if (err) return (sound.play('error'), toast(err, 'bad'));
+    this.busy = true;
+    const won = await playArmWrestle(armSetup(p), p.name);
+    const rng = createRng(randomSeed());
+    const r = this.store.update((pl) => {
+      const res = finishArmWrestle(pl, won);
+      if (won) onEvent(pl, 'armWin', rng);
+      return res;
+    });
+    this.busy = false;
+    void this.store.flush();
+    const line = npcLine(won ? 'armCheer' : 'armTease', Math.floor(rng() * 1000));
+    this.view.npcSay('patron', line);
+    toast(won ? t('event.armWonToast', { coins: r.coins, fame: r.fame }) : t('event.armLostToast'), won ? 'gold' : 'info', 5000);
+    this.renderPanel();
+  }
+
+  seeMedic(): void {
+    const err = this.store.update((p) => seeMedic(p));
+    if (err) return (sound.play('error'), toast(err, 'bad'));
+    sound.play('guard');
+    this.view.npcSay('medic', npcLine('medicDone', Math.floor(Math.random() * 1000)));
+    toast(t('injury.healed'), 'good', 4000);
+  }
+
+  smithSay(text: string): void {
+    this.view.npcSay('smith', text);
+  }
+
   // ---------------------------------------------------------------- renderização
   private onStateChange(): void {
     this.applySettings();
+    if (!this.battle) this.updateMusic();
     this.renderStatus();
     this.view?.refreshMap();
     if (!this.battle) this.renderPanel();
