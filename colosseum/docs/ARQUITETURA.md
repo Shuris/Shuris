@@ -180,3 +180,26 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
   `CalendarSystem.canTrade` bloqueia compra/venda com o mercado fechado.
 - Moradores do mercado usam o mesmo sistema de camadas dos gladiadores, com as folhas
   `tunic`/`robe` tingidas.
+
+## Idiomas, taverna, melhorias, jornal e diálogos (0.5.0)
+
+- `i18n/` — `t(chave, parâmetros)` com dicionários `pt.ts` e `en.ts`. O tipo de `en.ts`
+  exige todas as chaves do português (o TypeScript acusa qualquer texto faltando). Dados do
+  jogo (itens, adversários, habilidades, locais) mantêm o português nos próprios arquivos e o
+  inglês em `i18n/data.ts` (testado). A preferência fica em `localStorage` e no salvamento;
+  trocar o idioma redesenha moldura, painel, status, cena e mapa.
+- `core/data/upgrades.ts` — melhorias permanentes; `CalendarSystem.napEnergy/trainEnergy` e
+  `TrainingSystem.trainingGain` aplicam os efeitos. A `HubScene` desenha camas, pesos,
+  estacas, pista, palus reforçado e o doctore conforme o que foi comprado.
+- `core/systems/TavernSystem.ts` — refeição, boatos (1x por dia, +1 fama) e conversa.
+- `core/systems/NewsSystem.ts` — cada notícia guarda o **modelo** (`tpl`) e as variáveis
+  (ids), e é montada no idioma atual ao ser exibida; `img` aponta para uma ilustração em
+  `assets/news/` (geradas por `tools/gen_v05.py`: cenas compostas com as próprias folhas do
+  jogo e convertidas em retícula ordenada de duas tintas).
+- `core/data/dialogue.ts` + `game/speech.ts` — falas por personagem e momento (variantes
+  separadas por `|`) e o balão de fala em pixel art que acompanha quem fala.
+- Combate: a `ArenaScene` mantém uma coreografia visual por lutador (investida, empurrão,
+  salto, inclinação) somada à posição do motor, mais um afastamento fixo; o motor e o
+  balanceamento não mudaram. O manifesto lista em `weaponTop` os quadros em que a arma e o
+  braço (folha `arm_top_*`) passam à frente do escudo.
+- Salvamento versão 3: `upgrades`, `tavern`, `settings.language` e notícias com `tpl/v/img`.

@@ -5,6 +5,7 @@ import { computeCombatStats, equippedItems, finalAttributes, naturalAttributes, 
 import { autoPerks, combinedMods, skillsFromPerks } from '../systems/SkillTreeSystem';
 import { getItem } from '../data/equipment';
 import { opponentAttributes, type OpponentDef } from '../data/opponents';
+import { opponentFullName } from '../../i18n/data';
 
 /** Informação visual para a renderização (independente da lógica). */
 export interface FighterVisual {
@@ -61,7 +62,7 @@ export function opponentCombatant(def: OpponentDef): { spec: CombatantSpec; visu
   const attrs = finalAttributes(opponentAttributes(def), gear);
   const perks = opponentPerks(def);
   return {
-    spec: { name: `${def.name}, ${def.epithet}`, level: def.level, stats: applyPerks(computeCombatStats(attrs, gear), perks), skills: skillsFromPerks(perks), strategy: def.strategy },
+    spec: { name: opponentFullName(def), level: def.level, stats: applyPerks(computeCombatStats(attrs, gear), perks), skills: skillsFromPerks(perks), strategy: def.strategy },
     visual: { appearance: def.appearance, gear },
   };
 }

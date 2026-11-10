@@ -2,6 +2,7 @@
 import type { PlayerState, SkillId } from '../model/types';
 import { PERKS, getPerk, type BranchId, type PerkMods } from '../data/skillTree';
 import { SKILL_ORDER } from '../data/skills';
+import { t } from '../../i18n';
 
 /** Pontos de habilidade: 2 no início + 1 por nível ganho. */
 export function skillPointsForLevel(level: number): number {
@@ -10,10 +11,10 @@ export function skillPointsForLevel(level: number): number {
 
 export function canLearn(p: Pick<PlayerState, 'perks' | 'skillPoints'>, id: string): string | null {
   const perk = getPerk(id);
-  if (!perk) return 'Habilidade inexistente.';
+  if (!perk) return t('err.noPerk');
   if (p.perks.includes(id)) return 'Já aprendida.';
-  if (perk.requires.length && !perk.requires.some((r) => p.perks.includes(r))) return 'Aprenda a anterior primeiro.';
-  if (p.skillPoints < perk.cost) return `Precisa de ${perk.cost} ponto(s).`;
+  if (perk.requires.length && !perk.requires.some((r) => p.perks.includes(r))) return t('err.perkPrev');
+  if (p.skillPoints < perk.cost) return t('err.perkPoints', { n: perk.cost });
   return null;
 }
 
@@ -31,9 +32,9 @@ export function respecCost(p: Pick<PlayerState, 'respecs' | 'level'>): number {
 
 /** Devolve todos os pontos (pago em moedas, custo crescente). */
 export function respec(p: PlayerState): string | null {
-  if (!p.perks.length) return 'Nada para recomeçar.';
+  if (!p.perks.length) return t('err.nothingRespec');
   const cost = respecCost(p);
-  if (p.coins < cost) return 'Moedas insuficientes.';
+  if (p.coins < cost) return t('err.noCoins');
   p.coins -= cost;
   p.skillPoints += p.perks.reduce((s, id) => s + (getPerk(id)?.cost ?? 0), 0);
   p.perks = [];

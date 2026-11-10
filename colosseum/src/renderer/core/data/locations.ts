@@ -1,5 +1,6 @@
 // Locais da cidade acessíveis pelo mapa.
 import type { LocationId } from '../model/types';
+import { t } from '../../i18n';
 
 export interface LocationDef {
   id: LocationId;
@@ -22,7 +23,8 @@ export const LOCATIONS: LocationDef[] = [
   { id: 'market', name: 'Mercado', short: 'Comprar e vender', bg: 'bg:loc_market', outdoor: true, hours: [7 * 60, 20 * 60], closedSunday: true, map: [326, 286] },
   { id: 'arena', name: 'Arena', short: 'Lutar', bg: 'bg:arena_capua', outdoor: true, hours: [7 * 60, 20 * 60], map: [530, 250] },
   { id: 'temple', name: 'Templo de Marte', short: 'Árvore de habilidades', bg: 'bg:loc_temple', outdoor: true, hours: null, map: [500, 78] },
-  { id: 'forum', name: 'Fórum', short: 'Jornal (Folha Diurna)', bg: 'bg:loc_forum', outdoor: true, hours: null, map: [340, 168] },
+  { id: 'forum', name: 'Fórum', short: 'Jornal (Capua Times)', bg: 'bg:loc_forum', outdoor: true, hours: null, map: [340, 168] },
+  { id: 'tavern', name: 'Taverna', short: 'Comida, vinho e boatos', bg: 'bg:loc_tavern', outdoor: false, hours: [11 * 60, 24 * 60], map: [430, 196] },
   { id: 'baths', name: 'Termas', short: 'Recuperar energia', bg: 'bg:loc_baths', outdoor: true, hours: [8 * 60, 21 * 60], map: [232, 86] },
 ];
 
@@ -32,13 +34,14 @@ export function getLocation(id: LocationId): LocationDef {
 
 /** Dia 1 é uma segunda-feira. */
 export const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+const WEEKDAY_KEYS = ['wd.0', 'wd.1', 'wd.2', 'wd.3', 'wd.4', 'wd.5', 'wd.6'] as const;
 
 export function weekdayIndex(day: number): number {
   return ((day % 7) + 7) % 7;
 }
 
 export function weekdayName(day: number): string {
-  return WEEKDAYS[weekdayIndex(day)];
+  return t(WEEKDAY_KEYS[weekdayIndex(day)]);
 }
 
 export function isSunday(day: number): boolean {
@@ -52,8 +55,8 @@ export function isOpen(loc: LocationDef, minutes: number, day = 1): boolean {
 }
 
 export function hoursLabel(loc: LocationDef, day = 1): string {
-  if (loc.closedSunday && isSunday(day)) return 'fechado aos domingos';
-  if (!loc.hours) return 'sempre aberto';
-  const h = (m: number) => `${Math.floor(m / 60)}h`;
-  return `${h(loc.hours[0])}–${h(loc.hours[1])}${loc.closedSunday ? ', exceto domingo' : ''}`;
+  if (loc.closedSunday && isSunday(day)) return t('hours.closedSunday');
+  if (!loc.hours) return t('hours.always');
+  const h = (m: number) => t('hours.h', { n: Math.floor(m / 60) });
+  return `${h(loc.hours[0])}–${h(loc.hours[1])}${loc.closedSunday ? t('hours.exceptSunday') : ''}`;
 }

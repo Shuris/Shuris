@@ -68,7 +68,8 @@
     "beard",
     "helmet",
     "body_front",
-    "shield"
+    "shield",
+    "arm_top"
   ],
   "sheets": {
     "body_back_0": {
@@ -107,6 +108,18 @@
       "file": "sprites/gladiator/body_front_2.png",
       "layer": "body_front"
     },
+    "arm_top_0": {
+      "file": "sprites/gladiator/arm_top_0.png",
+      "layer": "arm_top"
+    },
+    "arm_top_1": {
+      "file": "sprites/gladiator/arm_top_1.png",
+      "layer": "arm_top"
+    },
+    "arm_top_2": {
+      "file": "sprites/gladiator/arm_top_2.png",
+      "layer": "arm_top"
+    },
     "cloth": {
       "file": "sprites/gladiator/cloth.png",
       "layer": "cloth"
@@ -141,6 +154,10 @@
     },
     "shield_parmula": {
       "file": "sprites/gladiator/shield_parmula.png",
+      "layer": "shield"
+    },
+    "shield_parma": {
+      "file": "sprites/gladiator/shield_parma.png",
       "layer": "shield"
     },
     "shield_scutum": {
@@ -204,6 +221,11 @@
       "gripX": 12,
       "gripY": 7
     },
+    "sica": {
+      "file": "sprites/gladiator/weapon_sica.png",
+      "gripX": 12,
+      "gripY": 7
+    },
     "spear": {
       "file": "sprites/gladiator/weapon_spear.png",
       "gripX": 12,
@@ -215,6 +237,11 @@
       "gripY": 7
     }
   },
+  "weaponTop": [
+    11,
+    12,
+    13
+  ],
   "hands": [
     [
       59,
@@ -267,24 +294,24 @@
       -30
     ],
     [
-      50,
-      47,
-      -110
+      48,
+      41,
+      -140
     ],
     [
-      61,
-      52,
-      -35
+      61.84,
+      40.31,
+      -62
     ],
     [
-      71,
-      54,
-      -4
+      72.41,
+      52.95,
+      4
     ],
     [
-      63,
-      57,
-      -25
+      66.57,
+      58.78,
+      32
     ],
     [
       53,

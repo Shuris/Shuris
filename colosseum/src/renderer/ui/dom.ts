@@ -1,7 +1,8 @@
 // Utilitários de DOM. Todo texto dinâmico passa por esc() antes de virar HTML.
 import type { ItemDef, ItemMods } from '../core/model/types';
 import { ATTRIBUTE_KEYS } from '../core/model/types';
-import { ATTRIBUTE_INFO } from '../core/data/gladiators';
+import { t } from '../i18n';
+import { attrShort, itemName } from '../i18n/data';
 import { RARITY_COLOR } from '../core/data/equipment';
 
 export function esc(v: unknown): string {
@@ -29,7 +30,7 @@ export function itemIcon(item: ItemDef, cls = ''): string {
 }
 
 export function rarityName(item: ItemDef): string {
-  return `<span class="item-name" style="color:${RARITY_COLOR[item.rarity]}">${esc(item.name)}</span>`;
+  return `<span class="item-name" style="color:${RARITY_COLOR[item.rarity]}">${esc(itemName(item))}</span>`;
 }
 
 export function bar(value: number, max: number, cls: string, label = true): string {
@@ -41,14 +42,14 @@ export function bar(value: number, max: number, cls: string, label = true): stri
 
 export function modsSummary(m: ItemMods): string {
   const parts: string[] = [];
-  if (m.damage) parts.push(`Dano +${m.damage}`);
-  if (m.defense) parts.push(`Defesa +${m.defense}`);
-  if (m.reach) parts.push(`Alcance ${m.reach}`);
-  if (m.block) parts.push(`Bloqueio ${Math.round(m.block * 100)}%`);
-  if (m.attackSpeed) parts.push(`Velocidade ${m.attackSpeed < 0 ? '+' : '−'}${Math.abs(m.attackSpeed).toFixed(2)}s`);
+  if (m.damage) parts.push(`${t('stat.damage')} +${m.damage}`);
+  if (m.defense) parts.push(`${t('stat.defense')} +${m.defense}`);
+  if (m.reach) parts.push(`${t('stat.reach')} ${m.reach}`);
+  if (m.block) parts.push(`${t('stat.block')} ${Math.round(m.block * 100)}%`);
+  if (m.attackSpeed) parts.push(`${t('stat.speed')} ${m.attackSpeed < 0 ? '+' : '−'}${Math.abs(m.attackSpeed).toFixed(2)}s`);
   for (const k of ATTRIBUTE_KEYS) {
     const v = m.attrs?.[k];
-    if (v) parts.push(`${ATTRIBUTE_INFO[k].short} ${v > 0 ? '+' : ''}${v}`);
+    if (v) parts.push(`${attrShort(k)} ${v > 0 ? '+' : ''}${v}`);
   }
   return parts.join(' · ');
 }

@@ -84,13 +84,19 @@ export interface BattleRecord {
   levelUps: number;
 }
 
-export type LocationId = 'ludus' | 'home' | 'market' | 'arena' | 'temple' | 'forum' | 'baths';
+export type LocationId = 'ludus' | 'home' | 'market' | 'arena' | 'temple' | 'forum' | 'baths' | 'tavern';
 
 export interface NewsItem {
   id: string;
   kind: 'fame' | 'victory' | 'defeat' | 'streak' | 'level' | 'arena' | 'rival' | 'champion' | 'debut' | 'city';
   headline: string;
   body: string;
+  /** modelo de texto (traduzível): news.<tpl>.h / .b */
+  tpl?: string;
+  /** variáveis do modelo (ids: nome, origem, rival, adversário, arena) */
+  v?: Record<string, string | number>;
+  /** ilustração em preto e branco (assets/news/<img>.png) */
+  img?: string;
 }
 
 export interface Edition {
@@ -114,6 +120,8 @@ export interface GameSettings {
   /** volume geral dos efeitos sonoros (0..1) */
   volume: number;
   muted: boolean;
+  /** idioma da interface */
+  language: 'pt' | 'en';
 }
 
 export interface PlayerState {
@@ -151,6 +159,10 @@ export interface PlayerState {
   /** sequência atual: positiva = vitórias seguidas, negativa = derrotas seguidas */
   streak: number;
   news: NewsState;
+  /** melhorias compradas (cama, equipamentos do ludus...) */
+  upgrades: string[];
+  /** taverna: último dia em que ouviu boatos e conversas já ouvidas */
+  tavern: { rumorDay: number; heard: string[] };
   createdAt: number;
   updatedAt: number;
 }

@@ -1,6 +1,44 @@
-# Funcionalidades — versão 0.4.0
+# Funcionalidades — versão 0.5.0
 
-## Novidades da 0.4.0
+## Novidades da 0.5.0
+
+- [x] **Idiomas:** português e inglês. Botão PT/EN na barra de título, na tela inicial e em
+      Opções. Tudo é traduzido: interface, itens, adversários, habilidades, jornal, falas e
+      mensagens. A escolha fica salva. Um teste garante que o inglês tem todos os textos.
+- [x] **Combate legível:** lutadores **30% maiores** e afastados (não ficam "abraçados").
+      Cada golpe tem preparação (recua o peso), investida rápida e um arco de corte; no golpe
+      a arma e o braço passam à frente do escudo. Bloqueio: faísca e anel no escudo e o
+      defensor desliza para trás. Esquiva: salto para trás em arco. Golpe recebido: empurrão,
+      tronco inclinado, faíscas e pausa de impacto nos golpes fortes. Erro: o atacante
+      passa do ponto.
+- [x] **Gráficos mais detalhados:** poses de ataque redesenhadas (espada erguida, golpe por
+      cima, estocada); armas com fio, sulco central, guarda e pomo; nova **sica** curva e
+      **parma** trácia; scutum com curvatura, umbo e rebites; capacetes com viseira furada,
+      penacho e crista; **lorica segmentata** em faixas, couraça musculada e ptéruges;
+      grevas com joelheira e correias.
+- [x] **Templo:** o monge fica à direita e o gladiador à esquerda, de frente para ele.
+- [x] **Melhorias no Mercado** (aba Melhorias, permanentes): colchão de lã (+12 no cochilo),
+      leito de nobre (+25), pesos de pedra (+35% Força), pista de areia (+35% Resistência),
+      circuito de estacas (+35% Agilidade), palus reforçado (+35% Técnica) e doctore
+      particular (treino gasta 3 de energia a menos). Aparecem no alojamento e no ludus.
+- [x] **Taverna do Javali** (perto do fórum, 11h–24h): ensopado (+15 energia), rodada de
+      vinho com **boatos sobre o próximo rival** (personalidade e dica de combate, +1 fama,
+      1x por dia, às vezes vira nota no jornal) e conversas com Lívia, a taverneira, o velho
+      Quintus e fregueses.
+- [x] **Ludus vivo:** dupla de gladiadores treinando (ataques, bloqueios e esquivas), um
+      gladiador no segundo poste e o instrutor dando ordens.
+- [x] **Jornal Cápua Times:** cabeçalho gótico, preço, número da edição e ano romano, duas
+      colunas, anúncios e, de vez em quando, **ilustrações em preto e branco** (retícula de
+      jornal) — vitória, derrota, retrato do rival, estátua, multidão, navio, teatro, chuva...
+      As notícias guardam o modelo do texto, então mudam de idioma junto com o jogo.
+- [x] **Personalidade e diálogos:** cada adversário tem um temperamento (Marcus nervoso,
+      Cassius impetuoso, Rufus piadista, Brutus bruto, Spiculus disciplinado, Crixus
+      orgulhoso, Verus frio, Priscus cansado, Flamma showman) com falas em balões: provocação
+      e resposta do jogador antes da luta, falas ao ficar ferido, ao acertar crítico, ao
+      vencer e ao perder. Monge, instrutor, doctore, taverneira, Quintus, fregueses,
+      vendedores e compradores também falam.
+
+## Da versão 0.4.0
 
 - [x] Público cresce com a arena: Cápua quase vazia (22%), Pompeia, Verona, Leptis Magna e o Coliseu lotado (96%).
 - [x] **Dias da semana** (dia 1 = segunda). O **mercado fecha à noite e aos domingos** e,

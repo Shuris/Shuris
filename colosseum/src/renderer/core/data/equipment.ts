@@ -76,7 +76,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Lâmina curta e curva dos gladiadores trácios. Rápida e traiçoeira.',
     price: 480, minLevel: 9, shop: true,
     mods: { damage: 10, reach: 21, attackSpeed: -0.2, attrs: { agi: 2, tech: 1 } },
-    visual: { sheets: ['weapon_shortsword'], tint: DARK_BRONZE, icon: 'weapon_shortsword' },
+    visual: { sheets: ['weapon_sica'], icon: 'weapon_sica' },
   },
   {
     id: 'gladius_mainz', name: 'Gládio de Mainz', category: 'weapon', slot: 'mainHand', rarity: 'rare',
@@ -126,7 +126,7 @@ export const ITEMS: ItemDef[] = [
     description: 'Escudo quadrado e côncavo dos trácios, equilibrando defesa e agilidade.',
     price: 450, minLevel: 8, shop: true,
     mods: { defense: 6, block: 0.5, attrs: { agi: 1, tech: 1 } },
-    visual: { sheets: ['shield_parmula'], tint: DARK_BRONZE, icon: 'shield_parmula' },
+    visual: { sheets: ['shield_parma'], icon: 'shield_parma' },
   },
   {
     id: 'reinforced_scutum', name: 'Scutum reforçado', category: 'shield', slot: 'offHand', rarity: 'rare',
@@ -181,7 +181,7 @@ export const ITEMS: ItemDef[] = [
   },
   {
     id: 'medium_armor', name: 'Armadura média', category: 'armor', slot: 'body', rarity: 'uncommon',
-    description: 'Lorica squamata: escamas de ferro costuradas sobre couro.',
+    description: 'Lorica segmentata: faixas de ferro presas por correias de couro.',
     price: 260, minLevel: 4, shop: true,
     mods: { defense: 10, attrs: { agi: -1 } },
     visual: { sheets: ['armor_medium'], icon: 'armor_medium' },

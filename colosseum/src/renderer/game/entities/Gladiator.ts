@@ -16,8 +16,12 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   /** arma: imagem rígida posicionada na mão a cada quadro */
   private weapon: Phaser.GameObjects.Image | null = null;
   private weaponTint: number | null = null;
+  private weaponIndex = 0;
+  private weaponTop = new Set<number>();
   private baseTints: number[] = [];
   private shadow: Phaser.GameObjects.Ellipse;
+  /** corpo (camadas + arma + aura): pode subir (salto) e inclinar sem mover a sombra */
+  private rig: Phaser.GameObjects.Container;
   private anim = 'idle';
   private loop = true;
   private fps = 5;
@@ -34,11 +38,14 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, visual: FighterVisual) {
     super(scene, x, y);
     this.manifest = getManifest(scene);
+    this.weaponTop = new Set(this.manifest.weaponTop ?? []);
     this.shadow = scene.add.ellipse(0, 0, 26, 6, 0x000000, 0.28);
     this.add(this.shadow);
+    this.rig = scene.add.container(0, 0);
+    this.add(this.rig);
     this.aura = scene.add.ellipse(0, -22, 30, 50, 0xffd36a, 0);
     this.aura.setBlendMode(Phaser.BlendModes.ADD);
-    this.add(this.aura);
+    this.rig.add(this.aura);
     this.setVisual(visual);
     scene.add.existing(this);
   }
@@ -61,6 +68,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     push('cloth', CLOTH_COLORS[a.clothColor] ?? 0xffffff);
     push('belt');
     push(`body_front_${a.skin}`);
+    push(`arm_top_${a.skin}`);
     const hasHelmet = !!v.gear.head;
     if (!hasHelmet) push(`hair_${a.hairStyle}`, HAIR_COLORS[a.hairColor] ?? 0xffffff);
     if (a.beard) push('beard', HAIR_COLORS[a.hairColor] ?? 0xffffff);
@@ -80,14 +88,15 @@ export class GladiatorView extends Phaser.GameObjects.Container {
         img.setOrigin(def.gripX / img.width, def.gripY / img.height).setTint(e.tint);
         this.weaponTint = e.tint;
         this.weapon = img;
-        this.add(img);
+        this.rig.add(img);
+        this.weaponIndex = this.rig.getIndex(img);
         continue;
       }
       const s = this.scene.add.sprite(0, 0, sheetKey(e.sheet), 0).setOrigin(ox, oy);
       s.setTint(e.tint);
       this.layers.push(s);
       this.baseTints.push(e.tint);
-      this.add(s);
+      this.rig.add(s);
     }
     this.applyFrame();
   }
@@ -95,6 +104,13 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   setFacing(dir: 1 | -1): void {
     this.facingDir = dir;
     this.setScale(this.baseScale * dir, this.baseScale);
+  }
+
+  /** Eleva o corpo (px, positivo = para cima) e inclina (graus, positivo = para trás). */
+  setPose(lift: number, tilt: number): void {
+    this.rig.y = -lift;
+    this.rig.angle = -tilt;
+    this.shadow.setScale(1 - Math.min(0.5, lift / 30));
   }
 
   setBaseScale(s: number): void {
@@ -162,6 +178,9 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     if (this.weapon && hand) {
       this.weapon.setPosition(Math.round(hand[0] - this.manifest.originX), Math.round(hand[1] - this.manifest.originY));
       this.weapon.setAngle(hand[2]);
+      // nos golpes a arma passa à frente do escudo
+      if (this.weaponTop.has(f)) this.rig.bringToTop(this.weapon);
+      else if (this.rig.getIndex(this.weapon) !== this.weaponIndex) this.rig.moveTo(this.weapon, this.weaponIndex);
     }
   }
 

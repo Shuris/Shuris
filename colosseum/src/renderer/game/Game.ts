@@ -126,6 +126,15 @@ export class GameView {
     return true;
   }
 
+  /** Um figurante da cena atual fala (taverna, templo...). */
+  npcSay(kind: string, text: string): boolean {
+    return this.current === 'hub' && this.hub.scene.isActive() ? this.hub.say(kind, text) : false;
+  }
+
+  heroSay(text: string): void {
+    if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.heroSay(text);
+  }
+
   showGain(text: string): void {
     if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.showGain(text);
   }

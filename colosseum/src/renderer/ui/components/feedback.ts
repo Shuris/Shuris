@@ -1,5 +1,6 @@
 // Toasts e janelas modais.
 import { esc } from '../dom';
+import { t } from '../../i18n';
 
 export function toast(message: string, kind: 'info' | 'good' | 'bad' | 'gold' = 'info', ms = 3200): void {
   const root = document.getElementById('toast-root');
@@ -50,11 +51,11 @@ export function hasModal(): boolean {
   return !!closeCurrent;
 }
 
-export function confirmModal(title: string, text: string, okLabel = 'Confirmar'): Promise<boolean> {
+export function confirmModal(title: string, text: string, okLabel = t('common.confirm')): Promise<boolean> {
   return new Promise((resolve) => {
     let answered = false;
     const m = openModal(
-      `<h2>${esc(title)}</h2><p>${esc(text)}</p><div class="row end"><button class="btn" data-a="no">Cancelar</button><button class="btn btn-red" data-a="ok">${esc(okLabel)}</button></div>`,
+      `<h2>${esc(title)}</h2><p>${esc(text)}</p><div class="row end"><button class="btn" data-a="no">${t('common.cancel')}</button><button class="btn btn-red" data-a="ok">${esc(okLabel)}</button></div>`,
       { onClose: () => !answered && resolve(false) },
     );
     m.addEventListener('click', (e) => {

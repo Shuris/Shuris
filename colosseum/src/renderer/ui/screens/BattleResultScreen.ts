@@ -4,31 +4,31 @@ import type { OpponentDef } from '../../core/data/opponents';
 import { getItem } from '../../core/data/equipment';
 import type { BattleRewards } from '../../core/systems/ProgressionSystem';
 import { esc, fmtDuration, icon, itemIcon, rarityName } from '../dom';
+import { t } from '../../i18n';
 
-const REASON = { ko: 'nocaute', decision: 'decisão', forfeit: 'desistência' } as const;
 
 export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, auto: boolean, energy: number): string {
   const won = rw.result === 'win';
   const item = rw.itemId ? getItem(rw.itemId) : undefined;
   return `
     <div class="result ${won ? 'win' : 'loss'}">
-      <h1>${won ? 'VITÓRIA!' : 'DERROTA'}</h1>
-      <p class="subtitle">vs ${esc(opp.name)} · ${REASON[res.reason]} · ${fmtDuration(res.duration)}</p>
+      <h1>${won ? t('result.victory') : t('result.defeat')}</h1>
+      <p class="subtitle">vs ${esc(opp.name)} · ${t(`reason.${res.reason}` as 'reason.ko')} · ${fmtDuration(res.duration)}</p>
       <div class="rewards-box">
         <div class="reward">${icon('xp')} <b>+${rw.xp}</b> XP</div>
-        <div class="reward">${icon('coin')} <b>+${rw.coins}</b> moedas</div>
-        ${rw.reputation ? `<div class="reward">${icon('laurel')} <b>+${rw.reputation}</b> fama</div>` : ''}
+        <div class="reward">${icon('coin')} <b>+${rw.coins}</b> ${t('common.coinsLower')}</div>
+        ${rw.reputation ? `<div class="reward">${icon('laurel')} <b>+${rw.reputation}</b> ${t('common.fameLower')}</div>` : ''}
         ${item ? `<div class="reward">${itemIcon(item)} ${rarityName(item)}</div>` : ''}
       </div>
-      ${rw.levelUps ? `<div class="levelup">Nível ${rw.newLevel}! +${rw.pointsGained} pontos e +${rw.levelUps} p/ o Templo</div>` : ''}
-      ${rw.unlockedOpponent ? `<div class="unlock">Novo rival: <b>${esc(rw.unlockedOpponent.name)}</b></div>` : ''}
-      ${won ? '' : '<p class="hint">Você não perde nada. Treine e tente de novo!</p>'}
-      <p class="hint">Energia restante: <b>${Math.round(energy)}</b>${energy < 35 ? ' — hora de descansar.' : ''}</p>
+      ${rw.levelUps ? `<div class="levelup">${t('app.levelUp', { level: rw.newLevel, points: rw.pointsGained, skill: rw.levelUps })}</div>` : ''}
+      ${rw.unlockedOpponent ? `<div class="unlock">${t('result.newRival')} <b>${esc(rw.unlockedOpponent.name)}</b></div>` : ''}
+      ${won ? '' : `<p class="hint">${t('result.noLoss')}</p>`}
+      <p class="hint">${t('result.energyLeft', { n: Math.round(energy) })}${energy < 35 ? t('result.rest') : ''}</p>
       ${auto ? '<p class="tiny" data-countdown></p>' : ''}
       <div class="row center">
-        ${rw.levelUps ? '<button class="btn btn-gold" data-r="points">Usar pontos</button>' : ''}
-        <button class="btn" data-r="close">Continuar</button>
-        <button class="btn btn-red" data-r="again">Revanche</button>
+        ${rw.levelUps ? `<button class="btn btn-gold" data-r="points">${t('result.usePoints')}</button>` : ''}
+        <button class="btn" data-r="close">${t('common.continue')}</button>
+        <button class="btn btn-red" data-r="again">${t('result.rematch')}</button>
       </div>
     </div>`;
 }

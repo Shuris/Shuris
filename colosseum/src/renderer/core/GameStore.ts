@@ -2,6 +2,7 @@
 // e salva automaticamente (com debounce) através de um adaptador de persistência.
 import type { PlayerState } from './model/types';
 import { parseSave, serialize } from './systems/SaveSystem';
+import { t } from '../i18n';
 
 export interface Persistence {
   read(): Promise<{ data: string | null; source: string; error?: string }>;
@@ -26,10 +27,11 @@ export class GameStore {
     const res = await this.persistence.read();
     if (!res.data) return { player: null, notice: res.error ?? null };
     const parsed = parseSave(res.data);
-    if (!parsed.ok) return { player: null, notice: `Não foi possível carregar o progresso: ${parsed.error}` };
+    if (!parsed.ok) return { player: null, notice: t('err.loadFailed', { error: parsed.error }) };
     this.player = parsed.player;
-    let notice = res.error ?? null;
-    if (parsed.warnings.length) notice = `Alguns dados salvos foram corrigidos (${parsed.warnings.length}).`;
+    // o processo principal avisa (em português) quando usa o backup; traduz aqui
+    let notice = res.source === 'backup' && res.error ? t('save.backupLoaded') : (res.error ?? null);
+    if (parsed.warnings.length) notice = t('err.saveFixed', { n: parsed.warnings.length });
     return { player: parsed.player, notice };
   }
 

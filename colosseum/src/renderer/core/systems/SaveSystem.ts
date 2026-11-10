@@ -2,6 +2,7 @@
 // são rejeitados ou corrigidos (valores fora da faixa são limitados).
 import type { Attributes, BattleRecord, Edition, LocationId, NewsItem, PlayerState, Slot, StrategyId, TrainingId } from '../model/types';
 import { getPerk } from '../data/skillTree';
+import { getUpgrade } from '../data/upgrades';
 import { LOCATIONS } from '../data/locations';
 import { skillPointsForLevel } from './SkillTreeSystem';
 import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
@@ -11,6 +12,7 @@ import { OPPONENTS, getOpponent } from '../data/opponents';
 import { HISTORY_LIMIT } from './ProgressionSystem';
 import { SAVE_VERSION, sanitizeName } from './PlayerFactory';
 import { clamp } from './rng';
+import { t } from '../../i18n';
 
 export const SAVE_FORMAT = 'colosseum-save';
 
@@ -51,18 +53,18 @@ function attrs(v: unknown, def: number, max: number, w: string[], field: string)
 }
 
 export function parseSave(text: string | null | undefined): ParseResult {
-  if (!text) return { ok: false, error: 'Nenhum dado salvo.' };
+  if (!text) return { ok: false, error: t('save.none') };
   let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch {
-    return { ok: false, error: 'Arquivo de salvamento corrompido (JSON inválido).' };
+    return { ok: false, error: t('save.corrupt') };
   }
   if (!isObj(raw) || raw.format !== SAVE_FORMAT || !isObj(raw.player)) {
-    return { ok: false, error: 'Formato de salvamento desconhecido.' };
+    return { ok: false, error: t('save.unknown') };
   }
   if (typeof raw.version !== 'number' || raw.version > SAVE_VERSION) {
-    return { ok: false, error: 'Salvamento de uma versão mais nova do jogo.' };
+    return { ok: false, error: t('save.newer') };
   }
   return validatePlayer(raw.player);
 }
@@ -70,7 +72,7 @@ export function parseSave(text: string | null | undefined): ParseResult {
 export function validatePlayer(p: Obj): ParseResult {
   const w: string[] = [];
   const name = typeof p.name === 'string' ? sanitizeName(p.name) : '';
-  if (name.length < 2) return { ok: false, error: 'Nome do gladiador ausente ou inválido.' };
+  if (name.length < 2) return { ok: false, error: t('save.badName') };
 
   const inventory: PlayerState['inventory'] = [];
   const seen = new Set<string>();
@@ -169,9 +171,16 @@ export function validatePlayer(p: Obj): ParseResult {
       tipsSeen: Array.isArray(settings.tipsSeen) ? settings.tipsSeen.filter((s): s is string => typeof s === 'string').slice(0, 50) : [],
       volume: typeof settings.volume === 'number' && Number.isFinite(settings.volume) ? clamp(settings.volume, 0, 1) : 0.7,
       muted: settings.muted === true,
+      language: settings.language === 'en' ? 'en' : 'pt',
     },
     nextUid: Math.max(int(p.nextUid, maxUid + 1, 1, 1e9, w, 'nextUid'), maxUid + 1),
     ...calendarAndTree(p, w),
+    // versão 3: melhorias e taverna
+    upgrades: Array.isArray(p.upgrades) ? [...new Set(p.upgrades.filter((id): id is string => typeof id === 'string' && !!getUpgrade(id)))] : [],
+    tavern: {
+      rumorDay: int(isObj(p.tavern) ? p.tavern.rumorDay : 0, 0, 0, 1e7, w, 'tavern.rumorDay'),
+      heard: isObj(p.tavern) && Array.isArray(p.tavern.heard) ? p.tavern.heard.filter((h): h is string => typeof h === 'string').slice(0, 200) : [],
+    },
     createdAt: int(p.createdAt, Date.now(), 0, 8.64e15, w, 'createdAt'),
     updatedAt: int(p.updatedAt, Date.now(), 0, 8.64e15, w, 'updatedAt'),
   };
@@ -194,7 +203,20 @@ function newsItems(v: unknown): NewsItem[] {
       kind: (NEWS_KINDS.includes(n.kind as string) ? n.kind : 'city') as NewsItem['kind'],
       headline: (n.headline as string).slice(0, 140),
       body: (n.body as string).slice(0, 400),
+      ...(typeof n.tpl === 'string' && /^[a-zA-Z0-9]+\.\d+$/.test(n.tpl) ? { tpl: n.tpl } : {}),
+      ...(isObj(n.v) ? { v: newsVars(n.v) } : {}),
+      ...(typeof n.img === 'string' && /^[a-z_]+$/.test(n.img) ? { img: n.img } : {}),
     }));
+}
+
+function newsVars(v: Obj): Record<string, string | number> {
+  const out: Record<string, string | number> = {};
+  for (const [k, val] of Object.entries(v).slice(0, 12)) {
+    if (!/^\w{1,20}$/.test(k)) continue;
+    if (typeof val === 'string') out[k] = val.slice(0, 60);
+    else if (typeof val === 'number' && Number.isFinite(val)) out[k] = val;
+  }
+  return out;
 }
 
 /** Campos da versão 2 (calendário, energia, árvore, jornal). Saves v1 recebem valores iniciais. */

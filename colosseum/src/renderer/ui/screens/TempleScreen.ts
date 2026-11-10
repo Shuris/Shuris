@@ -6,11 +6,17 @@ import { esc, icon } from '../dom';
 import { confirmModal, toast } from '../components/feedback';
 import { sound } from '../../audio/SoundManager';
 import type { Screen, ScreenDeps } from './Screen';
+import { t } from '../../i18n';
+import { branchName, branchSubtitle, perkName, perkShort } from '../../i18n/data';
 
 export class TempleScreen implements Screen {
   readonly id = 'temple' as const;
-  readonly title = 'Templo de Marte';
-  readonly tip = 'O monge Aurelius ensina as habilidades. Você ganha 1 ponto por nível.';
+  get title() {
+    return t('temple.title');
+  }
+  get tip() {
+    return t('temple.tip');
+  }
   private selected: string | null = null;
 
   constructor(private readonly d: ScreenDeps) {}
@@ -19,8 +25,8 @@ export class TempleScreen implements Screen {
     const owned = p.perks.includes(perk.id);
     const err = canLearn(p, perk.id);
     const state = owned ? 'owned' : !err ? 'available' : perk.requires.some((r) => p.perks.includes(r)) || !perk.requires.length ? 'poor' : 'locked';
-    return `<button class="perk perk-${state} ${this.selected === perk.id ? 'sel' : ''}" data-action="select" data-id="${perk.id}" title="${esc(perk.short)}">
-      ${icon(perk.icon)}<span>${esc(perk.name)}</span><i>${'●'.repeat(perk.cost)}</i></button>`;
+    return `<button class="perk perk-${state} ${this.selected === perk.id ? 'sel' : ''}" data-action="select" data-id="${perk.id}" title="${esc(perkShort(perk))}">
+      ${icon(perk.icon)}<span>${esc(perkName(perk))}</span><i>${'●'.repeat(perk.cost)}</i></button>`;
   }
 
   render(p: PlayerState): string {
@@ -30,26 +36,26 @@ export class TempleScreen implements Screen {
         const tiers = [1, 2, 3, 4, 5]
           .map((t) => `<div class="tier">${PERKS.filter((pk) => pk.branch === b && pk.tier === t).map((pk) => this.node(p, pk)).join('')}</div>`)
           .join('<div class="link"></div>');
-        return `<div class="branch" style="--bc:${br.color}"><div class="branch-head"><b>${br.name}</b><small>${br.subtitle}</small></div>${tiers}</div>`;
+        return `<div class="branch" style="--bc:${br.color}"><div class="branch-head"><b>${branchName(b)}</b><small>${branchSubtitle(b)}</small></div>${tiers}</div>`;
       })
       .join('');
     const sel = this.selected ? getPerk(this.selected) : undefined;
-    let detail = '<p class="hint center">Toque numa habilidade para ver.</p>';
+    let detail = `<p class="hint center">${t('temple.pick')}</p>`;
     if (sel) {
       const owned = p.perks.includes(sel.id);
       const err = canLearn(p, sel.id);
-      detail = `<div class="perk-detail"><div class="row">${icon(sel.icon)}<b>${esc(sel.name)}</b><span class="tag">${sel.cost} ponto(s)</span></div>
-        <p>${esc(sel.short)}</p>
-        ${owned ? '<p class="gold">Aprendida</p>' : `<button class="btn btn-gold wide" data-action="learn" data-id="${sel.id}" ${err ? 'disabled' : ''}>${err ? esc(err) : 'Aprender com o monge'}</button>`}</div>`;
+      detail = `<div class="perk-detail"><div class="row">${icon(sel.icon)}<b>${esc(perkName(sel))}</b><span class="tag">${t('temple.cost', { n: sel.cost })}</span></div>
+        <p>${esc(perkShort(sel))}</p>
+        ${owned ? `<p class="gold">${t('temple.learned')}</p>` : `<button class="btn btn-gold wide" data-action="learn" data-id="${sel.id}" ${err ? 'disabled' : ''}>${err ? esc(err) : t('temple.learn')}</button>`}</div>`;
     }
     const say = p.skillPoints
       ? p.perks.length
-        ? 'Continue no seu caminho. O que deseja aprender hoje?'
-        : 'Marte, Mercúrio ou Minerva... escolha seu caminho, jovem gladiador.'
-      : 'Volte quando tiver mais experiência na arena.';
-    return `<div class="monk-say"><b>Monge Aurelius:</b><span>“${say}”</span></div>
-      <div class="row between"><span class="big-num">${p.skillPoints} <small>pontos</small></span>
-        <button class="btn sm btn-dark" data-action="respec" ${p.perks.length ? '' : 'disabled'}>Recomeçar · ${respecCost(p)}</button></div>
+        ? t('monk.continue')
+        : t('monk.choose')
+      : t('monk.later');
+    return `<div class="monk-say"><b>${t('monk.name')}:</b><span>“${say}”</span></div>
+      <div class="row between"><span class="big-num">${p.skillPoints} <small>${t('temple.points')}</small></span>
+        <button class="btn sm btn-dark" data-action="respec" ${p.perks.length ? '' : 'disabled'}>${t('temple.respec', { cost: respecCost(p) })}</button></div>
       <div class="tree">${cols}</div>
       ${detail}`;
   }
@@ -65,14 +71,15 @@ export class TempleScreen implements Screen {
         toast(err, 'bad');
         sound.play('error');
       } else {
-        toast(`O monge ensinou: ${getPerk(id)?.name}!`, 'gold');
+        const pk = getPerk(id);
+        toast(t('temple.taught', { name: pk ? perkName(pk) : id }), 'gold');
         sound.play('levelup');
       }
     } else if (action === 'respec') {
-      void confirmModal('Recomeçar a árvore?', `Devolve todos os pontos por ${respecCost(p)} moedas.`, 'Recomeçar').then((ok) => {
+      void confirmModal(t('temple.respecTitle'), t('temple.respecBody', { cost: respecCost(p) }), t('temple.respecOk')).then((ok) => {
         if (!ok) return;
         const err = this.d.store.update((pl) => respec(pl));
-        toast(err ?? 'Pontos devolvidos.', err ? 'bad' : 'good');
+        toast(err ?? t('temple.respecDone'), err ? 'bad' : 'good');
       });
     }
   }

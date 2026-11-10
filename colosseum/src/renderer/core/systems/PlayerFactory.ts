@@ -5,8 +5,9 @@ import { OPPONENTS } from '../data/opponents';
 import { skillPointsForLevel } from './SkillTreeSystem';
 import { debutEdition } from './NewsSystem';
 import { createRng } from './rng';
+import { t } from '../../i18n';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const STARTING_COINS = 150;
 export const MAX_NAME_LENGTH = 20;
 
@@ -16,8 +17,8 @@ export function sanitizeName(raw: string): string {
 
 export function validateName(raw: string): string | null {
   const n = sanitizeName(raw);
-  if (n.length < 2) return 'O nome deve ter pelo menos 2 caracteres.';
-  if (!/^[\p{L}\p{N} '.-]+$/u.test(n)) return 'Use apenas letras, números, espaços, apóstrofo, ponto ou hífen.';
+  if (n.length < 2) return t('err.nameShort');
+  if (!/^[\p{L}\p{N} '.-]+$/u.test(n)) return t('err.nameChars');
   return null;
 }
 
@@ -56,7 +57,7 @@ function buildPlayer(name: string, originId: string, appearance: Appearance, now
     strategy: 'balanced',
     defeatedOpponents: [],
     selectedOpponent: OPPONENTS[0].id,
-    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [], volume: 0.7, muted: false },
+    settings: { battleSpeed: 1, autoContinue: false, tipsSeen: [], volume: 0.7, muted: false, language: 'pt' },
     nextUid: 2,
     day: 1,
     minutes: 8 * 60,
@@ -67,6 +68,8 @@ function buildPlayer(name: string, originId: string, appearance: Appearance, now
     respecs: 0,
     streak: 0,
     news: { editions: [], pending: [], milestones: [] },
+    upgrades: [],
+    tavern: { rumorDay: 0, heard: [] },
     createdAt: now,
     updatedAt: now,
   };

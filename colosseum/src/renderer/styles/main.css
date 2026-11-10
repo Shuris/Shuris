@@ -343,15 +343,34 @@ em.down { color: var(--red-hi); }
 .ed-day { font-size: 20px; white-space: nowrap; }
 .ed-head { flex: 1; font-size: 22px; }
 .modal-news { width: min(620px, calc(100% - 24px)); background: none; border: 0; padding: 0; }
-.newspaper { background: #ecdcb2; color: #2e1c10; border: 4px double #6a4a2a; padding: 14px 20px; box-shadow: 0 0 0 3px #1a110c, 0 10px 30px rgba(0, 0, 0, 0.6); }
-.newspaper header { text-align: center; border-bottom: 3px double #6a4a2a; margin-bottom: 10px; }
-.np-title { font-size: 60px; letter-spacing: 6px; color: #3a1e10; }
-.np-sub { font-size: 21px; color: #6a4a2a; }
-.newspaper article { border-bottom: 1px solid #b89a6a; padding: 6px 0; }
-.newspaper article h3 { color: #3a1e10; margin: 2px 0; font-size: 26px; }
-.newspaper article.lead h3 { font-size: 34px; }
-.newspaper article p { font-size: 22px; margin: 2px 0 4px; color: #4a3020; }
-.newspaper .news-city h3 { font-size: 22px; color: #6a4a2a; }
+.newspaper {
+  --ink: #1e1610;
+  background: #efe3c4 radial-gradient(ellipse at 30% 20%, rgba(255, 250, 230, 0.55), transparent 60%);
+  color: var(--ink); border: 1px solid #8a7450; padding: 14px 22px 10px;
+  box-shadow: 0 0 0 3px #1a110c, 0 10px 30px rgba(0, 0, 0, 0.6);
+  font-family: 'Old Standard TT', Georgia, serif;
+}
+.newspaper header { text-align: center; margin-bottom: 10px; }
+.np-top { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
+.np-title { font-family: 'UnifrakturMaguntia', 'Old Standard TT', serif; font-size: 66px; line-height: 1.05; color: var(--ink); letter-spacing: 1px; margin: 4px 0 2px; }
+.np-sub { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; border-top: 3px double var(--ink); border-bottom: 3px double var(--ink); padding: 3px 2px; }
+.np-motto { font-style: italic; }
+.newspaper article { padding: 6px 0 8px; border-bottom: 1px solid rgba(30, 22, 16, 0.35); break-inside: avoid; }
+.newspaper article h3 { font-family: 'Old Standard TT', Georgia, serif; font-weight: 700; color: var(--ink); margin: 2px 0 3px; font-size: 21px; line-height: 1.15; }
+.newspaper article.lead { border-bottom: 2px solid var(--ink); }
+.newspaper article.lead h3 { font-size: 32px; text-align: center; }
+.newspaper article p { font-size: 17px; line-height: 1.35; margin: 2px 0 4px; color: #2e2218; text-align: justify; hyphens: auto; }
+.newspaper article.lead p { font-size: 19px; }
+.newspaper .news-city h3 { font-size: 18px; }
+.np-cols { columns: 2; column-gap: 22px; column-rule: 1px solid rgba(30, 22, 16, 0.4); margin-top: 6px; }
+.np-fig { margin: 2px 0 6px; text-align: center; }
+.np-fig img { display: block; width: 100%; image-rendering: pixelated; border: 1px solid var(--ink); filter: contrast(1.05); }
+.np-fig.big img { max-height: 230px; object-fit: cover; }
+.np-fig.small { float: right; width: 46%; margin: 4px 0 4px 10px; }
+.np-fig figcaption { font-size: 13px; font-style: italic; color: #4a3a2a; margin-top: 2px; }
+.np-ad { break-inside: avoid; border: 2px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 2px; padding: 6px 8px; margin: 10px 2px 4px; text-align: center; }
+.np-ad b { font-family: 'UnifrakturMaguntia', serif; font-size: 20px; font-weight: 400; }
+.np-ad p { font-size: 16px; margin: 2px 0; }
 .newspaper .btn { margin-top: 6px; }
 
 /* no mapa, o status fica compacto para não cobrir os locais */

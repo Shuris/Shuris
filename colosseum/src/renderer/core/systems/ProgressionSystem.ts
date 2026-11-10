@@ -5,6 +5,7 @@ import { OPPONENTS, opponentIndex, type OpponentDef } from '../data/opponents';
 import { addItem } from './EquipmentSystem';
 import { pick, type Rng } from './rng';
 import { onBattle } from './NewsSystem';
+import { t } from '../../i18n';
 
 export const HISTORY_LIMIT = 50;
 
@@ -165,10 +166,10 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
 }
 
 export function reputationTitle(rep: number): string {
-  if (rep >= 600) return 'Lenda de Roma';
-  if (rep >= 350) return 'Campeão da Arena';
-  if (rep >= 180) return 'Favorito do Público';
-  if (rep >= 80) return 'Gladiador Conhecido';
-  if (rep >= 25) return 'Promessa da Arena';
-  return 'Tirocinius (novato)';
+  if (rep >= 600) return t('rank.6');
+  if (rep >= 350) return t('rank.5');
+  if (rep >= 180) return t('rank.4');
+  if (rep >= 80) return t('rank.3');
+  if (rep >= 25) return t('rank.2');
+  return t('rank.1');
 }

@@ -1,7 +1,8 @@
 // HUD da batalha (HTML sobre o canvas): barras de vida/resistência, tempo e narração.
 import type { CombatEngine } from '../../core/combat/CombatEngine';
 import type { CombatEvent, FighterState } from '../../core/combat/CombatTypes';
-import { SKILLS } from '../../core/data/skills';
+import { t } from '../../i18n';
+import { skillName } from '../../i18n/data';
 import { esc, fmtDuration } from '../dom';
 
 export interface HudCallbacks {
@@ -29,7 +30,7 @@ export class BattleHud {
     this.log = [];
     const plate = (f: FighterState, side: 0 | 1) => `
       <div class="plate plate-${side}">
-        <div class="plate-name"><span>${esc(f.spec.name)}</span><span class="lvl">Nv ${levels[side]}</span></div>
+        <div class="plate-name"><span>${esc(f.spec.name)}</span><span class="lvl">${t('common.lv', { n: levels[side] })}</span></div>
         <div class="bar hp"><div class="bar-fill" data-hp="${side}"></div><span class="bar-label" data-hpt="${side}"></span></div>
         <div class="bar st"><div class="bar-fill" data-st="${side}"></div></div>
       </div>`;
@@ -39,11 +40,11 @@ export class BattleHud {
         <div class="hud-log" data-log></div>
         <div class="hud-controls">
           <span class="speed">${[1, 2, 3].map((s) => `<button class="btn sm ${s === speed ? 'active' : ''}" data-hud="speed" data-v="${s}">${s}x</button>`).join('')}</span>
-          <button class="btn sm btn-dark" data-hud="forfeit" title="Desistir (conta como derrota)">Desistir</button>
+          <button class="btn sm btn-dark" data-hud="forfeit" title="${t('battle.forfeitHint')}">${t('battle.forfeit')}</button>
         </div>
       </div>`;
     this.root.hidden = false;
-    this.push('Os gladiadores entram na arena!');
+    this.push(t('battle.enter'));
     this.update(engine);
   }
 
@@ -85,19 +86,19 @@ export class BattleHud {
     const name = (s: 0 | 1) => `<b class="side-${s}">${esc(engine.fighters[s].spec.name.split(',')[0])}</b>`;
     switch (e.type) {
       case 'start':
-        this.push('<b>Lutem!</b>');
+        this.push(`<b>${t('battle.fight')}</b>`);
         break;
       case 'skill':
-        this.push(`${name(e.side)}: <span class="gold">${esc(SKILLS[e.skill].name)}</span>`);
+        this.push(`${name(e.side)}: <span class="gold">${esc(skillName(e.skill))}</span>`);
         break;
       case 'impact':
-        if (e.crit && e.outcome === 'hit') this.push(`Crítico de ${name(e.side)}!`);
+        if (e.crit && e.outcome === 'hit') this.push(t('battle.critBy', { name: name(e.side) }));
         break;
       case 'exhausted':
-        this.push(`${name(e.side)} está cansado!`);
+        this.push(t('battle.tired', { name: name(e.side) }));
         break;
       case 'end':
-        this.push(`${name(e.winner)} vence!`);
+        this.push(t('battle.wins', { name: name(e.winner) }));
         break;
     }
   }

@@ -1,26 +1,35 @@
-// Alojamento: dormir até o dia seguinte ou cochilar.
+// Alojamento: dormir até o dia seguinte ou cochilar. A cama comprada no mercado
+// melhora o cochilo.
 import type { PlayerState } from '../../core/model/types';
-import { NAP_ENERGY, NAP_MINUTES, canNap } from '../../core/systems/CalendarSystem';
+import { NAP_MINUTES, canNap, napEnergy } from '../../core/systems/CalendarSystem';
 import { bar } from '../dom';
+import { t } from '../../i18n';
+import { hasUpgrade } from '../../core/data/upgrades';
 import type { Screen, ScreenDeps } from './Screen';
 
 export class HomeScreen implements Screen {
   readonly id = 'home' as const;
-  readonly title = 'Alojamento';
-  readonly tip = 'Durma para começar um novo dia com energia cheia.';
+  get title() {
+    return t('home.title');
+  }
+  get tip() {
+    return t('home.tip');
+  }
 
   constructor(private readonly d: ScreenDeps) {}
 
   render(p: PlayerState): string {
     const napErr = canNap(p);
+    const bed = hasUpgrade(p, 'bed_noble') ? t('home.bedNoble') : hasUpgrade(p, 'bed_wool') ? t('home.bedWool') : t('home.bedStraw');
     return `<div class="card center">
-        <div class="big-num">Dia ${p.day}</div>
-        <div class="hint">Energia</div>
+        <div class="big-num">${t('common.dayN', { n: p.day })}</div>
+        <div class="hint">${t('common.energy')}</div>
         ${bar(p.energy, 100, 'energy')}
       </div>
-      <button class="btn btn-gold btn-big wide" data-action="sleep">Dormir até amanhã</button>
-      <p class="hint center">Acorda às 7h com energia cheia. Sai o jornal do dia.</p>
-      <button class="btn wide" data-action="nap" ${napErr ? `disabled title="${napErr}"` : ''}>Cochilar ${NAP_MINUTES / 60}h (+${NAP_ENERGY} energia)</button>`;
+      <button class="btn btn-gold btn-big wide" data-action="sleep">${t('home.sleep')}</button>
+      <p class="hint center">${t('home.sleepHint')}</p>
+      <button class="btn wide" data-action="nap" ${napErr ? `disabled title="${napErr}"` : ''}>${t('home.nap', { hours: NAP_MINUTES / 60, energy: napEnergy(p) })}</button>
+      <p class="tiny dim center">${t('home.bed', { bed })}</p>`;
   }
 
   onAction(action: string): void {

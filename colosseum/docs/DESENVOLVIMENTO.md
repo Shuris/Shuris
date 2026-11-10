@@ -40,12 +40,12 @@ npm run dist:win
 
 Saída em `release/`:
 
-- `Colosseum-Setup-0.4.0.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
-- `Colosseum-Portatil-0.4.0.exe` — versão portátil.
+- `Colosseum-Setup-0.5.0.exe` — instalador (atalhos na área de trabalho e menu Iniciar, desinstalador).
+- `Colosseum-Portatil-0.5.0.exe` — versão portátil.
 - `win-unpacked/` — aplicativo descompactado (útil para testes).
 
 No Linux é possível gerar o mesmo instalador com Wine (`wine64` + `wine32:i386`); foi assim que a
-versão 0.1.0 foi produzida (a 0.4.0 é gerada pelo GitHub Actions). Configuração em `electron-builder.yml`; ícone em `build/icon.ico`.
+versão 0.1.0 foi produzida (as versões atuais são geradas pelo GitHub Actions). Configuração em `electron-builder.yml`; ícone em `build/icon.ico`.
 
 Também há um workflow do GitHub Actions (`.github/workflows/colosseum-windows.yml` na raiz do
 repositório) que roda os testes e gera o instalador num runner Windows real, disponibilizando os
@@ -59,19 +59,22 @@ assinatura de código (configurável via `CSC_LINK`/`CSC_KEY_PASSWORD` no Electr
 ## Arte
 
 Toda a arte é gerada por `tools/generate_assets.py` (+ `tools/pixel.py`, `gen_gladiator.py`,
-`gen_scenes.py`, `gen_ui.py`) e os PNGs resultantes ficam versionados em
+`gen_scenes.py`, `gen_ui.py`, `gen_arenas.py`, `gen_locations.py`, `gen_v05.py`) e os PNGs resultantes ficam versionados em
 `src/renderer/public/assets/`. Para trocar por spritesheets desenhadas à mão, veja a seção
 "Substituindo a arte" em [ARQUITETURA.md](ARQUITETURA.md).
 
 ## Testes
 
-- **Unitários (55):** fórmulas de atributos, limites (esquiva 35%, intervalo 0,8 s, redução 70%),
+- **Unitários (74):** fórmulas de atributos, limites (esquiva 35%, intervalo 0,8 s, redução 70%),
   equipamentos, progressão, treinamento, salvamento/validação, GameStore, motor de combate
   (determinismo, limites físicos, todos os eventos/habilidades, efeito das estratégias,
-  duração média), arenas, hora do dia, configurações salvas, árvore de habilidades, sistema de dias, jornal, migração de save e balanceamento (150 lutas × 3
-  estratégias × 9 adversários).
-- **E2E (18 etapas):** criação e jornal de estreia, viagens pelo mapa, mercado e equipamento,
+  duração média), arenas, hora do dia, configurações salvas, árvore de habilidades, sistema de dias, jornal, migração de save, idiomas (inglês completo, mesmos
+  parâmetros), melhorias, taverna, modelos e ilustrações do jornal, falas de todos os adversários,
+  salvamento v3 e balanceamento (150 lutas × 3 estratégias × 9 adversários).
+- **E2E (21 etapas):** criação e jornal de estreia, viagens pelo mapa, mercado e equipamento,
   treino (energia/tempo), luta completa com sons, falta de energia, dormir e novo dia,
   derrota, evolução de nível, árvore no Templo, arena correta por adversário, dia e noite,
   manchete de fama citando o rival, tela cheia, redimensionamento, salvamento/reabertura e
-  recuperação por backup, mercado fechado à noite/domingo e chuva.
+  recuperação por backup, mercado fechado à noite/domingo, chuva, lutadores 30% maiores com
+  provocação em balão, monge à direita no templo, melhorias (ludus com gladiadores treinando),
+  taverna e troca de idioma.

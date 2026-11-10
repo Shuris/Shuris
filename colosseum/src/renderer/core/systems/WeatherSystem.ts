@@ -1,5 +1,6 @@
 // Clima: alguns dias têm chuva durante parte do dia (determinístico por gladiador e dia).
 import { createRng } from './rng';
+import { t } from '../../i18n';
 
 export const RAIN_CHANCE = 0.3;
 
@@ -37,7 +38,7 @@ export function weatherAt(seed: number, day: number, minutes: number): WeatherNo
 }
 
 export function weatherLabel(now: WeatherNow): string | null {
-  if (now.rain > 0.05) return 'Chuva';
-  if (now.cloud > 0.3) return 'Nublado';
+  if (now.rain > 0.05) return t('weather.rain');
+  if (now.cloud > 0.3) return t('weather.cloudy');
   return null;
 }

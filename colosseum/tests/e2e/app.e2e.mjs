@@ -96,6 +96,7 @@ await step('2. Criação do gladiador e jornal de estreia', async () => {
   assert(p.name === 'Maximus Decimus' && p.baseAttributes.agi === 7, 'dados do gladiador');
   assert(p.location === 'home' && p.day === 1 && p.energy === 100, 'começa no alojamento, dia 1');
   assert(p.news.editions[0].items[0].body.includes('Maximus'), 'manchete com o nome');
+  assert(p.news.editions[0].items[0].img === 'newcomer', 'estreia com ilustração');
   await win.waitForTimeout(600);
   assert(fs.existsSync(SAVE), 'salvamento criado');
 });
@@ -222,6 +223,11 @@ await step('13. Templo: árvore de habilidades', async () => {
   const p = await state();
   assert(p.perks.includes('m1') && p.perks.includes('m2'), 'habilidades aprendidas');
   assert(((await win.textContent('#panel')) ?? '').includes('Monge Aurelius'), 'monge presente');
+  const pos = await win.evaluate(() => {
+    const hub = window.__colosseum.view.game.scene.getScene('hub');
+    return { monk: hub.monk.x, hero: hub.hero.x };
+  });
+  assert(pos.monk > pos.hero, `monge à direita do gladiador (${JSON.stringify(pos)})`);
   await shot('13-temple');
 });
 
@@ -240,6 +246,12 @@ await step('15. Arena certa a cada dois adversários', async () => {
   const id = await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id);
   assert(id === 'pompeii', `Rufus em Pompeia (${id})`);
   await win.waitForTimeout(2000);
+  const arena = await win.evaluate(() => {
+    const sc = window.__colosseum.view.arena;
+    return { scale: sc.views[0].scaleY, bubbles: sc.children.list.filter((o) => o.depth === 1200).length };
+  });
+  assert(Math.abs(arena.scale - 1.3) < 0.01, `lutadores 30% maiores (${arena.scale})`);
+  assert(arena.bubbles >= 1, 'provocação do adversário em balão de fala');
   await shot('15-pompeii');
 });
 
@@ -317,6 +329,59 @@ await step('18. Redimensionamento da janela', async () => {
     const c = await win.evaluate(() => ({ cw: document.querySelector('#game canvas').clientWidth, iw: window.innerWidth }));
     assert(Math.abs(c.cw - c.iw) <= 2, `canvas acompanha a janela (${JSON.stringify(c)})`);
   }
+});
+
+await step('22. Melhorias do mercado: cama e equipamentos do ludus', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.coins += 1000; p.minutes = 10 * 60; p.energy = 60; p.day = p.day % 7 === 0 ? p.day + 1 : p.day; }));
+  await goTo('market');
+  await win.click('[data-action="tab"][data-id="upgrades"]');
+  await win.click('[data-action="upgrade"][data-id="bed_wool"]');
+  await win.click('[data-action="upgrade"][data-id="stone_weights"]');
+  const p = await state();
+  assert(p.upgrades.includes('bed_wool') && p.upgrades.includes('stone_weights'), `melhorias compradas (${p.upgrades})`);
+  await goTo('ludus');
+  await win.waitForTimeout(1500);
+  const lud = await win.evaluate(() => {
+    const hub = window.__colosseum.view.game.scene.getScene('hub');
+    return { npcs: hub.npcs.length, weights: hub.children.list.some((o) => o.texture && o.texture.key === 'fx:up_weights') };
+  });
+  assert(lud.npcs >= 4, `outros gladiadores treinando (${lud.npcs})`);
+  assert(lud.weights, 'pesos de pedra aparecem no ludus');
+  assert(((await win.textContent('#panel')) ?? '').includes('equipamento +35%'), 'bônus de treino indicado');
+  await shot('22-ludus');
+  await goTo('home');
+  assert(((await win.textContent('#panel')) ?? '').includes('+32 energia'), 'cochilo melhor com o colchão de lã');
+});
+
+await step('23. Taverna: comer, ouvir boatos e conversar', async () => {
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 14 * 60; p.energy = 50; }));
+  await goTo('tavern');
+  const before = await state();
+  await win.click('[data-action="eat"]');
+  let p = await state();
+  assert(p.energy === before.energy + 15 && p.coins < before.coins, 'refeição recupera energia');
+  await win.click('[data-action="rumor"]');
+  p = await state();
+  assert(p.reputation === before.reputation + 1 && p.tavern.rumorDay === p.day, 'boato ouvido (+1 fama)');
+  assert(await win.locator('[data-action="rumor"][disabled]').count(), 'boato só 1x por dia');
+  await win.click('[data-action="talk"]');
+  await win.waitForTimeout(600);
+  const bubbles = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').children.list.filter((o) => o.depth === 1200).length);
+  assert(bubbles >= 1, 'conversa em balão de fala');
+  await shot('23-tavern');
+});
+
+await step('24. Idioma: inglês e português', async () => {
+  await win.click('[data-w="lang"]');
+  await win.waitForTimeout(400);
+  assert((await win.textContent('[data-nav="map"]')) === 'Map', 'abas em inglês');
+  assert(((await win.textContent('#panel')) ?? '').includes('The Boar Tavern'), 'painel em inglês');
+  assert(((await win.textContent('#statusbar')) ?? '').match(/Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday/), 'dia da semana em inglês');
+  assert((await state()).settings.language === 'en', 'idioma salvo');
+  await shot('24-english');
+  await win.click('[data-w="lang"]');
+  await win.waitForTimeout(400);
+  assert((await win.textContent('[data-nav="map"]')) === 'Mapa', 'de volta ao português');
 });
 
 const snapshot = await state();

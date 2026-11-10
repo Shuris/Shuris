@@ -3,6 +3,7 @@ import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
 import { MAX_ATTRIBUTE, emptyAttributes } from '../data/gladiators';
 import { getItem } from '../data/equipment';
 import { clamp } from './rng';
+import { t } from '../../i18n';
 
 /** Estatísticas de combate derivadas de atributos + equipamentos. */
 export interface CombatStats {
@@ -132,12 +133,12 @@ export function allocatePoints(player: PlayerState, alloc: Partial<Record<Attrib
   let total = 0;
   for (const k of ATTRIBUTE_KEYS) {
     const v = alloc[k] ?? 0;
-    if (!Number.isInteger(v) || v < 0) return 'Distribuição inválida.';
-    if (player.baseAttributes[k] + player.trainedBonus[k] + v > MAX_ATTRIBUTE) return 'Atributo no valor máximo.';
+    if (!Number.isInteger(v) || v < 0) return t('err.badAlloc');
+    if (player.baseAttributes[k] + player.trainedBonus[k] + v > MAX_ATTRIBUTE) return t('err.attrMax');
     total += v;
   }
-  if (total === 0) return 'Nenhum ponto selecionado.';
-  if (total > player.unspentPoints) return 'Pontos insuficientes.';
+  if (total === 0) return t('err.noPoints');
+  if (total > player.unspentPoints) return t('err.notEnoughPoints');
   for (const k of ATTRIBUTE_KEYS) player.baseAttributes[k] += alloc[k] ?? 0;
   player.unspentPoints -= total;
   return null;

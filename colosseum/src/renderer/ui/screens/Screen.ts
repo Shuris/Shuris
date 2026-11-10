@@ -13,6 +13,7 @@ export interface AppActions {
   sleep(): void;
   nap(): void;
   bathe(): void;
+  tavern(action: 'eat' | 'rumor' | 'talk'): void;
   readEdition(day: number): void;
   winChance(opponentId: string): number;
   refreshVisual(): void;

@@ -3,6 +3,8 @@ import { MAX_ATTRIBUTE } from '../data/gladiators';
 import { grantXp } from './ProgressionSystem';
 import { onLevel } from './NewsSystem';
 import { createRng, type Rng } from './rng';
+import { trainingMul } from '../data/upgrades';
+import { t } from '../../i18n';
 
 export const TRAINING_THRESHOLD = 100;
 export const TRAINING_PROGRESS = 25;
@@ -25,7 +27,7 @@ export const TRAININGS: TrainingDef[] = [
  * lutar, o progresso de cada sessão diminui conforme o atributo já foi treinado.
  */
 export function trainingGain(p: PlayerState, id: TrainingId): number {
-  return Math.max(6, Math.round(TRAINING_PROGRESS / (1 + p.trainedBonus[id] * 0.12)));
+  return Math.max(6, Math.round((TRAINING_PROGRESS * trainingMul(p, id)) / (1 + p.trainedBonus[id] * 0.12)));
 }
 
 /** Sessões que faltam para o próximo +1 no atributo. */
@@ -47,14 +49,14 @@ export interface TrainingResult {
 
 export function train(p: PlayerState, id: TrainingId, rng: Rng = createRng(Date.now())): TrainingResult {
   if (p.baseAttributes[id] + p.trainedBonus[id] >= MAX_ATTRIBUTE)
-    return { ok: false, message: 'Este atributo já está no máximo.', attributeGained: false, xp: 0, levelUps: 0 };
-  const t = p.training[id];
+    return { ok: false, message: t('train.maxed'), attributeGained: false, xp: 0, levelUps: 0 };
+  const tp = p.training[id];
   const gain = trainingGain(p, id);
-  t.sessions++;
-  t.progress += gain;
+  tp.sessions++;
+  tp.progress += gain;
   let gained = false;
-  if (t.progress >= TRAINING_THRESHOLD) {
-    t.progress -= TRAINING_THRESHOLD;
+  if (tp.progress >= TRAINING_THRESHOLD) {
+    tp.progress -= TRAINING_THRESHOLD;
     p.trainedBonus[id] += 1;
     gained = true;
   }
@@ -63,7 +65,7 @@ export function train(p: PlayerState, id: TrainingId, rng: Rng = createRng(Date.
   if (levelUps) onLevel(p, rng);
   return {
     ok: true,
-    message: gained ? 'O treino rendeu frutos: +1 ponto de atributo!' : `Progresso de treino +${gain}.`,
+    message: gained ? t('train.gained') : t('train.progress', { n: gain }),
     attributeGained: gained,
     xp,
     levelUps,

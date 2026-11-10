@@ -5,6 +5,7 @@ import { LOCATIONS, isOpen } from '../../core/data/locations';
 import { SkyLayer } from '../DayNight';
 import { FONT } from '../fx';
 import { frameCamera, type Insets } from '../layout';
+import { locationName } from '../../i18n/data';
 
 export interface MapData {
   current: LocationId;
@@ -37,7 +38,7 @@ export class MapScene extends Phaser.Scene {
       const [x, y] = loc.map;
       const ring = this.add.ellipse(x, y, 96, 70, 0xffe49a, 0).setStrokeStyle(2, 0xffe49a, 0).setDepth(600);
       const text = this.add
-        .text(x, y + 34, loc.name, { fontFamily: FONT, fontSize: '16px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 4 })
+        .text(x, y + 34, locationName(loc.id), { fontFamily: FONT, fontSize: '16px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 4 })
         .setOrigin(0.5, 0)
         .setDepth(601)
         // texto renderizado em alta resolução: continua nítido com qualquer zoom
@@ -82,6 +83,7 @@ export class MapScene extends Phaser.Scene {
     for (const l of this.labels) {
       const open = isOpen(LOCATIONS.find((x) => x.id === l.id)!, m, day);
       l.text.setColor(open ? '#fff3d6' : '#9a8a70');
+      l.text.setText(locationName(l.id));
     }
   }
 

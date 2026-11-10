@@ -27,6 +27,7 @@ import gen_ui  # noqa: E402
 import gen_arenas  # noqa: E402
 import sky  # noqa: E402
 import gen_locations  # noqa: E402
+import gen_v05  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -76,6 +77,20 @@ def main():
     big.save(os.path.join(ASSETS, "ui", "app-icon.png"))
     big.save(os.path.join(build, "icon.ico"), sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
     icon.resize((32, 32), Image.NEAREST).save(os.path.join(build, "tray.png"))
+
+    # versão 0.5: taverna, camas, equipamentos do ludus, ícones e jornal
+    gen_v05.tavern(rng).save(os.path.join(bg, "loc_tavern.png"))
+    gen_v05.tavern_front().save(os.path.join(fx, "tavern_front.png"))
+    gen_v05.bed_overlay("wool").save(os.path.join(fx, "bed_wool.png"))
+    gen_v05.bed_overlay("noble").save(os.path.join(fx, "bed_noble.png"))
+    gen_v05.palus_iron_sheet().save(os.path.join(fx, "palus_iron.png"))
+    gen_v05.up_weights().save(os.path.join(fx, "up_weights.png"))
+    gen_v05.up_stakes().save(os.path.join(fx, "up_stakes.png"))
+    gen_v05.up_track().save(os.path.join(fx, "up_track.png"))
+    for name, fn in gen_v05.UPGRADE_ICONS.items():
+        fn().save(os.path.join(icons, name + ".png"))
+    pics = gen_v05.news_images(ASSETS, os.path.join(ASSETS, "news"))
+    print(f"jornal: {len(pics)} ilustrações")
     print("assets gerados em", ASSETS)
 
 

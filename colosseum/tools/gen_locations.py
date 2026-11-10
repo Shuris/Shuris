@@ -329,7 +329,7 @@ def baths(rng):
 # ------------------------------------------------------------------ mapa da cidade
 MAP_POS = {
     "home": (86, 138), "baths": (232, 86), "forum": (340, 168), "temple": (500, 78),
-    "ludus": (140, 270), "market": (326, 286), "arena": (530, 250),
+    "ludus": (140, 270), "market": (326, 286), "arena": (530, 250), "tavern": (440, 150),
 }
 
 
@@ -404,6 +404,8 @@ def city_map(rng):
         d.rectangle([x - 1, y - 1, x + 1, y + 1], fill=hexc("6a5a4a"))
     d.ellipse([ax - 36, ay - 20, ax + 36, ay + 20], fill=hexc("a8916a"))
     d.ellipse([ax - 32, ay - 17, ax + 32, ay + 17], fill=hexc("e0c890"))
+    from gen_v05 import map_tavern
+    map_tavern(img, MAP_POS["tavern"])
     return img
 
 

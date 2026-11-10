@@ -3,12 +3,18 @@ import type { LocationId, PlayerState } from '../../core/model/types';
 import { LOCATIONS, hoursLabel, isOpen } from '../../core/data/locations';
 import { TRAVEL_MINUTES } from '../../core/systems/CalendarSystem';
 import { esc } from '../dom';
+import { t } from '../../i18n';
+import { locationName, locationShort } from '../../i18n/data';
 import type { Screen, ScreenDeps } from './Screen';
 
 export class MapScreen implements Screen {
   readonly id = 'map' as const;
-  readonly title = 'Mapa de Cápua';
-  readonly tip = 'Clique num local para ir até ele. Cada viagem leva 20 minutos.';
+  get title() {
+    return t('map.title');
+  }
+  get tip() {
+    return t('map.tip');
+  }
 
   constructor(private readonly d: ScreenDeps) {}
 
@@ -17,7 +23,7 @@ export class MapScreen implements Screen {
       const here = l.id === p.location;
       const open = isOpen(l, p.minutes, p.day);
       return `<button class="place ${here ? 'here' : ''} ${open ? '' : 'closed'}" data-action="go" data-id="${l.id}">
-        <b>${esc(l.name)}</b><span>${esc(l.short)}</span><small>${here ? 'você está aqui' : open ? `${TRAVEL_MINUTES} min` : `fechado (${hoursLabel(l, p.day)})`}</small></button>`;
+        <b>${esc(locationName(l.id))}</b><span>${esc(locationShort(l.id))}</span><small>${here ? t('map.here') : open ? t('map.minutes', { n: TRAVEL_MINUTES }) : t('map.closed', { hours: hoursLabel(l, p.day) })}</small></button>`;
     }).join('')}</div>`;
   }
 

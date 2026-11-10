@@ -21,6 +21,8 @@ export interface GladiatorManifest {
   weapons: Record<string, { file: string; gripX: number; gripY: number }>;
   /** [x, y, ângulo] da mão que segura a arma, por quadro */
   hands: Array<[number, number, number]>;
+  /** quadros em que a arma passa à frente do escudo (golpes) */
+  weaponTop?: number[];
 }
 
 export const MANIFEST_KEY = 'gladiator-manifest';

@@ -1,4 +1,5 @@
 // Hora do dia do jogo (lógica pura). O relógio avança com as ações do jogador.
+import { t as tr } from '../../i18n';
 
 /** Fração do dia: 0 = meia-noite, 0,5 = meio-dia. */
 export function dayFraction(minutes: number): number {
@@ -6,12 +7,12 @@ export function dayFraction(minutes: number): number {
 }
 
 export function phaseName(t: number): string {
-  if (t < 0.22) return 'Noite';
-  if (t < 0.3) return 'Amanhecer';
-  if (t < 0.5) return 'Manhã';
-  if (t < 0.72) return 'Tarde';
-  if (t < 0.8) return 'Entardecer';
-  return 'Noite';
+  if (t < 0.22) return tr('phase.night');
+  if (t < 0.3) return tr('phase.dawn');
+  if (t < 0.5) return tr('phase.morning');
+  if (t < 0.72) return tr('phase.afternoon');
+  if (t < 0.8) return tr('phase.dusk');
+  return tr('phase.night');
 }
 
 /** Relógio no formato HH:MM. */
