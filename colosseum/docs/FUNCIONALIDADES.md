@@ -1,4 +1,10 @@
-# Funcionalidades — versão 0.6.0
+# Funcionalidades — versão 0.6.1
+
+## Correções da 0.6.1
+- Corrigido o travamento quando a chuva começava (ou parava) com figurantes em cena, por exemplo logo depois de falar com o médico do ludus: a animação congelava porque um golpe de treino agendado tentava animar um figurante que já tinha saído por causa da chuva.
+- Rede de segurança: se um erro inesperado parar a animação, ela é religada sozinha; se a página do jogo cair, a janela recarrega (o progresso já está salvo).
+- Registro de problemas em `%APPDATA%\Colosseum\logs\colosseum.log`.
+
 
 ## Novidades da 0.6.0
 

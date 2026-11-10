@@ -150,6 +150,12 @@ export class App implements AppActions {
     });
     await this.showTitle();
     window.addEventListener('beforeunload', () => this.store.flushSync());
+    // rede de segurança: um erro inesperado não pode congelar a animação do jogo
+    window.addEventListener('error', (e) => {
+      console.error('[colosseum] erro', e.message);
+      this.recoverLoop();
+    });
+    window.addEventListener('unhandledrejection', (e) => console.error('[colosseum] promessa rejeitada', e.reason));
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         // Esc: fecha a janela aberta ou pausa o jogo (menu de pausa)
@@ -436,6 +442,21 @@ export class App implements AppActions {
     this.intro?.close();
     this.intro = null;
     await this.showTitle();
+  }
+
+  private lastRecover = 0;
+
+  /** Se o laço do Phaser parou por causa de um erro, religa (no máximo a cada 2 s). */
+  private recoverLoop(): void {
+    const loop = this.view?.game.loop;
+    if (!loop || this.paused || Date.now() - this.lastRecover < 2000) return;
+    const f0 = loop.frame;
+    setTimeout(() => {
+      if (loop.frame !== f0 || this.paused) return;
+      this.lastRecover = Date.now();
+      loop.sleep();
+      loop.wake();
+    }, 400);
   }
 
   /** Música conforme o lugar e a hora (arena, taverna, noite, cidade). */

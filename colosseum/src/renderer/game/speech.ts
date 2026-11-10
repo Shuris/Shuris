@@ -77,6 +77,7 @@ export function speech(
   scene.tweens.add({ targets: c, scale: 1, alpha: 1, duration: 140, ease: 'Back.easeOut' });
   const follow = () => {
     if (!c.active) return;
+    if ((who as { active?: boolean }).active === false) return done();
     const cam = scene.cameras.main;
     const half = w / 2 + 2;
     const right = cam.worldView.right - (opts.insetRight?.() ?? 0) / cam.zoom;

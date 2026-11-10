@@ -159,6 +159,8 @@ export class HubScene extends Phaser.Scene {
     const now = this.raining ? r > RAIN_OFF : r > RAIN_ON;
     if (now === this.raining) return;
     this.raining = now;
+    const gone = new Set<Phaser.GameObjects.GameObject>(this.people);
+    this.glows = this.glows.filter((g) => !gone.has(g));
     for (const o of this.people) {
       this.tweens.killTweensOf(o);
       o.destroy();
@@ -221,8 +223,10 @@ export class HubScene extends Phaser.Scene {
         const [atk, def] = turn++ % 2 ? [b, a] : [a, b];
         const dir = atk === a ? 1 : -1;
         atk.sequence([['attack', 0, 0.22], ['attack', 1, 0.08], ['attack', 2, 0.18], ['attack', 3, 0.3], ['idle', 0, 9]]);
+        if (!atk.active || !def.active) return;
         this.tweens.add({ targets: atk, x: atk.x + dir * 6, duration: 90, delay: 300, yoyo: true, hold: 120 });
         this.time.delayedCall(300, () => {
+          if (!def.active || !atk.active) return;
           if (Math.random() < 0.7) {
             def.sequence([['block', 0, 0.35], ['idle', 0, 9]]);
             this.tweens.add({ targets: def, x: def.x + dir * 3, duration: 80, yoyo: true });
@@ -241,6 +245,7 @@ export class HubScene extends Phaser.Scene {
       t: 1.1,
       period: 1.25,
       run: () => {
+        if (!c.active) return;
         c.sequence([['attack', 0, 0.2], ['attack', 1, 0.08], ['attack', 2, 0.18], ['attack', 3, 0.25], ['idle', 0, 9]]);
         this.time.delayedCall(290, () => {
           if (!palus2.active) return;
@@ -306,6 +311,7 @@ export class HubScene extends Phaser.Scene {
       t: 0.5,
       period: 0.9,
       run: () => {
+        if (!a.active || !b.active) return;
         const push = Math.random() < 0.5 ? a : b;
         this.tweens.add({ targets: push, x: push.x + (push === a ? 2 : -2), duration: 200, yoyo: true });
       },
@@ -329,6 +335,7 @@ export class HubScene extends Phaser.Scene {
         t: 1.4,
         period: 2.6,
         run: () => {
+          if (!smith.active) return;
           smith.sequence([['attack', 0, 0.2], ['attack', 2, 0.15], ['attack', 3, 0.3], ['idle', 0, 9]]);
           this.time.delayedCall(330, () => {
             for (let i = 0; i < 4; i++) {

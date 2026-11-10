@@ -120,6 +120,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
 
   /** Toca uma animação do manifesto. */
   play(anim: string, opts: { loop?: boolean; fps?: number; restart?: boolean } = {}): void {
+    if (!this.active) return;
     const def = this.manifest.animations[anim];
     if (!def) return;
     if (!opts.restart && this.anim === anim && !this.seq && this.loop === (opts.loop ?? def.loop)) {
@@ -137,6 +138,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
 
   /** Sequência explícita de quadros (anim, índice, duração) — sincroniza com o motor. */
   sequence(steps: Array<[string, number, number]>): void {
+    if (!this.active) return;
     const m = this.manifest.animations;
     this.seq = steps.filter(([a]) => m[a]).map(([a, i, d]) => ({ frame: m[a].start + Math.min(i, m[a].count - 1), dur: d }));
     this.seqIdx = 0;
@@ -150,6 +152,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   }
 
   flash(duration = 0.08): void {
+    if (!this.active) return;
     this.flashTime = duration;
     for (const l of this.layers) l.setTintFill(0xffffff);
     this.weapon?.setTintFill(0xffffff);
@@ -172,6 +175,8 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   }
 
   private applyFrame(): void {
+    // personagem já removido da cena (ex.: figurante que saiu por causa da chuva)
+    if (!this.active) return;
     const f = this.currentFrame();
     for (const l of this.layers) l.setFrame(f);
     const hand = this.manifest.hands[f];
@@ -185,6 +190,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   }
 
   tick(dt: number): void {
+    if (!this.active) return;
     if (this.flashTime > 0) {
       this.flashTime -= dt;
       if (this.flashTime <= 0) {

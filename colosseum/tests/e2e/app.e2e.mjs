@@ -556,6 +556,47 @@ await step('30. Torneio de sábado: inscrição, chave e prêmio', async () => {
   assert(p.tournament.run === null && p.reputation === fame0 + 1, 'prêmio de participação');
 });
 
+await step('32. Chuva começando e parando não trava a cena (figurantes saem e voltam)', async () => {
+  const r = await win.evaluate(() => {
+    for (let d = 2; d < 200; d++) {
+      const w = window.__colosseum.weatherOfDay(d);
+      if (w.rainy && d % 7 !== 0) return { day: d, start: w.start, mid: Math.round((w.start + w.end) / 2) };
+    }
+    return null;
+  });
+  await win.evaluate((r) => window.__colosseum.store.update((p) => { p.day = r.day; p.minutes = r.start - 60; p.energy = 100; }), r);
+  await goTo('ludus');
+  const errs0 = errors.length;
+  for (let i = 0; i < 12; i++) {
+    await win.evaluate((r) => window.__colosseum.store.update((p) => (p.minutes = r.mid)), r);
+    await win.waitForTimeout(350 + ((i * 37) % 300));
+    await win.evaluate((r) => window.__colosseum.store.update((p) => (p.minutes = r.start - 60)), r);
+    await win.waitForTimeout(350 + ((i * 53) % 700));
+  }
+  const fps = await win.evaluate(async () => {
+    const g = window.__colosseum.view.game;
+    const f0 = g.loop.frame;
+    await new Promise((res) => setTimeout(res, 1000));
+    return g.loop.frame - f0;
+  });
+  assert(errors.length === errs0, `sem erros (${errors.slice(errs0).join('; ')})`);
+  assert(fps > 3, `animação continua rodando (${fps} quadros/s)`);
+});
+
+await step('33. Rede de segurança: um erro na cena não congela o jogo', async () => {
+  const before = errors.length;
+  await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').time.delayedCall(50, () => { throw new Error('teste de recuperação'); }));
+  await win.waitForTimeout(1500);
+  const fps = await win.evaluate(async () => {
+    const g = window.__colosseum.view.game;
+    const f0 = g.loop.frame;
+    await new Promise((res) => setTimeout(res, 1000));
+    return g.loop.frame - f0;
+  });
+  errors.splice(before); // o erro foi provocado de propósito
+  assert(fps > 3, `animação religada depois do erro (${fps} quadros/s)`);
+});
+
 const snapshot = await state();
 
 await step('19. Salvamento, fechamento e reabertura', async () => {

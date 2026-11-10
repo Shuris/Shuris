@@ -227,7 +227,11 @@ class MusicPlayer {
     if (!ctx || this.current === 'none' || !this.trackGain) return;
     const song = SONGS[this.current as Exclude<Track, 'none'>];
     const sixteenth = 60 / song.bpm / 4;
-    while (this.nextTime < ctx.currentTime + 0.2) {
+    // se o relógio de áudio pulou (janela travada, troca de dispositivo, suspensão),
+    // pula as notas perdidas em vez de tocar todas de uma vez
+    if (this.nextTime < ctx.currentTime - 0.1) this.nextTime = ctx.currentTime + 0.05;
+    let guard = 0;
+    while (this.nextTime < ctx.currentTime + 0.2 && guard++ < 16) {
       const bar = Math.floor(this.step / 16) % song.chords.length;
       const pos = this.step % 16;
       const chord = song.chords[bar];

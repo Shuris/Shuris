@@ -1,6 +1,7 @@
 // Gerencia a janela única do jogo. O jogo sempre abre em tela cheia; F11 alterna
 // para janela (com a moldura normal do sistema, sem barra própria dentro do jogo).
-import { BrowserWindow, screen, shell } from 'electron';
+import { app, BrowserWindow, screen, shell } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import { IPC, type WindowState } from '../shared/ipc';
 import type { Bounds, SettingsStore } from './settingsStore';
@@ -64,6 +65,15 @@ export class WindowManager {
       }
     });
 
+    // o processo da página caiu ou travou: registra e recarrega (o progresso já está salvo)
+    win.webContents.on('render-process-gone', (_e, d) => {
+      logCrash(`render-process-gone: ${d.reason} (${d.exitCode})`);
+      if (d.reason !== 'clean-exit') setTimeout(() => !win.isDestroyed() && win.reload(), 500);
+    });
+    win.on('unresponsive', () => logCrash('janela sem resposta'));
+    win.webContents.on('console-message', (_e, level, message) => {
+      if (level >= 3) logCrash(`erro na página: ${message}`);
+    });
     for (const ev of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen'] as const) {
       win.on(ev as 'maximize', () => this.broadcast());
     }
@@ -128,5 +138,18 @@ export class WindowManager {
 
   broadcast(): void {
     if (this.win && !this.win.isDestroyed()) this.win.webContents.send(IPC.evtWindowState, this.state());
+  }
+}
+
+/** Registro de problemas em userData/logs/colosseum.log (ajuda a investigar travamentos). */
+export function logCrash(msg: string): void {
+  try {
+    const dir = path.join(app.getPath('userData'), 'logs');
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, 'colosseum.log');
+    if (fs.existsSync(file) && fs.statSync(file).size > 512 * 1024) fs.renameSync(file, `${file}.old`);
+    fs.appendFileSync(file, `${new Date().toISOString()} ${msg}\n`);
+  } catch {
+    /* o registro é opcional */
   }
 }
