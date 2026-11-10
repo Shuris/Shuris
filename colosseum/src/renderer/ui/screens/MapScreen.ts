@@ -15,9 +15,9 @@ export class MapScreen implements Screen {
   render(p: PlayerState): string {
     return `<div class="places">${LOCATIONS.map((l) => {
       const here = l.id === p.location;
-      const open = isOpen(l, p.minutes);
+      const open = isOpen(l, p.minutes, p.day);
       return `<button class="place ${here ? 'here' : ''} ${open ? '' : 'closed'}" data-action="go" data-id="${l.id}">
-        <b>${esc(l.name)}</b><span>${esc(l.short)}</span><small>${here ? 'você está aqui' : open ? `${TRAVEL_MINUTES} min` : `fechado (${hoursLabel(l)})`}</small></button>`;
+        <b>${esc(l.name)}</b><span>${esc(l.short)}</span><small>${here ? 'você está aqui' : open ? `${TRAVEL_MINUTES} min` : `fechado (${hoursLabel(l, p.day)})`}</small></button>`;
     }).join('')}</div>`;
   }
 

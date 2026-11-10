@@ -111,8 +111,18 @@ await step('3. Mapa: viajar leva 20 minutos', async () => {
 });
 
 await step('4. Mercado: comprar; Gladiador: equipar e tirar', async () => {
+  await win.waitForTimeout(800);
+  await shot('04-market');
   await win.click('[data-action="buy"][data-id="parmula"]');
   assert((await state()).coins === 90, 'moedas após compra');
+  // mercado fechado à noite e aos domingos: não compra nem vende
+  const m0 = (await state()).minutes;
+  await win.evaluate(() => window.__colosseum.store.update((p) => (p.minutes = 21 * 60)));
+  assert(await win.locator('[data-action="buy"][data-id="greaves"][disabled]').count(), 'compra bloqueada à noite');
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 10 * 60; p.day = 7; }));
+  assert(await win.locator('[data-action="buy"][data-id="greaves"][disabled]').count(), 'compra bloqueada no domingo');
+  assert(((await win.textContent('#statusbar')) ?? '').includes('Domingo'), 'dia da semana visível');
+  await win.evaluate((m) => window.__colosseum.store.update((p) => { p.minutes = m; p.day = 1; }), m0);
   await win.click('[data-nav="gladiator"]');
   await win.click('[data-action="tab"][data-id="gear"]');
   await win.click('[data-action="equip"]');
@@ -125,13 +135,13 @@ await step('4. Mercado: comprar; Gladiador: equipar e tirar', async () => {
   assert(p.equipment.offHand !== null, 'equipar de novo');
 });
 
-await step('5. Ludus: treino gasta moedas, energia e 1 hora', async () => {
+await step('5. Ludus: treino gasta só energia e 1 hora (sem moedas)', async () => {
   await goTo('ludus');
   const before = await state();
   await win.click('[data-action="train"][data-id="str"]');
   await win.waitForFunction(() => window.__colosseum.store.state.training.str.sessions === 1, null, { timeout: 5000 });
   const after = await state();
-  assert(after.coins === before.coins - 25 && after.training.str.progress === 25, 'custo e progresso');
+  assert(after.coins === before.coins && after.training.str.progress === 25, 'sem moedas, com progresso');
   assert(after.energy === before.energy - 12 && after.minutes === before.minutes + 60, 'energia e tempo');
 });
 
@@ -211,6 +221,7 @@ await step('13. Templo: árvore de habilidades', async () => {
   await win.click('[data-action="learn"]');
   const p = await state();
   assert(p.perks.includes('m1') && p.perks.includes('m2'), 'habilidades aprendidas');
+  assert(((await win.textContent('#panel')) ?? '').includes('Monge Aurelius'), 'monge presente');
   await shot('13-temple');
 });
 
@@ -257,6 +268,28 @@ await step('14. Jornal: a fama vira manchete na manhã seguinte, citando o rival
   await win.waitForSelector('.newspaper');
   await shot('14-newspaper');
   await win.click('[data-np="close"]');
+});
+
+await step('21. Chuva: céu fechado e gotas caindo', async () => {
+  const rainy = await win.evaluate(() => {
+    for (let d = 2; d < 120; d++) {
+      const w = window.__colosseum.weatherOfDay(d);
+      if (w.rainy) return { day: d, mid: Math.round((w.start + w.end) / 2) };
+    }
+    return null;
+  });
+  assert(rainy, 'existe dia chuvoso');
+  const before = await state();
+  await win.evaluate((r) => window.__colosseum.store.update((p) => { p.day = r.day; p.minutes = r.mid; }), rainy);
+  await win.waitForTimeout(2500);
+  const w = await win.evaluate(() => {
+    const sky = window.__colosseum.view.sky;
+    return { rain: sky.weather.rain, cloud: sky.weather.cloud, light: sky.state.light, status: document.getElementById('statusbar').textContent };
+  });
+  assert(w.rain > 0.9 && w.cloud > 0.9, `chovendo (${JSON.stringify(w)})`);
+  assert(w.status.includes('Chuva'), 'status mostra chuva');
+  await shot('21-rain');
+  await win.evaluate((b) => window.__colosseum.store.update((p) => { p.day = b.day; p.minutes = b.minutes; }), before);
 });
 
 await step('17. Tela cheia (ativar e sair)', async () => {

@@ -15,27 +15,27 @@ THEMES = {
     "capua": dict(
         name="Arena de Cápua", style="wood", seat_top=136, balteus=[], velarium=None, upper="fence",
         stone="9a6a3e", podium="7a5230", panel=None, trim="5a3a20", floor="c4a272", banner="8a3a22",
-        crowd=0.6, scenery="hills", pulvinar=False,
+        crowd=0.22, scenery="hills", pulvinar=False,
     ),
     "pompeii": dict(
         name="Anfiteatro de Pompeia", style="stone", seat_top=118, balteus=[158], velarium=("b8372e", "efe0c0"),
         velarium_partial=True, upper="parapet", stone="bca98a", podium="e2d6bc", panel="2a2420", trim="a8322a",
-        floor="d4b47a", banner="a8322a", crowd=0.72, scenery="vesuvius", pulvinar=False,
+        floor="d4b47a", banner="a8322a", crowd=0.42, scenery="vesuvius", pulvinar=False,
     ),
     "verona": dict(
         name="Arena de Verona", style="stone", seat_top=113, balteus=[142, 172], velarium=("3e6e40", "efe0c0"),
         upper="arcade", arcade_top=58, stone="d8a898", podium="efe4dc", panel="3e6e40", trim="d8b04a",
-        floor="dcbf88", banner="3e6e40", crowd=0.85, scenery="cypress", pulvinar=False,
+        floor="dcbf88", banner="3e6e40", crowd=0.62, scenery="cypress", pulvinar=False,
     ),
     "leptis": dict(
         name="Anfiteatro de Leptis Magna", style="stone", seat_top=113, balteus=[142, 172], velarium=("2a5a9a", "f2ecd8"),
         velarium_partial=True, upper="arcade", arcade_top=74, stone="e2c48a", podium="f2e8d0", panel="2a5a9a",
-        trim="d8b04a", floor="e6c88a", banner="2a5a9a", crowd=0.85, scenery="palms", pulvinar=False,
+        trim="d8b04a", floor="e6c88a", banner="2a5a9a", crowd=0.8, scenery="palms", pulvinar=False,
     ),
     "rome": dict(
         name="Coliseu de Roma", style="stone", seat_top=113, balteus=[142, 172], velarium=("b8372e", "efe0c0"),
         upper="attic", arcade_top=66, stone="d8c6a0", podium="e8e2d2", panel="8e2b23", trim="d8b04a",
-        floor="d9b97c", banner="a8322a", crowd=0.93, scenery=None, pulvinar=True,
+        floor="d9b97c", banner="a8322a", crowd=0.96, scenery=None, pulvinar=True,
     ),
 }
 ORDER = ["capua", "pompeii", "verona", "leptis", "rome"]

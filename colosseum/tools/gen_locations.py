@@ -63,55 +63,102 @@ def _column(a, x, top, bottom, w=8):
 
 
 # ------------------------------------------------------------------ alojamento (interior)
+# O gladiador tem ~44 px de altura (pés em y=312, cabeça em ~268): móveis nessa escala.
 def home(rng):
     a = _arr()
-    # parede de pedra
-    fill_rect(a, 0, 0, W, 240, hexc("7a6e60"))
-    for y in range(0, 240, 10):
-        off = 0 if (y // 10) % 2 else 12
-        fill_rect(a, 0, y, W, y + 1, hexc("5a5046"))
-        for x in range(off, W, 24):
-            fill_rect(a, x, y, x + 1, y + 10, hexc("5a5046"))
-    noise(a, 0, 240, [hexc("847868"), hexc("6e6456")], 0.1, rng)
-    # janela (céu visível através dela)
-    for (wx, wy) in ((140, 70), (460, 70)):
-        fill_rect(a, wx - 4, wy - 4, wx + 48, wy + 44, hexc("4a4038"))
-        a[wy:wy + 40, wx:wx + 44, 3] = 0
-        fill_rect(a, wx + 21, wy, wx + 23, wy + 40, WOOD_D)
-        fill_rect(a, wx, wy + 19, wx + 44, wy + 21, WOOD_D)
-    # piso de madeira
-    for y in range(240, H):
-        col = WOOD if ((y - 240) // 6) % 2 else darker(WOOD, 0.88)
+    # parede: reboco claro em cima, barra pompeiana vermelha embaixo
+    fill_rect(a, 0, 0, W, 252, hexc("dccbaa"))
+    noise(a, 0, 252, [hexc("d4c2a0"), hexc("e2d2b2")], 0.12, rng)
+    fill_rect(a, 0, 214, W, 252, POMP)
+    fill_rect(a, 0, 212, W, 214, hexc("2e2018"))
+    fill_rect(a, 0, 250, W, 254, hexc("2e2018"))
+    for x in range(20, W, 70):  # painéis decorativos na barra
+        fill_rect(a, x, 220, x + 40, 246, darker(POMP, 0.85))
+        fill_rect(a, x + 2, 222, x + 38, 244, POMP)
+    fill_rect(a, 0, 120, W, 123, hexc("b8a888"))  # friso
+    # janela na altura da cabeça (céu visível através dela)
+    wx, wy, ww, wh = 204, 176, 34, 30
+    fill_rect(a, wx - 3, wy - 3, wx + ww + 3, wy + wh + 4, hexc("6a4a2a"))
+    a[wy:wy + wh, wx:wx + ww, 3] = 0
+    fill_rect(a, wx + ww // 2 - 1, wy, wx + ww // 2 + 1, wy + wh, hexc("6a4a2a"))
+    fill_rect(a, wx - 12, wy - 2, wx - 3, wy + wh + 2, hexc("8a5a32"))  # venezianas abertas
+    fill_rect(a, wx + ww + 3, wy - 2, wx + ww + 12, wy + wh + 2, hexc("8a5a32"))
+    for yy in range(wy + 1, wy + wh, 4):
+        fill_rect(a, wx - 11, yy, wx - 4, yy + 1, hexc("6a4428"))
+        fill_rect(a, wx + ww + 4, yy, wx + ww + 11, yy + 1, hexc("6a4428"))
+    fill_rect(a, wx - 5, wy + wh + 2, wx + ww + 5, wy + wh + 5, hexc("b8a888"))  # parapeito
+    # piso de tábuas
+    for y in range(254, H):
+        col = WOOD if ((y - 254) // 5) % 2 else darker(WOOD, 0.9)
         fill_rect(a, 0, y, W, y + 1, col)
-    for y in range(240, H, 6):
-        for x in range(((y // 6) % 3) * 40, W, 120):
-            fill_rect(a, x, y, x + 1, y + 6, WOOD_D)
-    fill_rect(a, 0, 236, W, 242, hexc("4a3a2a"))
+    for y in range(254, H, 5):
+        for x in range(((y // 5) % 3) * 23, W, 70):
+            fill_rect(a, x, y, x + 1, y + 5, WOOD_D)
     img = to_img(np.clip(a, 0, 255))
     d = ImageDraw.Draw(img)
-    # cama de palha
-    d.rectangle([380, 278, 520, 300], fill=hexc("6a4628"))
-    d.rectangle([384, 268, 516, 282], fill=hexc("d8c48a"))
-    d.rectangle([450, 266, 516, 282], fill=hexc("8e2b23"))
-    d.rectangle([386, 262, 410, 272], fill=hexc("efe6d2"))
-    for x in (382, 512):
-        d.rectangle([x, 298, x + 6, 312], fill=WOOD_D)
-    # mesa com lamparina, baú, ânfora
-    d.rectangle([250, 270, 300, 276], fill=WOOD)
-    d.rectangle([254, 276, 258, 304], fill=WOOD_D)
-    d.rectangle([292, 276, 296, 304], fill=WOOD_D)
-    d.ellipse([268, 262, 284, 270], fill=hexc("c08a3e"))
-    d.rectangle([560, 278, 610, 306], fill=hexc("6a4628"))
-    d.rectangle([560, 278, 610, 284], fill=hexc("8a6038"))
-    d.rectangle([583, 286, 587, 292], fill=GOLD)
-    d.ellipse([60, 262, 84, 300], fill=hexc("b0603a"))
-    d.rectangle([66, 254, 78, 264], fill=hexc("b0603a"))
+    # larário (altar doméstico) com estatuetas
+    lx = 300
+    d.rectangle([lx, 176, lx + 30, 202], fill=hexc("efe6d2"))
+    d.polygon([(lx - 3, 176), (lx + 15, 164), (lx + 33, 176)], fill=hexc("efe6d2"), outline=hexc("b9b1a0"))
+    d.rectangle([lx + 4, 180, lx + 26, 200], fill=hexc("6a2a20"))
+    for fx_ in (lx + 9, lx + 19):
+        d.rectangle([fx_, 188, fx_ + 3, 198], fill=GOLD)
+        d.ellipse([fx_, 184, fx_ + 3, 188], fill=GOLD)
+    d.rectangle([lx - 2, 202, lx + 32, 205], fill=hexc("b9b1a0"))
     # gládio e escudo pendurados
-    d.line([(330, 120), (330, 160)], fill=hexc("c4c8d0"), width=3)
-    d.rectangle([324, 160, 336, 163], fill=GOLD)
-    d.rectangle([350, 110, 380, 160], fill=GOLD)
-    d.rectangle([353, 113, 377, 157], fill=hexc("a62c24"))
-    d.ellipse([360, 130, 370, 140], fill=hexc("c4c8d0"))
+    d.line([(352, 178), (352, 204)], fill=hexc("c4c8d0"), width=2)
+    d.rectangle([348, 204, 356, 206], fill=GOLD)
+    d.rectangle([362, 172, 380, 204], fill=GOLD)
+    d.rectangle([364, 174, 378, 202], fill=hexc("a62c24"))
+    d.ellipse([368, 184, 374, 190], fill=hexc("c4c8d0"))
+    # prateleira com potes e tigela
+    d.rectangle([408, 196, 456, 199], fill=WOOD)
+    d.line([(412, 199), (416, 205)], fill=WOOD_D, width=2)
+    d.line([(452, 199), (448, 205)], fill=WOOD_D, width=2)
+    d.ellipse([412, 184, 422, 196], fill=hexc("b0603a"))
+    d.rectangle([415, 181, 419, 185], fill=hexc("b0603a"))
+    d.ellipse([426, 186, 436, 196], fill=hexc("c8b48a"))
+    d.ellipse([440, 191, 454, 197], fill=hexc("8a5a32"))
+    # capa vermelha num cabide
+    d.rectangle([466, 178, 469, 181], fill=WOOD_D)
+    d.polygon([(462, 181), (473, 181), (476, 214), (459, 214)], fill=hexc("9c2a22"))
+    d.line([(467, 184), (467, 212)], fill=hexc("7a1e18"))
+    # tapete sob o gladiador
+    d.rectangle([306, 304, 374, 318], fill=hexc("9a5a2a"))
+    d.rectangle([309, 306, 371, 316], fill=hexc("c8903a"))
+    for x in range(312, 370, 8):
+        d.rectangle([x, 309, x + 3, 312], fill=hexc("7a2a1e"))
+    # mesa com lamparina, pão e caneca (proporcional)
+    d.rectangle([228, 284, 266, 287], fill=hexc("8a5a32"))
+    d.rectangle([230, 287, 233, 306], fill=WOOD_D)
+    d.rectangle([261, 287, 264, 306], fill=WOOD_D)
+    d.ellipse([233, 278, 243, 284], fill=hexc("c08a3e"))  # lamparina
+    d.rectangle([241, 278, 244, 281], fill=hexc("c08a3e"))
+    d.ellipse([247, 279, 257, 285], fill=hexc("c8903a"))  # pão
+    d.line([(249, 281), (255, 281)], fill=hexc("9a6a2a"))
+    d.rectangle([259, 278, 263, 284], fill=hexc("8a8a9a"))  # caneca
+    # banquinho
+    d.rectangle([270, 294, 284, 297], fill=hexc("8a5a32"))
+    d.line([(272, 297), (271, 306)], fill=WOOD_D, width=2)
+    d.line([(282, 297), (283, 306)], fill=WOOD_D, width=2)
+    # cama na escala do gladiador (~54 px de comprimento)
+    d.rectangle([392, 292, 446, 297], fill=hexc("6a4628"))
+    d.rectangle([392, 286, 395, 306], fill=hexc("5a3a20"))
+    d.rectangle([443, 288, 446, 306], fill=hexc("5a3a20"))
+    d.rectangle([396, 286, 442, 292], fill=hexc("d8c48a"))  # colchão de palha
+    d.rectangle([414, 284, 442, 292], fill=hexc("8e2b23"))  # cobertor
+    for x in range(416, 442, 6):
+        d.line([(x, 284), (x, 292)], fill=hexc("b8473a"))
+    d.ellipse([396, 282, 408, 289], fill=hexc("efe6d2"))  # travesseiro
+    # sandálias ao lado da cama e baú
+    d.rectangle([382, 306, 388, 308], fill=hexc("6a4628"))
+    d.rectangle([382, 310, 388, 312], fill=hexc("6a4628"))
+    d.rectangle([454, 292, 478, 308], fill=hexc("6a4628"))
+    d.rectangle([454, 292, 478, 296], fill=hexc("8a6038"))
+    d.rectangle([465, 298, 467, 302], fill=GOLD)
+    # ânfora no canto
+    d.ellipse([186, 286, 200, 308], fill=hexc("b0603a"))
+    d.rectangle([190, 280, 196, 288], fill=hexc("b0603a"))
     return img
 
 
@@ -146,6 +193,35 @@ def market(rng):
         d.ellipse([x, 228, x + 12, 246], fill=hexc("b0603a"))
     for x in range(520, 610, 22):  # tecidos
         d.rectangle([x, 222, x + 16, 244], fill=[hexc("7a4a8a"), hexc("3d5c8c"), hexc("efe6d2"), hexc("b8372e")][(x // 22) % 4])
+    # lanternas penduradas nos toldos
+    for x in (60, 120, 220, 280, 390, 450, 540, 600):
+        d.line([(x, 220), (x, 226)], fill=WOOD_D)
+        d.rectangle([x - 2, 226, x + 2, 231], fill=hexc("e0a040"))
+    # fonte pública
+    fx0 = 430
+    d.rectangle([fx0 - 22, 296, fx0 + 22, 312], fill=hexc("c8beaa"))
+    d.rectangle([fx0 - 20, 298, fx0 + 20, 304], fill=hexc("3a7ab0"))
+    d.rectangle([fx0 - 3, 274, fx0 + 3, 298], fill=hexc("b9b1a0"))
+    d.ellipse([fx0 - 6, 270, fx0 + 6, 276], fill=hexc("c8beaa"))
+    d.line([(fx0 - 1, 276), (fx0 - 8, 298)], fill=hexc("8ac0e0"))
+    d.line([(fx0 + 1, 276), (fx0 + 8, 298)], fill=hexc("8ac0e0"))
+    # caixotes, barris e cestos
+    for (x, y) in ((196, 286), (208, 278), (220, 288)):
+        d.rectangle([x, y, x + 12, y + 12], fill=hexc("9a6a3a"))
+        d.line([(x, y), (x + 12, y + 12)], fill=hexc("6a4428"))
+        d.rectangle([x, y, x + 12, y + 12], outline=hexc("6a4428"))
+    for x in (480, 494):
+        d.rounded_rectangle([x, 282, x + 12, 302], radius=3, fill=hexc("7a5230"))
+        d.line([(x, 287), (x + 12, 287)], fill=hexc("4a3a2a"))
+        d.line([(x, 297), (x + 12, 297)], fill=hexc("4a3a2a"))
+    for x in (250, 268):
+        d.ellipse([x, 300, x + 14, 310], fill=hexc("b89a5a"))
+        for k in range(3):
+            d.ellipse([x + 2 + k * 4, 297, x + 6 + k * 4, 302], fill=[hexc("c84a2a"), hexc("e0b040"), hexc("6a9a3a")][k])
+    # pombos
+    for (x, y) in ((300, 330), (306, 333), (360, 326)):
+        d.ellipse([x, y, x + 4, y + 3], fill=hexc("8a8a92"))
+        d.point((x + 4, y), fill=hexc("6a6a72"))
     return img
 
 
@@ -329,3 +405,41 @@ def city_map(rng):
     d.ellipse([ax - 36, ay - 20, ax + 36, ay + 20], fill=hexc("a8916a"))
     d.ellipse([ax - 32, ay - 17, ax + 32, ay + 17], fill=hexc("e0c890"))
     return img
+
+
+# ------------------------------------------------------------------ monge do templo
+def monk_sheet():
+    """Monge de Marte sentado de pernas cruzadas (2 quadros: respiração)."""
+    from PIL import Image
+    from pixel import new_img, finish
+    fw, fh = 48, 44
+    sheet = new_img(fw * 2, fh)
+    for f in range(2):
+        img = new_img(fw, fh)
+        d = ImageDraw.Draw(img)
+        b = 1 if f == 1 else 0
+        # esteira
+        d.rectangle([4, 38, 44, 42], fill=hexc("b89a5a"))
+        for x in range(6, 44, 4):
+            d.line([(x, 38), (x, 42)], fill=hexc("9a7a40"))
+        robe = hexc("8e2b23")
+        # pernas cruzadas
+        d.ellipse([8, 30, 40, 40], fill=darker(robe, 0.85))
+        d.ellipse([10, 32, 22, 38], fill=hexc("c88e62"))  # pé
+        d.ellipse([28, 32, 38, 38], fill=hexc("c88e62"))
+        # tronco (manto)
+        d.polygon([(16, 14 + b), (32, 14 + b), (35, 34), (13, 34)], fill=robe)
+        d.line([(24, 15 + b), (20, 33)], fill=hexc("d8b04a"))  # faixa dourada
+        # braços com mãos sobre os joelhos
+        d.line([(16, 18 + b), (12, 30)], fill=darker(robe, 0.9), width=4)
+        d.line([(32, 18 + b), (36, 30)], fill=darker(robe, 0.9), width=4)
+        d.ellipse([10, 29, 15, 33], fill=hexc("c88e62"))
+        d.ellipse([34, 29, 39, 33], fill=hexc("c88e62"))
+        # cabeça calva com barba grisalha
+        d.ellipse([18, 3 + b, 30, 15 + b], fill=hexc("c88e62"))
+        d.polygon([(19, 11 + b), (29, 11 + b), (27, 18 + b), (21, 18 + b)], fill=hexc("c8c4bc"))
+        d.point((21, 8 + b), fill=hexc("2a1c14"))
+        d.point((26, 8 + b), fill=hexc("2a1c14"))
+        img = finish(img, light=0.2)
+        sheet.alpha_composite(img, (f * fw, 0))
+    return sheet

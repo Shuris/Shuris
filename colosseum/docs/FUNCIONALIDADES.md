@@ -1,6 +1,28 @@
-# Funcionalidades — versão 0.3.0
+# Funcionalidades — versão 0.4.0
 
-## Novidades da 0.3.0
+## Novidades da 0.4.0
+
+- [x] Público cresce com a arena: Cápua quase vazia (22%), Pompeia, Verona, Leptis Magna e o Coliseu lotado (96%).
+- [x] **Dias da semana** (dia 1 = segunda). O **mercado fecha à noite e aos domingos** e,
+      fechado, não permite comprar nem vender.
+- [x] **Chuva:** cerca de 30% dos dias têm chuva por 3 a 6 horas. Fica nublado o dia todo,
+      o céu fecha e escurece, sol e lua somem, gotas caem (pela janela nos interiores) e há
+      som de chuva. O status mostra "Nublado"/"Chuva".
+- [x] Jornal renomeado para **Folha Diurna**; manchetes de sequência diferentes para 3, 5 e 10
+      vitórias (só a mais recente sai), notícias de **derrota** (nocaute, decisão,
+      desistência), "três derrotas seguidas" e "volta por cima".
+- [x] Nomes do mapa nítidos (texto em alta resolução).
+- [x] Mercado mais vivo: moradores andando e parando nas bancas (túnicas e estolas), fonte,
+      caixotes, barris, cestos de frutas, lanternas e pombos.
+- [x] Templo: o **monge Aurelius**, sentado de pernas cruzadas, ensina as habilidades.
+- [x] **Treinar no ludus não custa moedas** — só energia e tempo; atributos já treinados
+      evoluem mais devagar.
+- [x] Alojamento redesenhado na escala do gladiador: cama proporcional, janela na altura da
+      cabeça, mesa com lamparina, pão e caneca, banquinho, larário, prateleira, capa,
+      tapete, baú e ânfora.
+
+
+## Da versão 0.3.0
 
 - [x] **Mapa da cidade (Cápua)** com 7 locais, cada um com cenário próprio em pixel art:
       Ludus (treino), Alojamento (dormir), Mercado (comprar/vender), Arena (lutar),
@@ -17,7 +39,7 @@
       velocidade, acerto, vida, fôlego, bloqueio, quebra-guarda, redução de dano) e o
       "Segundo fôlego" (recupera vida uma vez por luta). Recomeçar a árvore custa moedas.
       Os adversários também seguem a árvore.
-- [x] **Jornal Acta Diurna:** sai toda manhã. Manchetes geradas pelos acontecimentos: estreia,
+- [x] **Jornal Folha Diurna (antes "Acta Diurna"):** sai toda manhã. Manchetes geradas pelos acontecimentos: estreia,
       marcos de fama (citando o próximo rival: "é melhor Brutus tomar cuidado!"), primeiras
       vitórias, chegada a novas arenas, sequências de vitórias/derrotas, evolução nos treinos,
       provocações dos rivais e notícias da cidade. Edições antigas ficam no Fórum.

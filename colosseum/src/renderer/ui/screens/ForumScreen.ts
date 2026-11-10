@@ -1,4 +1,4 @@
-// Fórum: as edições da Acta Diurna (jornal).
+// Fórum: as edições da Folha Diurna (jornal).
 import type { Edition, PlayerState } from '../../core/model/types';
 import { esc } from '../dom';
 import type { Screen, ScreenDeps } from './Screen';
@@ -8,7 +8,7 @@ export function newspaperHtml(ed: Edition): string {
     .map((n, i) => `<article class="${i === 0 ? 'lead' : ''} news-${n.kind}"><h3>${esc(n.headline)}</h3><p>${esc(n.body)}</p></article>`)
     .join('');
   return `<div class="newspaper">
-    <header><div class="np-title">ACTA DIURNA</div><div class="np-sub">Cápua · Dia ${ed.day}</div></header>
+    <header><div class="np-title">FOLHA DIURNA</div><div class="np-sub">Cápua · Dia ${ed.day}</div></header>
     ${items}
     <div class="row center"><button class="btn" data-np="close">Fechar</button></div>
   </div>`;

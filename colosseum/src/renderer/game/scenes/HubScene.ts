@@ -7,6 +7,7 @@ import { sound } from '../../audio/SoundManager';
 import { WORLD } from '../assets';
 import { SkyLayer } from '../DayNight';
 import { GladiatorView } from '../entities/Gladiator';
+import { CLOTH_COLORS, HAIR_COLORS } from '../../core/data/gladiators';
 import { dust, floatText, bigText } from '../fx';
 import { frameCamera, type Insets } from '../layout';
 
@@ -18,6 +19,8 @@ export interface HubData {
   bg: string;
   crowd?: string;
   outdoor: boolean;
+  /** mercado aberto: moradores circulando */
+  busy?: boolean;
 }
 
 const GROUND = 312;
@@ -40,6 +43,9 @@ export class HubScene extends Phaser.Scene {
   location: LocationId = 'home';
   sky!: SkyLayer;
   private glows: Phaser.GameObjects.Image[] = [];
+  private npcs: Array<{ v: GladiatorView; speed: number; min: number; max: number; pause: number }> = [];
+  private monk: Phaser.GameObjects.Sprite | null = null;
+  private monkTimer = 0;
 
   constructor() {
     super('hub');
@@ -51,14 +57,21 @@ export class HubScene extends Phaser.Scene {
     this.busy = false;
     this.glows = [];
     this.palus = null;
-    this.sky = new SkyLayer(this, data.time, 150, data.outdoor);
+    this.sky = new SkyLayer(this, data.time, 150, data.outdoor, !data.outdoor);
     this.add.image(0, 0, data.bg).setOrigin(0);
     if (data.crowd) this.add.sprite(0, 0, data.crowd, 0).setOrigin(0);
     for (const [x, y, brazier] of LIGHTS[data.location] ?? []) {
       if (brazier) this.add.sprite(x, y, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(3);
       this.glows.push(this.add.image(x, y - 16, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
     }
-    this.heroX = data.location === 'ludus' ? 318 : data.location === 'home' ? 340 : 300;
+    this.heroX = data.location === 'ludus' ? 318 : data.location === 'home' ? 340 : data.location === 'temple' ? 384 : 300;
+    this.npcs = [];
+    this.monk = null;
+    if (data.location === 'market' && data.busy) this.spawnTownsfolk();
+    if (data.location === 'temple') {
+      this.monk = this.add.sprite(262, GROUND + 2, 'fx:monk', 0).setOrigin(0.5, 1).setDepth(9);
+      this.add.ellipse(262, GROUND, 40, 6, 0x000000, 0.2).setDepth(8);
+    }
     if (data.location === 'ludus') {
       this.palus = this.add.sprite(352, GROUND, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(4);
       this.add.ellipse(352, GROUND, 18, 5, 0x000000, 0.25).setDepth(3);
@@ -72,6 +85,52 @@ export class HubScene extends Phaser.Scene {
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this));
+  }
+
+  /** Moradores: dois comerciantes parados e alguns passantes indo e vindo. */
+  private spawnTownsfolk(): void {
+    const rnd = (n: number) => Math.floor(Math.random() * n);
+    const person = (long: boolean) => ({
+      appearance: { skin: rnd(3), hairStyle: long ? 1 : rnd(3), hairColor: rnd(HAIR_COLORS.length), beard: !long && Math.random() < 0.4, clothColor: rnd(CLOTH_COLORS.length) },
+      gear: {},
+      extra: [{ sheet: long ? 'robe' : 'tunic', tint: [0x4a6aa8, 0xd8c890, 0x9a4a3a, 0x6a8a5a, 0xe8dcc0, 0x7a5a8a][rnd(6)] }],
+    });
+    const spots: Array<[number, number, number, number, number]> = [
+      // x, y, profundidade, velocidade, direção
+      [230, GROUND - 14, 9, 0, 1],
+      [404, GROUND - 14, 9, 0, -1],
+      [200, GROUND - 8, 9, 20, 1],
+      [470, GROUND + 10, 11, 24, -1],
+      [330, GROUND + 14, 11, 17, 1],
+    ];
+    for (const [x, y, depth, speed, dir] of spots) {
+      const v = new GladiatorView(this, x, y, person(Math.random() < 0.45));
+      v.setDepth(depth);
+      v.setFacing(dir as 1 | -1);
+      v.play(speed ? 'walk' : 'idle', { fps: speed ? 8 : 4 });
+      this.npcs.push({ v, speed: speed * dir, min: 186, max: 488, pause: 0 });
+    }
+  }
+
+  private updateNpcs(dt: number): void {
+    for (const n of this.npcs) {
+      n.v.tick(dt);
+      if (!n.speed) continue;
+      if (n.pause > 0) {
+        n.pause -= dt;
+        if (n.pause <= 0) n.v.play('walk', { fps: 8 });
+        continue;
+      }
+      n.v.x += n.speed * dt;
+      if (n.v.x < n.min || n.v.x > n.max) {
+        n.speed = -n.speed;
+        n.v.x = Phaser.Math.Clamp(n.v.x, n.min, n.max);
+        n.v.setFacing(n.speed > 0 ? 1 : -1);
+      } else if (Math.random() < dt * 0.15) {
+        n.pause = 1 + Math.random() * 2.5; // para para olhar as bancas
+        n.v.play('idle');
+      }
+    }
   }
 
   setInsets(i: Insets): void {
@@ -147,6 +206,11 @@ export class HubScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     const dt = Math.min(0.1, delta / 1000);
     this.hero?.tick(dt);
+    this.updateNpcs(dt);
+    if (this.monk) {
+      this.monkTimer += dt;
+      this.monk.setFrame(Math.floor(this.monkTimer / 1.1) % 2);
+    }
     if (this.sky) {
       this.sky.update(dt);
       const lamp = this.sky.lampStrength;

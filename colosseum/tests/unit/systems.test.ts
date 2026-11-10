@@ -3,7 +3,7 @@ import { createPlayer, sanitizeName, validateName } from '../../src/renderer/cor
 import { allocatePoints, computeCombatStats, playerCombatStats } from '../../src/renderer/core/systems/AttributeSystem';
 import { buyItem, equipItem, sellItem, unequipSlot } from '../../src/renderer/core/systems/EquipmentSystem';
 import { applyBattleResult, grantXp, isUnlocked, xpToNext } from '../../src/renderer/core/systems/ProgressionSystem';
-import { train, trainingCost } from '../../src/renderer/core/systems/TrainingSystem';
+import { train, trainingGain } from '../../src/renderer/core/systems/TrainingSystem';
 import { parseSave, serialize } from '../../src/renderer/core/systems/SaveSystem';
 import { createRng } from '../../src/renderer/core/systems/rng';
 import { OPPONENTS } from '../../src/renderer/core/data/opponents';
@@ -150,20 +150,17 @@ describe('progressão', () => {
 });
 
 describe('treinamento', () => {
-  it('custo progressivo e conversão em atributo', () => {
+  it('não custa moedas; 4 treinos dão +1 e o ganho diminui depois', () => {
     const p = fresh();
-    p.coins = 10000;
-    const c0 = trainingCost(p, 'str');
+    const coins = p.coins;
+    const g0 = trainingGain(p, 'str');
     for (let i = 0; i < 4; i++) expect(train(p, 'str').ok).toBe(true);
-    expect(trainingCost(p, 'str')).toBeGreaterThan(c0);
+    expect(p.coins).toBe(coins);
     expect(p.trainedBonus.str).toBe(1);
-    expect(p.training.str.progress).toBe(0);
     expect(playerCombatStats(p).attrs.str).toBe(8);
-  });
-  it('recusa sem moedas', () => {
-    const p = fresh();
-    p.coins = 0;
-    expect(train(p, 'agi').ok).toBe(false);
+    expect(trainingGain(p, 'str')).toBeLessThan(g0);
+    p.trainedBonus.str = 50;
+    expect(trainingGain(p, 'str')).toBeGreaterThanOrEqual(6);
   });
 });
 

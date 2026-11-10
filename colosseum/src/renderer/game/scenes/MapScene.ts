@@ -11,6 +11,7 @@ export interface MapData {
   insets: Insets;
   time: () => number;
   minutes: () => number;
+  day: () => number;
   onPick: (id: LocationId) => void;
 }
 
@@ -32,15 +33,15 @@ export class MapScene extends Phaser.Scene {
     this.traveling = false;
     this.labels = [];
     this.add.image(0, 0, 'bg:map').setOrigin(0);
-    const zoom = () => this.cameras.main.zoom;
     for (const loc of LOCATIONS) {
       const [x, y] = loc.map;
       const ring = this.add.ellipse(x, y, 96, 70, 0xffe49a, 0).setStrokeStyle(2, 0xffe49a, 0).setDepth(600);
       const text = this.add
-        .text(x, y + 34, loc.name, { fontFamily: FONT, fontSize: '14px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 4 })
+        .text(x, y + 34, loc.name, { fontFamily: FONT, fontSize: '16px', color: '#fff3d6', stroke: '#1a0e08', strokeThickness: 4 })
         .setOrigin(0.5, 0)
         .setDepth(601)
-        .setResolution(Math.max(1, Math.ceil(zoom() * (window.devicePixelRatio || 1))));
+        // texto renderizado em alta resolução: continua nítido com qualquer zoom
+        .setResolution(Math.max(4, Math.ceil(4 * (window.devicePixelRatio || 1))));
       const zone = this.add.zone(x, y, 100, 76).setInteractive({ useHandCursor: true }).setDepth(602);
       zone.on('pointerover', () => ring.setStrokeStyle(2, 0xffe49a, 1).setFillStyle(0xffe49a, 0.12));
       zone.on('pointerout', () => ring.setStrokeStyle(2, 0xffe49a, 0).setFillStyle(0xffe49a, 0));
@@ -77,8 +78,9 @@ export class MapScene extends Phaser.Scene {
   /** Locais fechados aparecem esmaecidos. */
   refreshLabels(): void {
     const m = this.data_.minutes();
+    const day = this.data_.day();
     for (const l of this.labels) {
-      const open = isOpen(LOCATIONS.find((x) => x.id === l.id)!, m);
+      const open = isOpen(LOCATIONS.find((x) => x.id === l.id)!, m, day);
       l.text.setColor(open ? '#fff3d6' : '#9a8a70');
     }
   }

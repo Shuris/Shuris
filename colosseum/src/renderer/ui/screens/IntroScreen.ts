@@ -104,7 +104,7 @@ export class IntroScreen {
         <ul class="howto">
           <li>Use o <b>Mapa</b> para ir ao Ludus (treino), Mercado, Arena, Templo e outros locais.</li>
           <li>Treinar e lutar gastam <b>energia</b>. À noite, durma no <b>Alojamento</b>.</li>
-          <li>Fique famoso e saia no jornal <b>Acta Diurna</b>!</li>
+          <li>Fique famoso e saia no jornal <b>Folha Diurna</b>!</li>
         </ul>
         <p class="hint">Derrotas não tiram nada. Dica: compre um escudo antes da primeira luta.</p>
         <div class="row end"><button class="btn" data-i="back">Voltar</button><button class="btn btn-red" data-i="finish">Começar</button></div>

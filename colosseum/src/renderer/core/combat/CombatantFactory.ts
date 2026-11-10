@@ -10,6 +10,8 @@ import { opponentAttributes, type OpponentDef } from '../data/opponents';
 export interface FighterVisual {
   appearance: Appearance;
   gear: Partial<Record<Slot, ItemDef>>;
+  /** roupas extras (moradores da cidade): folha + tinta */
+  extra?: Array<{ sheet: string; tint?: number }>;
 }
 
 /** Aplica os efeitos da árvore de habilidades sobre as estatísticas base. */

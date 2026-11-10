@@ -102,7 +102,7 @@ describe('sistema de dias', () => {
   });
 });
 
-describe('jornal Acta Diurna', () => {
+describe('jornal Folha Diurna', () => {
   it('estreia já tem edição com o nome do gladiador', () => {
     const p = fresh();
     expect(p.news.editions.length).toBe(1);
@@ -146,5 +146,59 @@ describe('jornal Acta Diurna', () => {
     expect(m.ok && m.player.skillPoints).toBe(5);
     expect(m.ok && m.player.day).toBe(1);
     expect(m.ok && m.player.energy).toBe(100);
+  });
+});
+
+import { weekdayName, isOpen, getLocation } from '../../src/renderer/core/data/locations';
+import { canTrade } from '../../src/renderer/core/systems/CalendarSystem';
+import { weatherAt, weatherOfDay } from '../../src/renderer/core/systems/WeatherSystem';
+
+describe('semana, mercado e clima', () => {
+  it('dia 1 é segunda; o mercado fecha à noite e aos domingos', () => {
+    expect(weekdayName(1)).toBe('Segunda');
+    expect(weekdayName(7)).toBe('Domingo');
+    const p = fresh();
+    p.minutes = 10 * 60;
+    expect(canTrade(p)).toBeNull();
+    p.minutes = 21 * 60;
+    expect(canTrade(p)).toMatch(/fechado/);
+    p.minutes = 10 * 60;
+    p.day = 7;
+    expect(canTrade(p)).toMatch(/domingo/);
+    expect(isOpen(getLocation('ludus'), 10 * 60, 7)).toBe(true);
+  });
+  it('alguns dias chovem, com transição suave, sempre nas mesmas datas para o mesmo jogador', () => {
+    const days = Array.from({ length: 200 }, (_, i) => weatherOfDay(12345, i + 2));
+    const rainy = days.filter((d) => d.rainy).length;
+    expect(rainy).toBeGreaterThan(30);
+    expect(rainy).toBeLessThan(90);
+    expect(weatherOfDay(12345, 9)).toEqual(weatherOfDay(12345, 9));
+    const d = days.find((x) => x.rainy)!;
+    const day = days.indexOf(d) + 2;
+    expect(weatherAt(12345, day, (d.start + d.end) / 2).rain).toBe(1);
+    expect(weatherAt(12345, day, d.start + 10).rain).toBeLessThan(1);
+    expect(weatherAt(12345, day, d.start - 60).rain).toBe(0);
+    expect(weatherAt(12345, day, d.start - 60).cloud).toBeGreaterThan(0.5);
+    expect(weatherOfDay(12345, 1).rainy).toBe(false);
+  });
+});
+
+describe('jornal: derrotas e sequências sem repetição', () => {
+  it('derrota vira notícia e só a sequência mais recente sai na edição', () => {
+    const p = fresh();
+    applyBattleResult(p, { opponent: OPPONENTS[0], won: false, reason: 'forfeit', duration: 20, strategy: 'balanced', rng: createRng(1) });
+    expect(p.news.pending.find((n) => n.kind === 'defeat')?.headline).toMatch(/desiste/);
+    const q = fresh();
+    for (let i = 0; i < 5; i++) applyBattleResult(q, { opponent: OPPONENTS[0], won: true, reason: 'ko', duration: 60, strategy: 'balanced', rng: createRng(i) });
+    const streaks = q.news.pending.filter((n) => n.kind === 'streak');
+    expect(streaks.length).toBe(1);
+    expect(streaks[0].headline).toMatch(/quinta/);
+    expect(streaks[0].headline.charAt(0)).toBe(streaks[0].headline.charAt(0).toUpperCase());
+  });
+  it('volta por cima depois de derrotas', () => {
+    const p = fresh();
+    for (let i = 0; i < 2; i++) applyBattleResult(p, { opponent: OPPONENTS[0], won: false, reason: 'ko', duration: 60, strategy: 'balanced', rng: createRng(i) });
+    applyBattleResult(p, { opponent: OPPONENTS[0], won: true, reason: 'ko', duration: 60, strategy: 'balanced', rng: createRng(7) });
+    expect(p.news.pending.some((n) => /volta por cima/.test(n.headline))).toBe(true);
   });
 });

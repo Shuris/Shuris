@@ -20,9 +20,17 @@ export const TRAININGS: TrainingDef[] = [
   { id: 'tech', name: 'Treinamento de técnica', description: 'Exercícios de esgrima com o doctor (instrutor) do ludus.' },
 ];
 
-/** Custo progressivo: cresce 18% a cada sessão do mesmo tipo. */
-export function trainingCost(p: PlayerState, id: TrainingId): number {
-  return Math.round(25 * Math.pow(1.18, p.training[id].sessions));
+/**
+ * Treinar custa só energia e tempo (no CalendarSystem). Para não evoluir sem
+ * lutar, o progresso de cada sessão diminui conforme o atributo já foi treinado.
+ */
+export function trainingGain(p: PlayerState, id: TrainingId): number {
+  return Math.max(6, Math.round(TRAINING_PROGRESS / (1 + p.trainedBonus[id] * 0.12)));
+}
+
+/** Sessões que faltam para o próximo +1 no atributo. */
+export function sessionsToNext(p: PlayerState, id: TrainingId): number {
+  return Math.ceil((TRAINING_THRESHOLD - p.training[id].progress) / trainingGain(p, id));
 }
 
 export function trainingXp(p: PlayerState): number {
@@ -38,14 +46,12 @@ export interface TrainingResult {
 }
 
 export function train(p: PlayerState, id: TrainingId, rng: Rng = createRng(Date.now())): TrainingResult {
-  const cost = trainingCost(p, id);
-  if (p.coins < cost) return { ok: false, message: 'Moedas insuficientes para este treinamento.', attributeGained: false, xp: 0, levelUps: 0 };
   if (p.baseAttributes[id] + p.trainedBonus[id] >= MAX_ATTRIBUTE)
     return { ok: false, message: 'Este atributo já está no máximo.', attributeGained: false, xp: 0, levelUps: 0 };
-  p.coins -= cost;
   const t = p.training[id];
+  const gain = trainingGain(p, id);
   t.sessions++;
-  t.progress += TRAINING_PROGRESS;
+  t.progress += gain;
   let gained = false;
   if (t.progress >= TRAINING_THRESHOLD) {
     t.progress -= TRAINING_THRESHOLD;
@@ -57,7 +63,7 @@ export function train(p: PlayerState, id: TrainingId, rng: Rng = createRng(Date.
   if (levelUps) onLevel(p, rng);
   return {
     ok: true,
-    message: gained ? 'O treino rendeu frutos: +1 ponto de atributo!' : `Progresso de treino +${TRAINING_PROGRESS}.`,
+    message: gained ? 'O treino rendeu frutos: +1 ponto de atributo!' : `Progresso de treino +${gain}.`,
     attributeGained: gained,
     xp,
     levelUps,

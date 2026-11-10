@@ -60,6 +60,7 @@
     "weapon",
     "body_main",
     "cloth",
+    "tunic",
     "belt",
     "legs_front",
     "armor",
@@ -109,6 +110,14 @@
     "cloth": {
       "file": "sprites/gladiator/cloth.png",
       "layer": "cloth"
+    },
+    "tunic": {
+      "file": "sprites/gladiator/tunic.png",
+      "layer": "tunic"
+    },
+    "robe": {
+      "file": "sprites/gladiator/robe.png",
+      "layer": "tunic"
     },
     "belt": {
       "file": "sprites/gladiator/belt.png",

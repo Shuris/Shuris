@@ -169,3 +169,14 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 - `core/systems/NewsSystem.ts` — gera notícias a partir de eventos (fama, vitórias,
   sequências, níveis) com modelos de texto e publica a edição ao acordar.
 - Salvamento versão 2 (`SaveSystem`): novos campos validados; saves v1 migrados.
+
+## Clima e semana (0.4.0)
+
+- `core/systems/WeatherSystem.ts` — previsão determinística por gladiador (semente =
+  data de criação) e dia: dias chuvosos, horário e intensidade com transição.
+  `game/DayNight.ts` aplica nuvens, céu cinzento, luz ambiente mais escura, gotas
+  (atrás do cenário em interiores) e o som de chuva.
+- `core/data/locations.ts` — dias da semana (`weekdayName`) e `closedSunday`;
+  `CalendarSystem.canTrade` bloqueia compra/venda com o mercado fechado.
+- Moradores do mercado usam o mesmo sistema de camadas dos gladiadores, com as folhas
+  `tunic`/`robe` tingidas.

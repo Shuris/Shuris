@@ -229,6 +229,22 @@ def layer_cloth(s):
     return img
 
 
+def layer_tunic(s, long=False):
+    """Túnica (ou estola longa) dos moradores da cidade — tons de cinza para tingir."""
+    img, d = draw_canvas(FW, FH)
+    g = (214, 214, 214)
+    poly(d, torso_poly(s, 5.5, 5.5, top=0.5, bottom=-1), g)
+    hx, hy = R(s["hip"])
+    hem = 20 if long else 9
+    poly(d, [(hx - 6, hy - 2), (hx + 6, hy - 2), (hx + 7 + (1 if long else 0), hy + hem), (hx - 7 - (1 if long else 0), hy + hem)], g)
+    sh = R(s["fsh"])
+    d.ellipse([sh[0] - 2, sh[1] - 2, sh[0] + 3, sh[1] + 2], fill=g)  # manga curta
+    img = finish(img, light=0.22)
+    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
+    d.line([(hx - 1, hy + 1), (hx - 1, hy + hem - 1)], fill=(176, 176, 176))
+    return img
+
+
 def layer_belt(s):
     img, d = draw_canvas(FW, FH)
     hx, hy = R(s["hip"])
@@ -417,6 +433,8 @@ for i, sk in enumerate(SKINS):
     SHEETS[f"body_main_{i}"] = ("body_main", lambda s, sk=sk: layer_body_main(s, sk))
     SHEETS[f"body_front_{i}"] = ("body_front", lambda s, sk=sk: layer_body_front(s, sk))
 SHEETS["cloth"] = ("cloth", layer_cloth)
+SHEETS["tunic"] = ("tunic", lambda s: layer_tunic(s))
+SHEETS["robe"] = ("tunic", lambda s: layer_tunic(s, True))
 SHEETS["belt"] = ("belt", layer_belt)
 for st in range(3):
     SHEETS[f"hair_{st}"] = ("hair", lambda s, st=st: layer_hair(s, st))
@@ -442,7 +460,7 @@ for g in ("iron", "bronze"):
     SHEETS[f"legsb_{g}"] = ("legs_back", lambda s, g=g: layer_greave(s, "b", g))
     SHEETS[f"legsf_{g}"] = ("legs_front", lambda s, g=g: layer_greave(s, "f", g))
 
-LAYER_ORDER = ["body_back", "legs_back", "weapon", "body_main", "cloth", "belt", "legs_front",
+LAYER_ORDER = ["body_back", "legs_back", "weapon", "body_main", "cloth", "tunic", "belt", "legs_front",
                "armor", "hair", "beard", "helmet", "body_front", "shield"]
 
 

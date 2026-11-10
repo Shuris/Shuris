@@ -19,6 +19,7 @@ export class GameView {
   time: () => number = () => 0.4;
   /** minutos do dia (para o mapa mostrar locais fechados) */
   minutes: () => number = () => 480;
+  day: () => number = () => 1;
 
   constructor(parent: HTMLElement) {
     this.game = new Phaser.Game({
@@ -82,7 +83,7 @@ export class GameView {
 
   showMap(current: LocationId, onPick: (id: LocationId) => void): void {
     this.stopAll();
-    this.game.scene.start('map', { current, onPick, insets: this.insets, time: () => this.time(), minutes: () => this.minutes() });
+    this.game.scene.start('map', { current, onPick, insets: this.insets, time: () => this.time(), minutes: () => this.minutes(), day: () => this.day() });
     this.current = 'map';
   }
 

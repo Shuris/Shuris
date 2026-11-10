@@ -8,14 +8,16 @@ import type { CombatResult } from '../core/combat/CombatTypes';
 import { opponentCombatant, playerCombatant, type FighterVisual } from '../core/combat/CombatantFactory';
 import { getOpponent, type OpponentDef } from '../core/data/opponents';
 import { arenaForOpponent } from '../core/data/arenas';
-import { getLocation, isOpen } from '../core/data/locations';
+import { getLocation, hoursLabel, isOpen, weekdayName } from '../core/data/locations';
 import { getItem } from '../core/data/equipment';
 import { applyBattleResult, isUnlocked, xpToNext } from '../core/systems/ProgressionSystem';
 import { createPlayer } from '../core/systems/PlayerFactory';
-import { train as doTrain, trainingCost } from '../core/systems/TrainingSystem';
+import { train as doTrain } from '../core/systems/TrainingSystem';
 import { applyFight, applyTraining, bathe, canFight, canTrain, canTravel, nap, sleep, travel } from '../core/systems/CalendarSystem';
 import { publish, unreadCount } from '../core/systems/NewsSystem';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
+import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
+import { worldWeather } from '../game/DayNight';
 import { createRng, randomSeed } from '../core/systems/rng';
 import { MAX_LEVEL } from '../core/data/gladiators';
 import { bridge, isElectron } from '../platform/bridge';
@@ -53,6 +55,8 @@ export class App implements AppActions {
     writeSync: (d) => bridge.save.writeSync(d),
   });
   readonly sound = sound;
+  /** previsão do tempo de um dia (usada pelos testes E2E) */
+  readonly weatherOfDay = (day: number) => weatherOfDay(this.store.state.createdAt, day);
   private view!: GameView;
   private screens: Record<ScreenId, Screen>;
   private screen: ScreenId = 'home';
@@ -92,6 +96,12 @@ export class App implements AppActions {
     this.view = new GameView($('#game'));
     this.view.time = () => (this.store.hasPlayer ? dayFraction(this.store.state.minutes) : 0.4);
     this.view.minutes = () => (this.store.hasPlayer ? this.store.state.minutes : 480);
+    this.view.day = () => (this.store.hasPlayer ? this.store.state.day : 1);
+    worldWeather.now = () => {
+      if (!this.store.hasPlayer) return { cloud: 0, rain: 0 };
+      const p = this.store.state;
+      return weatherAt(p.createdAt, p.day, p.minutes);
+    };
     this.store.onSaveError = (msg) => toast(`Falha ao salvar: ${msg}`, 'bad', 6000);
     this.store.subscribe(() => this.onStateChange());
 
@@ -336,7 +346,7 @@ export class App implements AppActions {
       const arena = arenaForOpponent(p.selectedOpponent);
       this.view.showLocation({ visual, location: 'arena', bg: arena.bg, crowd: arena.crowd, outdoor: true });
     } else {
-      this.view.showLocation({ visual, location: loc.id, bg: loc.bg, outdoor: loc.outdoor });
+      this.view.showLocation({ visual, location: loc.id, bg: loc.bg, outdoor: loc.outdoor, busy: isOpen(loc, p.minutes, p.day) });
     }
     $('#side').hidden = false;
     $('#statusbar').hidden = false;
@@ -386,7 +396,7 @@ export class App implements AppActions {
       this.busy = false;
       this.store.update((pl) => travel(pl, to));
       const loc = getLocation(to);
-      if (!isOpen(loc, this.store.state.minutes)) toast(`${loc.name} está fechado agora.`, 'info');
+      if (!isOpen(loc, this.store.state.minutes, this.store.state.day)) toast(`${loc.name} está fechado agora (${hoursLabel(loc, this.store.state.day)}).`, 'info');
       this.enterLocation();
     });
   }
@@ -469,7 +479,7 @@ export class App implements AppActions {
   train(id: TrainingId): void {
     if (this.busy || this.battle) return;
     const p = this.store.state;
-    const err = canTrain(p) ?? (p.coins < trainingCost(p, id) ? 'Moedas insuficientes.' : null);
+    const err = canTrain(p);
     if (err) {
       sound.play('error');
       return toast(err, 'bad');
@@ -641,7 +651,8 @@ export class App implements AppActions {
       <div class="status panel">
         <div class="row between"><b class="st-name">${esc(p.name)}</b><span class="lvl">Nível ${p.level}</span></div>
         ${p.level < MAX_LEVEL ? bar(p.xp, xpToNext(p.level), 'xp') : '<div class="tiny gold">Nível máximo</div>'}
-        <div class="row between st-day"><span>Dia ${p.day}</span><span id="clock">${phaseName(t)} ${clockLabel(t)}</span></div>
+        <div class="row between st-day"><span>${weekdayName(p.day)}, dia ${p.day}</span><span id="clock">${phaseName(t)} ${clockLabel(t)}</span></div>
+        ${weatherLabel(worldWeather.now()) ? `<div class="weather">${weatherLabel(worldWeather.now())}</div>` : ''}
         <div class="energy-row"><span>Energia</span>${bar(p.energy, 100, 'energy')}</div>
         <div class="row st-res"><span title="Moedas">${icon('coin')} ${p.coins}</span><span title="Fama">${icon('laurel')} ${p.reputation}</span></div>
         ${late ? '<div class="late">Está tarde: vá dormir no Alojamento.</div>' : ''}
@@ -669,7 +680,7 @@ export class App implements AppActions {
       ? ''
       : `<div class="tip">${esc(screen.tip)} <button class="btn sm" data-action="tip-ok" data-id="${screen.id}">OK</button></div>`;
     const loc = (LOCATION_IDS as string[]).includes(this.screen) ? getLocation(this.screen as LocationId) : null;
-    const closed = loc && !isOpen(loc, p.minutes) ? '<div class="closed-note">Fechado agora. Volte mais tarde.</div>' : '';
+    const closed = loc && !isOpen(loc, p.minutes, p.day) ? `<div class="closed-note">Fechado agora (${hoursLabel(loc, p.day)}).</div>` : '';
     const head = `<div class="panel-head"><h2>${esc(screen.title)}</h2>${isSheet ? '<button class="btn sm" data-action="back">Voltar</button>' : ''}</div>`;
     panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}`;
     panel.scrollTop = scroll;

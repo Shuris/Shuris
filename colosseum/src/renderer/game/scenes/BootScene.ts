@@ -26,6 +26,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');
+    this.load.spritesheet('fx:monk', 'assets/sprites/fx/monk.png', { frameWidth: 48, frameHeight: 44 });
     this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       this.anims.create({
         key: 'brazier',

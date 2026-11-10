@@ -10,7 +10,7 @@ import type { Screen, ScreenDeps } from './Screen';
 export class TempleScreen implements Screen {
   readonly id = 'temple' as const;
   readonly title = 'Templo de Marte';
-  readonly tip = 'Ganhe 1 ponto por nível. Escolha um caminho: Marte, Mercúrio ou Minerva.';
+  readonly tip = 'O monge Aurelius ensina as habilidades. Você ganha 1 ponto por nível.';
   private selected: string | null = null;
 
   constructor(private readonly d: ScreenDeps) {}
@@ -40,9 +40,15 @@ export class TempleScreen implements Screen {
       const err = canLearn(p, sel.id);
       detail = `<div class="perk-detail"><div class="row">${icon(sel.icon)}<b>${esc(sel.name)}</b><span class="tag">${sel.cost} ponto(s)</span></div>
         <p>${esc(sel.short)}</p>
-        ${owned ? '<p class="gold">Aprendida</p>' : `<button class="btn btn-gold wide" data-action="learn" data-id="${sel.id}" ${err ? 'disabled' : ''}>${err ? esc(err) : 'Aprender'}</button>`}</div>`;
+        ${owned ? '<p class="gold">Aprendida</p>' : `<button class="btn btn-gold wide" data-action="learn" data-id="${sel.id}" ${err ? 'disabled' : ''}>${err ? esc(err) : 'Aprender com o monge'}</button>`}</div>`;
     }
-    return `<div class="row between"><span class="big-num">${p.skillPoints} <small>pontos</small></span>
+    const say = p.skillPoints
+      ? p.perks.length
+        ? 'Continue no seu caminho. O que deseja aprender hoje?'
+        : 'Marte, Mercúrio ou Minerva... escolha seu caminho, jovem gladiador.'
+      : 'Volte quando tiver mais experiência na arena.';
+    return `<div class="monk-say"><b>Monge Aurelius:</b><span>“${say}”</span></div>
+      <div class="row between"><span class="big-num">${p.skillPoints} <small>pontos</small></span>
         <button class="btn sm btn-dark" data-action="respec" ${p.perks.length ? '' : 'disabled'}>Recomeçar · ${respecCost(p)}</button></div>
       <div class="tree">${cols}</div>
       ${detail}`;
@@ -59,7 +65,7 @@ export class TempleScreen implements Screen {
         toast(err, 'bad');
         sound.play('error');
       } else {
-        toast(`${getPerk(id)?.name} aprendida!`, 'gold');
+        toast(`O monge ensinou: ${getPerk(id)?.name}!`, 'gold');
         sound.play('levelup');
       }
     } else if (action === 'respec') {

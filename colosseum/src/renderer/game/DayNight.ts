@@ -2,6 +2,11 @@
 // iluminação ambiente sobre o cenário e braseiros mais fortes à noite.
 import * as Phaser from 'phaser';
 import { WORLD } from './assets';
+import type { WeatherNow } from '../core/systems/WeatherSystem';
+import { sound } from '../audio/SoundManager';
+
+/** Clima atual do jogo (definido pela interface a partir do salvamento). */
+export const worldWeather = { now: (): WeatherNow => ({ cloud: 0, rain: 0 }) };
 
 export interface SkyState {
   top: number;
@@ -66,7 +71,18 @@ export class SkyLayer {
    * @param timeFn hora do jogo (0..1); a transição é suave quando o relógio avança
    * @param withSky false para interiores e para o mapa (só a luz ambiente)
    */
-  constructor(private readonly scene: Phaser.Scene, private readonly timeFn: () => number, private readonly horizon = 150, withSky = true) {
+  private drops: Array<{ r: Phaser.GameObjects.Rectangle; vy: number; vx: number }> = [];
+  private extraClouds: Phaser.GameObjects.Image[] = [];
+  weather: WeatherNow = { cloud: 0, rain: 0 };
+
+  constructor(
+    private readonly scene: Phaser.Scene,
+    private readonly timeFn: () => number,
+    private readonly horizon = 150,
+    withSky = true,
+    /** chuva atrás do cenário (interiores: só aparece pela janela) */
+    rainBehind = false,
+  ) {
     this.gfx = scene.add.graphics().setDepth(-30);
     this.stars = scene.add.graphics().setDepth(-29);
     for (let i = 0; i < 90; i++) {
@@ -86,8 +102,16 @@ export class SkyLayer {
       .setOrigin(0)
       .setDepth(500)
       .setBlendMode(Phaser.BlendModes.MULTIPLY);
+    // nuvens carregadas extras (dias nublados) e gotas de chuva
+    for (let i = 0; i < 9; i++) {
+      this.extraClouds.push(scene.add.image((i / 9) * WORLD.width + Math.random() * 40, 6 + Math.random() * 46, 'fx:cloud').setDepth(-27).setScale(1.6 + Math.random()).setVisible(false));
+    }
+    for (let i = 0; i < 240; i++) {
+      const r = scene.add.rectangle(Math.random() * WORLD.width, Math.random() * WORLD.height, 1, 8, 0xd0e2f6, 0.8).setDepth(rainBehind ? -26 : 450).setVisible(false);
+      this.drops.push({ r, vy: 260 + Math.random() * 90, vx: -40 - Math.random() * 20 });
+    }
     if (!withSky) {
-      for (const o of [this.gfx, this.stars, this.sun, this.moon, ...this.clouds]) o.setVisible(false).setActive(false);
+      for (const o of [this.gfx, this.stars, this.sun, this.moon, ...this.clouds, ...this.extraClouds]) o.setVisible(false).setActive(false);
       this.skyless = true;
     }
     this.update(0);
@@ -107,9 +131,25 @@ export class SkyLayer {
       if (Math.abs(diff) < 0.0005) this.shown = target;
     }
     this.t = this.shown;
-    const s = (this.state = skyAt(this.t));
+    const w = (this.weather = worldWeather.now());
+    const base = skyAt(this.t);
+    // tempo fechado: céu cinzento e luz mais fraca
+    const grey = (light: number, dark: number) => lerpColor(dark, light, base.light);
+    const s = (this.state = {
+      top: lerpColor(base.top, grey(0x6a7280, 0x14161e), w.cloud * 0.9),
+      bottom: lerpColor(base.bottom, grey(0x9aa2ac, 0x24262e), w.cloud * 0.9),
+      ambient: lerpColor(base.ambient, lerpColor(0x4a5060, 0x8c92a2, base.light), w.cloud * 0.85),
+      stars: base.stars * (1 - w.cloud),
+      light: base.light * (1 - w.cloud * 0.35),
+    });
     this.overlay.setFillStyle(s.ambient, 1);
+    this.updateRain(dt, w);
     if (this.skyless) return;
+    for (const c of this.extraClouds) {
+      c.setVisible(w.cloud > 0.2).setAlpha(Math.min(1, w.cloud * 1.2)).setTint(lerpColor(0x5a6070, 0xb0b6c0, base.light));
+      c.x += dt * 6;
+      if (c.x > WORLD.width + 50) c.x = -50;
+    }
     const now = this.scene.time.now;
     if (now - this.lastDraw > 400 || this.lastDraw < 0) {
       this.lastDraw = now;
@@ -124,14 +164,30 @@ export class SkyLayer {
     const nightP = (((this.t + 0.5) % 1) - 0.24) / 0.54;
     const sp = arc(Phaser.Math.Clamp(dayP, 0, 1));
     const mp = arc(Phaser.Math.Clamp(nightP, 0, 1));
-    this.sun.setPosition(sp.x, sp.y).setVisible(dayP > 0 && dayP < 1);
-    this.moon.setPosition(mp.x, mp.y).setVisible(nightP > 0 && nightP < 1);
+    this.sun.setPosition(sp.x, sp.y).setVisible(dayP > 0 && dayP < 1 && w.cloud < 0.3);
+    this.moon.setPosition(mp.x, mp.y).setVisible(nightP > 0 && nightP < 1 && w.cloud < 0.5);
     for (const c of this.clouds) {
       c.x += dt * 4;
       if (c.x > WORLD.width + 30) c.x = -30;
       c.setTint(s.ambient);
       c.setAlpha(0.35 + s.light * 0.55);
     }
+  }
+
+  private updateRain(dt: number, w: WeatherNow): void {
+    const active = Math.round(this.drops.length * w.rain);
+    this.drops.forEach((d, i) => {
+      const on = i < active;
+      d.r.setVisible(on);
+      if (!on) return;
+      d.r.y += d.vy * dt;
+      d.r.x += d.vx * dt;
+      if (d.r.y > WORLD.height + 5 || d.r.x < -5) {
+        d.r.y = -5 - Math.random() * 40;
+        d.r.x = Math.random() * (WORLD.width + 60);
+      }
+    });
+    sound.setRain(w.rain);
   }
 
   /** Intensidade das fontes de luz (braseiros): fraca de dia, forte à noite. */

@@ -128,8 +128,9 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
   p.stats.battles++;
   if (won) p.stats.wins++;
   else p.stats.losses++;
+  const prevStreak = p.streak;
   p.streak = won ? Math.max(0, p.streak) + 1 : Math.min(0, p.streak) - 1;
-  onBattle(p, opp, won, r.firstVictory, rng);
+  onBattle(p, opp, won, r.firstVictory, rng, input.reason, prevStreak);
   const rec: BattleRecord = {
     id: `b${p.stats.battles}-${input.now ?? Date.now()}`,
     date: input.now ?? Date.now(),

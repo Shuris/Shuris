@@ -5,6 +5,7 @@ import { buyItem, canBuy, isEquipped, sellItem } from '../../core/systems/Equipm
 import { icon } from '../dom';
 import { confirmModal, toast } from '../components/feedback';
 import { itemRow } from '../components/items';
+import { canTrade } from '../../core/systems/CalendarSystem';
 import { sound } from '../../audio/SoundManager';
 import type { Screen, ScreenDeps } from './Screen';
 
@@ -18,12 +19,13 @@ export class MarketScreen implements Screen {
 
   render(p: PlayerState): string {
     const tabs = `<div class="subtabs"><button class="btn ${this.tab === 'buy' ? 'active' : ''}" data-action="tab" data-id="buy">Comprar</button><button class="btn ${this.tab === 'sell' ? 'active' : ''}" data-action="tab" data-id="sell">Vender</button></div>`;
+    const closed = canTrade(p);
     const coins = `<p class="hint">${icon('coin', 'xs')} <b>${p.coins}</b> moedas</p>`;
     if (this.tab === 'buy') {
       const items = ITEMS.filter((i) => i.shop)
         .sort((a, b) => a.minLevel - b.minLevel || a.price - b.price)
         .map((item) => {
-          const err = canBuy(p, item.id);
+          const err = closed ?? canBuy(p, item.id);
           return itemRow(p, item, `<button class="btn btn-gold sm" data-action="buy" data-id="${item.id}" ${err ? `disabled title="${err}"` : ''}>${icon('coin', 'xs')} ${item.price}</button>`);
         })
         .join('');
@@ -33,7 +35,7 @@ export class MarketScreen implements Screen {
       .filter((i) => !isEquipped(p, i.uid))
       .map((inv) => {
         const item = getItem(inv.itemId);
-        return item ? itemRow(p, item, `<button class="btn sm" data-action="sell" data-id="${inv.uid}">Vender ${sellPrice(item)}</button>`) : '';
+        return item ? itemRow(p, item, `<button class="btn sm" data-action="sell" data-id="${inv.uid}" ${closed ? `disabled title="${closed}"` : ''}>Vender ${sellPrice(item)}</button>`) : '';
       })
       .join('');
     return tabs + coins + `<div class="items">${items || '<p class="dim">Nada para vender (itens equipados não podem ser vendidos).</p>'}</div>`;
@@ -41,6 +43,12 @@ export class MarketScreen implements Screen {
 
   onAction(action: string, el: HTMLElement, p: PlayerState): void {
     const id = el.dataset.id ?? '';
+    const closed = canTrade(p);
+    if (closed && (action === 'buy' || action === 'sell')) {
+      sound.play('error');
+      toast(closed, 'bad');
+      return;
+    }
     if (action === 'tab') {
       this.tab = id === 'sell' ? 'sell' : 'buy';
       this.d.actions.rerender();

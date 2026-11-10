@@ -1,4 +1,4 @@
-// Acta Diurna: o jornal diário de Roma. As notícias sobre o gladiador são
+// Folha Diurna: o jornal diário da cidade. As notícias sobre o gladiador são
 // geradas pelos acontecimentos (fama, vitórias, sequências...) e publicadas
 // na edição da manhã seguinte.
 import type { NewsItem, PlayerState } from '../model/types';
@@ -34,11 +34,18 @@ const T = {
   ],
   champion: [['NOVO CAMPEÃO DE ROMA!', '{nome} derrotou Flamma no Coliseu. O imperador em pessoa ergueu o polegar diante de 50 mil pessoas.']],
   arena: [['{nome} é chamado para lutar em {arena}', 'Os organizadores dos jogos querem o gladiador em palcos maiores.']],
-  streak: [
-    ['{n} vitórias seguidas!', '{nome} segue invicto há {n} lutas. Os apostadores já não aceitam apostas contra o gladiador.'],
-    ['Ninguém para {nome}', 'São {n} vitórias em sequência. {rival} pede mais tempo para treinar.'],
+  // uma manchete diferente para cada marco (sem repetir a mesma ideia)
+  streak3: [['Três vitórias seguidas para {nome}', 'O público já decorou o nome do gladiador. Os apostadores estão de olho.']],
+  streak5: [['{nome} vence pela quinta vez seguida', 'Cinco lutas, cinco vitórias. {rival} começa a ficar preocupado.']],
+  streak10: [['Dez vitórias seguidas!', 'Ninguém derrota {nome} há dez lutas. Já falam em levar o gladiador a Roma.']],
+  comeback: [['{nome} dá a volta por cima', 'Depois de uma fase ruim, o gladiador voltou a vencer em {arena}.']],
+  lossKo: [
+    ['{vencedor} derruba {nome} em {arena}', 'A torcida silenciou quando o gladiador caiu na areia. Nas tabernas, já pedem uma revanche.'],
+    ['Dia difícil para {nome}', '{vencedor} foi superior em {arena}. Os instrutores pedem mais disciplina no ludus.'],
   ],
-  slump: [['Fase ruim para {nome}', 'Três derrotas seguidas. O lanista exige mais treino no ludus.']],
+  lossDecision: [['{vencedor} vence {nome} por decisão', 'A luta foi até o fim, mas os juízes deram a vitória a {vencedor}.']],
+  lossForfeit: [['{nome} desiste diante de {vencedor}', 'O gladiador ergueu o dedo pedindo clemência. Parte do público vaiou.']],
+  slump: [['Três derrotas seguidas para {nome}', 'O lanista está preocupado e exige mais treino no ludus.']],
   level: [
     ['{nome} impressiona nos treinos', 'Os instrutores do ludus dizem que o gladiador está mais forte do que nunca.'],
     ['Músculos de ferro', 'Quem viu {nome} treinar no palus garante: {rival} terá trabalho.'],
@@ -74,10 +81,16 @@ function vars(p: PlayerState, extra: Vars = {}): Vars {
   };
 }
 
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/** Tipos dos quais só a notícia mais recente interessa (evita manchetes repetidas na mesma edição). */
+const SINGLE: ReadonlyArray<NewsItem['kind']> = ['streak', 'defeat'];
+
 function add(p: PlayerState, kind: NewsItem['kind'], options: readonly (readonly [string, string])[], rng: Rng, extra: Vars = {}): void {
   const [h, b] = pick(rng, options);
   const v = vars(p, extra);
-  p.news.pending.push({ id: `n${p.day}-${p.news.pending.length}-${Math.floor(rng() * 1e6)}`, kind, headline: fill(h, v), body: fill(b, v) });
+  if (SINGLE.includes(kind)) p.news.pending = p.news.pending.filter((n) => n.kind !== kind);
+  p.news.pending.push({ id: `n${p.day}-${p.news.pending.length}-${Math.floor(rng() * 1e6)}`, kind, headline: cap(fill(h, v)), body: cap(fill(b, v)) });
 }
 
 /** Notícia de estreia (edição do primeiro dia). */
@@ -108,17 +121,34 @@ export function onLevel(p: PlayerState, rng: Rng): void {
   }
 }
 
-export function onBattle(p: PlayerState, opp: OpponentDef, won: boolean, firstVictory: boolean, rng: Rng): void {
-  if (won && firstVictory) {
-    if (opp.id === OPPONENTS[OPPONENTS.length - 1].id) add(p, 'champion', T.champion, rng);
-    else {
-      add(p, 'victory', T.victory, rng, { vencido: opp.name, arena: arenaForOpponent(opp.id).name });
-      const next = nextRival(p);
-      if (arenaForOpponent(next.id).id !== arenaForOpponent(opp.id).id) add(p, 'arena', T.arena, rng);
+export function onBattle(
+  p: PlayerState,
+  opp: OpponentDef,
+  won: boolean,
+  firstVictory: boolean,
+  rng: Rng,
+  reason: 'ko' | 'decision' | 'forfeit' = 'ko',
+  prevStreak = 0,
+): void {
+  const where = { vencido: opp.name, vencedor: opp.name, arena: arenaForOpponent(opp.id).name };
+  if (won) {
+    if (firstVictory) {
+      if (opp.id === OPPONENTS[OPPONENTS.length - 1].id) add(p, 'champion', T.champion, rng);
+      else {
+        add(p, 'victory', T.victory, rng, where);
+        const next = nextRival(p);
+        if (arenaForOpponent(next.id).id !== arenaForOpponent(opp.id).id) add(p, 'arena', T.arena, rng);
+      }
     }
+    if (prevStreak <= -2) add(p, 'streak', T.comeback, rng, where);
+    if (p.streak === 3) add(p, 'streak', T.streak3, rng);
+    if (p.streak === 5) add(p, 'streak', T.streak5, rng);
+    if (p.streak === 10) add(p, 'streak', T.streak10, rng);
+  } else {
+    p.news.pending = p.news.pending.filter((n) => n.kind !== 'streak');
+    if (p.streak === -3) add(p, 'defeat', T.slump, rng, where);
+    else add(p, 'defeat', reason === 'forfeit' ? T.lossForfeit : reason === 'decision' ? T.lossDecision : T.lossKo, rng, where);
   }
-  if (p.streak === 3 || p.streak === 5 || p.streak === 10) add(p, 'streak', T.streak, rng, { n: p.streak });
-  if (p.streak === -3) add(p, 'defeat', T.slump, rng);
   checkFame(p, rng);
   onLevel(p, rng);
 }

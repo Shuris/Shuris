@@ -57,6 +57,7 @@ def main():
     gen_scenes.brazier_sheet().save(os.path.join(fx, "brazier.png"))
     gen_scenes.glow_sprite().save(os.path.join(fx, "glow.png"))
     gen_scenes.palus_sheet().save(os.path.join(fx, "palus.png"))
+    gen_locations.monk_sheet().save(os.path.join(fx, "monk.png"))
     sky.sun().save(os.path.join(fx, "sun.png"))
     sky.moon().save(os.path.join(fx, "moon.png"))
     sky.cloud(rng).save(os.path.join(fx, "cloud.png"))

@@ -237,6 +237,31 @@ export class SoundManager {
     this.crowdGain = null;
   }
 
+  private rainGain: GainNode | null = null;
+
+  /** Som contínuo de chuva (0 = desligado). */
+  setRain(intensity: number): void {
+    if (intensity <= 0.02 && !this.rainGain) return;
+    if (!this.ensure()) return;
+    const ctx = this.ctx!;
+    if (!this.rainGain) {
+      const src = ctx.createBufferSource();
+      src.buffer = this.noiseBuf;
+      src.loop = true;
+      const hp = ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 1200;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 6000;
+      this.rainGain = ctx.createGain();
+      this.rainGain.gain.value = 0;
+      src.connect(hp).connect(lp).connect(this.rainGain).connect(this.master!);
+      src.start();
+    }
+    this.rainGain.gain.setTargetAtTime(this.muted ? 0 : intensity * 0.09, ctx.currentTime, 0.5);
+  }
+
   /** Explosão de torcida (golpes fortes, início e fim da luta). */
   cheer(intensity = 1): void {
     if (this.muted || this.volume <= 0 || !this.ensure()) return;

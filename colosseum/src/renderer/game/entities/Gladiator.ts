@@ -68,6 +68,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
       if (!item) continue;
       for (const s of item.visual.sheets) push(s, item.visual.tint ?? 0xffffff);
     }
+    for (const e of v.extra ?? []) push(e.sheet, e.tint ?? 0xffffff);
     const order = new Map(m.layerOrder.map((l, i) => [l, i]));
     entries.sort((x, y) => (order.get(x.layer) ?? 0) - (order.get(y.layer) ?? 0));
     const ox = m.originX / m.frameWidth;

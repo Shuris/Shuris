@@ -357,3 +357,6 @@ em.down { color: var(--red-hi); }
 /* no mapa, o status fica compacto para não cobrir os locais */
 .on-map #statusbar { width: 260px; }
 .on-map #statusbar .bar.xp, .on-map #statusbar .st-res, .on-map #statusbar .btn, .on-map #statusbar .late { display: none; }
+.weather { color: #a8c8f0; font-size: 21px; }
+.monk-say { display: flex; gap: 10px; align-items: center; background: rgba(0, 0, 0, 0.35); border: 2px solid #8e2b23; padding: 6px 10px; margin: 6px 0; font-size: 22px; }
+.monk-say b { color: #e0584a; white-space: nowrap; }
