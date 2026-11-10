@@ -231,3 +231,29 @@ describe('salvamento versão 3', () => {
     }
   });
 });
+
+import { avoidOffset } from '../../src/renderer/game/avoid';
+
+describe('balões de fala não ficam sob as janelas', () => {
+  const bounds = { left: 0, right: 1600, bottom: 900 };
+  it('sem janela por cima, não mexe', () => {
+    expect(avoidOffset({ left: 500, top: 400, right: 700, bottom: 440 }, [], bounds)).toEqual({ dx: 0, dy: 0 });
+  });
+  it('desliza para o lado livre mais próximo (status no canto superior esquerdo)', () => {
+    const status = { left: 10, top: 50, right: 330, bottom: 230 };
+    const off = avoidOffset({ left: 250, top: 150, right: 450, bottom: 190 }, [status], bounds);
+    expect(off.dy).toBe(0);
+    expect(250 + off.dx).toBeGreaterThanOrEqual(330);
+  });
+  it('desvia do painel lateral para a esquerda', () => {
+    const side = { left: 1070, top: 40, right: 1600, bottom: 900 };
+    const off = avoidOffset({ left: 1000, top: 300, right: 1200, bottom: 340 }, [side], bounds);
+    expect(1200 + off.dx).toBeLessThanOrEqual(1070);
+  });
+  it('entre duas janelas, desce', () => {
+    const a = { left: 0, top: 40, right: 600, bottom: 150 };
+    const b = { left: 600, top: 40, right: 1600, bottom: 150 };
+    const off = avoidOffset({ left: 500, top: 100, right: 700, bottom: 140 }, [a, b], bounds);
+    expect(100 + off.dy).toBeGreaterThanOrEqual(150);
+  });
+});

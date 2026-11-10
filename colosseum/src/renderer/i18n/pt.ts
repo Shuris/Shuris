@@ -338,6 +338,7 @@ export const PT = {
   'monk.name': 'Monge Aurelius',
   'monk.continue': 'Continue no seu caminho. O que deseja aprender hoje?',
   'monk.choose': 'Marte, Mercúrio ou Minerva... escolha seu caminho, jovem gladiador.',
+  'temple.rainNote': 'Está chovendo: o monge medita dentro do templo, mas continua ensinando.',
   'monk.later': 'Volte quando tiver mais experiência na arena.',
 
   // ---------------------------------------------------------------- fórum e jornal
@@ -522,6 +523,7 @@ export const PT = {
   'npc.quintus': 'No meu tempo, a arena era de verdade...|Já contei da vez em que lutei contra um urso?|Hic! Mais uma jarra...|Essa cicatriz aqui foi um trácio. Rápido como um raio.',
   'npc.patron': 'Mais uma rodada!|Quem vence a luta de amanhã?|Esse vinho está aguado!|Viva os gladiadores de Cápua!',
   'npc.vendor': 'Figos frescos! Figos de Túsculo!|Olha o pão, olha o pão!|Panos tingidos de Tiro, os melhores!|Azeite da Campânia, barato hoje!',
+  'npc.vendorRain': 'Que chuva! Hoje ninguém compra nada.|Venha para debaixo da tenda, gladiador!|Cuidado com os figos, não podem molhar!|Júpiter está zangado hoje...',
   'npc.shopper': 'Caro demais!|Vou levar dois.|Você viu o gladiador novo?|Esse peixe é de hoje?',
 
   // falas de combate: provocação, resposta, vitória, derrota, ferido e crítico

@@ -339,6 +339,7 @@ export const EN: Record<keyof typeof PT, string> = {
   'monk.name': 'Monk Aurelius',
   'monk.continue': 'Keep to your path. What would you like to learn today?',
   'monk.choose': 'Mars, Mercury or Minerva... choose your path, young gladiator.',
+  'temple.rainNote': 'It is raining: the monk meditates inside the temple, but still teaches.',
   'monk.later': 'Come back when you have more experience in the arena.',
 
   // ---------------------------------------------------------------- forum and paper
@@ -520,6 +521,7 @@ export const EN: Record<keyof typeof PT, string> = {
   'npc.quintus': 'In my day, the arena was the real thing...|Did I ever tell you about the time I fought a bear?|Hic! Another jug...|This scar here was a Thracian. Quick as lightning.',
   'npc.patron': 'Another round!|Who wins tomorrow’s fight?|This wine is watered down!|Long live the gladiators of Capua!',
   'npc.vendor': 'Fresh figs! Figs from Tusculum!|Bread, fresh bread!|Tyrian dyed cloth, the finest!|Campanian olive oil, cheap today!',
+  'npc.vendorRain': 'What a downpour! Nobody is buying today.|Come under the awning, gladiator!|Mind the figs, they can’t get wet!|Jupiter is angry today...',
   'npc.shopper': 'Too expensive!|I’ll take two.|Have you seen the new gladiator?|Is this fish from today?',
 
   'talk.player.reply': 'We’ll see on the sand, {name}.|Talk less, fight more!|Today the victory is mine.|The crowd came to see me, {name}.',

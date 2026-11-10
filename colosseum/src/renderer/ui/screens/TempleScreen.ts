@@ -7,6 +7,7 @@ import { confirmModal, toast } from '../components/feedback';
 import { sound } from '../../audio/SoundManager';
 import type { Screen, ScreenDeps } from './Screen';
 import { t } from '../../i18n';
+import { weatherAt } from '../../core/systems/WeatherSystem';
 import { branchName, branchSubtitle, perkName, perkShort } from '../../i18n/data';
 
 export class TempleScreen implements Screen {
@@ -53,7 +54,8 @@ export class TempleScreen implements Screen {
         ? t('monk.continue')
         : t('monk.choose')
       : t('monk.later');
-    return `<div class="monk-say"><b>${t('monk.name')}:</b><span>“${say}”</span></div>
+    const rain = weatherAt(p.createdAt, p.day, p.minutes).rain > 0.08 ? `<p class="hint">${t('temple.rainNote')}</p>` : '';
+    return `<div class="monk-say"><b>${t('monk.name')}:</b><span>“${say}”</span></div>${rain}
       <div class="row between"><span class="big-num">${p.skillPoints} <small>${t('temple.points')}</small></span>
         <button class="btn sm btn-dark" data-action="respec" ${p.perks.length ? '' : 'disabled'}>${t('temple.respec', { cost: respecCost(p) })}</button></div>
       <div class="tree">${cols}</div>

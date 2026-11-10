@@ -37,6 +37,9 @@ interface Talker {
 }
 
 const GROUND = 312;
+/** intensidade de chuva que tira (e devolve) os figurantes da rua */
+const RAIN_ON = 0.08;
+const RAIN_OFF = 0.03;
 /** fontes de luz de cada local (braseiros/lamparinas) */
 const LIGHTS: Partial<Record<LocationId, Array<[number, number, boolean]>>> = {
   ludus: [[430, 240, true]],
@@ -61,6 +64,10 @@ export class HubScene extends Phaser.Scene {
   private monk: Phaser.GameObjects.Sprite | null = null;
   private monkTimer = 0;
   private talkers: Talker[] = [];
+  private data_!: HubData;
+  /** objetos criados por spawnPeople (refeitos quando começa/para a chuva) */
+  private people: Phaser.GameObjects.GameObject[] = [];
+  private raining = false;
   private chatTimer = 4;
   /** treinos dos outros gladiadores do ludus */
   private drills: Array<{ t: number; period: number; run: () => void }> = [];
@@ -83,21 +90,14 @@ export class HubScene extends Phaser.Scene {
       this.glows.push(this.add.image(x, y - 16, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
     }
     this.heroX = data.location === 'ludus' ? 318 : data.location === 'home' ? 340 : data.location === 'temple' ? 360 : 300;
-    this.npcs = [];
-    this.monk = null;
-    this.talkers = [];
-    this.drills = [];
+    this.data_ = data;
+    this.people = [];
     this.chatTimer = 2.5 + Math.random() * 2;
     const ups = new Set(data.upgrades ?? []);
-    if (data.location === 'market' && data.busy) this.spawnTownsfolk();
-    if (data.location === 'ludus') this.spawnLudus(ups);
-    if (data.location === 'tavern') this.spawnTavern(!!data.busy);
-    if (data.location === 'home') this.spawnHome(ups);
-    if (data.location === 'temple') {
-      this.monk = this.add.sprite(424, GROUND + 2, 'fx:monk', 0).setOrigin(0.5, 1).setDepth(9);
-      this.add.ellipse(424, GROUND, 40, 6, 0x000000, 0.2).setDepth(8);
-      this.talkers.push({ who: { x: 424, y: GROUND }, line: 'monk', head: 46 });
-    }
+    // na chuva ninguém fica ao ar livre: o ludus esvazia, o mercado fica só com os
+    // vendedores debaixo das tendas e o monge medita dentro do templo
+    this.raining = data.outdoor && this.sky.weather.rain > RAIN_ON;
+    this.spawnPeople();
     if (data.location === 'ludus') {
       this.palus = this.add.sprite(352, GROUND, ups.has('iron_palus') ? 'fx:palus_iron' : 'fx:palus', 0).setOrigin(0.5, 1).setDepth(4);
       this.add.ellipse(352, GROUND, 18, 5, 0x000000, 0.25).setDepth(3);
@@ -113,6 +113,41 @@ export class HubScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scale.off(Phaser.Scale.Events.RESIZE, this.layout, this));
   }
 
+
+  /** Cria os figurantes do local (e as melhorias), conforme o tempo. */
+  private spawnPeople(): void {
+    const data = this.data_;
+    const before = new Set(this.children.list);
+    this.npcs = [];
+    this.monk = null;
+    this.talkers = [];
+    this.drills = [];
+    const ups = new Set(data.upgrades ?? []);
+    if (data.location === 'market' && data.busy) this.spawnTownsfolk();
+    if (data.location === 'ludus') this.spawnLudus(ups);
+    if (data.location === 'tavern') this.spawnTavern(!!data.busy);
+    if (data.location === 'home') this.spawnHome(ups);
+    if (data.location === 'temple' && !this.raining) {
+      this.monk = this.add.sprite(424, GROUND + 2, 'fx:monk', 0).setOrigin(0.5, 1).setDepth(9);
+      this.add.ellipse(424, GROUND, 40, 6, 0x000000, 0.2).setDepth(8);
+      this.talkers.push({ who: { x: 424, y: GROUND }, line: 'monk', head: 46 });
+    }
+    this.people = this.children.list.filter((o) => !before.has(o));
+  }
+
+  /** Começou ou parou de chover: refaz os figurantes. */
+  private checkRain(): void {
+    if (!this.data_?.outdoor) return;
+    const r = this.sky.weather.rain;
+    const now = this.raining ? r > RAIN_OFF : r > RAIN_ON;
+    if (now === this.raining) return;
+    this.raining = now;
+    for (const o of this.people) {
+      this.tweens.killTweensOf(o);
+      o.destroy();
+    }
+    this.spawnPeople();
+  }
 
   /** Pessoa da cidade (túnica/estola) ou gladiador de treino. */
   private person(opts: { long?: boolean; gladiator?: boolean; old?: boolean; tint?: number } = {}) {
@@ -139,6 +174,10 @@ export class HubScene extends Phaser.Scene {
     if (ups.has('stone_weights')) this.add.image(300, GROUND - 30, 'fx:up_weights').setOrigin(0.5, 1).setDepth(2);
     if (ups.has('agility_stakes')) this.add.image(244, GROUND - 26, 'fx:up_stakes').setOrigin(0.5, 1).setDepth(2);
     if (ups.has('sand_track')) this.add.image(330, GROUND - 42, 'fx:up_track').setOrigin(0.5, 1).setDepth(1);
+    // segundo poste (os outros gladiadores usam)
+    const palus2 = this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(5).setScale(0.92);
+    // na chuva, os outros gladiadores e o instrutor treinam lá dentro
+    if (this.raining) return;
     // dupla treinando com rúdis e escudo
     const a = new GladiatorView(this, 226, backY, this.person({ gladiator: true }));
     const b = new GladiatorView(this, 258, backY, this.person({ gladiator: true }));
@@ -168,8 +207,7 @@ export class HubScene extends Phaser.Scene {
       },
     });
     this.talkers.push({ who: a, line: 'trainee', head: 44 }, { who: b, line: 'trainee', head: 44 });
-    // gladiador batendo num segundo poste
-    const palus2 = this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(5).setScale(0.92);
+    // gladiador batendo no segundo poste
     const c = new GladiatorView(this, 426, backY, this.person({ gladiator: true }));
     c.setDepth(6);
     c.setBaseScale(0.92);
@@ -181,8 +219,9 @@ export class HubScene extends Phaser.Scene {
       run: () => {
         c.sequence([['attack', 0, 0.2], ['attack', 1, 0.08], ['attack', 2, 0.18], ['attack', 3, 0.25], ['idle', 0, 9]]);
         this.time.delayedCall(290, () => {
+          if (!palus2.active) return;
           palus2.setFrame(1);
-          this.time.delayedCall(110, () => palus2.setFrame(0));
+          this.time.delayedCall(110, () => palus2.active && palus2.setFrame(0));
         });
       },
     });
@@ -264,7 +303,13 @@ export class HubScene extends Phaser.Scene {
       gear: {},
       extra: [{ sheet: long ? 'robe' : 'tunic', tint: [0x4a6aa8, 0xd8c890, 0x9a4a3a, 0x6a8a5a, 0xe8dcc0, 0x7a5a8a][rnd(6)] }],
     });
-    const spots: Array<[number, number, number, number, number]> = [
+    // na chuva: só os dois vendedores, abrigados debaixo das tendas; ninguém passeando
+    const spots: Array<[number, number, number, number, number]> = this.raining
+      ? [
+          [252, GROUND - 50, 4, 0, 1],
+          [410, GROUND - 50, 4, 0, -1],
+        ]
+      : [
       // x, y, profundidade, velocidade, direção
       [230, GROUND - 14, 9, 0, 1],
       [404, GROUND - 14, 9, 0, -1],
@@ -278,7 +323,8 @@ export class HubScene extends Phaser.Scene {
       v.setFacing(dir as 1 | -1);
       v.play(speed ? 'walk' : 'idle', { fps: speed ? 8 : 4 });
       this.npcs.push({ v, speed: speed * dir, min: 186, max: 488, pause: 0 });
-      this.talkers.push({ who: v, line: speed ? 'shopper' : 'vendor', head: 46 });
+      if (this.raining) v.setBaseScale(0.88);
+      this.talkers.push({ who: v, line: this.raining ? 'vendorRain' : speed ? 'shopper' : 'vendor', head: 46 });
     }
   }
 
@@ -391,6 +437,7 @@ export class HubScene extends Phaser.Scene {
     }
     if (this.sky) {
       this.sky.update(dt);
+      this.checkRain();
       const lamp = this.sky.lampStrength;
       for (const g of this.glows) g.setAlpha(lamp * (0.8 + Math.random() * 0.2)).setScale(0.9 + lamp * 0.8);
     }

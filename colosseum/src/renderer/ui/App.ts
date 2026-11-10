@@ -18,6 +18,7 @@ import { publish, unreadCount } from '../core/systems/NewsSystem';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
 import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
 import { worldWeather } from '../game/DayNight';
+import { setSpeechObstacles } from '../game/speech';
 import { createRng, randomSeed } from '../core/systems/rng';
 import { MAX_LEVEL } from '../core/data/gladiators';
 import { bridge, isElectron } from '../platform/bridge';
@@ -111,6 +112,9 @@ export class App implements AppActions {
       const p = this.store.state;
       return weatherAt(p.createdAt, p.day, p.minutes);
     };
+    // balões de fala desviam das janelas da interface
+    const SPEECH_OBSTACLES = '#statusbar:not([hidden]) .status, #side:not([hidden]), #hud:not([hidden]) .plate, #hud:not([hidden]) .hud-timer, #hud:not([hidden]) .hud-log, #hud:not([hidden]) .hud-controls, #toast-root .toast, #exit-fullscreen:not([hidden])';
+    setSpeechObstacles(() => Array.from(this.root.querySelectorAll<HTMLElement>(SPEECH_OBSTACLES), (el) => el.getBoundingClientRect()));
     this.store.onSaveError = (msg) => toast(t('app.saveFailed', { msg }), 'bad', 6000);
     this.store.subscribe(() => this.onStateChange());
 

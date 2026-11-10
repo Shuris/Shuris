@@ -307,6 +307,12 @@ await step('21. Chuva: céu fechado e gotas caindo', async () => {
   assert(w.rain > 0.9 && w.cloud > 0.9, `chovendo (${JSON.stringify(w)})`);
   assert(w.status.includes('Chuva'), 'status mostra chuva');
   await shot('21-rain');
+  // na chuva ninguém fica ao ar livre: ludus vazio e mercado só com os vendedores
+  await goTo('ludus');
+  await win.evaluate((r) => window.__colosseum.store.update((p) => { p.day = r.day; p.minutes = r.mid; }), rainy);
+  await win.waitForTimeout(2500);
+  const ludusNpcs = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').npcs.length);
+  assert(ludusNpcs === 0, `ludus vazio na chuva (${ludusNpcs})`);
   await win.evaluate((b) => window.__colosseum.store.update((p) => { p.day = b.day; p.minutes = b.minutes; }), before);
 });
 
