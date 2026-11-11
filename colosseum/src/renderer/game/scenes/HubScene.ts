@@ -107,7 +107,7 @@ export class HubScene extends Phaser.Scene {
   location: LocationId = 'home';
   sky!: SkyLayer;
   private glows: Phaser.GameObjects.Image[] = [];
-  private npcs: Array<{ v: GladiatorView; speed: number; min: number; max: number; pause: number; leaving?: number }> = [];
+  private npcs: Array<{ v: GladiatorView; speed: number; min: number; max: number; pause: number; leaving?: number; leftAt?: number }> = [];
   /** o local estava aberto na última checagem (para saber quando fecha) */
   private wasOpen = true;
   private openCheck = 0;
@@ -778,6 +778,7 @@ export class HubScene extends Phaser.Scene {
     this.npcs.forEach((n, i) => {
       const left = n.v.x < 330;
       n.leaving = left ? -60 : WORLD.width + 60;
+      n.leftAt = this.time.now;
       n.speed = (left ? -1 : 1) * (24 + (i % 3) * 4);
       n.pause = 0.2 + (i % 4) * 0.35; // não saem todos ao mesmo tempo
       n.v.disableInteractive();
@@ -800,6 +801,12 @@ export class HubScene extends Phaser.Scene {
     for (let i = this.npcs.length - 1; i >= 0; i--) {
       const n = this.npcs[i];
       if (n.leaving === undefined) continue;
+      // em PCs lentos (poucos quadros por segundo) ninguém fica preso saindo: some em até 12 s
+      if (this.time.now - (n.leftAt ?? this.time.now) > 12000) {
+        n.v.destroy();
+        this.npcs.splice(i, 1);
+        continue;
+      }
       n.v.tick(dt);
       if (n.pause > 0) {
         n.pause -= dt;
