@@ -18,6 +18,8 @@ export interface OpponentDef {
   appearance: Appearance;
   /** tipo de gladiador (lutadores avulsos) */
   cls?: string;
+  /** fera da venatio (sem equipamento: garras e presas) */
+  beast?: string;
 }
 
 export const OPPONENTS: OpponentDef[] = [

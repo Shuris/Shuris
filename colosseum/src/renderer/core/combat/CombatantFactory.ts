@@ -7,6 +7,14 @@ import { getItem } from '../data/equipment';
 import { opponentAttributes, type OpponentDef } from '../data/opponents';
 import { opponentFullName } from '../../i18n/data';
 
+/** multiplicadores das feras (dano das garras e vida), calibrados para ~40% de vitória de um gladiador médio do mesmo nível */
+export const BEAST_STATS: Record<string, { damage: number; hp: number; reach: number }> = {
+  wolf: { damage: 1.4, hp: 0.9, reach: 34 },
+  boar: { damage: 1.1, hp: 1.0, reach: 34 },
+  bear: { damage: 1.1, hp: 0.9, reach: 38 },
+  lion: { damage: 1.0, hp: 1.2, reach: 38 },
+};
+
 /** penalidades do ferimento (vida e dano) */
 export const INJURY_HP = 0.85;
 export const INJURY_DAMAGE = 0.9;
@@ -17,6 +25,8 @@ export interface FighterVisual {
   gear: Partial<Record<Slot, ItemDef>>;
   /** roupas extras (moradores da cidade): folha + tinta */
   extra?: Array<{ sheet: string; tint?: number }>;
+  /** fera da venatio (leão, urso, lobo, javali): folha única no lugar das camadas */
+  beast?: string;
 }
 
 /** Aplica os efeitos da árvore de habilidades sobre as estatísticas base. */
@@ -71,8 +81,18 @@ export function opponentCombatant(def: OpponentDef): { spec: CombatantSpec; visu
   const gear = opponentGear(def);
   const attrs = finalAttributes(opponentAttributes(def), gear);
   const perks = opponentPerks(def);
+  const stats = applyPerks(computeCombatStats(attrs, gear), perks);
+  const beast = def.beast ? BEAST_STATS[def.beast] : null;
+  if (beast) {
+    // feras: garras e presas no lugar da arma, quase não bloqueiam
+    stats.damageMul *= beast.damage;
+    stats.maxHp = Math.round(stats.maxHp * beast.hp);
+    stats.blockPower = Math.min(stats.blockPower, 0.1);
+    // alcance das garras/presas (sem arma o alcance não passaria do corpo do adversário)
+    stats.reach = Math.max(stats.reach, beast.reach);
+  }
   return {
-    spec: { name: opponentFullName(def), level: def.level, stats: applyPerks(computeCombatStats(attrs, gear), perks), skills: skillsFromPerks(perks), strategy: def.strategy },
-    visual: { appearance: def.appearance, gear },
+    spec: { name: opponentFullName(def), level: def.level, stats, skills: skillsFromPerks(perks), strategy: def.strategy },
+    visual: { appearance: def.appearance, gear, beast: def.beast },
   };
 }

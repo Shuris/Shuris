@@ -9,10 +9,10 @@ import { ATTRIBUTE_KEYS, SLOTS } from '../model/types';
 import { MAX_ATTRIBUTE, MAX_LEVEL, ORIGINS } from '../data/gladiators';
 import { getItem, MAX_PLUS } from '../data/equipment';
 import { getPoolFighter } from '../data/fighters';
-import type { EventsState, RivalMemory, TournamentRun, TournamentState } from '../model/types';
+import type { CareerState, EventsState, RivalMemory, TournamentRun, TournamentState } from '../model/types';
 import { OPPONENTS, getOpponent } from '../data/opponents';
 import { HISTORY_LIMIT } from './ProgressionSystem';
-import { SAVE_VERSION, sanitizeName } from './PlayerFactory';
+import { SAVE_VERSION, emptyCareer, sanitizeName } from './PlayerFactory';
 import { clamp } from './rng';
 import { t } from '../../i18n';
 
@@ -296,7 +296,75 @@ function v4Fields(p: Obj, w: string[]) {
     injury: inj > 0 ? { days: inj } : null,
     tournament,
     events,
+    career: careerFields(p.career, w),
   };
+}
+
+/** Campos da versão 5 (convites, amizades, missões, ranking, venatio). Saves antigos começam vazios. */
+function careerFields(v: unknown, w: string[]): CareerState {
+  const c = emptyCareer();
+  if (!isObj(v)) return c;
+  const n = (x: unknown, max: number, label: string, min = 0) => int(x, min, min, max, w, `career.${label}`);
+  if (Array.isArray(v.invites)) {
+    c.invites = v.invites
+      .filter((i): i is Obj => isObj(i) && typeof i.id === 'string' && /^[a-z]{2,20}$/.test(i.id as string))
+      .slice(0, 10)
+      .map((i) => ({
+        id: i.id as string,
+        status: i.status === 'done' ? 'done' : 'open',
+        day: n(i.day, 1e7, 'invite.day', 1),
+        won: i.won === true,
+        round: n(i.round, 3, 'invite.round'),
+        foes: Array.isArray(i.foes)
+          ? i.foes.filter((f): f is Obj => isObj(f) && typeof f.id === 'string' && !!getPoolFighter(f.id as string)).slice(0, 4).map((f) => ({ id: f.id as string, level: n(f.level, MAX_LEVEL, 'invite.level', 1) }))
+          : [],
+      }));
+  }
+  if (isObj(v.respect)) {
+    for (const [id, r] of Object.entries(v.respect).slice(0, 100)) if (/^[a-z0-9_]{1,30}$/.test(id)) c.respect[id] = n(r, 100, 'respect');
+  }
+  c.partner = typeof v.partner === 'string' && c.respect[v.partner] !== undefined ? v.partner : null;
+  if (isObj(v.quest) && typeof v.quest.id === 'string' && typeof v.quest.npc === 'string') {
+    const q = v.quest;
+    const kinds = ['beat', 'wins', 'deliver', 'offering', 'train'] as const;
+    const kind = kinds.find((k) => k === q.kind);
+    const rw = isObj(q.reward) ? q.reward : {};
+    if (kind) {
+      c.quest = {
+        id: (q.id as string).slice(0, 30),
+        npc: (q.npc as string).slice(0, 20),
+        kind,
+        target: typeof q.target === 'string' ? q.target.slice(0, 30) : '',
+        need: n(q.need, 100, 'quest.need', 1),
+        progress: n(q.progress, 100, 'quest.progress'),
+        day: n(q.day, 1e7, 'quest.day', 1),
+        expires: n(q.expires, 1e7, 'quest.expires', 1),
+        reward: {
+          coins: n(rw.coins, 1e6, 'quest.coins'),
+          fame: n(rw.fame, 1000, 'quest.fame'),
+          item: typeof rw.item === 'string' && getItem(rw.item) ? rw.item : null,
+        },
+      };
+    }
+  }
+  c.questsDone = n(v.questsDone, 1e5, 'questsDone');
+  c.questDay = n(v.questDay, 1e7, 'questDay');
+  if (Array.isArray(v.rank)) {
+    c.rank = v.rank
+      .filter((r): r is Obj => isObj(r) && typeof r.id === 'string' && (!!getPoolFighter(r.id as string) || !!getOpponent(r.id as string)))
+      .slice(0, 30)
+      .map((r) => ({ id: r.id as string, level: n(r.level, MAX_LEVEL, 'rank.level', 1), pts: n(r.pts, 1e6, 'rank.pts'), w: n(r.w, 1e5, 'rank.w'), l: n(r.l, 1e5, 'rank.l'), prev: n(r.prev, 100, 'rank.prev') }));
+  }
+  c.rankDay = n(v.rankDay, 1e7, 'rankDay');
+  c.rankPts = n(v.rankPts, 1e6, 'rankPts');
+  c.rankPrev = n(v.rankPrev, 100, 'rankPrev');
+  c.talkDay = n(v.talkDay, 1e7, 'talkDay');
+  c.beastDay = n(v.beastDay, 1e7, 'beastDay');
+  c.beastWins = n(v.beastWins, 1e5, 'beastWins');
+  c.duoWins = n(v.duoWins, 1e5, 'duoWins');
+  c.duoDay = n(v.duoDay, 1e7, 'duoDay');
+  c.thumbsUp = n(v.thumbsUp, 1e5, 'thumbsUp');
+  return c;
 }
 
 function tournamentRun(v: unknown): TournamentRun | null {

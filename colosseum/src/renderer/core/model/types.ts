@@ -91,7 +91,7 @@ export interface BattleRecord {
 export type LocationId = 'ludus' | 'home' | 'market' | 'arena' | 'temple' | 'forum' | 'baths' | 'tavern';
 
 /** Tipo de luta: escada de adversários, desafiante avulso, revanche ou torneio. */
-export type FightMode = 'ladder' | 'free' | 'rematch' | 'tournament';
+export type FightMode = 'ladder' | 'free' | 'rematch' | 'tournament' | 'beast' | 'invite' | 'duo';
 
 export interface NewsItem {
   id: string;
@@ -183,6 +183,71 @@ export interface EventsState {
   freeCount: number;
 }
 
+/** Convite de uma arena particular (por fama). */
+export interface InviteState {
+  id: string;
+  status: 'open' | 'done';
+  /** dia em que chegou */
+  day: number;
+  won: boolean;
+  /** torneio por convite: rodada atual (0 = semifinal, 1 = final) e adversários sorteados */
+  round: number;
+  foes: Array<{ id: string; level: number }>;
+}
+
+/** Missão curta de um morador. */
+export interface QuestState {
+  id: string;
+  npc: string;
+  kind: 'beat' | 'wins' | 'deliver' | 'offering' | 'train';
+  /** adversário (beat) ou item (deliver) */
+  target: string;
+  need: number;
+  progress: number;
+  day: number;
+  expires: number;
+  reward: { coins: number; fame: number; item: string | null };
+}
+
+/** Linha do ranking da cidade (os outros gladiadores; o jogador é calculado). */
+export interface RankEntry {
+  id: string;
+  level: number;
+  pts: number;
+  w: number;
+  l: number;
+  /** posição no dia anterior (0 = nova) */
+  prev: number;
+}
+
+/** Versão 5: convites, amizades e duplas, missões, ranking, venatio e plateia. */
+export interface CareerState {
+  invites: InviteState[];
+  /** respeito dos adversários derrotados (0..100); a partir de FRIEND_RESPECT é amigo */
+  respect: Record<string, number>;
+  /** parceiro escolhido para as lutas de dupla */
+  partner: string | null;
+  quest: QuestState | null;
+  questsDone: number;
+  /** último dia em que uma missão terminou ou foi oferecida */
+  questDay: number;
+  rank: RankEntry[];
+  rankDay: number;
+  /** pontos do jogador no ranking e posição de ontem */
+  rankPts: number;
+  rankPrev: number;
+  /** último dia em que conversou com cada rival na taverna (amizade) */
+  talkDay: number;
+  /** último dia em que enfrentou uma fera */
+  beastDay: number;
+  beastWins: number;
+  duoWins: number;
+  /** último dia de luta em dupla */
+  duoDay: number;
+  /** melhor favor da plateia (polegar para cima) */
+  thumbsUp: number;
+}
+
 export interface PlayerState {
   version: number;
   name: string;
@@ -231,6 +296,7 @@ export interface PlayerState {
   injury: { days: number } | null;
   tournament: TournamentState;
   events: EventsState;
+  career: CareerState;
   createdAt: number;
   updatedAt: number;
 }

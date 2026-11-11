@@ -5,15 +5,25 @@ import { getItem } from '../../core/data/equipment';
 import type { BattleRewards } from '../../core/systems/ProgressionSystem';
 import { esc, fmtDuration, icon, itemIcon, rarityName } from '../dom';
 import { t } from '../../i18n';
+import { opponentFullName } from '../../i18n/data';
 
 
-export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDef, again: 'free' | 'retry' | null, energy: number): string {
+export function resultHtml(
+  res: CombatResult,
+  rw: BattleRewards,
+  opp: OpponentDef,
+  again: 'free' | 'retry' | 'final' | null,
+  energy: number,
+  notes: Array<{ text: string; bad?: boolean }> = [],
+  title?: string,
+): string {
   const won = rw.result === 'win';
   const item = rw.itemId ? getItem(rw.itemId) : undefined;
   return `
     <div class="result ${won ? 'win' : 'loss'}">
       <h1>${won ? t('result.victory') : t('result.defeat')}</h1>
-      <p class="subtitle">vs ${esc(opp.name)} · ${t(`reason.${res.reason}` as 'reason.ko')} · ${fmtDuration(res.duration)}</p>
+      ${title ? `<p class="tiny gold center">${esc(title)}</p>` : ''}
+      <p class="subtitle">vs ${esc(opponentFullName(opp).split(',')[0])} · ${t(`reason.${res.reason}` as 'reason.ko')} · ${fmtDuration(res.duration)}</p>
       <div class="rewards-box">
         <div class="reward">${icon('xp')} <b>+${rw.xp}</b> XP</div>
         <div class="reward">${icon('coin')} <b>+${rw.coins}</b> ${t('common.coinsLower')}</div>
@@ -26,12 +36,13 @@ export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDe
       ${rw.mode === 'rematch' && won ? `<div class="unlock">${t('result.rematchWon')}</div>` : ''}
       ${rw.rematchAsked ? `<div class="unlock red">${t('result.rematchAsked', { name: esc(opp.name) })}</div>` : ''}
       ${rw.injuryDays ? `<div class="injury-note">${t('injury.got', { n: rw.injuryDays })}</div>` : ''}
-      ${won || rw.injuryDays ? '' : `<p class="hint">${t('result.noLoss')}</p>`}
+      ${notes.map((n) => `<div class="note ${n.bad ? 'bad' : ''}">${n.text}</div>`).join('')}
+      ${won || rw.injuryDays || rw.mode === 'invite' || rw.mode === 'duo' || notes.some((n) => n.text === t('result.spared')) ? '' : `<p class="hint">${t('result.noLoss')}</p>`}
       <p class="hint">${t('result.energyLeft', { n: Math.round(energy) })}${energy < 35 ? t('result.rest') : ''}</p>
       <div class="row center">
         ${rw.levelUps ? `<button class="btn btn-gold" data-r="points">${t('result.usePoints')}</button>` : ''}
         <button class="btn" data-r="close">${t('common.continue')}</button>
-        ${again ? `<button class="btn btn-red" data-r="again">${again === 'free' ? t('result.nextChallenger') : t('result.retry')}</button>` : ''}
+        ${again ? `<button class="btn btn-red" data-r="again">${again === 'free' ? t('result.nextChallenger') : again === 'final' ? t('invite.fightFinal') : t('result.retry')}</button>` : ''}
       </div>
     </div>`;
 }

@@ -40,6 +40,28 @@ THEMES = {
 }
 ORDER = ["capua", "pompeii", "verona", "leptis", "rome"]
 
+# Arenas particulares (convites por fama). Geradas com RNG próprio, depois das demais.
+PRIVATE = {
+    "villa": dict(
+        name="Arena da Villa de Lucullus", style="stone", seat_top=150, balteus=[], velarium=None, upper="hedge",
+        stone="e6dccb", podium="f2ece0", panel="4a7a4a", trim="b89a4a", floor="cdb98a", banner="4a7a4a",
+        crowd=0.32, scenery="garden", pulvinar=False, nobles=True,
+    ),
+    "senator": dict(
+        name="Anfiteatro do Senador Varro", style="stone", seat_top=128, balteus=[160], velarium=None, upper="hall",
+        stone="8a5a52", podium="d8ccbc", panel="6a1a22", trim="c8a040", floor="bfa478", banner="6a1a22",
+        crowd=0.4, scenery=None, pulvinar=True, nobles=True,
+    ),
+    "baiae": dict(
+        name="Arena de Ouro de Baiae", style="stone", seat_top=113, balteus=[142, 172], velarium=("5a2a7a", "e8c860"),
+        velarium_partial=True, upper="arcade", arcade_top=70, stone="efe2c4", podium="f6f0e2", panel="5a2a7a",
+        trim="e0b840", floor="e8d098", banner="5a2a7a", crowd=0.78, scenery="bay", pulvinar=True, nobles=True,
+    ),
+}
+PRIVATE_ORDER = ["villa", "senator", "baiae"]
+THEMES.update(PRIVATE)
+NOBLE_TUNICS = [hexc("f2ece0"), hexc("e8e0cc"), hexc("6a2a6a"), hexc("8a1a22"), hexc("f0e6d0"), hexc("2a4a7a")]
+
 
 def _scenery(a, kind, rng):
     if kind == "hills":
@@ -73,6 +95,38 @@ def _scenery(a, kind, rng):
             for y in range(top, 60):
                 w = int(4 * math.sin(math.pi * (y - top) / (64 - top)) + 1)
                 fill_rect(a, cx - w, y, cx + w, y + 1, hexc("2f5a34") if y % 3 else hexc("3e6e40"))
+    elif kind == "garden":
+        # villa ao fundo: telhado de telhas, colunata e ciprestes do jardim
+        fill_rect(a, 0, 70, W, 150, hexc("e8dcc4"))
+        fill_rect(a, 0, 58, W, 70, hexc("b4583a"))
+        for x in range(0, W, 8):
+            fill_rect(a, x, 58, x + 1, 70, hexc("8a3a24"))
+        fill_rect(a, 0, 70, W, 73, hexc("f6eedc"))
+        for x in range(10, W, 34):
+            fill_rect(a, x, 73, x + 6, 150, hexc("f6f0e2"))
+            fill_rect(a, x + 5, 73, x + 6, 150, hexc("c8bca4"))
+            fill_rect(a, x + 6, 80, x + 34, 150, hexc("c8b896"))
+        for cx in range(24, W, 68):
+            top = rng.randint(40, 56)
+            for y in range(top, 150):
+                w = int(5 * math.sin(math.pi * min(1, (y - top) / 50)) + 1)
+                fill_rect(a, cx - w, y, cx + w, y + 1, hexc("2f5a34") if y % 3 else hexc("3e6e40"))
+    elif kind == "bay":
+        # golfo de Baiae: mar, vilas na encosta e um farol
+        fill_rect(a, 0, 52, W, 72, hexc("2a6a9a"))
+        for y in range(52, 72, 3):
+            for x in range(rng.randint(0, 9), W, 13):
+                fill_rect(a, x, y, x + 4, y + 1, hexc("6aa8d0"))
+        for x in range(W):
+            h = int(40 + 10 * math.sin(x / 70 + 1) + 4 * math.sin(x / 19))
+            if x > 360:
+                fill_rect(a, x, h, x + 1, 72, hexc("6e8a5a"))
+        for vx in range(380, W, 42):
+            vy = int(46 + 10 * math.sin(vx / 70 + 1))
+            fill_rect(a, vx, vy - 6, vx + 14, vy, hexc("f2ead8"))
+            fill_rect(a, vx - 1, vy - 8, vx + 15, vy - 6, hexc("b4583a"))
+        fill_rect(a, 120, 30, 128, 56, hexc("e8e0cc"))
+        fill_rect(a, 118, 26, 130, 30, hexc("ffd060"))
     elif kind == "palms":
         fill_rect(a, 0, 64, W, 74, hexc("3a7ab0"))  # mar ao longe
         fill_rect(a, 0, 64, W, 65, hexc("8ac0e0"))
@@ -160,6 +214,36 @@ def arena(theme_id, rng):
             fill_rect(a, x, 4, x + 2, 104, hexc("6a4a2a"))
         for x in (180, 460):
             fill_rect(a, x, 4, x + 2, 104, hexc("6a4a2a"))
+    elif t["upper"] == "hedge":
+        # sebe aparada do jardim com vasos e estátuas
+        fill_rect(a, 0, 128, W, 150, hexc("3e6e40"))
+        for x in range(0, W, 6):
+            fill_rect(a, x, 126, x + 4, 128, hexc("4a7e4a"))
+        for x in range(0, W, 3):
+            if rng.random() < 0.3:
+                fill_rect(a, x, rng.randint(130, 148), x + 1, rng.randint(130, 150), hexc("2f5a34"))
+        for x in range(40, W, 120):
+            fill_rect(a, x, 104, x + 12, 128, hexc("f2ece0"))  # pedestal
+            fill_rect(a, x + 3, 88, x + 9, 104, hexc("e6e0d4"))  # estátua
+            fill_rect(a, x + 4, 82, x + 8, 88, hexc("e6e0d4"))
+            fill_rect(a, x + 8, 92, x + 10, 104, hexc("c8c0b0"))
+    elif t["upper"] == "hall":
+        # salão fechado: teto de caixotões, colunas e cortinas vermelhas (sem céu)
+        fill_rect(a, 0, 0, W, 128, hexc("3a2422"))
+        for x in range(0, W, 40):
+            for y in range(0, 36, 18):
+                fill_rect(a, x + 3, y + 3, x + 37, y + 15, hexc("4a2e2a"))
+                fill_rect(a, x + 6, y + 6, x + 34, y + 12, hexc("5a3830"))
+        fill_rect(a, 0, 36, W, 40, hexc("c8a040"))
+        for x in range(16, W, 80):
+            fill_rect(a, x, 40, x + 12, 128, hexc("e8dcc8"))
+            fill_rect(a, x + 10, 40, x + 12, 128, hexc("b8ac98"))
+            fill_rect(a, x - 2, 40, x + 14, 44, hexc("f2ead8"))
+            for k in range(0, 60, 2):
+                fill_rect(a, x + 14 + k // 2, 40, x + 15 + k // 2, 40 + 88 - k, hexc("8a1a22") if (k // 2) % 3 else hexc("6a1018"))
+        for x in range(0, W, 2):
+            fill_rect(a, x, 40, x + 1, 50, hexc("9a2028"))
+        fill_rect(a, 0, 50, W, 52, hexc("c8a040"))
     elif t["upper"] == "fence":
         fill_rect(a, 0, 126, W, 136, hexc("5a3a20"))
         for x in range(0, W, 24):
@@ -315,7 +399,7 @@ def crowd(theme_id, rng, shadow, frames=5, density=None):
                 if t["pulvinar"] and 276 <= x <= 364 and y > 150:
                     blocked = True
                 if not blocked and rng.random() < t["crowd"]:
-                    people.append((x, y, rng.choice(SKINS), rng.choice(HAIRS), rng.choice(TUNICS), rng.random()))
+                    people.append((x, y, rng.choice(SKINS), rng.choice(HAIRS), rng.choice(NOBLE_TUNICS if t.get("nobles") else TUNICS), rng.random()))
                 x += rng.choice((4, 4, 5))
         y += 6
     if t["upper"] in ("attic", "arcade"):

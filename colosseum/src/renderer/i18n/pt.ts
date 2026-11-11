@@ -2,6 +2,7 @@
 // Variantes de uma mesma fala são separadas por "|". Parâmetros: {nome}.
 import { PT06 } from './pt06';
 import { PT07 } from './pt07';
+import { PT08 } from './pt08';
 export const PT_BASE = {
   // ---------------------------------------------------------------- comuns
   'common.back': 'Voltar',
@@ -582,4 +583,4 @@ export const PT_BASE = {
   'talk.flamma.crit': 'Aplaudam!|Para a primeira fila!',
 } as const;
 
-export const PT = { ...PT_BASE, ...PT06, ...PT07 } as const;
+export const PT = { ...PT_BASE, ...PT06, ...PT07, ...PT08 } as const;

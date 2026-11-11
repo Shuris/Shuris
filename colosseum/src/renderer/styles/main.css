@@ -459,3 +459,37 @@ em.down { color: var(--red-hi); }
 .arm-zone { position: absolute; top: 0; bottom: 0; background: rgba(244, 208, 106, 0.75); }
 .arm-marker { position: absolute; top: -6px; width: 6px; height: 28px; margin-left: -3px; background: #fff; border: 1px solid #000; }
 .arm-msg { font-size: 28px; min-height: 34px; margin: 10px 0; }
+
+/* ---------------------------------------------------------------- 0.9: carreira */
+.hud-mid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.favor { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.favor-label { font-size: 12px; color: #e8d8b0; text-shadow: 1px 1px 0 #000; }
+.favor-bar { position: relative; width: 150px; height: 10px; background: #2a1a12; border: 2px solid #120a06; }
+.favor-fill { height: 100%; width: 50%; background: #c8a050; transition: width 0.25s; }
+.favor-fill.hot { background: #f0c040; box-shadow: 0 0 6px #f0c040; }
+.favor-fill.cold { background: #a04030; }
+.favor-mark { position: absolute; top: -3px; width: 2px; height: 14px; background: #fff8; }
+.favor-mark.up { left: 60%; }
+.favor-mark.down { left: 30%; }
+.quest-card { border-left: 4px solid #c8a050; }
+.quest-card.active { border-left-color: #6ab04c; }
+.quest-card .row { gap: 8px; }
+.invite-card { border: 2px solid #c8a040; background: linear-gradient(180deg, #3a2a1a, #2a1c12); }
+.invite-card .row { gap: 8px; align-items: center; margin: 6px 0; }
+.invite-baiae { border-color: #9a6ac8; }
+.venatio-card { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; border: 2px solid #a04030; }
+.duo-card .friends { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.friend-row { display: grid; grid-template-columns: auto 1fr 90px auto; gap: 6px; align-items: center; }
+.friend-row.chosen { background: #c8a04022; }
+.respect { display: block; height: 6px; background: #2a1a12; border: 1px solid #120a06; }
+.respect span { display: block; height: 100%; background: #6ab04c; }
+.duo-foes { gap: 4px; align-items: center; margin-bottom: 6px; }
+.rank-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rank-table th { text-align: left; color: #c8a050; font-weight: normal; border-bottom: 1px solid #5a4030; }
+.rank-table td { padding: 2px 4px; border-bottom: 1px solid #3a2a1e; }
+.rank-table tr.me td { background: #c8a04033; color: #ffe8a0; }
+.rank-table tr.out td { border-top: 2px dashed #5a4030; }
+.rk-up { color: #6ab04c; } .rk-down { color: #d06050; } .rk-same, .rk-new { color: #8a7a6a; }
+.result .note { margin: 4px 0; color: #ffe08a; }
+.result .note.bad { color: #e08070; }
+.drink-row { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; margin: 4px 0; }

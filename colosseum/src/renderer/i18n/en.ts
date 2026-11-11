@@ -2,6 +2,7 @@
 import type { PT, PT_BASE } from './pt';
 import { EN06 } from './en06';
 import { EN07 } from './en07';
+import { EN08 } from './en08';
 
 const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   // ---------------------------------------------------------------- common
@@ -579,4 +580,4 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   'talk.flamma.crit': 'Applaud!|For the front row!',
 };
 
-export const EN: Record<keyof typeof PT, string> = { ...EN_BASE, ...EN06, ...EN07 };
+export const EN: Record<keyof typeof PT, string> = { ...EN_BASE, ...EN06, ...EN07, ...EN08 };

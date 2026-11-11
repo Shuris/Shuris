@@ -35,7 +35,7 @@ export class BattleHud {
         <div class="bar st"><div class="bar-fill" data-st="${side}"></div></div>
       </div>`;
     this.root.innerHTML = `
-      <div class="hud-top">${plate(engine.fighters[0], 0)}<div class="hud-timer" data-timer>2:00</div>${plate(engine.fighters[1], 1)}</div>
+      <div class="hud-top">${plate(engine.fighters[0], 0)}<div class="hud-mid"><div class="hud-timer" data-timer>2:00</div><div class="favor" title="${t('favor.label')}"><span class="favor-label">${t('favor.label')}</span><div class="favor-bar"><div class="favor-fill" data-favor></div><span class="favor-mark up"></span><span class="favor-mark down"></span></div></div></div>${plate(engine.fighters[1], 1)}</div>
       <div class="hud-bottom">
         <div class="hud-log" data-log></div>
         <div class="hud-controls">
@@ -51,6 +51,15 @@ export class BattleHud {
   hide(): void {
     this.root.hidden = true;
     this.root.innerHTML = '';
+  }
+
+  /** Barra do favor da plateia (0..100). */
+  setFavor(f: number): void {
+    const el = this.root.querySelector<HTMLElement>('[data-favor]');
+    if (!el) return;
+    el.style.width = `${Math.round(f)}%`;
+    el.classList.toggle('hot', f >= 60);
+    el.classList.toggle('cold', f < 30);
   }
 
   setSpeed(s: number): void {

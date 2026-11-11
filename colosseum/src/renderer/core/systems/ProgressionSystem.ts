@@ -1,3 +1,4 @@
+import { BEAST_FAME_MUL } from './VenatioSystem';
 import type { BattleRecord, FightMode, PlayerState, Rarity, StrategyId } from '../model/types';
 import { MAX_LEVEL, POINTS_PER_LEVEL } from '../data/gladiators';
 import { ITEMS } from '../data/equipment';
@@ -92,13 +93,14 @@ export function computeRewards(p: PlayerState, opp: OpponentDef, won: boolean, r
     const reputation = mode === 'tournament' ? 0 : -lossFame(opp.level);
     return { xp: Math.max(5, Math.round((30 + 12 * opp.level) * f * 0.2)), coins: 5 + opp.level, reputation, itemId: null, firstVictory };
   }
-  const mul = mode === 'rematch' ? REMATCH_REWARD_MUL : mode === 'free' ? 0.9 : 1;
+  const mul = mode === 'rematch' ? REMATCH_REWARD_MUL : mode === 'free' ? 0.9 : mode === 'beast' ? 1.2 : 1;
   const xp = Math.round((30 + 12 * opp.level) * f * mul);
   const coins = Math.round((20 + 8 * opp.level) * f * mul) + (firstVictory ? 25 + opp.level * 10 : 0);
   const fame = Math.max(1, Math.round((2 + opp.level) * Math.min(1, f))) + (firstVictory ? 5 : 0) + (mode === 'rematch' ? 4 : 0);
-  const reputation = fame * fameMul;
-  const dropChance = firstVictory ? 1 : mode === 'rematch' ? 0.5 : mode === 'free' ? 0.15 : 0.2;
-  const idx = mode === 'free' ? Math.min(OPPONENTS.length - 1, Math.floor(opp.level / 3)) : opponentIndex(opp.id);
+  // venatio: vencer uma fera vale bem mais fama
+  const reputation = Math.round(fame * fameMul * (mode === 'beast' ? BEAST_FAME_MUL : 1)) + (mode === 'beast' ? 5 : 0);
+  const dropChance = firstVictory ? 1 : mode === 'rematch' ? 0.5 : mode === 'free' ? 0.15 : mode === 'beast' ? 0.3 : 0.2;
+  const idx = mode === 'free' || mode === 'beast' ? Math.min(OPPONENTS.length - 1, Math.floor(opp.level / 3)) : opponentIndex(opp.id);
   const itemId = rng() < dropChance ? rollDrop(Math.max(0, idx), rng) : null;
   return { xp, coins, reputation, itemId, firstVictory };
 }
@@ -164,7 +166,8 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
     if (won) rematchAsked = maybeAskRematch(p, opp.id, rng);
   }
   const injuryDays = won ? 0 : applyInjury(p, input.reason, rng);
-  onBattle(p, opp, won, r.firstVictory, rng, input.reason, prevStreak, mode);
+  // a venatio tem as próprias manchetes (a fera não é um gladiador conhecido)
+  if (mode !== 'beast') onBattle(p, opp, won, r.firstVictory, rng, input.reason, prevStreak, mode);
   if (rematchAsked) onRematchAsked(p, opp.id, rng);
   const rec: BattleRecord = {
     id: `b${p.stats.battles}-${input.now ?? Date.now()}`,

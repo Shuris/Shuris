@@ -76,6 +76,10 @@ export class CombatEngine {
     this.timeLimit = opts.timeLimit ?? DEFAULT_TIME_LIMIT;
     this.introDuration = opts.introDuration ?? DEFAULT_INTRO;
     this.fighters = [this.makeFighter(0, a), this.makeFighter(1, b)];
+    opts.startHp?.forEach((hp, i) => {
+      const f = this.fighters[i];
+      if (hp != null && f) f.hp = Math.max(1, Math.min(f.spec.stats.maxHp, Math.round(hp)));
+    });
   }
 
   private makeFighter(side: Side, spec: CombatantSpec): FighterState {

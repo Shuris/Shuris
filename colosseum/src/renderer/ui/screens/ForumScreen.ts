@@ -1,4 +1,5 @@
 // Fórum: as edições do Cápua Times (jornal da cidade).
+import { rankingHtml } from '../components/career';
 import type { Edition, PlayerState } from '../../core/model/types';
 import { newsBody, newsHeadline } from '../../core/systems/NewsSystem';
 import { weekdayName } from '../../core/data/locations';
@@ -51,8 +52,8 @@ export class ForumScreen implements Screen {
   constructor(private readonly d: ScreenDeps) {}
 
   render(p: PlayerState): string {
-    if (!p.news.editions.length) return `<p class="dim">${t('forum.none')}</p>`;
-    return `<div class="editions">${p.news.editions
+    if (!p.news.editions.length) return `${rankingHtml(p)}<p class="dim">${t('forum.none')}</p>`;
+    return `${rankingHtml(p)}<div class="editions">${p.news.editions
       .map(
         (e) => `<button class="edition ${e.read ? '' : 'unread'}" data-action="read" data-id="${e.day}">
           <span class="ed-day">${t('common.dayN', { n: e.day })}</span><span class="ed-head">${esc(e.items[0] ? newsHeadline(e.items[0]) : '')}</span>${e.read ? '' : `<span class="tag gold">${t('forum.new')}</span>`}</button>`,

@@ -4,7 +4,7 @@ import { ITEMS, MAX_PLUS, forgeCost, forgeLevel, getItem, invItem, sellPrice } f
 import { buyFromMerchant, canBuyFromMerchant, merchantHere, merchantSoldOut, merchantStock, nextMerchantDay } from '../../core/systems/EventSystem';
 import { canForge, forgeItem } from '../../core/systems/ForgeSystem';
 import { itemIcon, rarityName } from '../dom';
-import { UPGRADES, canBuyUpgrade, buyUpgrade, getUpgrade, hasUpgrade, type UpgradeId } from '../../core/data/upgrades';
+import { UPGRADES, canBuyUpgrade, buyUpgrade, getUpgrade, hasUpgrade, upgradeVisible, type UpgradeId } from '../../core/data/upgrades';
 import { buyItem, canBuy, isEquipped, sellItem } from '../../core/systems/EquipmentSystem';
 import { esc, icon } from '../dom';
 import { confirmModal, toast } from '../components/feedback';
@@ -40,7 +40,7 @@ export class MarketScreen implements Screen {
   }
 
   private upgrades(p: PlayerState, closed: string | null): string {
-    const rows = UPGRADES.map((u) => {
+    const rows = UPGRADES.filter((u) => upgradeVisible(p, u)).map((u) => {
       const owned = hasUpgrade(p, u.id);
       const err = closed ?? this.upgradeErr(p, u.id);
       const btn = owned
@@ -48,7 +48,7 @@ export class MarketScreen implements Screen {
         : `<button class="btn btn-gold sm" data-action="upgrade" data-id="${u.id}" ${err ? `disabled title="${esc(err)}"` : ''}>${icon('coin', 'xs')} ${u.price}</button>`;
       return `<div class="item-row upgrade ${owned ? 'owned' : ''}">
         <span class="item-icon">${icon(u.icon)}</span>
-        <div class="item-info"><div><b>${esc(tk(`upgrade.${u.id}.name`))}</b> <span class="tag">${esc(locationName(u.place))}</span>${!owned && p.level < u.minLevel ? ` <span class="tag red">${t('common.lv', { n: u.minLevel })}</span>` : ''}</div>
+        <div class="item-info"><div><b>${esc(tk(`upgrade.${u.id}.name`))}</b> <span class="tag">${esc(locationName(u.place))}</span>${u.tier === 2 ? ` <span class="tag gold">${t('market.tier2')}</span>` : ''}${!owned && p.level < u.minLevel ? ` <span class="tag red">${t('common.lv', { n: u.minLevel })}</span>` : ''}</div>
           <div class="item-delta"><em class="up">${esc(tk(`upgrade.${u.id}.desc`))}</em></div></div>
         <div class="item-actions">${btn}</div></div>`;
     }).join('');

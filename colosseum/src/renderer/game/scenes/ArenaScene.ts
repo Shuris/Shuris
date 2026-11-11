@@ -50,6 +50,9 @@ export interface BattleSetup {
   talk?: { opponentId: string; playerName: string; intro?: TalkMoment; portrait?: string; player?: PlayerLook };
   /** dia de festival: arquibancada lotada e enfeitada */
   festival?: boolean;
+  /** luta de dupla: vida inicial de cada lado e os parceiros esperando nos portões */
+  startHp?: [number | null, number | null];
+  bench?: [FighterVisual | null, FighterVisual | null];
 }
 
 export interface BattleHandlers {
@@ -73,6 +76,7 @@ export class ArenaScene extends Phaser.Scene {
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
   private crowd!: Phaser.GameObjects.Sprite;
   private crowdTimer = 0;
+  private benchViews: Array<GladiatorView | null> = [];
   private crowdExcite = 0;
   private crowdFrame = 0;
   private endTimer = -1;
@@ -126,7 +130,7 @@ export class ArenaScene extends Phaser.Scene {
     this.ended = false;
     this.crowdExcite = 1.5;
     this.freeze = 0;
-    this.engine = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed });
+    this.engine = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed, startHp: setup.startHp });
 
     this.sky = new SkyLayer(this, setup.time, 150);
     this.add.image(0, 0, setup.arena.bg).setOrigin(0);
@@ -158,6 +162,16 @@ export class ArenaScene extends Phaser.Scene {
       return v;
     });
     this.prevX = this.engine.fighters.map((f) => f.x);
+    // dupla: quem espera a vez fica no portão do seu lado, torcendo
+    this.benchViews = (setup.bench ?? [null, null]).map((vis, i) => {
+      if (!vis) return null;
+      const b = new GladiatorView(this, i === 0 ? 92 : 548, GROUND_Y - 10, vis);
+      b.setBaseScale(FIGHTER_SCALE * 0.9);
+      b.setFacing(i === 0 ? 1 : -1);
+      b.setDepth(8);
+      b.play('victory', { fps: 3 });
+      return b;
+    });
     this.choreo = [0, 1].map(() => ({ lunge: 0, push: 0, lift: 0, tilt: 0 }));
     // sangue: gotas e manchas na areia; escuro do golpe final (atrás dos lutadores)
     this.blood = [];
@@ -228,6 +242,20 @@ export class ArenaScene extends Phaser.Scene {
     frameCamera(this.cameras.main, { x: 0, y: 160, w: 460 / b, h: 175 / b }, this.insets, { x: cx, y: cy }, 6 * b);
   }
 
+  /** Decisão da plateia no fim da luta: polegar para cima ou para baixo sobre a arena. */
+  showThumb(kind: 'up' | 'down' | 'none'): void {
+    if (kind === 'none' || !this.scene.isActive()) return;
+    const img = this.add
+      .image(this.cameras.main.midPoint.x, 96, thumbTexture(this))
+      .setDepth(600)
+      .setScale(0.2)
+      .setAngle(kind === 'down' ? 180 : 0)
+      .setTint(kind === 'up' ? 0xffe28a : 0xe06a5a);
+    this.tweens.add({ targets: img, scale: 3, duration: 380, ease: 'Back.Out' });
+    this.tweens.add({ targets: img, y: 90, duration: 600, yoyo: true, repeat: 2, ease: 'Sine.InOut' });
+    sound.play(kind === 'up' ? 'horn' : 'defeat');
+  }
+
   forfeit(): void {
     if (this.engine.finished) return;
     this.engine.forfeit(0);
@@ -288,6 +316,7 @@ export class ArenaScene extends Phaser.Scene {
       if (f.action !== 'victory' && f.action !== 'defeat') v.setFacing(f.facing);
       v.tick(dt);
     });
+    for (const b of this.benchViews) b?.tick(dt);
     const mid = (this.views[0].x + this.views[1].x) / 2;
     this.camX += (mid - this.camX) * Math.min(1, dt * 3);
     this.layout();
@@ -748,7 +777,7 @@ export class ArenaScene extends Phaser.Scene {
  * devolve quando começa o ataque que derruba o adversário.
  */
 export function predictFinale(setup: BattleSetup): { attackT: number; impactT: number; side: Side; target: Side } | null {
-  const shadow = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed });
+  const shadow = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed, startHp: setup.startHp });
   const lastAttack: [number, number] = [0, 0];
   while (!shadow.finished && shadow.time < 600) {
     for (const e of shadow.step()) {
@@ -760,3 +789,38 @@ export function predictFinale(setup: BattleSetup): { attackT: number; impactT: n
   }
   return null;
 }
+
+/** Mão com o polegar para cima (pixel art 16x16, desenhada uma vez). */
+function thumbTexture(scene: Phaser.Scene): string {
+  const key = 'fx:thumb';
+  if (scene.textures.exists(key)) return key;
+  const rows = [
+    '......XX........',
+    '.....XooX.......',
+    '.....XooX.......',
+    '.....XooX.......',
+    '.....XooX.......',
+    '....XooooXXXX...',
+    'XXXXooooooooX...',
+    'XooXoooooXXXX...',
+    'XooXooooooooX...',
+    'XooXoooooXXXX...',
+    'XooXooooooooX...',
+    'XooXoooooXXX....',
+    'XooXooooooX.....',
+    'XXXXXXXXXXX.....',
+  ];
+  const tex = scene.textures.createCanvas(key, 16, 16);
+  if (!tex) return key;
+  const ctx = tex.getContext();
+  rows.forEach((r, y) =>
+    [...r].forEach((c, x) => {
+      if (c === '.') return;
+      ctx.fillStyle = c === 'X' ? '#3a2416' : '#ffffff';
+      ctx.fillRect(x, y + 1, 1, 1);
+    }),
+  );
+  tex.refresh();
+  return key;
+}
+

@@ -7,14 +7,35 @@ import { CombatEngine } from '../core/combat/CombatEngine';
 import type { CombatResult } from '../core/combat/CombatTypes';
 import { opponentCombatant, playerCombatant, type FighterVisual } from '../core/combat/CombatantFactory';
 import { getOpponent, type OpponentDef } from '../core/data/opponents';
-import { arenaForOpponent, type ArenaDef } from '../core/data/arenas';
+import { arenaForOpponent, getArena, type ArenaDef } from '../core/data/arenas';
 import { getLocation, hoursLabel, isOpen, weekdayName } from '../core/data/locations';
 import { getItem } from '../core/data/equipment';
-import { applyBattleResult, xpToNext } from '../core/systems/ProgressionSystem';
+import { applyBattleResult, grantXp, xpToNext } from '../core/systems/ProgressionSystem';
 import { createPlayer } from '../core/systems/PlayerFactory';
 import { train as doTrain } from '../core/systems/TrainingSystem';
 import { applyFight, applyTraining, bathe, canFight, canTrain, canTravel, nap, sleep, travel } from '../core/systems/CalendarSystem';
-import { nextRival, onEvent, publish, unreadCount } from '../core/systems/NewsSystem';
+import { nextRival, onCareer, onEvent, publish, unreadCount } from '../core/systems/NewsSystem';
+import { beastOfDay, isVenatioDay, venatioCheck } from '../core/systems/VenatioSystem';
+import { checkInvites, finishInviteFight, inviteFoe, recordSpecialFight } from '../core/systems/InviteSystem';
+import {
+  RESPECT_DUO,
+  RESPECT_FIRST_WIN,
+  RESPECT_REMATCH_WIN,
+  RESPECT_TAVERN,
+  addRespect,
+  duoBout,
+  duoCheck,
+  duoFoes,
+  duoPrize,
+  newDuoRun,
+  partnerDef,
+  setPartner,
+  type DuoRun,
+} from '../core/systems/DuoSystem';
+import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../core/systems/CrowdSystem';
+import { acceptQuest, declineQuest, expireQuest, makeOffering, questOffer, questOnArrive, questOnFight, questOnTrain, type QuestDone } from '../core/systems/QuestSystem';
+import { nightlyRanking, rankFight } from '../core/systems/RankingSystem';
+import { questCard, questText } from './components/career';
 import { recordFightOnly } from '../core/systems/ProgressionSystem';
 import { abandonTournament, checkNoShow, closeTournament, playerMatch, recordPlayerFight, register, startTournament, timeForFight, TOURNAMENT_ENERGY } from '../core/systems/TournamentSystem';
 import { expireRematch, fightDef, introMoment, ladderCheck, rematchActive, seeMedic } from '../core/systems/RivalSystem';
@@ -67,7 +88,23 @@ interface BattleCtx {
   mode: FightMode;
   strategy: PlayerState['strategy'];
   engine: CombatEngine | null;
+  /** favor da plateia (0..100) */
+  favor: number;
+  inviteId?: string;
+  duo?: { run: DuoRun; partner: OpponentDef; foes: [OpponentDef, OpponentDef] };
 }
+
+interface FightPlan {
+  def: OpponentDef;
+  mode: FightMode;
+  arena: ArenaDef;
+  voice: string;
+  intro: TalkMoment;
+  bench?: [OpponentDef | null, OpponentDef | null];
+}
+
+/** Notas extras da tela de resultado (plateia, missões, amizades, convites). */
+type Note = { text: string; bad?: boolean };
 
 const LOCATION_IDS: LocationId[] = ['ludus', 'home', 'market', 'arena', 'temple', 'forum', 'baths', 'tavern'];
 
@@ -87,6 +124,12 @@ export class App implements AppActions {
   readonly weatherOfDay = (day: number) => weatherOfDay(this.store.state.createdAt, day);
   /** dia de visita do mercador (testes E2E) */
   readonly isMerchantDay = (day: number) => isMerchantDay(this.store.state.createdAt, day);
+  /** dia de venatio (testes E2E) */
+  readonly isVenatio = (day: number) => isVenatioDay(this.store.state.createdAt, day);
+  /** confere convites por fama agora (testes E2E) */
+  checkInvitesNow(): void {
+    this.checkNewInvites();
+  }
   private view!: GameView;
   private screens: Record<ScreenId, Screen>;
   private screen: ScreenId = 'home';
@@ -221,6 +264,7 @@ export class App implements AppActions {
         return;
       }
       if (el.dataset.action === 'back') return this.open(this.store.state.location);
+      if (el.dataset.action?.startsWith('career-')) return this.careerAction(el.dataset.action.slice(7), el.dataset.id ?? '');
       this.screens[this.screen].onAction(el.dataset.action ?? '', el, this.store.state);
     };
     panel.addEventListener('click', handle);
@@ -579,7 +623,15 @@ export class App implements AppActions {
     sound.play('step');
     this.view.travelOnMap(to, () => {
       this.busy = false;
-      this.store.update((pl) => travel(pl, to));
+      const delivered = this.store.update((pl) => {
+        travel(pl, to);
+        return questOnArrive(pl, to);
+      });
+      if (delivered) {
+        sound.play('coin');
+        toast(this.questDoneText(delivered), 'gold', 5000);
+        this.checkNewInvites();
+      }
       const loc = getLocation(to);
       if (!isOpen(loc, this.store.state.minutes, this.store.state.day)) toast(t('app.closedNow', { place: locationName(loc.id), hours: hoursLabel(loc, this.store.state.day) }), 'info');
       this.enterLocation();
@@ -591,6 +643,7 @@ export class App implements AppActions {
     this.busy = true;
     const apply = () => {
       let noShow = false;
+      let lostQuest: string | null = null;
       const edition = this.store.update((p) => {
         const rng = createRng(randomSeed());
         // torneio largado no meio e inscrição esquecida
@@ -600,6 +653,9 @@ export class App implements AppActions {
           if (r) onEvent(p, r.reached === 3 ? 'tourneyWin' : 'tourneyOut', rng, { opp: r.champion === 'player' ? '' : r.champion });
         }
         sleep(p);
+        const upset = nightlyRanking(p);
+        if (upset) onCareer(p, 'rankUpset', rng, { opp: upset.winner, rival: upset.loser });
+        lostQuest = expireQuest(p)?.npc ?? null;
         if (checkNoShow(p)) {
           onEvent(p, 'tourneyNoShow', rng);
           noShow = true;
@@ -612,6 +668,7 @@ export class App implements AppActions {
       this.busy = false;
       this.renderPanel();
       if (noShow) toast(t('tour.noShowToast'), 'bad', 5000);
+      if (lostQuest) toast(t('quest.failed', { npc: tk(`quest.npc.${lostQuest}`) }), 'bad', 5000);
       if (edition) setTimeout(() => this.readEdition(edition.day), 1800);
     };
     if (!this.view.playSleep(this.store.state.day + 1, apply)) apply();
@@ -712,8 +769,12 @@ export class App implements AppActions {
       const r = this.store.update((pl) => {
         const res = doTrain(pl, id);
         if (res.ok) applyTraining(pl);
-        return res;
+        return { ...res, quest: res.ok ? questOnTrain(pl) : null };
       });
+      if (r.ok && r.quest) {
+        toast(this.questDoneText(r.quest), 'gold', 5000);
+        this.checkNewInvites();
+      }
       if (!r.ok) {
         toast(r.message, 'bad');
         sound.play('error');
@@ -739,8 +800,35 @@ export class App implements AppActions {
 
   // ---------------------------------------------------------------- batalha
   /** Monta a luta conforme o modo (escada/revanche, desafiante avulso ou torneio). */
-  private prepareFight(p: PlayerState, opts: { mode?: FightMode; opponentId?: string }): { def: OpponentDef; mode: FightMode; arena: ArenaDef; voice: string; intro: TalkMoment } | string {
+  private prepareFight(p: PlayerState, opts: { mode?: FightMode; opponentId?: string; inviteId?: string }): FightPlan | string {
     const cityArena = arenaForOpponent(nextRival(p).id);
+    if (opts.mode === 'beast') {
+      const v = venatioCheck(p);
+      if (v) return t(v === 'done' ? 'venatio.done' : 'venatio.notToday');
+      const err = canFight(p);
+      if (err) return err;
+      return { def: beastOfDay(p), mode: 'beast', arena: cityArena, voice: 'beast', intro: 'intro' };
+    }
+    if (opts.mode === 'invite') {
+      const inv = p.career.invites.find((i) => i.id === opts.inviteId && i.status === 'open');
+      const foe = inv ? inviteFoe(inv) : null;
+      const arena = inv ? getArena(inv.id) : undefined;
+      if (!inv || !foe || !arena) return t('arena.unavailable');
+      // a final do torneio de Baiae é logo depois da semifinal
+      if (inv.round === 0) {
+        const err = canFight(p);
+        if (err) return err;
+      }
+      return { def: foe, mode: 'invite', arena, voice: 'pool', intro: 'intro' };
+    }
+    if (opts.mode === 'duo') {
+      const d = duoCheck(p);
+      if (d) return t(d === 'noPartner' ? 'duo.needPartner' : 'duo.done');
+      const err = canFight(p);
+      if (err) return err;
+      const [f1, f2] = duoFoes(p);
+      return { def: f1, mode: 'duo', arena: cityArena, voice: 'pool', intro: 'intro', bench: [partnerDef(p), f2] };
+    }
     if (opts.mode === 'tournament') {
       const run = p.tournament.run;
       const m = run ? playerMatch(run) : null;
@@ -759,7 +847,7 @@ export class App implements AppActions {
     return { def: fightDef(p, base), mode: rematchActive(p, base.id) ? 'rematch' : 'ladder', arena: arenaForOpponent(base.id), voice: base.id, intro: introMoment(p, base.id) };
   }
 
-  startBattle(opts: { mode?: FightMode; opponentId?: string; injuredOk?: boolean } = {}): void {
+  startBattle(opts: { mode?: FightMode; opponentId?: string; inviteId?: string; injuredOk?: boolean } = {}): void {
     if (this.battle || this.busy || !this.store.hasPlayer) return;
     const p = this.store.state;
     const fight = this.prepareFight(p, opts);
@@ -776,29 +864,57 @@ export class App implements AppActions {
     }
     closeModal();
     const me = playerCombatant(p);
-    const them = opponentCombatant(fight.def);
-    this.battle = { opponent: fight.def, mode: fight.mode, strategy: p.strategy, engine: null };
+    this.battle = {
+      opponent: fight.def,
+      mode: fight.mode,
+      strategy: p.strategy,
+      engine: null,
+      favor: FAVOR_START,
+      inviteId: opts.inviteId,
+      duo: fight.mode === 'duo' && fight.bench?.[0] && fight.bench[1] ? { run: newDuoRun(), partner: fight.bench[0], foes: [fight.def, fight.bench[1]] } : undefined,
+    };
     this.root.classList.add('in-battle');
     $('#side').hidden = true;
     $('#statusbar').hidden = true;
     this.updateLayout();
     music.play('arena');
+    this.launchBout(me, p.level, p.name, fight, [null, null]);
+  }
+
+  /** Começa um assalto na arena (luta comum ou um dos assaltos da dupla). */
+  private launchBout(
+    me: { spec: ReturnType<typeof playerCombatant>['spec']; visual: FighterVisual },
+    myLevel: number,
+    myName: string,
+    fight: FightPlan,
+    startHp: [number | null, number | null],
+  ): void {
+    const p = this.store.state;
+    const them = opponentCombatant(fight.def);
     this.view.startBattle(
       {
         fighters: [me, them],
         arena: fight.arena,
         seed: randomSeed(),
         speed: p.settings.battleSpeed,
-        festival: isFestival(p.day),
-        talk: { opponentId: fight.voice, playerName: p.name, intro: fight.intro, portrait: fight.def.id, player: playerPortraitKey(p) },
+        festival: fight.mode !== 'invite' && isFestival(p.day),
+        talk: { opponentId: fight.voice, playerName: myName, intro: fight.intro, portrait: fight.def.id, player: playerPortraitKey(p) },
+        startHp,
+        bench: fight.bench ? [fight.bench[0] ? opponentCombatant(fight.bench[0]).visual : null, fight.bench[1] ? opponentCombatant(fight.bench[1]).visual : null] : undefined,
       },
       {
         onReady: (engine) => {
           if (!this.battle) return;
           this.battle.engine = engine;
-          this.hud.show(engine, this.store.state.settings.battleSpeed, [p.level, fight.def.level]);
+          this.hud.show(engine, this.store.state.settings.battleSpeed, [myLevel, fight.def.level]);
+          this.hud.setFavor(this.battle.favor);
         },
-        onEvent: (e, engine) => this.hud.event(e, engine),
+        onEvent: (e, engine) => {
+          this.hud.event(e, engine);
+          if (!this.battle) return;
+          this.battle.favor = favorAfter(this.battle.favor, e);
+          this.hud.setFavor(this.battle.favor);
+        },
         onFrame: (engine) => this.hud.update(engine),
         onEnd: (res) => this.finishBattle(res),
         onSpeedReset: () => this.hud.setSpeed(1),
@@ -824,10 +940,14 @@ export class App implements AppActions {
     if (!ctx) return;
     const won = res.winner === 0;
     const rng = createRng(randomSeed());
+    if (ctx.mode === 'duo' && ctx.duo) return this.finishDuoBout(res, ctx, rng);
+    this.view.showThumb(thumbOf(ctx.favor));
+    if (ctx.mode === 'invite' && ctx.inviteId) return this.finishInvite(res, ctx, rng);
     if (ctx.mode === 'tournament') {
       const injury = this.store.update((p) => {
         const inj = recordFightOnly(p, ctx.opponent, won, res.reason, res.duration, ctx.strategy, rng);
         recordPlayerFight(p, won);
+        this.afterFight(p, won, ctx, rng, 0);
         return inj;
       });
       void this.store.flush();
@@ -836,13 +956,27 @@ export class App implements AppActions {
       setTimeout(() => this.showBracket(), 400);
       return;
     }
+    const notes: Note[] = [];
     const rw = this.store.update((p) => {
       applyFight(p);
       if (ctx.mode === 'free') {
         if (p.events.freeDay !== p.day) p.events = { ...p.events, freeDay: p.day, freeCount: 0 };
         p.events.freeCount++;
       }
-      return applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng, mode: ctx.mode });
+      const r = applyBattleResult(p, { opponent: ctx.opponent, won, reason: res.reason, duration: res.duration, strategy: ctx.strategy, rng, mode: ctx.mode });
+      if (ctx.mode === 'beast') {
+        p.career.beastDay = p.day;
+        if (won) {
+          p.career.beastWins++;
+          onCareer(p, 'beastWin', rng);
+        }
+      }
+      // respeito: quem foi vencido de forma limpa passa a respeitar o gladiador
+      if (won && ctx.mode === 'ladder' && r.firstVictory && addRespect(p, ctx.opponent.id, RESPECT_FIRST_WIN)) notes.push({ text: t('duo.newFriend', { name: ctx.opponent.name }) });
+      if (won && ctx.mode === 'rematch' && addRespect(p, ctx.opponent.id, RESPECT_REMATCH_WIN)) notes.push({ text: t('duo.newFriend', { name: ctx.opponent.name }) });
+      const extra = this.afterFight(p, won, ctx, rng, r.reputation, notes);
+      r.reputation += extra;
+      return r;
     });
     this.chanceCache.clear();
     void this.store.flush();
@@ -852,7 +986,7 @@ export class App implements AppActions {
     // revanche só quando o adversário pede: "lutar de novo" existe apenas para tentar
     // de novo quem ainda não foi vencido, ou para enfrentar o próximo desafiante avulso
     const again = ctx.mode === 'free' ? 'free' : ctx.mode === 'ladder' && !won ? 'retry' : null;
-    const m = openModal(resultHtml(res, rw, ctx.opponent, again, p.energy), {
+    const m = openModal(resultHtml(res, rw, ctx.opponent, again, p.energy, notes, ctx.mode === 'beast' ? t('venatio.today') : undefined), {
       cls: 'modal-result',
       onClose: () => {
         if (this.battle) this.exitBattle();
@@ -867,6 +1001,264 @@ export class App implements AppActions {
         this.open('gladiator');
       } else closeModal();
     });
+  }
+
+  /**
+   * Depois de qualquer luta do jogador: decisão da plateia (fama extra ou perdoada),
+   * pontos no ranking, missões e convites que a nova fama liberou.
+   * Retorna a fama extra aplicada (para a tela de resultado).
+   */
+  private afterFight(p: PlayerState, won: boolean, ctx: BattleCtx, rng: ReturnType<typeof createRng>, fameChange: number, notes: Note[] = []): number {
+    let extra = 0;
+    if (sparedByCrowd(ctx.favor, won) && fameChange < 0) {
+      p.reputation -= fameChange;
+      extra -= fameChange;
+      notes.push({ text: t('result.spared') });
+    }
+    const fx = ctx.mode === 'invite' && !won ? 0 : favorFame(ctx.favor, won);
+    if (fx) {
+      p.reputation = Math.max(0, p.reputation + fx);
+      extra += fx;
+      notes.push(fx > 0 ? { text: t('result.thumbUp', { n: fx }) } : { text: t('result.thumbDown', { n: fx }), bad: true });
+    }
+    p.career.thumbsUp = Math.max(p.career.thumbsUp, Math.round(ctx.favor));
+    rankFight(p, won);
+    const q = questOnFight(p, won, ctx.opponent.id, ctx.mode);
+    if (q) notes.push({ text: this.questDoneText(q) });
+    for (const inv of checkInvites(p)) {
+      onCareer(p, 'invite', rng, { arena: inv.id });
+      notes.push({ text: t('invite.arrived', { title: tk(`invite.${inv.id}.title`) }) });
+    }
+    return extra;
+  }
+
+  private questDoneText(q: QuestDone): string {
+    const parts = [t('quest.doneToast', { npc: tk(`quest.npc.${q.quest.npc}`) })];
+    if (q.coins) parts.push(`+${q.coins} ${t('common.coinsLower')}`);
+    if (q.fame) parts.push(`+${q.fame} ${t('common.fameLower')}`);
+    if (q.itemId) parts.push(itemName(getItem(q.itemId)!));
+    return parts.join(' · ');
+  }
+
+  /** Convite: amistoso nas arenas particulares ou o torneio de Baiae (semifinal e final). */
+  private finishInvite(res: CombatResult, ctx: BattleCtx, rng: ReturnType<typeof createRng>): void {
+    const won = res.winner === 0;
+    const id = ctx.inviteId as string;
+    const notes: Note[] = [];
+    let nextFoe: OpponentDef | null = null;
+    const out = this.store.update((p) => {
+      const inv = p.career.invites.find((i) => i.id === id);
+      if (inv && inv.round === 0) applyFight(p);
+      const levelBefore = p.level;
+      const r = finishInviteFight(p, id, won, res.reason, res.duration, rng);
+      if (!r) return null;
+      if (r.champion) notes.push({ text: t('invite.champion') });
+      else if (r.final && inv) {
+        nextFoe = inviteFoe(inv);
+        notes.push({ text: t('invite.toFinal', { name: nextFoe?.name ?? '' }) });
+      } else if (id === 'baiae' && !won) notes.push({ text: t(inv && inv.round === 1 ? 'invite.finalLost' : 'invite.semiLost') });
+      else notes.push({ text: t(won ? 'invite.win' : 'invite.loss') });
+      if (won && r.done) onCareer(p, 'inviteWin', rng, { arena: id });
+      const extra = this.afterFight(p, won, ctx, rng, 0, notes);
+      return { r, extra, levelBefore };
+    });
+    void this.store.flush();
+    if (!out) return this.exitBattle();
+    const { r, extra } = out;
+    if (r.levelUps) setTimeout(() => sound.play('levelup'), 600);
+    if (r.coins) sound.play('coin');
+    const p = this.store.state;
+    const rw = {
+      result: won ? 'win' : 'loss',
+      xp: r.xp,
+      coins: r.coins,
+      reputation: r.fame + extra,
+      itemId: r.itemId,
+      levelUps: r.levelUps,
+      newLevel: p.level,
+      pointsGained: r.levelUps * 3,
+      unlockedOpponent: null,
+      firstVictory: false,
+      injuryDays: 0,
+      rematchAsked: false,
+      festival: false,
+      mode: 'invite',
+    } as const;
+    const m = openModal(resultHtml(res, { ...rw }, ctx.opponent, r.final ? 'final' : null, p.energy, notes, tk(`invite.${id}.title`)), {
+      cls: 'modal-result',
+      onClose: () => {
+        if (this.battle) this.exitBattle();
+      },
+    });
+    m.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('[data-r]')?.getAttribute('data-r');
+      if (!a) return;
+      if (a === 'again' && r.final) {
+        this.battle = null;
+        closeModal();
+        this.hud.hide();
+        this.startBattle({ mode: 'invite', inviteId: id, injuredOk: true });
+      } else if (a === 'points') {
+        closeModal();
+        this.open('gladiator');
+      } else closeModal();
+    });
+  }
+
+  /** Fim de um assalto da luta de dupla: entra o próximo lutador ou a luta acaba. */
+  private finishDuoBout(res: CombatResult, ctx: BattleCtx, rng: ReturnType<typeof createRng>): void {
+    const d = ctx.duo!;
+    const hp: [number, number] = [res.fighters[0].hp, res.fighters[1].hp];
+    const outcome = duoBout(d.run, res.winner, hp);
+    if (outcome === 'next') {
+      const entering = res.winner === 1 ? d.partner.name : d.foes[d.run.b].name;
+      toast(t('duo.next', { name: entering }), 'info', 3000);
+      setTimeout(() => this.nextDuoBout(), 1800);
+      return;
+    }
+    this.view.showThumb(thumbOf(ctx.favor));
+    const won = outcome === 'win';
+    const notes: Note[] = [{ text: t(won ? 'duo.win' : 'duo.loss'), bad: !won }];
+    const out = this.store.update((p) => {
+      applyFight(p);
+      const pr = duoPrize(p, won);
+      p.coins += pr.coins;
+      p.reputation = Math.max(0, p.reputation + pr.fame - (won ? 0 : 2));
+      const levelUps = grantXp(p, pr.xp);
+      p.career.duoDay = p.day;
+      if (won) {
+        p.career.duoWins++;
+        onCareer(p, 'duoWin', rng, { rival: d.partner.id });
+      }
+      p.career.respect[d.partner.id] = Math.min(100, (p.career.respect[d.partner.id] ?? 0) + RESPECT_DUO);
+      notes.push({ text: t('duo.respect', { n: RESPECT_DUO, name: d.partner.name }) });
+      recordSpecialFight(p, d.foes[0], won, res.reason, res.duration, { ...pr, fame: pr.fame - (won ? 0 : 2), itemId: null, levelUps }, Date.now());
+      const extra = this.afterFight(p, won, ctx, rng, won ? 0 : -2, notes);
+      return { pr, levelUps, extra };
+    });
+    void this.store.flush();
+    if (out.levelUps) setTimeout(() => sound.play('levelup'), 600);
+    sound.play('coin');
+    const p = this.store.state;
+    const rw = {
+      result: won ? 'win' : 'loss',
+      xp: out.pr.xp,
+      coins: out.pr.coins,
+      reputation: out.pr.fame - (won ? 0 : 2) + out.extra,
+      itemId: null,
+      levelUps: out.levelUps,
+      newLevel: p.level,
+      pointsGained: out.levelUps * 3,
+      unlockedOpponent: null,
+      firstVictory: false,
+      injuryDays: 0,
+      rematchAsked: false,
+      festival: false,
+      mode: 'duo',
+    } as const;
+    const m = openModal(resultHtml(res, { ...rw }, d.foes[Math.min(1, d.run.b)], null, p.energy, notes, t('duo.title.result')), {
+      cls: 'modal-result',
+      onClose: () => {
+        if (this.battle) this.exitBattle();
+      },
+    });
+    m.addEventListener('click', (e) => {
+      const a = (e.target as HTMLElement).closest('[data-r]')?.getAttribute('data-r');
+      if (a === 'points') {
+        closeModal();
+        this.open('gladiator');
+      } else if (a) closeModal();
+    });
+  }
+
+  /** Próximo assalto da dupla: quem caiu sai e o parceiro entra; o vencedor continua ferido. */
+  private nextDuoBout(): void {
+    const ctx = this.battle;
+    const d = ctx?.duo;
+    if (!ctx || !d) return;
+    const p = this.store.state;
+    const mine = d.run.a === 0;
+    const me = mine ? playerCombatant(p) : opponentCombatant(d.partner);
+    const foe = d.foes[d.run.b];
+    ctx.opponent = foe;
+    this.hud.hide();
+    const cityArena = arenaForOpponent(nextRival(p).id);
+    const plan: FightPlan = {
+      def: foe,
+      mode: 'duo',
+      arena: cityArena,
+      voice: 'pool',
+      intro: 'intro',
+      // no portão fica só quem ainda não lutou
+      bench: [mine ? d.partner : null, d.run.b === 0 ? d.foes[1] : null],
+    };
+    this.launchBout(me, mine ? p.level : (partnerDef(p)?.level ?? p.level), mine ? p.name : d.partner.name, plan, [d.run.ours[d.run.a], d.run.theirs[d.run.b]]);
+  }
+
+  /** Ações da carreira (cartões de missão, convites, venatio, duplas e taverna). */
+  private careerAction(action: string, id: string): void {
+    const p = this.store.state;
+    switch (action) {
+      case 'accept': {
+        const q = questOffer(p, p.location);
+        if (!q) return;
+        this.store.update((pl) => acceptQuest(pl, q));
+        sound.play('equip');
+        toast(`${t('quest.accepted')} ${questText(q)}`, 'good', 4000);
+        return;
+      }
+      case 'decline':
+        this.store.update((pl) => declineQuest(pl));
+        return;
+      case 'offering': {
+        const r = this.store.update((pl) => makeOffering(pl));
+        if (typeof r === 'string') return (sound.play('error'), toast(t(r === 'noCoins' ? 'quest.noCoins' : 'arena.unavailable'), 'bad'));
+        sound.play('levelup');
+        this.view.npcSay('monk', npcLine('monk', Math.floor(Math.random() * 1000)));
+        toast(this.questDoneText(r), 'gold', 5000);
+        this.checkNewInvites();
+        return;
+      }
+      case 'partner':
+        if (this.store.update((pl) => setPartner(pl, id))) {
+          sound.play('equip');
+          toast(t('duo.partnerSet', { name: getOpponent(id)?.name ?? id }), 'good');
+        }
+        return;
+      case 'beast':
+        return this.startBattle({ mode: 'beast' });
+      case 'invite':
+        return this.startBattle({ mode: 'invite', inviteId: id });
+      case 'duo':
+        return this.startBattle({ mode: 'duo' });
+      case 'drink': {
+        // pagar uma rodada para um rival já vencido (amizade), uma vez por dia
+        const cost = 8 + p.level * 2;
+        if (p.career.talkDay === p.day) return (sound.play('error'), toast(t('tavern.drinkDone'), 'bad'));
+        if (p.coins < cost) return (sound.play('error'), toast(t('err.noCoins'), 'bad'));
+        const friend = this.store.update((pl) => {
+          pl.coins -= cost;
+          pl.career.talkDay = pl.day;
+          return addRespect(pl, id, RESPECT_TAVERN);
+        });
+        sound.play('coin');
+        const name = getOpponent(id)?.name ?? id;
+        this.view.npcSay('patron', t('tavern.drinkLine', { name }));
+        toast(friend ? t('duo.newFriend', { name }) : t('duo.respect', { n: RESPECT_TAVERN, name }), friend ? 'gold' : 'good', 4000);
+        return;
+      }
+    }
+  }
+
+  /** Convites que chegaram com fama ganha fora da arena (missões). */
+  private checkNewInvites(): void {
+    const rng = createRng(randomSeed());
+    const fresh = this.store.update((p) => {
+      const f = checkInvites(p);
+      for (const inv of f) onCareer(p, 'invite', rng, { arena: inv.id });
+      return f;
+    });
+    for (const inv of fresh) toast(t('invite.arrived', { title: tk(`invite.${inv.id}.title`) }), 'gold', 6000);
   }
 
   private fightAgain(opts: { mode: FightMode; opponentId?: string }): void {
@@ -1022,7 +1414,8 @@ export class App implements AppActions {
     const loc = (LOCATION_IDS as string[]).includes(this.screen) ? getLocation(this.screen as LocationId) : null;
     const closed = loc && !isOpen(loc, p.minutes, p.day) ? `<div class="closed-note">${t('status.closedNow', { hours: hoursLabel(loc, p.day) })}</div>` : '';
     const head = `<div class="panel-head"><h2>${esc(screen.title)}</h2>${isSheet ? `<button class="btn sm" data-action="back">${t('common.back')}</button>` : ''}</div>`;
-    panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}`;
+    const quest = loc || this.screen === 'map' ? questCard(p, loc ? loc.id : null) : '';
+    panel.innerHTML = `${head}${tip}${closed}${quest}${screen.render(p)}`;
     panel.scrollTop = scroll;
   }
 }

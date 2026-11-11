@@ -30,6 +30,7 @@ import gen_locations  # noqa: E402
 import gen_v05  # noqa: E402
 import gen_v06  # noqa: E402
 import gen_news  # noqa: E402
+import gen_beasts  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -54,6 +55,12 @@ def main():
         # dia de festival: arquibancada lotada
         gen_arenas.crowd(tid, random.Random(tid), shadow, density=0.99).save(os.path.join(bg, f"crowdfest_{tid}.png"))
     gen_scenes.ludus(rng).save(os.path.join(bg, "ludus.png"))
+    # arenas particulares (convites por fama): RNG próprio para não mudar os outros cenários
+    for tid in gen_arenas.PRIVATE_ORDER:
+        prng = random.Random("private-" + tid)
+        img, shadow = gen_arenas.arena(tid, prng)
+        img.save(os.path.join(bg, f"arena_{tid}.png"))
+        gen_arenas.crowd(tid, prng, shadow).save(os.path.join(bg, f"crowd_{tid}.png"))
     for loc in ("home", "market", "temple", "forum", "baths"):
         getattr(gen_locations, loc)(rng).save(os.path.join(bg, f"loc_{loc}.png"))
     gen_locations.city_map(rng).save(os.path.join(bg, "map.png"))
@@ -98,6 +105,15 @@ def main():
     gen_v06.forge().save(os.path.join(fx, "forge.png"))
     gen_v06.arm_table().save(os.path.join(fx, "arm_table.png"))
     gen_v06.crowd_front().save(os.path.join(fx, "crowd_front.png"))
+    # versão 0.9: feras da venatio
+    beasts_dir = os.path.join(ASSETS, "sprites", "beasts")
+    os.makedirs(beasts_dir, exist_ok=True)
+    for name, img in gen_beasts.sheets().items():
+        img.save(os.path.join(beasts_dir, name + ".png"))
+    for name, img in gen_beasts.icons().items():
+        img.save(os.path.join(icons, name + ".png"))
+    for name, img in gen_beasts.portraits().items():
+        img.save(os.path.join(ASSETS, "portraits", name + ".png"))
     for name, img in {**gen_v06.props(), **gen_v06.home_props(), **gen_v06.place_props()}.items():
         img.save(os.path.join(fx, name + ".png"))
     people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))

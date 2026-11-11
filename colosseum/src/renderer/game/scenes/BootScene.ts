@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import { MANIFEST_KEY, getManifest, queueGladiatorSheets } from '../assets';
-import { ARENAS } from '../../core/data/arenas';
+import { ARENAS, PRIVATE_ARENAS } from '../../core/data/arenas';
 
 /** Carrega o manifesto e, em seguida, todas as folhas e cenários. */
 export class BootScene extends Phaser.Scene {
@@ -15,7 +15,7 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     const m = getManifest(this);
     queueGladiatorSheets(this, m);
-    for (const a of ARENAS) {
+    for (const a of [...ARENAS, ...PRIVATE_ARENAS]) {
       this.load.image(a.bg, `assets/backgrounds/arena_${a.id}.png`);
       this.load.spritesheet(a.crowd, `assets/backgrounds/crowd_${a.id}.png`, { frameWidth: 640, frameHeight: 360 });
     }
@@ -28,6 +28,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('bg:map', 'assets/backgrounds/map.png');
     for (const k of ['sun', 'moon', 'cloud']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
+    for (const b of ['lion', 'bear', 'wolf', 'boar']) this.load.spritesheet(`beast:${b}`, `assets/sprites/beasts/beast_${b}.png`, { frameWidth: 112, frameHeight: 88 });
     this.load.spritesheet('fx:lamp_flame', 'assets/sprites/fx/lamp_flame.png', { frameWidth: 6, frameHeight: 8 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');

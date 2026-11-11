@@ -17,6 +17,17 @@ export const ARENAS: ArenaDef[] = [
   { id: 'rome', name: 'Coliseu de Roma', bg: 'bg:arena_rome', crowd: 'bg:crowd_rome' },
 ];
 
+/** Arenas particulares: só por convite (fama). */
+export const PRIVATE_ARENAS: ArenaDef[] = [
+  { id: 'villa', name: 'Arena da Villa de Lucullus', bg: 'bg:arena_villa', crowd: 'bg:crowd_villa' },
+  { id: 'senator', name: 'Anfiteatro do Senador Varro', bg: 'bg:arena_senator', crowd: 'bg:crowd_senator' },
+  { id: 'baiae', name: 'Arena de Ouro de Baiae', bg: 'bg:arena_baiae', crowd: 'bg:crowd_baiae' },
+];
+
+export function getArena(id: string): ArenaDef | undefined {
+  return ARENAS.find((a) => a.id === id) ?? PRIVATE_ARENAS.find((a) => a.id === id);
+}
+
 /** Marcus e Cassius → Cápua; Rufus e Brutus → Pompeia; e assim por diante. */
 export function arenaForOpponent(opponentId: string): ArenaDef {
   const idx = Math.max(0, opponentIndex(opponentId));

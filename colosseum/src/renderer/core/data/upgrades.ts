@@ -2,7 +2,20 @@
 // Nomes e descrições ficam no dicionário de idiomas (upgrade.<id>.name/desc).
 import type { PlayerState, TrainingId } from '../model/types';
 
-export type UpgradeId = 'bed_wool' | 'bed_noble' | 'stone_weights' | 'sand_track' | 'agility_stakes' | 'iron_palus' | 'doctore';
+export type UpgradeId =
+  | 'bed_wool'
+  | 'bed_noble'
+  | 'stone_weights'
+  | 'sand_track'
+  | 'agility_stakes'
+  | 'iron_palus'
+  | 'doctore'
+  // segundo nível das melhorias do ludus (só aparecem depois do primeiro)
+  | 'bronze_weights'
+  | 'long_track'
+  | 'swing_stakes'
+  | 'bronze_palus'
+  | 'doctore_legend';
 
 export interface UpgradeDef {
   id: UpgradeId;
@@ -17,6 +30,8 @@ export interface UpgradeDef {
   /** energia a menos por treino */
   trainEnergyCut?: number;
   icon: string;
+  /** 2 = melhoria de uma melhoria */
+  tier?: number;
 }
 
 export const UPGRADES: UpgradeDef[] = [
@@ -27,7 +42,17 @@ export const UPGRADES: UpgradeDef[] = [
   { id: 'agility_stakes', place: 'ludus', price: 220, minLevel: 3, training: { id: 'agi', mul: 1.35 }, icon: 'up_stakes' },
   { id: 'iron_palus', place: 'ludus', price: 240, minLevel: 3, training: { id: 'tech', mul: 1.35 }, icon: 'up_palus' },
   { id: 'doctore', place: 'ludus', price: 650, minLevel: 8, trainEnergyCut: 3, icon: 'up_doctore' },
+  { id: 'bronze_weights', place: 'ludus', price: 560, minLevel: 7, requires: 'stone_weights', training: { id: 'str', mul: 1.3 }, icon: 'up_weights2', tier: 2 },
+  { id: 'long_track', place: 'ludus', price: 520, minLevel: 7, requires: 'sand_track', training: { id: 'res', mul: 1.3 }, icon: 'up_track2', tier: 2 },
+  { id: 'swing_stakes', place: 'ludus', price: 560, minLevel: 8, requires: 'agility_stakes', training: { id: 'agi', mul: 1.3 }, icon: 'up_stakes2', tier: 2 },
+  { id: 'bronze_palus', place: 'ludus', price: 600, minLevel: 8, requires: 'iron_palus', training: { id: 'tech', mul: 1.3 }, icon: 'up_palus2', tier: 2 },
+  { id: 'doctore_legend', place: 'ludus', price: 1300, minLevel: 12, requires: 'doctore', trainEnergyCut: 3, icon: 'up_doctore2', tier: 2 },
 ];
+
+/** Melhoria que aparece no mercado: as de segundo nível só depois de ter a primeira. */
+export function upgradeVisible(p: PlayerState, u: UpgradeDef): boolean {
+  return !u.tier || u.tier < 2 || !u.requires || hasUpgrade(p, u.requires);
+}
 
 export function getUpgrade(id: string): UpgradeDef | undefined {
   return UPGRADES.find((u) => u.id === id);

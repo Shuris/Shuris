@@ -124,6 +124,11 @@ export class GameView {
     if (this.current === 'arena') this.arena.forfeit();
   }
 
+  /** Polegar da plateia no fim da luta. */
+  showThumb(kind: 'up' | 'down' | 'none'): void {
+    if (this.current === 'arena') this.arena.showThumb(kind);
+  }
+
   playTraining(kind: TrainingId, done: () => void): boolean {
     if (this.current !== 'hub' || !this.hub.scene.isActive()) return false;
     this.hub.playTraining(kind, done);

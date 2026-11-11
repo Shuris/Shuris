@@ -148,6 +148,9 @@ export const EN_ARENAS: Record<string, string> = {
   verona: 'Arena of Verona',
   leptis: 'Amphitheater of Leptis Magna',
   rome: 'Colosseum of Rome',
+  villa: 'Arena of the Villa of Lucullus',
+  senator: 'Amphitheater of Senator Varro',
+  baiae: 'Golden Arena of Baiae',
 };
 
 export const EN_TRAININGS: Record<TrainingId, ND> = {
@@ -171,13 +174,16 @@ export function itemDesc(item: ItemDef): string {
   return (en() && EN_ITEMS[item.id]?.description) || item.description;
 }
 export function opponentEpithet(o: OpponentDef): string {
+  if (o.beast) return tk(`beast.${o.beast}.ep`);
   if (o.cls) return tk(`class.${o.cls}.ep`);
   return (en() && EN_OPPONENTS[o.id]?.epithet) || o.epithet;
 }
 export function opponentFullName(o: OpponentDef): string {
+  if (o.beast) return `${tk(`beast.${o.beast}.name`)}, ${opponentEpithet(o)}`;
   return `${o.name}, ${opponentEpithet(o)}`;
 }
 export function opponentDesc(o: OpponentDef): string {
+  if (o.beast) return tk(`beast.${o.beast}.desc`);
   if (o.cls) return tk(`class.${o.cls}.desc`);
   return (en() && EN_OPPONENTS[o.id]?.description) || o.description;
 }
@@ -199,7 +205,7 @@ import { SKILLS, STRATEGIES } from '../core/data/skills';
 import { ATTRIBUTE_INFO, HAIR_STYLE_NAMES, SKIN_NAMES } from '../core/data/gladiators';
 import { BRANCHES } from '../core/data/skillTree';
 import { getLocation } from '../core/data/locations';
-import { ARENAS, type ArenaDef } from '../core/data/arenas';
+import { getArena, type ArenaDef } from '../core/data/arenas';
 import { RARITY_LABEL } from '../core/data/equipment';
 import { TRAININGS } from '../core/systems/TrainingSystem';
 
@@ -218,7 +224,7 @@ export const branchSubtitle = (b: BranchId) => (en() ? EN_BRANCHES[b].subtitle :
 export const locationName = (id: LocationId) => (en() ? EN_LOCATIONS[id].name : getLocation(id).name);
 export const locationShort = (id: LocationId) => (en() ? EN_LOCATIONS[id].short : getLocation(id).short);
 export const arenaName = (a: ArenaDef | string) => {
-  const def = typeof a === 'string' ? ARENAS.find((x) => x.id === a) : a;
+  const def = typeof a === 'string' ? getArena(a) : a;
   if (!def) return String(a);
   return en() ? (EN_ARENAS[def.id] ?? def.name) : def.name;
 };

@@ -25,6 +25,7 @@ import type { Screen, ScreenDeps } from './Screen';
 import { t, tk } from '../../i18n';
 import { arenaName, opponentDesc, opponentEpithet, strategyName } from '../../i18n/data';
 import { portrait } from '../components/portraits';
+import { duoCard, inviteCards, venatioCard } from '../components/career';
 
 export function difficulty(chance: number): { label: string; cls: string } {
   if (chance >= 0.75) return { label: t('diff.easy'), cls: 'diff-easy' };
@@ -157,7 +158,10 @@ export class MainMenu implements Screen {
       <p class="hint">${t(`strat.hint.${p.strategy}` as 'strat.hint.balanced')}</p>
       <p class="hint center ${fightErr ? 'red' : ''}">${fightErr ?? t('arena.cost', { energy: FIGHT_ENERGY })}</p>
       ${this.challengerCard(p, fightErr)}
+      ${venatioCard(p, fightErr)}
       ${this.tournamentCard(p)}
+      ${inviteCards(p, fightErr)}
+      ${duoCard(p, fightErr)}
       <h3>${t('arena.opponents')}</h3>
       ${detail}
       <div class="fight-box">

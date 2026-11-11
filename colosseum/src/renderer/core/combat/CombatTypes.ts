@@ -122,4 +122,6 @@ export interface CombatOptions {
   timeLimit?: number;
   /** duração da apresentação (entrada na arena) */
   introDuration?: number;
+  /** vida inicial de cada lado (luta de dupla: o vencedor do assalto anterior continua ferido) */
+  startHp?: [number | null, number | null];
 }

@@ -5,9 +5,10 @@
 import type { FightMode, NewsItem, PlayerState } from '../model/types';
 import { getPoolFighter } from '../data/fighters';
 import { isFestival, isMerchantDay } from './EventSystem';
+import { isVenatioDay } from './VenatioSystem';
 import { weekdayIndex } from '../data/locations';
 import { OPPONENTS, getOpponent, type OpponentDef } from '../data/opponents';
-import { ARENAS, arenaForOpponent } from '../data/arenas';
+import { arenaForOpponent, getArena } from '../data/arenas';
 import { getOrigin } from '../data/gladiators';
 import { pick, type Rng } from './rng';
 import { t, tk } from '../../i18n';
@@ -49,6 +50,12 @@ export const NEWS_TPL = {
   tourneyFinal: 1,
   tourneyOut: 1,
   tourneyNoShow: 1,
+  invite: 2,
+  inviteWin: 2,
+  venatio: 2,
+  beastWin: 2,
+  duoWin: 2,
+  rankUpset: 2,
 } as const;
 export type NewsGroup = keyof typeof NEWS_TPL;
 
@@ -84,6 +91,12 @@ const IMAGES: Partial<Record<NewsGroup, string[]>> = {
   tourneyFinal: ['tournament'],
   tourneyOut: ['tournament'],
   tourneyNoShow: ['tournament'],
+  invite: ['colosseum'],
+  inviteWin: ['victory', 'crowd'],
+  venatio: ['crowd'],
+  beastWin: ['crowd', 'victory'],
+  duoWin: ['victory'],
+  rankUpset: ['rival'],
 };
 const CITY_IMAGES = [
   'market', 'forum', 'ship', 'baths', 'theater', 'rain', 'temple', 'market',
@@ -106,7 +119,7 @@ function baseVars(p: PlayerState, extra: Vars = {}): Vars {
 /** Troca os ids das variáveis pelos nomes no idioma atual. */
 function resolve(v: Vars = {}): Vars {
   const opp = (id: unknown) => getOpponent(String(id))?.name ?? getPoolFighter(String(id))?.name ?? String(id ?? '');
-  const arena = ARENAS.find((a) => a.id === v.arena);
+  const arena = getArena(String(v.arena ?? ''));
   return {
     ...v,
     city: t('news.city'),
@@ -227,11 +240,18 @@ export function onEvent(p: PlayerState, group: 'armWin' | 'tourneyWin' | 'tourne
   if (group === 'tourneyWin' || group === 'armWin') illustrate(item, rng, 0.8);
 }
 
+/** Notícias da carreira (versão 0.9): convites, venatio, duplas e ranking. */
+export function onCareer(p: PlayerState, group: 'invite' | 'inviteWin' | 'beastWin' | 'duoWin' | 'rankUpset', rng: Rng, extra: Vars = {}): void {
+  const item = add(p, group === 'rankUpset' ? 'rival' : 'event', group, rng, extra);
+  if (group !== 'rankUpset') illustrate(item, rng, 0.7);
+}
+
 /** Avisos da cidade na edição da manhã: festival, mercador e torneio de sábado. */
 function cityEvents(p: PlayerState, rng: Rng): void {
   if (isFestival(p.day)) illustrate(add(p, 'event', 'festival', rng), rng, 0.8);
   else if (isFestival(p.day + 1)) add(p, 'event', 'festivalSoon', rng);
   if (isMerchantDay(p.createdAt, p.day)) illustrate(add(p, 'event', 'merchant', rng), rng, 0.5);
+  if (isVenatioDay(p.createdAt, p.day)) illustrate(add(p, 'event', 'venatio', rng), rng, 0.5);
   // inscrito: na manhã de sábado o jornal lembra que o torneio é hoje
   if (weekdayIndex(p.day) === 6 && p.tournament.registered === p.day) illustrate(add(p, 'tournament', 'tourneyToday', rng), rng, 0.8);
   else if (weekdayIndex(p.day) === 5) add(p, 'event', 'tourneySoon', rng);
@@ -239,9 +259,9 @@ function cityEvents(p: PlayerState, rng: Rng): void {
 
 /** Ordem de importância (a primeira vence quando duas notícias falam do mesmo assunto). */
 const PRIORITY: NewsGroup[] = [
-  'champion', 'tourneyWin', 'victory', 'rematchWin', 'streak10', 'streak5', 'comeback', 'streak3', 'tourneyFinal',
+  'champion', 'tourneyWin', 'inviteWin', 'beastWin', 'duoWin', 'invite', 'victory', 'rematchWin', 'streak10', 'streak5', 'comeback', 'streak3', 'tourneyFinal',
   'rematchAsk', 'armWin', 'arena', 'level', 'fame', 'rival', 'tavern', 'lossKo', 'lossDecision', 'lossForfeit',
-  'rematchLose', 'slump', 'tourneyOut', 'rematchFled', 'tourneyNoShow',
+  'rematchLose', 'slump', 'tourneyOut', 'rematchFled', 'tourneyNoShow', 'rankUpset',
 ];
 /** Notícias sobre o resultado de lutas: só a mais importante sai na edição. */
 const RESULT: ReadonlySet<NewsGroup> = new Set<NewsGroup>([

@@ -10,6 +10,9 @@ interface Step {
   dur: number;
 }
 
+/** escala das feras em relação ao quadro do gladiador */
+const BEAST_SCALE: Record<string, number> = { wolf: 0.62, boar: 0.62, bear: 0.78, lion: 0.72 };
+
 export class GladiatorView extends Phaser.GameObjects.Container {
   private manifest: GladiatorManifest;
   private layers: Phaser.GameObjects.Sprite[] = [];
@@ -57,6 +60,17 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     this.layers = [];
     this.baseTints = [];
     const m = this.manifest;
+    if (v.beast) {
+      // fera: uma folha só, com os mesmos quadros e animações do gladiador
+      // as folhas das feras são desenhadas maiores; reduzidas para ficar na proporção de um homem
+      const s = this.scene.add.sprite(0, 0, `beast:${v.beast}`, 0).setOrigin(m.originX / m.frameWidth, m.originY / m.frameHeight).setScale(BEAST_SCALE[v.beast] ?? 0.7);
+      this.layers.push(s);
+      this.baseTints.push(0xffffff);
+      this.rig.add(s);
+      this.shadow.setSize(34, 6);
+      this.applyFrame();
+      return;
+    }
     const a = v.appearance;
     const entries: Array<{ sheet: string; tint: number; layer: string; weapon?: string }> = [];
     const push = (sheet: string, tint = 0xffffff) => {

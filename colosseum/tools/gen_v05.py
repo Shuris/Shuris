@@ -268,9 +268,28 @@ def ic_doctore():
     return finish(img)
 
 
+def _tier2(fn, tint):
+    """Versão de segundo nível: tons de bronze e uma estrela dourada no canto."""
+    def make():
+        img = fn().convert("RGBA")
+        a = np.asarray(img, dtype=np.float32)
+        lum = (a[..., 0] * 0.3 + a[..., 1] * 0.59 + a[..., 2] * 0.11)[..., None] / 255.0
+        t = np.array(tint, dtype=np.float32)
+        rgb = np.clip(lum * t * 1.25 + a[..., :3] * 0.25, 0, 255)
+        out = Image.fromarray(np.dstack([rgb, a[..., 3:]]).astype(np.uint8), "RGBA")
+        d = ImageDraw.Draw(out)
+        for x, y in ((13, 1), (12, 2), (13, 2), (14, 2), (13, 3)):
+            d.point((x, y), fill=hexc("ffe070"))
+        return out
+    return make
+
+
 UPGRADE_ICONS = {
     "up_bed": lambda: ic_bed(False), "up_bed2": lambda: ic_bed(True), "up_weights": ic_weights,
     "up_track": ic_track, "up_stakes": ic_stakes, "up_palus": ic_palus, "up_doctore": ic_doctore,
+    "up_weights2": _tier2(ic_weights, (205, 140, 70)), "up_track2": _tier2(ic_track, (210, 160, 90)),
+    "up_stakes2": _tier2(ic_stakes, (200, 135, 75)), "up_palus2": _tier2(ic_palus, (215, 150, 70)),
+    "up_doctore2": _tier2(ic_doctore, (180, 120, 200)),
 }
 
 

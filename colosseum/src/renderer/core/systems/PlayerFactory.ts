@@ -1,4 +1,4 @@
-import type { Appearance, PlayerState } from '../model/types';
+import type { Appearance, CareerState, PlayerState } from '../model/types';
 import { ATTRIBUTE_KEYS } from '../model/types';
 import { BASE_ATTRIBUTE, emptyAttributes, getOrigin } from '../data/gladiators';
 import { OPPONENTS } from '../data/opponents';
@@ -7,7 +7,7 @@ import { debutEdition } from './NewsSystem';
 import { createRng } from './rng';
 import { t } from '../../i18n';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const STARTING_COINS = 150;
 export const MAX_NAME_LENGTH = 20;
 
@@ -76,7 +76,30 @@ function buildPlayer(name: string, originId: string, appearance: Appearance, now
     injury: null,
     tournament: { registered: 0, run: null, titles: 0, best: -1 },
     events: { armDay: 0, armWins: 0, merchantDay: 0, merchantBought: [], freeDay: 0, freeCount: 0 },
+    career: emptyCareer(),
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+/** Estado inicial da carreira (versão 5). */
+export function emptyCareer(): CareerState {
+  return {
+    invites: [],
+    respect: {},
+    partner: null,
+    quest: null,
+    questsDone: 0,
+    questDay: 0,
+    rank: [],
+    rankDay: 0,
+    rankPts: 0,
+    rankPrev: 0,
+    talkDay: 0,
+    beastDay: 0,
+    beastWins: 0,
+    duoWins: 0,
+    duoDay: 0,
+    thumbsUp: 0,
   };
 }

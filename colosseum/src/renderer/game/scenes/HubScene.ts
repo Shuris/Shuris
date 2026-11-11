@@ -154,6 +154,7 @@ export class HubScene extends Phaser.Scene {
     this.spawnPeople();
     if (data.location === 'ludus') {
       this.palus = this.add.sprite(352, GROUND, ups.has('iron_palus') ? 'fx:palus_iron' : 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(GROUND));
+      if (ups.has('bronze_palus')) this.palus.setTint(0xe8a860);
       this.add.ellipse(352, GROUND, 18, 5, 0x000000, 0.25).setDepth(3);
     }
     this.hero = new GladiatorView(this, this.heroX, GROUND, data.visual);
@@ -308,9 +309,12 @@ export class HubScene extends Phaser.Scene {
   private spawnLudusProps(ups: Set<string>): Phaser.GameObjects.Sprite {
     const backY = GROUND - 14;
     // equipamentos comprados no mercado
-    if (ups.has('stone_weights')) this.add.image(300, GROUND - 30, 'fx:up_weights').setOrigin(0.5, 1).setDepth(2);
-    if (ups.has('agility_stakes')) this.add.image(244, GROUND - 26, 'fx:up_stakes').setOrigin(0.5, 1).setDepth(2);
-    if (ups.has('sand_track')) this.add.image(330, GROUND - 42, 'fx:up_track').setOrigin(0.5, 1).setDepth(1);
+    // melhorias de segundo nível: o mesmo equipamento em bronze
+    const bronze = (img: Phaser.GameObjects.Image, on: boolean) => (on ? img.setTint(0xe8a860) : img);
+    if (ups.has('stone_weights')) bronze(this.add.image(300, GROUND - 30, 'fx:up_weights').setOrigin(0.5, 1).setDepth(2), ups.has('bronze_weights'));
+    if (ups.has('bronze_weights')) this.add.image(286, GROUND - 30, 'fx:up_weights').setOrigin(0.5, 1).setDepth(2).setScale(0.8).setTint(0xd89048);
+    if (ups.has('agility_stakes')) bronze(this.add.image(244, GROUND - 26, 'fx:up_stakes').setOrigin(0.5, 1).setDepth(2), ups.has('swing_stakes'));
+    if (ups.has('sand_track')) bronze(this.add.image(330, GROUND - 42, 'fx:up_track').setOrigin(0.5, 1).setDepth(1), ups.has('long_track'));
     // segundo poste (os outros gladiadores usam)
     return this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(backY)).setScale(0.92);
   }
@@ -379,7 +383,7 @@ export class HubScene extends Phaser.Scene {
     });
     this.talkers.push({ who: c, line: 'trainee', head: 44 });
     // o instrutor do ludus (ou o doctore particular comprado no mercado)
-    const doc = new GladiatorView(this, ups.has('doctore') ? 288 : 396, ups.has('doctore') ? GROUND - 4 : backY - 6, { ...this.person({ long: true, old: true, tint: 0x6a2a24 }), gear: { mainHand: getItem('rudis') } });
+    const doc = new GladiatorView(this, ups.has('doctore') ? 288 : 396, ups.has('doctore') ? GROUND - 4 : backY - 6, { ...this.person({ long: true, old: true, tint: ups.has('doctore_legend') ? 0x4a2a6a : 0x6a2a24 }), gear: { mainHand: getItem('rudis') } });
     doc.setDepth(ups.has('doctore') ? 8 : 5);
     doc.setFacing(1);
     doc.play('idle', { fps: 3 });
