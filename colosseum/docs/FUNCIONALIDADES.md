@@ -1,5 +1,11 @@
-# Funcionalidades — versão 0.7.1
+# Funcionalidades — versão 0.7.2
 
+## Novidades da 0.7.2
+- O público em silhueta embaixo da luta agora cobre toda a largura da tela, de ponta a ponta, em qualquer posição da câmera.
+- Com o doctore particular comprado, ele comemora (em balão) cada nível que você ganha treinando no ludus.
+- O ferreiro não fala mais quando melhora um item (o aviso na tela continua).
+
+## Novidades da 0.7.1
 ## Novidades da 0.7.1
 - **Clima do dia inteiro**: cada dia é de sol, nublado ou de chuva (a chuva dura das 0h às 24h). Em dia de chuva a taverna enche, principalmente à noite, e metade dos fregueses comenta o tempo.
 - **Locais fechados ficam vazios** (ludus, mercado, taverna...). Se o lugar fecha enquanto você está lá, as pessoas vão embora andando, cada uma para um lado, em vez de sumir.

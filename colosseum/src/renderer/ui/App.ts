@@ -720,6 +720,10 @@ export class App implements AppActions {
       if (r.attributeGained) sound.play('levelup');
       if (r.levelUps) {
         sound.play('levelup');
+        // o doctore particular (comprado no mercado) comenta cada nível ganho no treino
+        if (this.store.state.upgrades.includes('doctore')) {
+          this.view.npcSay('doctore', npcLine('doctoreLevel', Math.floor(Math.random() * 1000), { name: this.store.state.name, level: this.store.state.level }));
+        }
         toast(t('app.levelUp', { level: this.store.state.level, points: r.levelUps * 3, skill: r.levelUps }), 'gold', 5000);
       }
     };

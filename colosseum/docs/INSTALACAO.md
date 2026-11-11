@@ -6,12 +6,12 @@
 
 ## Instalar
 
-1. Execute **`Colosseum-Setup-0.7.1.exe`**.
+1. Execute **`Colosseum-Setup-0.7.2.exe`**.
 2. Se o SmartScreen avisar "editor desconhecido" (o instalador ainda não tem assinatura
    digital), clique em **Mais informações → Executar assim mesmo**.
 3. Conclua o assistente. São criados atalhos na **área de trabalho** e no **menu Iniciar**.
 
-**Versão portátil:** `Colosseum-Portatil-0.7.1.exe` roda sem instalar.
+**Versão portátil:** `Colosseum-Portatil-0.7.2.exe` roda sem instalar.
 
 ## Desinstalar
 

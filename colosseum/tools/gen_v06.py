@@ -635,7 +635,7 @@ def crowd_front():
     braços abaixados e braços erguidos. Ordem: corpos, depois o brilho das cabeças,
     e por último os braços (sempre na frente, sem nada cortando)."""
     rng = random.Random(42)
-    W, H = 640, 44
+    W, H = 1280, 44
     sheet = new_img(W * 2, H)
     people = []
     # fileira de trás (um pouco mais alta) e fileira da frente, ombro a ombro: sem vãos

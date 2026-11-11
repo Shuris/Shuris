@@ -145,7 +145,6 @@ export class MarketScreen implements Screen {
         toast(r.error, 'bad');
       } else {
         sound.play('forge');
-        this.d.actions.smithSay(t('forge.done', { n: r.plus }));
         toast(t('forge.toast', { name: r.name, n: r.plus }), 'gold', 4000);
         this.d.actions.refreshVisual();
       }

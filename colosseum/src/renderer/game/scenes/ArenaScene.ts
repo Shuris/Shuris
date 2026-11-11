@@ -178,7 +178,7 @@ export class ArenaScene extends Phaser.Scene {
     this.beams = [0, 1, 2].map((i) =>
       this.add.image(150 + i * 170, 150, beamTexture(this)).setOrigin(0.5, 0).setAngle(-24).setScale(1.2 + i * 0.3, 1.1).setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.12).setDepth(3),
     );
-    this.crowdFront = this.add.sprite(320, 326, 'fx:crowd_front', 0).setOrigin(0.5, 0).setDepth(455).setScrollFactor(1.18, 1);
+    this.crowdFront = this.add.sprite(320, 326, 'fx:crowd_front', 0).setOrigin(0.5, 0).setDepth(455);
     applyLook(this, 'arena');
     this.layout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);
