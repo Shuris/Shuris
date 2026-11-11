@@ -1,22 +1,26 @@
-// Clima: alguns dias têm chuva durante parte do dia (determinístico por gladiador e dia).
+// Clima: cada dia é inteiro de sol, nublado ou de chuva (determinístico por gladiador e dia).
 import { createRng } from './rng';
 import { t } from '../../i18n';
 
-export const RAIN_CHANCE = 0.3;
+export const RAIN_CHANCE = 0.25;
+export const CLOUDY_CHANCE = 0.25;
+
+export type DayKind = 'sun' | 'cloudy' | 'rain';
 
 export interface DayWeather {
+  kind: DayKind;
   rainy: boolean;
-  /** início e fim da chuva (minutos do dia) */
+  /** a chuva dura o dia inteiro (0h a 24h) */
   start: number;
   end: number;
 }
 
 export function weatherOfDay(seed: number, day: number): DayWeather {
   const rng = createRng((seed ^ Math.imul(day + 1, 2654435761)) >>> 0);
-  const rainy = day > 1 && rng() < RAIN_CHANCE;
-  const start = 8 * 60 + Math.floor(rng() * 7) * 60; // entre 8h e 14h
-  const end = start + (3 + Math.floor(rng() * 4)) * 60; // dura de 3 a 6 horas
-  return { rainy, start, end };
+  const r = rng();
+  // o primeiro dia é sempre de sol
+  const kind: DayKind = day <= 1 ? 'sun' : r < RAIN_CHANCE ? 'rain' : r < RAIN_CHANCE + CLOUDY_CHANCE ? 'cloudy' : 'sun';
+  return { kind, rainy: kind === 'rain', start: 0, end: 24 * 60 };
 }
 
 export interface WeatherNow {
@@ -26,15 +30,12 @@ export interface WeatherNow {
   rain: number;
 }
 
-/** Intensidade atual, com transição de 40 minutos no começo e no fim da chuva. */
-export function weatherAt(seed: number, day: number, minutes: number): WeatherNow {
+/** Tempo agora: chuva o dia todo, céu fechado o dia todo ou sol. */
+export function weatherAt(seed: number, day: number, _minutes: number): WeatherNow {
   const w = weatherOfDay(seed, day);
-  if (!w.rainy) return { cloud: 0, rain: 0 };
-  const ramp = 40;
-  let rain = 0;
-  if (minutes >= w.start && minutes <= w.end) rain = Math.min(1, (minutes - w.start) / ramp, (w.end - minutes) / ramp);
-  rain = Math.max(0, rain);
-  return { cloud: Math.max(0.55, rain), rain };
+  if (w.kind === 'rain') return { cloud: 1, rain: 1 };
+  if (w.kind === 'cloudy') return { cloud: 0.7, rain: 0 };
+  return { cloud: 0, rain: 0 };
 }
 
 export function weatherLabel(now: WeatherNow): string | null {

@@ -1,6 +1,7 @@
 // Textos em português (idioma original do jogo).
 // Variantes de uma mesma fala são separadas por "|". Parâmetros: {nome}.
 import { PT06 } from './pt06';
+import { PT07 } from './pt07';
 export const PT_BASE = {
   // ---------------------------------------------------------------- comuns
   'common.back': 'Voltar',
@@ -348,7 +349,7 @@ export const PT_BASE = {
   'forum.none': 'Nenhuma edição ainda.',
   'forum.new': 'nova',
   'np.title': 'Cápua Times',
-  'np.price': 'Grátis no Fórum',
+  'np.price': 'Fórum',
   'np.edition': 'Edição nº {n}',
   'np.year': 'Ano {y} da fundação de Roma',
   'np.motto': 'Tudo o que acontece na areia e na cidade',
@@ -581,4 +582,4 @@ export const PT_BASE = {
   'talk.flamma.crit': 'Aplaudam!|Para a primeira fila!',
 } as const;
 
-export const PT = { ...PT_BASE, ...PT06 } as const;
+export const PT = { ...PT_BASE, ...PT06, ...PT07 } as const;

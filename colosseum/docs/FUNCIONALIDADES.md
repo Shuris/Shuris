@@ -1,5 +1,14 @@
-# Funcionalidades — versão 0.7.0
+# Funcionalidades — versão 0.7.1
 
+## Novidades da 0.7.1
+- **Clima do dia inteiro**: cada dia é de sol, nublado ou de chuva (a chuva dura das 0h às 24h). Em dia de chuva a taverna enche, principalmente à noite, e metade dos fregueses comenta o tempo.
+- **Locais fechados ficam vazios** (ludus, mercado, taverna...). Se o lugar fecha enquanto você está lá, as pessoas vão embora andando, cada uma para um lado, em vez de sumir.
+- **Muito mais falas**: cada tipo de morador ganhou de 7 a 16 falas diferentes (monge, aprendizes, instrutor, doctore, taverneira, Quintus, fregueses, vendedores, compradores, ferreiro, médico, mercador, torcida da queda de braço) e há falas novas para os fregueses em dias de chuva.
+- **Jornal**: 22 notícias novas da cidade (Senado, obras, comércio, festas e curiosidades), 14 anúncios novos, e o canto do jornal agora diz só "Fórum".
+- **Luta**: logo depois do golpe final, se a luta estiver em 2x ou 3x, ela volta para 1x.
+- **Visual**: a vinheta ficou bem mais suave, quase imperceptível. Corrigido o público em silhueta na frente da luta (braços e brilho das cabeças se sobrepunham).
+
+## Novidades da 0.7.0
 ## Novidades da 0.7.0
 - **Falas**: o monge fala sozinho a cada 30 segundos. Os outros moradores só falam quando você clica neles; ao passar o mouse, o morador ganha um anel nos pés e reticências sobre a cabeça. Na luta, cada um fala na sua vez: a resposta só aparece depois que o balão do outro some, e todo balão fica pelo menos 3 segundos no ar.
 - **Sangue nas lutas**: cada golpe faz o ferido sangrar; as gotas caem e mancham a areia até o fim da luta; quem está gravemente ferido pinga sangue; no nocaute, uma poça se espalha.

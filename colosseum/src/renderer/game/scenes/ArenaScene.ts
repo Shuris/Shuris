@@ -57,6 +57,8 @@ export interface BattleHandlers {
   onEvent(e: CombatEvent, engine: CombatEngine): void;
   onFrame(engine: CombatEngine): void;
   onEnd(result: CombatResult): void;
+  /** a cena voltou a luta para 1x (depois do golpe final) */
+  onSpeedReset?(): void;
 }
 
 export class ArenaScene extends Phaser.Scene {
@@ -347,7 +349,14 @@ export class ArenaScene extends Phaser.Scene {
     this.tweens.add({ targets: pool, scaleX: 7, scaleY: 3, duration: 2600, delay: 600, ease: 'Sine.easeOut' });
     // volta aos poucos à velocidade normal (relógio real da cena)
     this.time.delayedCall(1100, () => (this.slow = 0.5));
-    this.time.delayedCall(1600, () => (this.slow = 1));
+    this.time.delayedCall(1600, () => {
+      this.slow = 1;
+      // depois do golpe final a luta volta para 1x (se estava mais rápida)
+      if (this.speed > 1) {
+        this.setSpeed(1);
+        this.handlers.onSpeedReset?.();
+      }
+    });
     this.time.delayedCall(1700, () => this.endFinale());
   }
 

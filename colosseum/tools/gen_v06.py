@@ -632,32 +632,44 @@ def news_images_v06(assets_dir, out_dir):
 
 def crowd_front():
     """Silhuetas do público em primeiro plano (embaixo da tela da luta), 2 quadros:
-    braços abaixados e braços erguidos."""
+    braços abaixados e braços erguidos. Ordem: corpos, depois o brilho das cabeças,
+    e por último os braços (sempre na frente, sem nada cortando)."""
     rng = random.Random(42)
     W, H = 640, 44
     sheet = new_img(W * 2, H)
     people = []
+    # fileira de trás (um pouco mais alta) e fileira da frente, ombro a ombro: sem vãos
+    x = -10
+    while x < W + 10:
+        people.append((x, rng.randint(9, 13), rng.choice((1, 2, 2)), rng.random()))
+        x += rng.randint(10, 13)
     x = -4
-    while x < W + 4:
-        people.append((x, rng.randint(6, 14), rng.choice((0, 1, 1, 2)), rng.random()))
-        x += rng.randint(13, 19)
+    while x < W + 10:
+        people.append((x, rng.randint(15, 20), rng.choice((1, 1, 2)), rng.random()))
+        x += rng.randint(10, 13)
     for f in range(2):
         img = new_img(W, H)
         d = ImageDraw.Draw(img)
+        col_of = lambda ph: (28 + int(ph * 14), 18 + int(ph * 8), 14, 255)
         for (px, top, build, ph) in people:
-            col = (28 + int(ph * 14), 18 + int(ph * 8), 14, 255)
             sw = 7 + build * 2
-            d.ellipse([px - 5, top, px + 5, top + 11], fill=col)                  # cabeça
-            d.rounded_rectangle([px - sw, top + 10, px + sw, H + 4], radius=5, fill=col)  # ombros
+            d.ellipse([px - 5, top, px + 5, top + 11], fill=col_of(ph))
+            d.rounded_rectangle([px - sw, top + 10, px + sw, H + 4], radius=5, fill=col_of(ph))
+        for (px, top, build, ph) in people:
+            d.arc([px - 5, top, px + 5, top + 11], 200, 340, fill=(110, 70, 40, 255))
+        for (px, top, build, ph) in people:
+            sw = 7 + build * 2
             up = (f == 1) == (ph < 0.55)
-            if up:  # braços erguidos (punho para cima)
-                side = -1 if ph < 0.3 else 1
-                d.line([(px + side * (sw - 2), top + 13), (px + side * (sw + 3), top - 6)], fill=col, width=4)
-                d.ellipse([px + side * (sw + 3) - 3, top - 10, px + side * (sw + 3) + 3, top - 4], fill=col)
-                if ph < 0.15:
-                    d.line([(px - side * (sw - 2), top + 13), (px - side * (sw + 2), top - 4)], fill=col, width=4)
-            # contorno de luz quente no topo das cabeças
-            d.arc([px - 5, top, px + 5, top + 11], 200, 340, fill=(120, 74, 40, 255))
+            if not up:
+                continue
+            col = col_of(ph)
+            side = -1 if ph < 0.3 else 1
+            sx, sy = px + side * (sw - 2), top + 13          # ombro
+            ex, ey = px + side * (sw + 2), top + 4           # cotovelo
+            hx, hy = px + side * (sw + 1), top - 5           # punho
+            d.line([(sx, sy), (ex, ey)], fill=col, width=4)
+            d.line([(ex, ey), (hx, hy)], fill=col, width=4)
+            d.ellipse([hx - 3, hy - 3, hx + 3, hy + 3], fill=col)
         sheet.alpha_composite(img, (f * W, 0))
     return sheet
 

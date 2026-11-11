@@ -31,6 +31,12 @@ export interface HubData {
   upgrades?: string[];
   /** cena sem o gladiador (fundo do menu principal) */
   hideHero?: boolean;
+  /** o local está aberto agora? (fechado = ninguém lá; se fechar, todos vão embora) */
+  openNow?: () => boolean;
+  /** dia de chuva (a taverna enche, principalmente à noite) */
+  rainyDay?: boolean;
+  /** minutos do dia ao entrar (noite = mais gente na taverna) */
+  minutes?: number;
   /** eventos do dia: festival, mercador, queda de braço, ferido */
   festival?: boolean;
   merchant?: boolean;
@@ -87,7 +93,10 @@ export class HubScene extends Phaser.Scene {
   location: LocationId = 'home';
   sky!: SkyLayer;
   private glows: Phaser.GameObjects.Image[] = [];
-  private npcs: Array<{ v: GladiatorView; speed: number; min: number; max: number; pause: number }> = [];
+  private npcs: Array<{ v: GladiatorView; speed: number; min: number; max: number; pause: number; leaving?: number }> = [];
+  /** o local estava aberto na última checagem (para saber quando fecha) */
+  private wasOpen = true;
+  private openCheck = 0;
   private monk: Phaser.GameObjects.Sprite | null = null;
   private monkTimer = 0;
   private talkers: Talker[] = [];
@@ -214,10 +223,14 @@ export class HubScene extends Phaser.Scene {
     this.talkers = [];
     this.drills = [];
     const ups = new Set(data.upgrades ?? []);
-    if (data.location === 'market' && data.busy) this.spawnTownsfolk();
-    if (data.location === 'market') this.spawnMarketExtras(!!data.busy, !!data.merchant);
-    if (data.location === 'ludus') this.spawnLudus(ups);
-    if (data.location === 'tavern') this.spawnTavern(!!data.busy);
+    // local fechado: ninguém lá dentro
+    const open = data.openNow ? data.openNow() : data.busy !== false;
+    this.wasOpen = open;
+    if (data.location === 'market' && open) this.spawnTownsfolk();
+    if (data.location === 'market') this.spawnMarketExtras(open, !!data.merchant);
+    if (data.location === 'ludus' && open) this.spawnLudus(ups);
+    else if (data.location === 'ludus') this.spawnLudusProps(ups);
+    if (data.location === 'tavern' && open) this.spawnTavern(true);
     if (data.location === 'home') this.spawnHome(ups);
     if (data.location === 'temple' && !this.raining) {
       this.monk = this.add.sprite(424, GROUND + 2, 'fx:monk', 0).setOrigin(0.5, 1).setDepth(depthAt(GROUND + 2));
@@ -264,14 +277,20 @@ export class HubScene extends Phaser.Scene {
   }
 
   /** Ludus: outros gladiadores treinando (duelo de treino, poste e corrida) e as melhorias compradas. */
-  private spawnLudus(ups: Set<string>): void {
+  /** Equipamentos do ludus (aparecem mesmo com o ludus fechado). */
+  private spawnLudusProps(ups: Set<string>): Phaser.GameObjects.Sprite {
     const backY = GROUND - 14;
     // equipamentos comprados no mercado
     if (ups.has('stone_weights')) this.add.image(300, GROUND - 30, 'fx:up_weights').setOrigin(0.5, 1).setDepth(2);
     if (ups.has('agility_stakes')) this.add.image(244, GROUND - 26, 'fx:up_stakes').setOrigin(0.5, 1).setDepth(2);
     if (ups.has('sand_track')) this.add.image(330, GROUND - 42, 'fx:up_track').setOrigin(0.5, 1).setDepth(1);
     // segundo poste (os outros gladiadores usam)
-    const palus2 = this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(backY)).setScale(0.92);
+    return this.add.sprite(452, backY, 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(backY)).setScale(0.92);
+  }
+
+  private spawnLudus(ups: Set<string>): void {
+    const backY = GROUND - 14;
+    const palus2 = this.spawnLudusProps(ups);
     // na chuva, os outros gladiadores e o instrutor treinam lá dentro
     if (this.raining) return;
     // o médico do ludus (Galeno), perto da entrada
@@ -364,13 +383,28 @@ export class HubScene extends Phaser.Scene {
       [252, GROUND + 14, 1, false],
       [452, GROUND + 10, -1, true],
     ];
+    // dia de chuva enche a taverna (e mais ainda à noite)
+    const night = (this.data_.minutes ?? 0) >= 19 * 60;
+    const extra: Array<[number, number, 1 | -1, boolean]> = [
+      [158, GROUND + 6, 1, false],
+      [520, GROUND + 12, -1, false],
+      [384, GROUND + 18, 1, true],
+      [190, GROUND + 20, 1, true],
+      [560, GROUND + 4, -1, true],
+      [330, GROUND + 22, -1, false],
+      [228, GROUND - 22, 1, false],
+      [480, GROUND + 22, -1, false],
+    ];
+    const more = (this.data_.rainyDay ? 3 : 0) + (night ? 2 : 0) + (this.data_.rainyDay && night ? 3 : 0);
+    spots.push(...extra.slice(0, more));
     for (const [x0, y, dir, glad] of spots) {
       const x = this.freeX(x0, y);
       const v = new GladiatorView(this, x, y, glad ? { ...this.person({ gladiator: true }), gear: {} } : this.person());
       v.setFacing(dir);
       v.play('idle', { fps: 3 + Math.random() * 2 });
       this.npcs.push({ v, speed: 0, min: x, max: x, pause: 0 });
-      this.talkers.push({ who: v, line: 'patron', head: 46 });
+      // em dia de chuva, metade dos fregueses comenta o tempo
+      this.talkers.push({ who: v, line: this.data_.rainyDay && this.talkers.length % 2 ? 'patronRain' : 'patron', head: 46 });
     }
   }
 
@@ -490,7 +524,7 @@ export class HubScene extends Phaser.Scene {
 
   /** Fala de um figurante agora (usado pela interface: taverna, templo). */
   say(kind: string, text: string): boolean {
-    const tk = this.talkers.find((x) => x.line === kind || (kind === 'medic' && x.line === 'medicInjured') || (kind === 'patron' && x.line === 'armCheer'));
+    const tk = this.talkers.find((x) => x.line === kind || (kind === 'medic' && x.line === 'medicInjured') || (kind === 'patron' && (x.line === 'armCheer' || x.line === 'patronRain')));
     if (!tk) return false;
     speech(this, tk.who, text, { head: tk.head, ms: 5200, insetRight: () => this.insets.right });
     return true;
@@ -534,8 +568,57 @@ export class HubScene extends Phaser.Scene {
     }
   }
 
+  /** O local fechou com gente dentro: todos vão embora andando, cada um para um lado. */
+  private departAll(): void {
+    this.drills = [];
+    this.talkers = this.talkers.filter((t) => t.auto);
+    for (const h of this.hovers) {
+      h.ring.setVisible(false);
+      h.mark.setVisible(false);
+    }
+    this.hovers = [];
+    this.npcs.forEach((n, i) => {
+      const left = n.v.x < 330;
+      n.leaving = left ? -60 : WORLD.width + 60;
+      n.speed = (left ? -1 : 1) * (24 + (i % 3) * 4);
+      n.pause = 0.2 + (i % 4) * 0.35; // não saem todos ao mesmo tempo
+      n.v.disableInteractive();
+    });
+  }
+
   private updateNpcs(dt: number): void {
+    // abriu ou fechou enquanto o jogador está aqui
+    this.openCheck -= dt;
+    if (this.openCheck <= 0 && this.data_?.openNow) {
+      this.openCheck = 0.5;
+      const open = this.data_.openNow();
+      if (this.wasOpen && !open) this.departAll();
+      else if (!this.wasOpen && open && !this.npcs.length) {
+        for (const o of this.people) o.destroy();
+        this.spawnPeople();
+      }
+      this.wasOpen = open;
+    }
+    for (let i = this.npcs.length - 1; i >= 0; i--) {
+      const n = this.npcs[i];
+      if (n.leaving === undefined) continue;
+      n.v.tick(dt);
+      if (n.pause > 0) {
+        n.pause -= dt;
+        if (n.pause <= 0) {
+          n.v.setFacing(n.speed > 0 ? 1 : -1);
+          n.v.play('walk', { fps: 8 });
+        }
+        continue;
+      }
+      n.v.x += n.speed * dt;
+      if ((n.speed < 0 && n.v.x <= n.leaving) || (n.speed > 0 && n.v.x >= n.leaving)) {
+        n.v.destroy();
+        this.npcs.splice(i, 1);
+      }
+    }
     for (const n of this.npcs) {
+      if (n.leaving !== undefined) continue;
       n.v.tick(dt);
       if (!n.speed) continue;
       if (n.pause > 0) {

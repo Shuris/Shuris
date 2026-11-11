@@ -527,6 +527,9 @@ export class App implements AppActions {
         armNight: isArmNight(p.day, p.minutes),
         injured: !!p.injury,
         heroLook: playerPortraitKey(p),
+        openNow: () => this.store.hasPlayer && isOpen(loc, this.store.state.minutes, this.store.state.day),
+        rainyDay: weatherOfDay(p.createdAt, p.day).rainy,
+        minutes: p.minutes,
       });
     }
     $('#side').hidden = false;
@@ -789,6 +792,7 @@ export class App implements AppActions {
         onEvent: (e, engine) => this.hud.event(e, engine),
         onFrame: (engine) => this.hud.update(engine),
         onEnd: (res) => this.finishBattle(res),
+        onSpeedReset: () => this.hud.setSpeed(1),
       },
     );
   }

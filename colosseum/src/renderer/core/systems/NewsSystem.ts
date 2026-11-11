@@ -33,7 +33,7 @@ export const NEWS_TPL = {
   slump: 1,
   level: 2,
   rival: 3,
-  city: 8,
+  city: 30,
   tavern: 2,
   rematchAsk: 2,
   rematchWin: 1,
@@ -83,7 +83,11 @@ const IMAGES: Partial<Record<NewsGroup, string[]>> = {
   tourneyOut: ['tournament'],
   tourneyNoShow: ['tournament'],
 };
-const CITY_IMAGES = ['market', 'forum', 'ship', 'baths', 'theater', 'rain', 'temple', 'market'];
+const CITY_IMAGES = [
+  'market', 'forum', 'ship', 'baths', 'theater', 'rain', 'temple', 'market',
+  'forum', 'market', 'rain', 'temple', 'baths', 'market', 'temple', 'forum', 'forum', 'market', 'market', 'forum', 'ship',
+  'theater', 'baths', 'ship', 'forum', 'ship', 'temple', 'theater', 'forum', 'temple',
+];
 
 export type Vars = Record<string, string | number>;
 

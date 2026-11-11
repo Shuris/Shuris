@@ -6,7 +6,7 @@ import { esc } from '../dom';
 import { t, tk } from '../../i18n';
 import type { Screen, ScreenDeps } from './Screen';
 
-const ADS = 6;
+const ADS = 20;
 
 /** Ano em algarismos romanos (o jogo se passa no ano DCCCXXX da fundação de Roma). */
 function roman(n: number): string {

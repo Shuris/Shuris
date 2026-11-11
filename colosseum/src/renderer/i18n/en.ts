@@ -1,6 +1,7 @@
 // English texts. The type forces every Portuguese key to exist here too.
 import type { PT, PT_BASE } from './pt';
 import { EN06 } from './en06';
+import { EN07 } from './en07';
 
 const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   // ---------------------------------------------------------------- common
@@ -349,7 +350,7 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   'forum.none': 'No editions yet.',
   'forum.new': 'new',
   'np.title': 'Capua Times',
-  'np.price': 'Free at the Forum',
+  'np.price': 'Forum',
   'np.edition': 'Issue no. {n}',
   'np.year': 'Year {y} since the founding of Rome',
   'np.motto': 'All the news from the sand and the city',
@@ -578,4 +579,4 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   'talk.flamma.crit': 'Applaud!|For the front row!',
 };
 
-export const EN: Record<keyof typeof PT, string> = { ...EN_BASE, ...EN06 };
+export const EN: Record<keyof typeof PT, string> = { ...EN_BASE, ...EN06, ...EN07 };

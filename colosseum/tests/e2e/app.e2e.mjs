@@ -579,20 +579,24 @@ await step('30. Torneio de sábado: inscrição, chave e prêmio', async () => {
 });
 
 await step('32. Chuva começando e parando não trava a cena (figurantes saem e voltam)', async () => {
-  const r = await win.evaluate(() => {
-    for (let d = 2; d < 200; d++) {
+  // a chuva dura o dia inteiro: alterna entre um dia de chuva e um de sol
+  const days = await win.evaluate(() => {
+    let rain = 0, sun = 0;
+    for (let d = 2; d < 300 && (!rain || !sun); d++) {
+      if (d % 7 === 0) continue;
       const w = window.__colosseum.weatherOfDay(d);
-      if (w.rainy && d % 7 !== 0) return { day: d, start: w.start, mid: Math.round((w.start + w.end) / 2) };
+      if (w.kind === 'rain' && !rain) rain = d;
+      if (w.kind === 'sun' && !sun) sun = d;
     }
-    return null;
+    return { rain, sun };
   });
-  await win.evaluate((r) => window.__colosseum.store.update((p) => { p.day = r.day; p.minutes = r.start - 60; p.energy = 100; }), r);
+  await win.evaluate((d) => window.__colosseum.store.update((p) => { p.day = d.sun; p.minutes = 10 * 60; p.energy = 100; }), days);
   await goTo('ludus');
   const errs0 = errors.length;
   for (let i = 0; i < 12; i++) {
-    await win.evaluate((r) => window.__colosseum.store.update((p) => (p.minutes = r.mid)), r);
+    await win.evaluate((d) => window.__colosseum.store.update((p) => (p.day = d.rain)), days);
     await win.waitForTimeout(350 + ((i * 37) % 300));
-    await win.evaluate((r) => window.__colosseum.store.update((p) => (p.minutes = r.start - 60)), r);
+    await win.evaluate((d) => window.__colosseum.store.update((p) => (p.day = d.sun)), days);
     await win.waitForTimeout(350 + ((i * 53) % 700));
   }
   const fps = await win.evaluate(async () => {
@@ -603,6 +607,27 @@ await step('32. Chuva começando e parando não trava a cena (figurantes saem e 
   });
   assert(errors.length === errs0, `sem erros (${errors.slice(errs0).join('; ')})`);
   assert(fps > 3, `animação continua rodando (${fps} quadros/s)`);
+});
+
+await step('34. Local que fecha esvazia (as pessoas vão embora) e taverna cheia em noite de chuva', async () => {
+  const sunny = await win.evaluate(() => { for (let d = 2; d < 300; d++) { const w = window.__colosseum.weatherOfDay(d); if (w.kind === 'sun' && d % 7 !== 0) return d; } return 2; });
+  await win.evaluate((d) => window.__colosseum.store.update((p) => { p.day = d; p.minutes = 19 * 60; }), sunny);
+  await goTo('market');
+  await win.waitForTimeout(800);
+  const before = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').npcs.length);
+  assert(before >= 3, `mercado aberto com gente (${before})`);
+  await win.evaluate(() => window.__colosseum.store.update((p) => (p.minutes = 20 * 60 + 5)));
+  await win.waitForFunction(() => window.__colosseum.view.game.scene.getScene('hub').npcs.length === 0, null, { timeout: 40000 });
+  await win.evaluate(() => window.__colosseum.store.update((p) => (p.minutes = 21 * 60)));
+  await goTo('ludus');
+  await goTo('market');
+  assert((await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').npcs.length)) === 0, 'mercado fechado vazio');
+  const rainy = await win.evaluate(() => { for (let d = 2; d < 300; d++) { const w = window.__colosseum.weatherOfDay(d); if (w.kind === 'rain' && d % 7 !== 0) return d; } return 2; });
+  await win.evaluate((d) => window.__colosseum.store.update((p) => { p.day = d; p.minutes = 20 * 60; }), rainy);
+  await goTo('tavern');
+  const crowd = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').npcs.length);
+  assert(crowd >= 10, `taverna cheia em noite de chuva (${crowd})`);
+  await shot('34-taverna-chuva');
 });
 
 await step('33. Rede de segurança: um erro na cena não congela o jogo', async () => {

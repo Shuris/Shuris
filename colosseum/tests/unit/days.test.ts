@@ -167,19 +167,19 @@ describe('semana, mercado e clima', () => {
     expect(canTrade(p)).toMatch(/domingo/);
     expect(isOpen(getLocation('ludus'), 10 * 60, 7)).toBe(true);
   });
-  it('alguns dias chovem, com transição suave, sempre nas mesmas datas para o mesmo jogador', () => {
+  it('cada dia é inteiro de sol, nublado ou de chuva, sempre igual para o mesmo jogador', () => {
     const days = Array.from({ length: 200 }, (_, i) => weatherOfDay(12345, i + 2));
-    const rainy = days.filter((d) => d.rainy).length;
-    expect(rainy).toBeGreaterThan(30);
-    expect(rainy).toBeLessThan(90);
+    const rainy = days.filter((d) => d.kind === 'rain').length;
+    const cloudy = days.filter((d) => d.kind === 'cloudy').length;
+    expect(rainy).toBeGreaterThan(25);
+    expect(rainy).toBeLessThan(80);
+    expect(cloudy).toBeGreaterThan(25);
     expect(weatherOfDay(12345, 9)).toEqual(weatherOfDay(12345, 9));
-    const d = days.find((x) => x.rainy)!;
-    const day = days.indexOf(d) + 2;
-    expect(weatherAt(12345, day, (d.start + d.end) / 2).rain).toBe(1);
-    expect(weatherAt(12345, day, d.start + 10).rain).toBeLessThan(1);
-    expect(weatherAt(12345, day, d.start - 60).rain).toBe(0);
-    expect(weatherAt(12345, day, d.start - 60).cloud).toBeGreaterThan(0.5);
-    expect(weatherOfDay(12345, 1).rainy).toBe(false);
+    const day = days.findIndex((x) => x.rainy) + 2;
+    for (const m of [0, 7 * 60, 13 * 60, 23 * 60 + 59]) expect(weatherAt(12345, day, m).rain).toBe(1);
+    const cday = days.findIndex((x) => x.kind === 'cloudy') + 2;
+    expect(weatherAt(12345, cday, 12 * 60)).toEqual({ cloud: 0.7, rain: 0 });
+    expect(weatherOfDay(12345, 1).kind).toBe('sun');
   });
 });
 

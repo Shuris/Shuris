@@ -231,3 +231,9 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 - `game/shaders.ts`: `applyLook()` (ColorMatrix + vinheta da câmera) em todas as cenas; texturas de luz criadas em tempo de execução. Público em primeiro plano: `fx:crowd_front` (gerado em `gen_v06.crowd_front`).
 - Objetos de cena (`gen_v06.props`): `HubScene.addProp` registra a pegada; `blocked()` e `freeX()` evitam sobreposição; profundidade por `depthAt(y)`.
 - Jornal: `NewsSystem.editionItems()` remove notícias repetidas sobre o mesmo adversário e deixa só um resultado de luta por edição.
+
+## Clima do dia e locais que fecham (0.7.1)
+
+- `WeatherSystem.weatherOfDay` devolve `kind` (`sun`, `cloudy` ou `rain`) para o dia inteiro; `weatherAt` é constante durante o dia.
+- `HubData.openNow()` diz se o local está aberto; `HubScene` não cria figurantes em local fechado e, se o local fechar com gente, chama `departAll()` (cada um sai andando pela borda mais próxima). `rainyDay` e `minutes` deixam a taverna mais cheia em noite de chuva.
+- Textos novos em `i18n/pt07.ts` e `en07.ts` (substituem as falas antigas pelas listas completas).

@@ -6,10 +6,11 @@ import * as Phaser from 'phaser';
 export type Look = 'arena' | 'outdoor' | 'indoor' | 'map';
 
 const VIGNETTE: Record<Look, { radius: number; strength: number }> = {
-  arena: { radius: 0.62, strength: 0.34 },
-  outdoor: { radius: 0.7, strength: 0.26 },
-  indoor: { radius: 0.6, strength: 0.38 },
-  map: { radius: 0.78, strength: 0.22 },
+  // bem suave: só um leve escurecimento nos cantos
+  arena: { radius: 0.9, strength: 0.1 },
+  outdoor: { radius: 0.95, strength: 0.08 },
+  indoor: { radius: 0.88, strength: 0.12 },
+  map: { radius: 1, strength: 0.06 },
 };
 
 const FX_KEY = 'colosseum.fx';

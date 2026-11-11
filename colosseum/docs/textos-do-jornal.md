@@ -28,7 +28,7 @@ Para mudar: reescreva, apague ou acrescente à vontade e me mande de volta. Dica
 | Onde | Português | Inglês |
 | --- | --- | --- |
 | Título | Cápua Times | Capua Times |
-| Canto esquerdo (antes "Um asse") | Grátis no Fórum | Free at the Forum |
+| Canto esquerdo (antes "Um asse") | Fórum | Forum |
 | Número da edição ({n} = dia) | Edição nº {n} | Issue no. {n} |
 | Ano ({y} = ano romano, DCCCXXX) | Ano {y} da fundação de Roma | Year {y} since the founding of Rome |
 | Lema (canto direito) | Tudo o que acontece na areia e na cidade | All the news from the sand and the city |
@@ -487,3 +487,115 @@ Um por edição; a edição do dia N mostra o anúncio número (N mod 6).
    *EN:* Wanted: experienced doctore to train gladiators. Good pay, plenty of food.
 6. Oferendas ao Templo de Marte trazem coragem. O monge Aurelius recebe os bravos.  
    *EN:* Offerings at the Temple of Mars bring courage. The monk Aurelius welcomes the brave.
+
+## Novas notícias da cidade (versão 0.7.1, `city.8` a `city.29`)
+
+Notas secundárias (Senado, obras, comércio, costumes). Saem como as outras notas da cidade.
+
+9. **Manchete:** Senado debate novo aqueduto  
+   **Texto:** Os senadores discutem quem vai pagar a obra. Ninguém quer.  
+   *EN:* Senate debates a new aqueduct — The senators argue over who will pay for it. Nobody wants to.
+
+10. **Manchete:** Edil promete consertar a ponte  
+   **Texto:** Depois da última cheia, a ponte do fórum ficou com rachaduras.  
+   *EN:* Aedile promises to fix the bridge — After the last flood, the forum bridge was left cracked.
+
+11. **Manchete:** Incêndio numa padaria assusta a vizinhança  
+   **Texto:** Os vigias apagaram o fogo antes que chegasse às casas.  
+   *EN:* Bakery fire scares the neighborhood — The night watch put out the fire before it reached the houses.
+
+12. **Manchete:** Cônsul visita Cápua  
+   **Texto:** O povo encheu as ruas para ver a comitiva passar.  
+   *EN:* Consul visits Capua — People filled the streets to watch the retinue go by.
+
+13. **Manchete:** Ladrão de capas preso nas termas  
+   **Texto:** Ele roubava as roupas dos banhistas enquanto se lavavam.  
+   *EN:* Cloak thief caught at the baths — He stole bathers' clothes while they washed.
+
+14. **Manchete:** Safra de uvas promete vinho farto  
+   **Texto:** Os vinhateiros do Vesúvio esperam o melhor ano em décadas.  
+   *EN:* Grape harvest promises plenty of wine — The vintners of Vesuvius expect the best year in decades.
+
+15. **Manchete:** Novo templo de Juno será erguido  
+   **Texto:** As obras começam depois das festas, diz o pontífice.  
+   *EN:* New temple of Juno to be built — Work begins after the festivities, says the pontiff.
+
+16. **Manchete:** Senado aprova pão de graça nos dias de jogos  
+   **Texto:** Os padeiros reclamam; o povo comemora.  
+   *EN:* Senate approves free bread on game days — The bakers complain; the people celebrate.
+
+17. **Manchete:** Escola de retórica abre as portas  
+   **Texto:** Os filhos dos mercadores agora aprendem a discursar como senadores.  
+   *EN:* School of rhetoric opens its doors — Merchants' sons now learn to speak like senators.
+
+18. **Manchete:** Elefante foge de circo e passeia no mercado  
+   **Texto:** Ninguém se feriu, mas uma barraca de melões foi destruída.  
+   *EN:* Elephant escapes and strolls through the market — Nobody was hurt, but a melon stall was destroyed.
+
+19. **Manchete:** Preço do azeite cai depois da colheita  
+   **Texto:** As ânforas chegam aos montes da Apúlia.  
+   *EN:* Olive oil prices fall after the harvest — Amphorae arrive by the hundreds from Apulia.
+
+20. **Manchete:** Censo da cidade começa amanhã  
+   **Texto:** Todo morador deve se apresentar no fórum com a família.  
+   *EN:* City census begins tomorrow — Every resident must appear at the forum with their family.
+
+21. **Manchete:** Nova estrada liga Cápua a Roma mais rápido  
+   **Texto:** Os mensageiros agora chegam em dois dias.  
+   *EN:* New road links Capua to Rome faster — Messengers now arrive in two days.
+
+22. **Manchete:** Poeta lê versos no fórum e é vaiado  
+   **Texto:** Ele promete voltar com um poema sobre gladiadores.  
+   *EN:* Poet reads verses at the forum and is booed — He promises to return with a poem about gladiators.
+
+23. **Manchete:** Médico grego abre consultório perto das termas  
+   **Texto:** Diz curar dor nas costas com agulhas. Muitos duvidam.  
+   *EN:* Greek doctor opens a practice near the baths — He claims to cure back pain with needles. Many doubt it.
+
+24. **Manchete:** Tempestade afunda barco de pescadores  
+   **Texto:** Todos foram resgatados a nado pelos colegas.  
+   *EN:* Storm sinks a fishing boat — Everyone was rescued by fellow fishermen swimming out.
+
+25. **Manchete:** Cães de rua viram problema no fórum  
+   **Texto:** O edil promete uma solução até o fim do mês.  
+   *EN:* Stray dogs become a problem at the forum — The aedile promises a solution by the end of the month.
+
+26. **Manchete:** Mercadores de Cartago chegam com marfim  
+   **Texto:** Os ricos da cidade disputam os melhores pedaços.  
+   *EN:* Merchants from Carthage arrive with ivory — The city's rich compete for the best pieces.
+
+27. **Manchete:** Festa de Saturno se aproxima  
+   **Texto:** Escravos e senhores trocam de lugar por um dia.  
+   *EN:* The feast of Saturn draws near — Slaves and masters trade places for a day.
+
+28. **Manchete:** Corrida de bigas lota o hipódromo  
+   **Texto:** A equipe verde venceu de novo, para alegria da plebe.  
+   *EN:* Chariot race packs the circus — The Greens won again, to the delight of the plebs.
+
+29. **Manchete:** Eleição para edil esquenta  
+   **Texto:** Muros da cidade amanhecem cheios de pinturas dos candidatos.  
+   *EN:* Election for aedile heats up — City walls wake up covered in candidates' paintings.
+
+30. **Manchete:** Sacerdotes leem bons presságios  
+   **Texto:** As aves voaram para a direita. Ano de sorte, dizem.  
+   *EN:* Priests read good omens — The birds flew to the right. A lucky year, they say.
+
+## Novos anúncios (versão 0.7.1, `ad.6` a `ad.19`)
+
+| Nº | Português | Inglês |
+| --- | --- | --- |
+| 6 | Barbearia do Lúcio: corte e barba por dois asses. Sai mais bonito que um senador. | Lucius' Barbershop: haircut and shave for two asses. Leave handsomer than a senator. |
+| 7 | Vende-se escravo que sabe ler, escrever e fazer contas. Tratar com o lanista. | For sale: a slave who reads, writes and does sums. Ask the lanista. |
+| 8 | Aulas de grego com professor de Atenas. Preço justo, paciência infinita. | Greek lessons with a teacher from Athens. Fair price, infinite patience. |
+| 9 | Perdeu-se um cachorro malhado perto das termas. Recompensa! | Lost: a spotted dog near the baths. Reward! |
+| 10 | Padaria do Fórum: pão quente ao nascer do sol. | Forum Bakery: hot bread at sunrise. |
+| 11 | Aluga-se quarto no segundo andar, perto do mercado. Sem goteiras (quase). | Room for rent on the second floor, near the market. No leaks (almost). |
+| 12 | Amuletos contra mau-olhado. Testados por gladiadores! | Amulets against the evil eye. Tested by gladiators! |
+| 13 | Sandálias sob medida. Couro da Hispânia. | Made-to-measure sandals. Leather from Hispania. |
+| 14 | Teatro de Cápua apresenta: 'O soldado fanfarrão'. Risos garantidos. | The Capua theater presents: 'The Braggart Soldier'. Laughs guaranteed. |
+| 15 | Compro ouro, prata e moedas antigas. Pago na hora. | Buying gold, silver and old coins. Cash on the spot. |
+| 16 | Escribas para cartas de amor e de cobrança. Discrição total. | Scribes for love letters and debt notices. Total discretion. |
+| 17 | Óleo para massagem dos atletas: deixa os músculos soltos para a arena. | Massage oil for athletes: keeps muscles loose for the arena. |
+| 18 | Vinho de Falerno direto do produtor. Ânforas lacradas. | Falernian wine straight from the vintner. Sealed amphorae. |
+| 19 | Ferreiro Vulcanus: armas afiadas, escudos consertados, preço honesto. | Vulcanus the blacksmith: sharp weapons, mended shields, honest prices. |
+
