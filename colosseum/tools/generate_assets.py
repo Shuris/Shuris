@@ -85,8 +85,6 @@ def main():
     # versão 0.5: taverna, camas, equipamentos do ludus, ícones e jornal
     gen_v05.tavern(rng).save(os.path.join(bg, "loc_tavern.png"))
     gen_v05.tavern_front().save(os.path.join(fx, "tavern_front.png"))
-    gen_v05.bed_overlay("wool").save(os.path.join(fx, "bed_wool.png"))
-    gen_v05.bed_overlay("noble").save(os.path.join(fx, "bed_noble.png"))
     gen_v05.palus_iron_sheet().save(os.path.join(fx, "palus_iron.png"))
     gen_v05.up_weights().save(os.path.join(fx, "up_weights.png"))
     gen_v05.up_stakes().save(os.path.join(fx, "up_stakes.png"))
@@ -100,7 +98,7 @@ def main():
     gen_v06.forge().save(os.path.join(fx, "forge.png"))
     gen_v06.arm_table().save(os.path.join(fx, "arm_table.png"))
     gen_v06.crowd_front().save(os.path.join(fx, "crowd_front.png"))
-    for name, img in gen_v06.props().items():
+    for name, img in {**gen_v06.props(), **gen_v06.home_props(), **gen_v06.place_props()}.items():
         img.save(os.path.join(fx, name + ".png"))
     people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))
     print(f"retratos: {len(people)}")

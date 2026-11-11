@@ -791,3 +791,184 @@ def props():
         d.line([(x - 1, 16), (x + 6, 16)], fill=hexc("6a3a20"))
     out["prop_amphorae"] = _with_shadow(img, 26)
     return out
+
+
+# ------------------------------------------------------------------ objetos do alojamento, termas e ludus
+def _shaded_crop(draw, box, shadow=None, light=0.22, dark=0.7):
+    """Desenha numa tela 640x360 (coordenadas do cenário), sombreia e recorta a caixa."""
+    layer = new_img(640, 360)
+    draw(ImageDraw.Draw(layer))
+    layer = finish(layer, light=light, dark=dark)
+    x0, y0, x1, y1 = box
+    img = layer.crop((x0, y0, x1, y1 + 4))
+    if shadow:
+        out = new_img(img.width, img.height)
+        d = ImageDraw.Draw(out)
+        sx0, sx1 = shadow
+        d.ellipse([sx0 - x0, y1 - y0 - 3, sx1 - x0, y1 - y0 + 3], fill=(0, 0, 0, 70))
+        out.alpha_composite(img)
+        img = out
+    return img
+
+
+def home_props():
+    WOOD = hexc("7a5230")
+    WOOD_D = hexc("5a3a20")
+    GOLD_ = hexc("d8b04a")
+    out = {}
+
+    def amphora(d):
+        d.ellipse([186, 286, 200, 308], fill=hexc("b0603a"))
+        d.rectangle([190, 280, 196, 288], fill=hexc("b0603a"))
+        d.line([(188, 283), (190, 287)], fill=hexc("9a5030"), width=2)
+        d.line([(198, 283), (196, 287)], fill=hexc("9a5030"), width=2)
+    out["prop_home_amphora"] = _shaded_crop(amphora, (182, 276, 204, 308), (184, 202))
+
+    def table(d):
+        d.rectangle([226, 283, 268, 287], fill=hexc("9a6a3e"))
+        d.rectangle([229, 287, 233, 307], fill=WOOD_D)
+        d.rectangle([261, 287, 265, 307], fill=WOOD_D)
+        d.rectangle([232, 289, 262, 291], fill=WOOD)
+        d.ellipse([232, 277, 243, 283], fill=hexc("c08a3e"))
+        d.rectangle([241, 277, 245, 280], fill=hexc("c08a3e"))
+        d.ellipse([247, 278, 257, 284], fill=hexc("c8903a"))
+        d.rectangle([259, 277, 264, 283], fill=hexc("8a8a9a"))
+    img = _shaded_crop(table, (224, 270, 270, 307), (226, 268))
+    d = ImageDraw.Draw(img)
+    d.point((236 - 224, 275 - 270), fill=(255, 200, 80))
+    d.point((236 - 224, 274 - 270), fill=(255, 236, 160))
+    d.line([(249 - 224, 280 - 270), (255 - 224, 280 - 270)], fill=hexc("e8b860"))
+    out["prop_home_table"] = img
+
+    def stool(d):
+        d.rectangle([269, 293, 285, 297], fill=hexc("9a6a3e"))
+        d.line([(271, 297), (270, 307)], fill=WOOD_D, width=2)
+        d.line([(283, 297), (284, 307)], fill=WOOD_D, width=2)
+    out["prop_home_stool"] = _shaded_crop(stool, (266, 290, 288, 307), (268, 286))
+
+    def chest(d):
+        d.rectangle([452, 292, 480, 308], fill=hexc("6a4628"))
+        d.rectangle([452, 290, 480, 296], fill=hexc("8a6038"))
+        d.rectangle([452, 296, 480, 297], fill=hexc("4a3020"))
+        d.rectangle([457, 290, 459, 308], fill=hexc("4a4a52"))
+        d.rectangle([473, 290, 475, 308], fill=hexc("4a4a52"))
+        d.rectangle([464, 298, 468, 303], fill=GOLD_)
+    out["prop_home_chest"] = _shaded_crop(chest, (450, 288, 482, 308), (451, 481))
+
+    # tapete e sandálias: decalques no chão (sem colisão)
+    def rug(d):
+        d.rectangle([304, 304, 376, 318], fill=hexc("9a5a2a"))
+        d.rectangle([307, 306, 373, 316], fill=hexc("c8903a"))
+        for x in range(310, 372, 8):
+            d.rectangle([x, 309, x + 3, 312], fill=hexc("7a2a1e"))
+        d.line([(307, 311), (373, 311)], fill=hexc("b07a30"))
+    layer = new_img(640, 360)
+    rug(ImageDraw.Draw(layer))
+    rimg = finish(layer, light=0.15, dark=0.8, ol=False).crop((302, 302, 378, 320))
+    rd = ImageDraw.Draw(rimg)
+    for x in range(0, 76, 4):  # franjas
+        rd.point((x, 0), fill=hexc("e8d0a0"))
+        rd.point((x, 17), fill=hexc("e8d0a0"))
+    out["prop_home_rug"] = rimg
+
+    def sandals(d):
+        d.rectangle([380, 306, 388, 308], fill=hexc("6a4628"))
+        d.rectangle([381, 310, 389, 312], fill=hexc("6a4628"))
+        d.line([(382, 306), (382, 305)], fill=hexc("4a3020"))
+    out["prop_home_sandals"] = _shaded_crop(sandals, (378, 303, 391, 312))
+
+    # camas: palha (inicial), lã e de nobre — no mesmo lugar (x 386–452)
+    def bed_straw(d):
+        d.rectangle([390, 292, 448, 298], fill=hexc("6a4628"))
+        d.rectangle([390, 285, 394, 308], fill=hexc("5a3a20"))
+        d.rectangle([444, 287, 448, 308], fill=hexc("5a3a20"))
+        d.rectangle([394, 285, 444, 292], fill=hexc("d8c48a"))
+        d.rectangle([414, 283, 444, 292], fill=hexc("8e2b23"))
+        d.ellipse([395, 280, 409, 288], fill=hexc("efe6d2"))
+    img = _shaded_crop(bed_straw, (380, 250, 458, 308), (386, 452))
+    d = ImageDraw.Draw(img)
+    for x in range(418 - 380, 444 - 380, 6):
+        d.line([(x, 284 - 250), (x, 291 - 250)], fill=hexc("b8473a"))
+    for x in range(396 - 380, 412 - 380, 3):
+        d.point((x, 291 - 250), fill=hexc("b8a060"))
+    out["prop_bed_straw"] = img
+    from gen_v05 import bed_overlay
+    for kind in ("wool", "noble"):
+        full = bed_overlay(kind)
+        img = full.crop((380, 250, 458, 312))
+        sh = new_img(img.width, img.height)
+        ImageDraw.Draw(sh).ellipse([6, 55, 72, 61], fill=(0, 0, 0, 70))
+        sh.alpha_composite(img)
+        out[f"prop_bed_{kind}"] = sh
+    return out
+
+
+def place_props():
+    """Objetos das termas e do ludus."""
+    out = {}
+    MARB = hexc("e8e2d4")
+    MARB_D = hexc("b8b0a0")
+
+    def bench(d):
+        d.rectangle([2, 10, 50, 15], fill=MARB)
+        d.rectangle([5, 15, 11, 26], fill=MARB_D)
+        d.rectangle([41, 15, 47, 26], fill=MARB_D)
+        d.rectangle([2, 15, 50, 16], fill=MARB_D)
+    layer = new_img(52, 30)
+    bench(ImageDraw.Draw(layer))
+    out["prop_bench"] = _with_shadow(finish(layer, light=0.25, dark=0.75), 50)
+
+    layer = new_img(22, 18)
+    d = ImageDraw.Draw(layer)
+    for i, c in enumerate((hexc("efe6d2"), hexc("c8483a"), hexc("efe6d2"), hexc("4a6aa8"))):
+        d.rounded_rectangle([1 + (i % 2), 13 - i * 4, 20 - (i % 2), 17 - i * 4], radius=2, fill=c)
+    out["prop_towels"] = _with_shadow(finish(layer, light=0.25, dark=0.75), 20)
+
+    layer = new_img(18, 26)
+    d = ImageDraw.Draw(layer)
+    d.rectangle([4, 18, 14, 25], fill=hexc("b0603a"))
+    d.rectangle([3, 16, 15, 19], fill=hexc("9a5030"))
+    for (x, y) in ((9, 4), (5, 8), (13, 8), (8, 11), (11, 13), (6, 14)):
+        d.ellipse([x - 3, y - 3, x + 3, y + 3], fill=hexc("4a8a44"))
+    out["prop_plant"] = _with_shadow(finish(layer, light=0.25, dark=0.72), 14)
+
+    # ludus: suporte de lanças e gládios, escudos encostados, cocho de água
+    layer = new_img(56, 72)
+    d = ImageDraw.Draw(layer)
+    d.rectangle([2, 26, 54, 30], fill=hexc("6a4428"))
+    d.rectangle([2, 48, 54, 52], fill=hexc("6a4428"))
+    d.rectangle([2, 26, 5, 71], fill=hexc("5a3a20"))
+    d.rectangle([51, 26, 54, 71], fill=hexc("5a3a20"))
+    for k in range(5):
+        x = 8 + k * 10
+        d.rectangle([x, 4, x + 2, 70], fill=hexc("8a6a40"))
+        d.polygon([(x - 1, 6), (x + 1, 0), (x + 3, 6)], fill=hexc("c4c8d0"))
+    img = finish(layer, light=0.24, dark=0.7)
+    d = ImageDraw.Draw(img)
+    for k in range(5):
+        d.point((8 + k * 10, 3), fill=(240, 244, 250))
+    out["prop_rack"] = _with_shadow(img, 52)
+
+    layer = new_img(32, 34)
+    d = ImageDraw.Draw(layer)
+    for sx in (2, 17):
+        d.rectangle([sx, 2, sx + 13, 33], fill=hexc("d8b04a"))
+        d.rectangle([sx + 1, 3, sx + 12, 32], fill=hexc("a62c24"))
+        d.ellipse([sx + 4, 14, sx + 9, 20], fill=hexc("c4c8d0"))
+    img = finish(layer, light=0.24, dark=0.7)
+    d = ImageDraw.Draw(img)
+    for sx in (2, 17):
+        d.line([(sx + 6, 5), (sx + 6, 12)], fill=hexc("d8b04a"))
+        d.line([(sx + 6, 22), (sx + 6, 29)], fill=hexc("d8b04a"))
+    out["prop_shields"] = _with_shadow(img, 30)
+
+    layer = new_img(54, 18)
+    d = ImageDraw.Draw(layer)
+    d.rectangle([1, 2, 52, 17], fill=hexc("9a9080"))
+    d.rectangle([4, 4, 49, 8], fill=hexc("4a7aa0"))
+    img = finish(layer, light=0.22, dark=0.72)
+    d = ImageDraw.Draw(img)
+    d.line([(8, 5), (18, 5)], fill=hexc("8ac0e0"))
+    d.line([(28, 6), (40, 6)], fill=hexc("8ac0e0"))
+    out["prop_trough"] = _with_shadow(img, 52)
+    return out

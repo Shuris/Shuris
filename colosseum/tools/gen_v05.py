@@ -56,6 +56,9 @@ def tavern(rng):
     for x in (306, 314, 324, 330):
         d.rectangle([x, 157, x + 2, 161], fill=hexc("4a3020"))
     d.point((337, 147), fill=hexc("c83a2a"))
+    # lareira, prateleiras e barris numa camada sombreada
+    layer = new_img(W, H)
+    d = ImageDraw.Draw(layer)
     # lareira com caldeirão (à esquerda)
     d.rectangle([118, 186, 186, 252], fill=hexc("7a6a5a"))
     d.rectangle([126, 206, 178, 252], fill=hexc("2a1c14"))
@@ -78,6 +81,10 @@ def tavern(rng):
             d.line([(bx + 2, yy), (bx + 26, yy)], fill=hexc("4a3a30"), width=2)
         d.ellipse([bx + 11, 230, bx + 17, 236], fill=WOOD_D)
     # (mesas e banquinhos viraram objetos da cena, com colisão: ver gen_v06.props)
+    img.alpha_composite(finish(layer, light=0.2, dark=0.72))
+    d = ImageDraw.Draw(img)
+    for i, col in enumerate((hexc("f0a030"), hexc("e05a20"), hexc("f8d070"))):
+        d.polygon([(136 + i * 10, 250), (142 + i * 10, 232 - i * 3), (148 + i * 10, 250)], fill=col)
     # lamparinas penduradas
     for lx in (262, 430):
         d.line([(lx, 128), (lx, 226)], fill=hexc("3a2a20"))

@@ -1,11 +1,20 @@
-# Funcionalidades — versão 0.7.2
+# Funcionalidades — versão 0.7.3
+
+## Novidades da 0.7.3
+- **Mobília de todos os locais refeita** no mesmo padrão do mercado: peças com volume e sombreamento, sombra no chão, proporção de acordo com as pessoas e colisão (o gladiador e os moradores contornam os móveis em vez de atravessá-los).
+  - **Alojamento**: cama, mesa com lamparina e pão, banquinho, baú, ânfora, tapete e sandálias são objetos separados do cenário; a cama troca de verdade ao comprar a de lã ou a nobre. Prateleira, janela, larário, escudo e manto na parede ganharam sombreamento. A luz da lamparina agora fica em cima da mesa.
+  - **Termas**: piscina reposicionada, bancos de mármore, pilha de toalhas, ânfora e vasos de planta.
+  - **Ludus**: suporte de lanças, escudos, cocho de água e barril como objetos com colisão.
+  - **Templo** e **Fórum**: altar, estátuas e pedestal redesenhados com sombreamento; chama acesa no altar.
+  - **Taverna**: lareira, prateleiras de jarros e barris com sombreamento.
+- As ilustrações do jornal que mostram esses locais acompanham o novo cenário.
+
 
 ## Novidades da 0.7.2
 - O público em silhueta embaixo da luta agora cobre toda a largura da tela, de ponta a ponta, em qualquer posição da câmera.
 - Com o doctore particular comprado, ele comemora (em balão) cada nível que você ganha treinando no ludus.
 - O ferreiro não fala mais quando melhora um item (o aviso na tela continua).
 
-## Novidades da 0.7.1
 ## Novidades da 0.7.1
 - **Clima do dia inteiro**: cada dia é de sol, nublado ou de chuva (a chuva dura das 0h às 24h). Em dia de chuva a taverna enche, principalmente à noite, e metade dos fregueses comenta o tempo.
 - **Locais fechados ficam vazios** (ludus, mercado, taverna...). Se o lugar fecha enquanto você está lá, as pessoas vão embora andando, cada uma para um lado, em vez de sumir.
@@ -14,7 +23,6 @@
 - **Luta**: logo depois do golpe final, se a luta estiver em 2x ou 3x, ela volta para 1x.
 - **Visual**: a vinheta ficou bem mais suave, quase imperceptível. Corrigido o público em silhueta na frente da luta (braços e brilho das cabeças se sobrepunham).
 
-## Novidades da 0.7.0
 ## Novidades da 0.7.0
 - **Falas**: o monge fala sozinho a cada 30 segundos. Os outros moradores só falam quando você clica neles; ao passar o mouse, o morador ganha um anel nos pés e reticências sobre a cabeça. Na luta, cada um fala na sua vez: a resposta só aparece depois que o balão do outro some, e todo balão fica pelo menos 3 segundos no ar.
 - **Sangue nas lutas**: cada golpe faz o ferido sangrar; as gotas caem e mancham a areia até o fim da luta; quem está gravemente ferido pinga sangue; no nocaute, uma poça se espalha.

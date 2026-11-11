@@ -76,7 +76,7 @@ const RAIN_OFF = 0.03;
 /** fontes de luz de cada local (braseiros/lamparinas) */
 const LIGHTS: Partial<Record<LocationId, Array<[number, number, boolean]>>> = {
   ludus: [[430, 240, true]],
-  home: [[276, 262, false]],
+  home: [[236, 290, false]],
   tavern: [[262, 236, false], [430, 236, false]],
   temple: [[320, 258, true]],
   arena: [[112, 200, true], [528, 200, true]],
@@ -206,8 +206,28 @@ export class HubScene extends Phaser.Scene {
       this.addProp('fx:prop_barrel', 482, 294, 8);
       this.addProp('fx:prop_sacks', 148, 296, 12);
       this.addProp('fx:forge', 536, 314, 30);
+    } else if (loc === 'home') {
+      // tapete e sandálias ficam no chão (sem colisão, sempre por baixo de quem pisa)
+      this.add.image(340, 320, 'fx:prop_home_rug').setOrigin(0.5, 1).setDepth(99);
+      this.add.image(384, 316, 'fx:prop_home_sandals').setOrigin(0.5, 1).setDepth(99);
+      this.addProp('fx:prop_home_amphora', 193, 309, 7);
+      this.addProp('fx:prop_home_table', 247, 308, 21);
+      this.addProp('fx:prop_home_stool', 277, 308, 9);
+      this.addProp('fx:prop_home_chest', 466, 309, 15);
+      const ups = new Set(this.data_.upgrades ?? []);
+      this.addProp(ups.has('bed_noble') ? 'fx:prop_bed_noble' : ups.has('bed_wool') ? 'fx:prop_bed_wool' : 'fx:prop_bed_straw', 419, 309, 33);
+    } else if (loc === 'baths') {
+      this.addProp('fx:prop_plant', 182, 304, 7);
+      this.addProp('fx:prop_bench', 236, 304, 24);
+      this.addProp('fx:prop_bench', 432, 304, 24);
+      this.addProp('fx:prop_towels', 476, 306, 10);
+      this.addProp('fx:prop_home_amphora', 498, 306, 7);
+      this.addProp('fx:prop_plant', 524, 304, 7);
     } else if (loc === 'ludus') {
       this.props.push({ x: 352, y: GROUND, w: 6 }); // poste de treino
+      this.addProp('fx:prop_shields', 132, 242, 15);
+      this.addProp('fx:prop_trough', 225, 242, 26);
+      this.addProp('fx:prop_rack', 495, 242, 26);
       this.addProp('fx:prop_barrel', 168, 300, 8);
       this.addProp('fx:prop_basket_bread', 186, 302, 11);
     }
@@ -468,9 +488,8 @@ export class HubScene extends Phaser.Scene {
   }
 
   /** Alojamento: a cama comprada no mercado aparece no lugar da cama de palha. */
-  private spawnHome(ups: Set<string>): void {
-    if (ups.has('bed_noble')) this.add.image(0, 0, 'fx:bed_noble').setOrigin(0).setDepth(2);
-    else if (ups.has('bed_wool')) this.add.image(0, 0, 'fx:bed_wool').setOrigin(0).setDepth(2);
+  private spawnHome(_ups: Set<string>): void {
+    // a cama (palha, lã ou de nobre) é um objeto da cena: ver spawnProps
   }
 
   /** Só o monge fala sozinho (a cada 30 s); os outros moradores falam quando clicados. */

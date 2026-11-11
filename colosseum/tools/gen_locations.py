@@ -6,7 +6,7 @@ Todos usam o chão a partir de y=240 para o gladiador ficar em y≈312.
 import math
 import numpy as np
 from PIL import ImageDraw
-from pixel import darker, lighter, mix, hexc
+from pixel import darker, lighter, mix, hexc, new_img, finish
 from gen_scenes import W, H, fill_rect, gradient, noise, to_img
 
 MARBLE = hexc("e8e2d2")
@@ -95,7 +95,9 @@ def home(rng):
         for x in range(((y // 5) % 3) * 23, W, 70):
             fill_rect(a, x, y, x + 1, y + 5, WOOD_D)
     img = to_img(np.clip(a, 0, 255))
-    d = ImageDraw.Draw(img)
+    # itens da parede numa camada própria, com sombreamento e contorno
+    layer = new_img(W, H)
+    d = ImageDraw.Draw(layer)
     # larário (altar doméstico) com estatuetas
     lx = 300
     d.rectangle([lx, 176, lx + 30, 202], fill=hexc("efe6d2"))
@@ -123,42 +125,8 @@ def home(rng):
     d.rectangle([466, 178, 469, 181], fill=WOOD_D)
     d.polygon([(462, 181), (473, 181), (476, 214), (459, 214)], fill=hexc("9c2a22"))
     d.line([(467, 184), (467, 212)], fill=hexc("7a1e18"))
-    # tapete sob o gladiador
-    d.rectangle([306, 304, 374, 318], fill=hexc("9a5a2a"))
-    d.rectangle([309, 306, 371, 316], fill=hexc("c8903a"))
-    for x in range(312, 370, 8):
-        d.rectangle([x, 309, x + 3, 312], fill=hexc("7a2a1e"))
-    # mesa com lamparina, pão e caneca (proporcional)
-    d.rectangle([228, 284, 266, 287], fill=hexc("8a5a32"))
-    d.rectangle([230, 287, 233, 306], fill=WOOD_D)
-    d.rectangle([261, 287, 264, 306], fill=WOOD_D)
-    d.ellipse([233, 278, 243, 284], fill=hexc("c08a3e"))  # lamparina
-    d.rectangle([241, 278, 244, 281], fill=hexc("c08a3e"))
-    d.ellipse([247, 279, 257, 285], fill=hexc("c8903a"))  # pão
-    d.line([(249, 281), (255, 281)], fill=hexc("9a6a2a"))
-    d.rectangle([259, 278, 263, 284], fill=hexc("8a8a9a"))  # caneca
-    # banquinho
-    d.rectangle([270, 294, 284, 297], fill=hexc("8a5a32"))
-    d.line([(272, 297), (271, 306)], fill=WOOD_D, width=2)
-    d.line([(282, 297), (283, 306)], fill=WOOD_D, width=2)
-    # cama na escala do gladiador (~54 px de comprimento)
-    d.rectangle([392, 292, 446, 297], fill=hexc("6a4628"))
-    d.rectangle([392, 286, 395, 306], fill=hexc("5a3a20"))
-    d.rectangle([443, 288, 446, 306], fill=hexc("5a3a20"))
-    d.rectangle([396, 286, 442, 292], fill=hexc("d8c48a"))  # colchão de palha
-    d.rectangle([414, 284, 442, 292], fill=hexc("8e2b23"))  # cobertor
-    for x in range(416, 442, 6):
-        d.line([(x, 284), (x, 292)], fill=hexc("b8473a"))
-    d.ellipse([396, 282, 408, 289], fill=hexc("efe6d2"))  # travesseiro
-    # sandálias ao lado da cama e baú
-    d.rectangle([382, 306, 388, 308], fill=hexc("6a4628"))
-    d.rectangle([382, 310, 388, 312], fill=hexc("6a4628"))
-    d.rectangle([454, 292, 478, 308], fill=hexc("6a4628"))
-    d.rectangle([454, 292, 478, 296], fill=hexc("8a6038"))
-    d.rectangle([465, 298, 467, 302], fill=GOLD)
-    # ânfora no canto
-    d.ellipse([186, 286, 200, 308], fill=hexc("b0603a"))
-    d.rectangle([190, 280, 196, 288], fill=hexc("b0603a"))
+    img.alpha_composite(finish(layer, light=0.2, dark=0.72))
+    # (mesa, banquinho, cama, baú, ânfora e tapete viraram objetos da cena: ver gen_v06.home_props)
     return img
 
 
@@ -224,7 +192,9 @@ def temple(rng):
         _column(a, x - 5, 116, 204, 10)
     img = to_img(np.clip(a, 0, 255))
     d = ImageDraw.Draw(img)
-    # altar
+    # altar e estátuas numa camada sombreada
+    layer = new_img(W, H)
+    d = ImageDraw.Draw(layer)
     d.rectangle([cx - 20, 262, cx + 20, 290], fill=MARBLE)
     d.rectangle([cx - 24, 258, cx + 24, 264], fill=MARBLE_D)
     # estátuas
@@ -233,6 +203,13 @@ def temple(rng):
         d.rectangle([sx - 10, 196, sx + 10, 230], fill=hexc("b0a890"))
         d.ellipse([sx - 6, 184, sx + 6, 198], fill=hexc("b0a890"))
         d.line([(sx + 10, 170), (sx + 10, 230)], fill=hexc("8a8270"), width=2)
+    # chama no altar
+    d.polygon([(cx - 5, 258), (cx, 246), (cx + 5, 258)], fill=hexc("f0a030"))
+    img.alpha_composite(finish(layer, light=0.22, dark=0.72))
+    d = ImageDraw.Draw(img)
+    d.polygon([(cx - 2, 257), (cx, 250), (cx + 2, 257)], fill=hexc("f8e070"))
+    for sx in (90, 550):
+        d.line([(sx - 3, 188), (sx - 3, 194)], fill=hexc("d0c8b0"))
     return img
 
 
@@ -248,6 +225,8 @@ def forum(rng):
     _paving(a, rng, base=hexc("c0b49c"))
     img = to_img(np.clip(a, 0, 255))
     d = ImageDraw.Draw(img)
+    layer = new_img(W, H)
+    d = ImageDraw.Draw(layer)
     # rostra (tribuna) com proas de navio
     d.rectangle([60, 210, 220, 262], fill=MARBLE)
     d.rectangle([60, 206, 220, 212], fill=MARBLE_D)
@@ -267,6 +246,11 @@ def forum(rng):
     d.rectangle([570, 220, 620, 300], fill=MARBLE_D)
     d.ellipse([574, 186, 616, 214], fill=hexc("6a7a6a"))
     d.rectangle([588, 160, 600, 192], fill=hexc("6a7a6a"))
+    d.rectangle([566, 296, 624, 302], fill=MARBLE)  # base da estátua
+    img.alpha_composite(finish(layer, light=0.22, dark=0.72))
+    d = ImageDraw.Draw(img)
+    d.line([(578, 190), (590, 186)], fill=hexc("9aaa9a"))
+    d.line([(408, 172), (532, 172)], fill=hexc("d8805a"))
     return img
 
 
@@ -288,17 +272,22 @@ def baths(rng):
             a[y, x, :3] = c
             a[y, x, 3] = 255
     img = to_img(np.clip(a, 0, 255))
+    layer = new_img(W, H)
+    d = ImageDraw.Draw(layer)
+    # piscina (atrás de quem está no salão)
+    d.rectangle([110, 244, 570, 292], fill=hexc("8a7a62"))
+    d.rectangle([116, 250, 564, 286], fill=hexc("3a7ab0"))
+    img.alpha_composite(finish(layer, light=0.18, dark=0.74))
     d = ImageDraw.Draw(img)
-    # piscina
-    d.rectangle([120, 262, 560, 330], fill=hexc("8a7a62"))
-    d.rectangle([126, 268, 554, 324], fill=hexc("3a7ab0"))
-    for y in range(274, 322, 8):
-        for x in range(134, 548, 24):
+    for y in range(256, 284, 7):
+        for x in range(124 + (y % 2) * 12, 556, 24):
             d.line([(x, y), (x + 10, y)], fill=hexc("7ab4e0"))
-    d.rectangle([126, 268, 554, 271], fill=hexc("2a5a8a"))
+    d.rectangle([116, 250, 564, 253], fill=hexc("2a5a8a"))
+    d.line([(110, 292), (570, 292)], fill=hexc("b8a888"))
     # vapor
-    for (x, y) in ((200, 250), (330, 246), (460, 252)):
+    for (x, y) in ((190, 236), (330, 232), (470, 238)):
         d.ellipse([x, y, x + 30, y + 10], fill=hexc("f4f4f0"))
+        d.ellipse([x + 8, y - 6, x + 24, y + 2], fill=hexc("fafaf6"))
     return img
 
 

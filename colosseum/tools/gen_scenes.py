@@ -154,22 +154,7 @@ def ludus(rng):
         fill_rect(a, x + 33, 140, x + 36, 240, MARBLE_D)
         fill_rect(a, x + 23, 140, x + 39, 144, MARBLE)
         fill_rect(a, x + 23, 236, x + 39, 240, MARBLE_D)
-    # suporte de armas
-    rx = 470
-    fill_rect(a, rx, 200, rx + 50, 204, hexc("6a4428"))
-    fill_rect(a, rx, 222, rx + 50, 226, hexc("6a4428"))
-    for k in range(5):
-        x = rx + 4 + k * 10
-        fill_rect(a, x, 176, x + 2, 240, hexc("8a6a40"))
-        fill_rect(a, x - 1, 172, x + 3, 178, hexc("c4c8d0"))
-    # escudos encostados
-    for k, sx in enumerate((120, 138)):
-        fill_rect(a, sx, 210, sx + 12, 240, GOLD)
-        fill_rect(a, sx + 1, 211, sx + 11, 239, hexc("a62c24"))
-        fill_rect(a, sx + 4, 222, sx + 8, 227, hexc("c4c8d0"))
-    # cocho de água
-    fill_rect(a, 200, 226, 250, 242, hexc("9a9080"))
-    fill_rect(a, 202, 228, 248, 232, hexc("4a7aa0"))
+    # (suporte de armas, escudos e cocho viraram objetos da cena: ver gen_v06.place_props)
     # chão de areia
     gradient(a, 240, H, SAND, lighter(SAND, 0.05))
     noise(a, 240, H, [SAND_D, SAND_L], 0.15, rng)

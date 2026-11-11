@@ -21,7 +21,7 @@ export class BootScene extends Phaser.Scene {
     }
     for (const a of ARENAS) this.load.spritesheet(`bg:crowdfest_${a.id}`, `assets/backgrounds/crowdfest_${a.id}.png`, { frameWidth: 640, frameHeight: 360 });
     for (const k of ['festival', 'merchant_cart', 'forge', 'arm_table']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
-    for (const k of ['prop_table', 'prop_stool', 'prop_crates', 'prop_basket_fruit', 'prop_basket_bread', 'prop_barrel', 'prop_sacks', 'prop_amphorae']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
+    for (const k of ['prop_table', 'prop_stool', 'prop_crates', 'prop_basket_fruit', 'prop_basket_bread', 'prop_barrel', 'prop_sacks', 'prop_amphorae', 'prop_bed_straw', 'prop_bed_wool', 'prop_bed_noble', 'prop_bench', 'prop_home_amphora', 'prop_home_chest', 'prop_home_rug', 'prop_home_sandals', 'prop_home_stool', 'prop_home_table', 'prop_plant', 'prop_rack', 'prop_shields', 'prop_towels', 'prop_trough']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:crowd_front', 'assets/sprites/fx/crowd_front.png', { frameWidth: 1280, frameHeight: 44 });
     this.load.image('bg:ludus', 'assets/backgrounds/ludus.png');
     for (const k of ['home', 'market', 'temple', 'forum', 'baths', 'tavern']) this.load.image(`bg:loc_${k}`, `assets/backgrounds/loc_${k}.png`);
@@ -32,7 +32,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');
     this.load.spritesheet('fx:monk', 'assets/sprites/fx/monk.png', { frameWidth: 48, frameHeight: 44 });
     this.load.spritesheet('fx:palus_iron', 'assets/sprites/fx/palus_iron.png', { frameWidth: 24, frameHeight: 56 });
-    for (const k of ['tavern_front', 'bed_wool', 'bed_noble', 'up_weights', 'up_stakes', 'up_track']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
+    for (const k of ['tavern_front', 'up_weights', 'up_stakes', 'up_track']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.once(Phaser.Loader.Events.COMPLETE, () => {
       this.anims.create({
         key: 'brazier',
