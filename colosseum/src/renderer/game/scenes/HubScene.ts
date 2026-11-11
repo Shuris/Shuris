@@ -52,6 +52,8 @@ export interface HubData {
   rivals?: Array<{ id: string; name: string; visual: FighterVisual; hater: boolean }>;
   /** dia do jogo (estação: folhas no outono) */
   day?: number;
+  /** nome do jogador (citado nas falas dos moradores e rivais) */
+  playerName?: string;
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */
@@ -679,7 +681,8 @@ export class HubScene extends Phaser.Scene {
   }
 
   private talk(tk: Talker): void {
-    const line = npcLine(tk.line, Math.floor(Math.random() * 1000));
+    // falas que citam o jogador ("Ria enquanto pode, {name}") recebem o nome dele
+    const line = npcLine(tk.line, Math.floor(Math.random() * 1000), { name: this.data_.playerName ?? '' });
     if (line) speech(this, tk.who, line, { head: tk.head, insetRight: () => this.insets.right });
   }
 

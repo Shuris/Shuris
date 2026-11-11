@@ -47,3 +47,16 @@ describe('rivais pela cidade', () => {
     expect(OPPONENTS.filter((o) => !isHater(o.id)).length).toBeGreaterThan(HATERS.size);
   });
 });
+
+describe('falas dos rivais', () => {
+  it('citam o nome do jogador (sem sobrar {name})', async () => {
+    const { npcLine } = await import('../../src/renderer/core/data/dialogue');
+    for (const id of Object.keys(RIVAL_HOME)) {
+      for (let k = 0; k < 8; k++) {
+        const line = npcLine(`rival.${id}`, k, { name: 'Maximus' });
+        expect(line.length).toBeGreaterThan(0);
+        expect(line).not.toContain('{');
+      }
+    }
+  });
+});

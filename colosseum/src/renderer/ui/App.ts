@@ -590,6 +590,7 @@ export class App implements AppActions {
         rainyDay: weatherOfDay(p.createdAt, p.day).rainy,
         minutes: p.minutes,
         day: p.day,
+        playerName: p.name,
         // rivais pela cidade, à paisana: sem armas nem escudo
         rivals: rivalsAt(p, loc.id).map((o) => {
           const v = opponentCombatant(o).visual;
