@@ -511,3 +511,10 @@ em.down { color: var(--red-hi); }
 .gear-layout { display: grid; grid-template-columns: 190px 1fr; gap: 8px; align-items: start; }
 .doll-wrap { display: flex; align-items: flex-end; justify-content: center; height: 230px; background: radial-gradient(ellipse at 50% 85%, #5a4030 0%, #2a1a12 70%); overflow: hidden; }
 .doll { width: 336px; height: 264px; image-rendering: pixelated; margin-bottom: -18px; }
+
+.hero-card.compact { display: flex; align-items: center; gap: 10px; padding: 6px 10px; }
+.hero-card.compact .hero-name { font-size: 18px; }
+.hero-card.compact .big-stats { display: flex; gap: 10px; margin-left: auto; font-size: 15px; }
+.hero-card.compact .big-stats .px-icon { width: 16px; height: 16px; }
+.arena-tabs .btn { position: relative; }
+.arena-tabs .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e8b040; box-shadow: 0 0 4px #e8b040; vertical-align: middle; }

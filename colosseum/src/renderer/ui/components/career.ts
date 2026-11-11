@@ -92,7 +92,6 @@ export function venatioCard(p: PlayerState, fightErr: string | null): string {
       <div class="tiny gold">${t('venatio.today')}</div>
       <b>${esc(tk(`beast.${beast.beast}.name`))}</b> <span class="tiny">${esc(opponentEpithet(beast))}</span>
       <div class="row between"><span class="lvl">${t('common.lv', { n: beast.level })}</span><span class="tag gold">${t('venatio.fame', { n: BEAST_FAME_MUL })}</span></div>
-      <p class="tiny dim">${esc(tk(`beast.${beast.beast}.desc`))}</p>
     </div>
     <button class="btn btn-red" data-action="career-beast" ${err || fightErr ? 'disabled' : ''}>${err === 'done' ? t('venatio.done') : t('venatio.fight')}</button>
   </div>`;

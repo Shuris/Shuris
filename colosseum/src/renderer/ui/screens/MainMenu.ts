@@ -26,6 +26,8 @@ import { t, tk } from '../../i18n';
 import { arenaName, opponentDesc, opponentEpithet, strategyName } from '../../i18n/data';
 import { portrait } from '../components/portraits';
 import { duoCard, inviteCards, venatioCard } from '../components/career';
+import { isVenatioDay, venatioCheck } from '../../core/systems/VenatioSystem';
+import { openInvites } from '../../core/systems/InviteSystem';
 
 export function difficulty(chance: number): { label: string; cls: string } {
   if (chance >= 0.75) return { label: t('diff.easy'), cls: 'diff-easy' };
@@ -40,7 +42,10 @@ export function todaysChallenger(p: PlayerState): OpponentDef {
   return freeChallenger(p.createdAt, p.day, n, p.level);
 }
 
+type ArenaTab = 'fights' | 'events' | 'duo';
+
 export class MainMenu implements Screen {
+  private tab: ArenaTab = 'fights';
   readonly id = 'arena' as const;
   get title() {
     return t('arena.title');
@@ -86,7 +91,6 @@ export class MainMenu implements Screen {
         <div class="tiny dim">${t('arena.challenger')}</div>
         <b>${esc(c.name)}</b> <span class="tiny">${esc(opponentEpithet(c))}</span>
         <div class="row between"><span class="lvl">${t('common.lv', { n: c.level })}</span>${this.chanceTag(c)}</div>
-        <p class="tiny dim">${esc(opponentDesc(c))}</p>
       </div>
       <button class="btn btn-red" data-action="fight-free" ${fightErr ? 'disabled' : ''}>${t('arena.fight')}</button>
     </div>`;
@@ -140,28 +144,27 @@ export class MainMenu implements Screen {
           </div>
         </div>`;
 
-    return `
-      ${isFestival(p.day) ? `<div class="festival-banner">${t('event.festivalBanner')}</div>` : ''}
-      ${p.injury ? `<div class="injury-note">${t('injury.note', { n: p.injury.days })}</div>` : ''}
-      <div class="card hero-card">
-        <div class="row between"><span class="hero-name">${esc(p.name)}</span><span class="lvl big">${t('common.level', { n: p.level })}</span></div>
-        <div class="big-stats">
-          <span title="${t('stat.maxHp')}">${icon('attr_vit')} ${stats.maxHp}</span>
-          <span title="${t('stat.baseDamage')}">${icon('attr_str')} ${Math.round(stats.baseDamage)}</span>
-          <span title="${t('stat.reduction')}">${icon('attr_res')} ${Math.round(stats.damageReduction * 100)}%</span>
-        </div>
-        ${p.unspentPoints > 0 ? `<button class="btn btn-gold wide" data-action="goto">${t('arena.pointsToUse', { n: p.unspentPoints })}</button>` : ''}
-      </div>
-      ${rem ? `<div class="card rematch-card">${portrait(rem.id, 'md')}<div><b>${t('rival.asked', { name: rem.name })}</b><p class="tiny dim">${t('rival.askedHint', { day: p.rematch!.expires })}</p></div><button class="btn btn-red" data-action="fight-rematch" ${fightErr ? 'disabled' : ''}>${t('rival.accept')}</button></div>` : ''}
-      <h3>${t('arena.strategy')}</h3>
+    const tabBtn = (id: ArenaTab, label: string, badge = '') =>
+      `<button class="btn ${this.tab === id ? 'active' : ''}" data-action="tab" data-id="${id}">${label}${badge}</button>`;
+    const eventsBadge = isVenatioDay(p.createdAt, p.day) && !venatioCheck(p) ? ' <span class="dot"></span>' : openInvites(p).length ? ' <span class="dot"></span>' : '';
+    const banner = `${isFestival(p.day) ? `<div class="festival-banner">${t('event.festivalBanner')}</div>` : ''}${p.injury ? `<div class="injury-note">${t('injury.note', { n: p.injury.days })}</div>` : ''}`;
+    const hero = `<div class="card hero-card compact">
+        <span class="hero-name">${esc(p.name)}</span><span class="lvl">${t('common.lv', { n: p.level })}</span>
+        <span class="big-stats">
+          <span title="${t('stat.maxHp')}">${icon('attr_vit', 'xs')} ${stats.maxHp}</span>
+          <span title="${t('stat.baseDamage')}">${icon('attr_str', 'xs')} ${Math.round(stats.baseDamage)}</span>
+          <span title="${t('stat.reduction')}">${icon('attr_res', 'xs')} ${Math.round(stats.damageReduction * 100)}%</span>
+        </span>
+        ${p.unspentPoints > 0 ? `<button class="btn btn-gold sm" data-action="goto">+${p.unspentPoints}</button>` : ''}
+      </div>`;
+    const tabs = `<div class="subtabs arena-tabs">${tabBtn('fights', t('arena.tabFights'))}${tabBtn('events', t('arena.tabEvents'), eventsBadge)}${tabBtn('duo', t('arena.tabDuo'))}</div>`;
+    const cost = `<p class="tiny center ${fightErr ? 'red' : 'dim'}">${fightErr ?? t('arena.cost', { energy: FIGHT_ENERGY })}</p>`;
+    let content = '';
+    if (this.tab === 'fights') {
+      content = `
       <div class="row strategies">${strategies}</div>
-      <p class="hint">${t(`strat.hint.${p.strategy}` as 'strat.hint.balanced')}</p>
-      <p class="hint center ${fightErr ? 'red' : ''}">${fightErr ?? t('arena.cost', { energy: FIGHT_ENERGY })}</p>
+      ${rem ? `<div class="card rematch-card">${portrait(rem.id, 'md')}<div><b>${t('rival.asked', { name: rem.name })}</b><p class="tiny dim">${t('rival.askedHint', { day: p.rematch!.expires })}</p></div><button class="btn btn-red" data-action="fight-rematch" ${fightErr ? 'disabled' : ''}>${t('rival.accept')}</button></div>` : ''}
       ${this.challengerCard(p, fightErr)}
-      ${venatioCard(p, fightErr)}
-      ${this.tournamentCard(p)}
-      ${inviteCards(p, fightErr)}
-      ${duoCard(p, fightErr)}
       <h3>${t('arena.opponents')}</h3>
       ${detail}
       <div class="fight-box">
@@ -172,11 +175,23 @@ export class MainMenu implements Screen {
         </div>
       </div>
       <div class="opp-list">${groups}</div>`;
+    } else if (this.tab === 'events') {
+      content = `${venatioCard(p, fightErr)}${this.tournamentCard(p)}${inviteCards(p, fightErr)}`;
+    } else {
+      content = duoCard(p, fightErr);
+    }
+    return `${banner}${hero}${tabs}${cost}${content}`;
   }
 
   onAction(action: string, el: HTMLElement): void {
     const id = el.dataset.id ?? '';
     switch (action) {
+      case 'tab':
+        if (id === 'fights' || id === 'events' || id === 'duo') {
+          this.tab = id;
+          this.d.actions.rerender();
+        }
+        break;
       case 'strategy':
         if (id in STRATEGIES) this.d.store.update((p) => (p.strategy = id as StrategyId));
         break;

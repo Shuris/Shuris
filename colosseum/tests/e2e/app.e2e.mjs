@@ -63,6 +63,8 @@ async function goTo(id) {
   await win.click('[data-nav="map"]');
   await win.click(`[data-action="go"][data-id="${id}"]`);
   await win.waitForFunction((id) => window.__colosseum.store.state.location === id && window.__colosseum.screen === id, id, { timeout: 8000 });
+  // a arena abre na aba de lutas comuns (as outras abas são escolhidas nas etapas)
+  if (id === 'arena' && (await win.locator('[data-action="tab"][data-id="fights"]').count())) await win.click('[data-action="tab"][data-id="fights"]');
 }
 
 async function closeNewspaper() {
@@ -572,9 +574,11 @@ await step('29. Queda de braço na taverna (domingo à noite)', async () => {
 await step('30. Torneio de sábado: inscrição, chave e prêmio', async () => {
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 15; p.minutes = 10 * 60; p.energy = 100; p.injury = null; }));
   await goTo('arena');
+  if (await win.locator('[data-action="tab"][data-id="events"]').count()) await win.click('[data-action="tab"][data-id="events"]');
   await win.click('[data-action="tour-register"]');
   assert((await state()).tournament.registered === 20, 'inscrito para o sábado (dia 20)');
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.day = 20; p.minutes = 14 * 60; p.energy = 100; p.location = 'arena'; }));
+  if (await win.locator('[data-action="tab"][data-id="events"]').count()) await win.click('[data-action="tab"][data-id="events"]');
   await win.click('[data-action="tour-start"]');
   await win.waitForSelector('.modal-bracket');
   assert((await win.locator('.bracket .bk-f').count()) >= 8, 'chave com 8 lutadores');
@@ -668,6 +672,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   }), vday);
   await goTo('arena');
   // venatio: a fera do dia
+  if (await win.locator('[data-action="tab"][data-id="events"]').count()) await win.click('[data-action="tab"][data-id="events"]');
   await win.click('[data-action="career-beast"]');
   await win.waitForSelector('#hud .favor-fill', { timeout: 10000 });
   const beast = await win.evaluate(() => window.__colosseum.view.arena.engine.fighters[1].spec.name);
@@ -682,6 +687,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   await win.evaluate(() => window.__colosseum.checkInvitesNow());
   assert((await state()).career.invites.some((i) => i.id === 'villa'), 'convite da Villa de Lucullus chegou');
   const fameBefore = (await state()).reputation;
+  if (await win.locator('[data-action="tab"][data-id="events"]').count()) await win.click('[data-action="tab"][data-id="events"]');
   await win.click('[data-action="career-invite"][data-id="villa"]');
   await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
   assert((await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id)) === 'villa', 'luta na arena particular');
@@ -694,6 +700,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   assert(afterInvite.career.invites.find((i) => i.id === 'villa').status === 'done', 'convite usado');
   // dupla: escolhe o amigo como parceiro e luta em revezamento
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 11 * 60; p.energy = 100; p.injury = null; }));
+  if (await win.locator('[data-action="tab"][data-id="duo"]').count()) await win.click('[data-action="tab"][data-id="duo"]');
   await win.click('[data-action="career-partner"][data-id="marcus"]');
   assert((await state()).career.partner === 'marcus', 'parceiro escolhido');
   await win.click('[data-action="career-duo"]');
