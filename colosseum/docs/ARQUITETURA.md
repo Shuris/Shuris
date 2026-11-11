@@ -237,3 +237,16 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 - `WeatherSystem.weatherOfDay` devolve `kind` (`sun`, `cloudy` ou `rain`) para o dia inteiro; `weatherAt` é constante durante o dia.
 - `HubData.openNow()` diz se o local está aberto; `HubScene` não cria figurantes em local fechado e, se o local fechar com gente, chama `departAll()` (cada um sai andando pela borda mais próxima). `rainyDay` e `minutes` deixam a taverna mais cheia em noite de chuva.
 - Textos novos em `i18n/pt07.ts` e `en07.ts` (substituem as falas antigas pelas listas completas).
+
+## Iluminação, fama e carreira (0.8.0 e 0.9.0)
+- **Mapa de iluminação** (`game/DayNight.ts`): à noite, em vez de um retângulo que só multiplica a cor do ambiente, um `RenderTexture` é preenchido com a luz ambiente e recebe "poças" de luz aditivas em volta de cada fonte (`addLight`). É redesenhado só quando o ambiente muda ou cerca de 12 vezes por segundo, para a tremulação.
+- **Carreira** (`PlayerState.career`, save versão 5, validado em `SaveSystem.careerFields`). Saves antigos começam com a carreira vazia. Os sistemas puros ficam em `core/systems/`:
+  - `InviteSystem`: convites por fama, amistosos e o torneio de Baiae (semifinal e final; a outra semifinal é simulada pelo motor).
+  - `VenatioSystem`: dias de feras, sorteados de forma estável por gladiador. As feras são `OpponentDef` com `beast`. `CombatantFactory.BEAST_STATS` dá alcance das garras e multiplicadores de dano e vida, calibrados para cerca de 40% de vitória de um gladiador médio.
+  - `DuoSystem`: respeito, amigos, parceiro e o revezamento. O motor aceita `startHp`, e a interface encadeia os assaltos.
+  - `CrowdSystem`: favor da plateia, uma função pura sobre os eventos do motor; polegar e fama.
+  - `QuestSystem`: missões dos moradores.
+  - `RankingSystem`: tabela da cidade; lutas noturnas simuladas ao dormir.
+- **Feras e bichos na cena**: folhas `sprites/beasts/beast_<tipo>.png` com exatamente os mesmos 29 quadros e animações do gladiador (`tools/gen_beasts.py`). A `GladiatorView` com `visual.beast` usa uma única folha, e a cena da arena não precisa saber que é um animal.
+- **Arenas particulares**: temas `PRIVATE` em `tools/gen_arenas.py`, gerados com RNG próprio (não alteram os outros cenários), e `PRIVATE_ARENAS` em `core/data/arenas.ts`.
+- **Boneco** (`ui/components/doll.ts`): monta as mesmas camadas num canvas. O manifesto é lido por XHR, porque `fetch` não lê `file://` no Electron.

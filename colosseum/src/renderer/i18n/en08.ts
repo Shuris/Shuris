@@ -145,4 +145,12 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'tavern.drinkDone': 'You already bought a round today.',
   'tavern.drinkBtn': 'Buy',
   'tavern.drinkLine': 'To your health, {name}! No hard feelings.',
+  'npc.senator': 'The Senate decides; the people watch. Such is Rome.|I voted for this month\'s games. Do not disappoint me, gladiator.|My toga cost more than your freedom.|Politics is an arena without sand.|Beware those who cheer: tomorrow they may boo.|The editor of the games is my brother-in-law. I speak well of you.',
+  'npc.soldier': 'Move along. No trouble in the forum.|I fought in Germania. There the sand is mud.|If you want to brawl, do it in the arena.|Pay is late again.|Saw your last fight. Good work with the shield.',
+  'npc.kid': 'When I grow up I\'ll be a gladiator!|Teach me that move?|My father says you\'re the best!|Get it! Get it! (chases a pigeon)|Is it true you fought a lion?',
+  'npc.dog': 'Woof! Woof!|(wags its tail)|Grrr... (sniffs your sandal)|Woof!',
+  'npc.cat': 'Meow.|(purrs)|(solemnly ignores you)|Mrrr...',
+  'status.injured': 'Injured',
+  'status.tired': 'Tired',
+  'status.motivated': 'Motivated',
 };

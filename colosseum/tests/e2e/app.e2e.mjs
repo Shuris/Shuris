@@ -214,7 +214,7 @@ await step('10. Sem energia não luta; dormir inicia o dia seguinte com o jornal
   await shot('10-new-day');
 });
 
-await step('11. Derrota (desistência) não tira nada', async () => {
+await step('11. Derrota (desistência): sem perder itens, só um pouco de fama', async () => {
   await win.evaluate(() => window.__colosseum.store.update((p) => (p.injury = null)));
   await goTo('arena');
   const before = await state();
@@ -642,6 +642,82 @@ await step('33. Rede de segurança: um erro na cena não congela o jogo', async 
   });
   errors.splice(before); // o erro foi provocado de propósito
   assert(fps > 3, `animação religada depois do erro (${fps} quadros/s)`);
+});
+
+await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da plateia, missão, ranking, boneco e estados', async () => {
+  const errs0 = errors.length;
+  const vday = await win.evaluate(() => { let d = 3; while (!window.__colosseum.isVenatio(d)) d++; return d; });
+  await win.evaluate((d) => window.__colosseum.store.update((p) => {
+    p.day = d; p.minutes = 9 * 60; p.energy = 100; p.injury = null; p.reputation = 120;
+    if (!p.defeatedOpponents.includes('marcus')) p.defeatedOpponents.push('marcus');
+    p.career.respect = { marcus: 70 }; p.career.partner = null; p.career.beastDay = 0; p.career.duoDay = 0;
+  }), vday);
+  await goTo('arena');
+  // venatio: a fera do dia
+  await win.click('[data-action="career-beast"]');
+  await win.waitForSelector('#hud .favor-fill', { timeout: 10000 });
+  const beast = await win.evaluate(() => window.__colosseum.view.arena.engine.fighters[1].spec.name);
+  assert(/Lobo|Javali|Urso|Leão/.test(beast), `adversário é uma fera (${beast})`);
+  await shot('35-venatio');
+  await forfeitNow();
+  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.click('[data-r="close"]');
+  assert((await state()).career.beastDay === vday, 'uma fera por dia');
+  // convite por fama
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.reputation = 160; p.minutes = 11 * 60; p.energy = 100; p.injury = null; }));
+  await win.evaluate(() => window.__colosseum.checkInvitesNow());
+  assert((await state()).career.invites.some((i) => i.id === 'villa'), 'convite da Villa de Lucullus chegou');
+  const fameBefore = (await state()).reputation;
+  await win.click('[data-action="career-invite"][data-id="villa"]');
+  await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
+  assert((await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id)) === 'villa', 'luta na arena particular');
+  await shot('35-convite');
+  await forfeitNow();
+  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.click('[data-r="close"]');
+  const afterInvite = await state();
+  assert(afterInvite.reputation >= fameBefore - 0 && !afterInvite.injury, 'amistoso não fere nem tira fama');
+  assert(afterInvite.career.invites.find((i) => i.id === 'villa').status === 'done', 'convite usado');
+  // dupla: escolhe o amigo como parceiro e luta em revezamento
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 11 * 60; p.energy = 100; p.injury = null; }));
+  await win.click('[data-action="career-partner"][data-id="marcus"]');
+  assert((await state()).career.partner === 'marcus', 'parceiro escolhido');
+  await win.click('[data-action="career-duo"]');
+  await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
+  const bench = await win.evaluate(() => window.__colosseum.view.arena.benchViews.filter(Boolean).length);
+  assert(bench === 2, `parceiros esperando no portão (${bench})`);
+  await shot('35-dupla');
+  await forfeitNow();
+  // o parceiro entra no segundo assalto
+  await win.waitForFunction(() => document.querySelector('#hud .plate-0 .plate-name span')?.textContent?.includes('Marcus'), null, { timeout: 20000 });
+  await forfeitNow();
+  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.click('[data-r="close"]');
+  assert((await state()).career.duoDay === (await state()).day, 'luta de dupla registrada');
+  // missão do instrutor no ludus
+  await win.evaluate(() => window.__colosseum.store.update((p) => {
+    p.career.quest = { id: 'q-e2e', npc: 'trainer', kind: 'train', target: 'any', need: 1, progress: 0, day: p.day, expires: p.day + 3, reward: { coins: 33, fame: 2, item: null } };
+    p.minutes = 15 * 60; p.energy = 100;
+  }));
+  await goTo('ludus');
+  assert((await win.locator('.quest-card.active').count()) === 1, 'missão ativa no painel');
+  const coins = (await state()).coins;
+  await win.click('[data-action="train"][data-id="str"]');
+  await win.waitForFunction(() => window.__colosseum.store.state.career.quest === null, null, { timeout: 10000 });
+  assert((await state()).coins === coins + 33, 'recompensa da missão paga');
+  // ranking no fórum, boneco e ícones de estado
+  await goTo('forum');
+  assert((await win.locator('.rank-table tr.me').count()) === 1, 'jogador na tabela do ranking');
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.energy = 20; p.streak = 3; }));
+  await win.waitForTimeout(300);
+  assert((await win.locator('#statusbar .st-icon').count()) >= 2, 'ícones de estado (cansado, motivado)');
+  await win.click('[data-nav="gladiator"]');
+  await win.click('[data-action="tab"][data-id="gear"]');
+  await win.waitForFunction(() => (document.querySelector('[data-doll]')?.getAttribute('src') ?? '').startsWith('data:image'), null, { timeout: 8000 });
+  await shot('35-boneco');
+  await win.click('[data-nav="gladiator"]');
+  await win.evaluate(() => window.__colosseum.store.update((p) => { p.energy = 100; p.streak = 0; }));
+  assert(errors.length === errs0, `sem erros (${errors.slice(errs0).join('; ')})`);
 });
 
 const snapshot = await state();

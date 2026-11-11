@@ -44,6 +44,8 @@ export interface HubData {
   injured?: boolean;
   /** aparência do jogador para o retrato nos balões */
   heroLook?: PlayerLook;
+  /** estados do gladiador (ícones sobre a cabeça) */
+  status?: string[];
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */
@@ -152,12 +154,15 @@ export class HubScene extends Phaser.Scene {
     this.spawnProps();
     this.baseProps = this.props.length;
     this.spawnPeople();
+    this.ambientFx(data.location, data.outdoor);
     if (data.location === 'ludus') {
       this.palus = this.add.sprite(352, GROUND, ups.has('iron_palus') ? 'fx:palus_iron' : 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(GROUND));
       if (ups.has('bronze_palus')) this.palus.setTint(0xe8a860);
       this.add.ellipse(352, GROUND, 18, 5, 0x000000, 0.25).setDepth(3);
     }
     this.hero = new GladiatorView(this, this.heroX, GROUND, data.visual);
+    this.statusIcons = [];
+    this.setStatus(data.status ?? []);
     this.hero.setDepth(10);
     this.hero.play('idle');
     if (data.hideHero) this.hero.setVisible(false);
@@ -265,9 +270,127 @@ export class HubScene extends Phaser.Scene {
       this.add.ellipse(424, GROUND, 40, 6, 0x000000, 0.2).setDepth(8);
       this.talkers.push({ who: this.monk, line: 'monk', head: 46, auto: true });
     }
+    if (open || data.location === 'forum' || data.location === 'temple') this.spawnCityFolk(data.location);
     this.hovers = [];
     this.makeClickable();
     this.people = this.children.list.filter((o) => !before.has(o));
+  }
+
+  /** Figurantes da cidade: crianças, soldados, senadores de toga, cães, gatos e pombos. */
+  private spawnCityFolk(loc: LocationId): void {
+    this.pigeons = [];
+    const indoor = loc === 'tavern' || loc === 'home';
+    if (this.raining && !indoor) return;
+    const rnd = (n: number) => Math.floor(Math.random() * n);
+    const walk = (v: GladiatorView, speed: number, min = 196, max = 480) => {
+      v.setFacing(speed >= 0 ? 1 : -1);
+      v.play(speed ? 'walk' : 'idle', { fps: speed ? 8 : 3 });
+      this.npcs.push({ v, speed, min, max, pause: 0 });
+    };
+    const senator = () => ({
+      appearance: { skin: rnd(2), hairStyle: 1, hairColor: 5, beard: Math.random() < 0.5, clothColor: 0 },
+      gear: {},
+      extra: [{ sheet: 'robe', tint: 0xf4eee2 }],
+    });
+    const soldier = () => ({
+      appearance: { skin: rnd(3), hairStyle: 0, hairColor: rnd(4), beard: Math.random() < 0.3, clothColor: 2 },
+      gear: { head: getItem('galea'), body: getItem('medium_armor'), mainHand: getItem('spear'), offHand: getItem('scutum') },
+    });
+    const kid = () => ({
+      appearance: { skin: rnd(3), hairStyle: rnd(3), hairColor: rnd(5), beard: false, clothColor: rnd(CLOTH_COLORS.length) },
+      gear: {},
+      extra: [{ sheet: 'tunic', tint: [0x4a6aa8, 0xd8c890, 0x9a4a3a, 0x6a8a5a][rnd(4)] }],
+    });
+    const animal = (beast: 'dog' | 'cat') => ({ appearance: { skin: 0, hairStyle: 0, hairColor: 0, beard: false, clothColor: 0 }, gear: {}, beast });
+    const add = (vis: FighterVisual, x: number, y: number, scale: number, line: string, head: number, speed = 0) => {
+      const v = new GladiatorView(this, speed ? x : this.freeX(x, y), y, vis);
+      v.setBaseScale(scale);
+      walk(v, speed);
+      this.talkers.push({ who: v, line, head });
+      return v;
+    };
+    if (loc === 'forum') {
+      add(senator(), 250, GROUND - 6, 1, 'senator', 46, 14);
+      add(senator(), 430, GROUND + 4, 1, 'senator', 46, -11);
+      add(soldier(), 470, GROUND - 16, 1, 'soldier', 50);
+      add(kid(), 300, GROUND + 14, 0.68, 'kid', 32, 26);
+      add(animal('dog'), 360, GROUND + 18, 0.5, 'dog', 18, -30);
+    } else if (loc === 'market') {
+      add(soldier(), 300, GROUND + 4, 1, 'soldier', 50, 12);
+      add(kid(), 260, GROUND + 18, 0.68, 'kid', 32, -24);
+      add(animal('dog'), 420, GROUND + 20, 0.5, 'dog', 18, 28);
+      add(animal('cat'), 214, GROUND - 4, 0.42, 'cat', 14);
+    } else if (loc === 'temple') {
+      add(senator(), 270, GROUND - 4, 1, 'senator', 46);
+      add(animal('cat'), 470, GROUND - 2, 0.42, 'cat', 14);
+    } else if (loc === 'tavern') {
+      // o gato da taverna cochila perto da lareira
+      add(animal('cat'), 196, GROUND + 6, 0.42, 'cat', 14);
+    } else if (loc === 'baths') {
+      add(kid(), 330, GROUND + 14, 0.68, 'kid', 32, 20);
+    }
+    // pombos no chão do fórum, do templo e do mercado: voam quando o gladiador chega perto
+    if (loc === 'forum' || loc === 'temple' || loc === 'market') {
+      for (let i = 0; i < (loc === 'forum' ? 6 : 3); i++) {
+        const pg = this.add.sprite(210 + Math.random() * 260, GROUND + 6 + Math.random() * 22, 'fx:pigeon', 0).setOrigin(0.5, 1);
+        pg.setDepth(depthAt(pg.y)).setFlipX(Math.random() < 0.5).play(Math.random() < 0.5 ? 'pigeon_peck' : 'pigeon_walk');
+        this.pigeons.push({ s: pg, vx: (Math.random() - 0.5) * 8, flying: false });
+      }
+    }
+  }
+
+  private statusIcons: Phaser.GameObjects.Image[] = [];
+
+  /** Ícones de estado sobre a cabeça do gladiador. */
+  setStatus(list: string[]): void {
+    for (const i of this.statusIcons) i.destroy();
+    this.statusIcons = list.filter((k) => this.textures.exists(`st:${k}`)).map((k) => this.add.image(0, 0, `st:${k}`).setScale(0.6).setAlpha(0.95));
+  }
+
+  private pigeons: Array<{ s: Phaser.GameObjects.Sprite; vx: number; flying: boolean }> = [];
+
+  private updatePigeons(dt: number): void {
+    for (const p of this.pigeons) {
+      if (!p.s.active || p.flying) continue;
+      const near = this.hero && Math.abs(this.hero.x - p.s.x) < 30 && Math.abs(this.hero.y - p.s.y) < 20;
+      if (near) {
+        p.flying = true;
+        const dir = this.hero.x < p.s.x ? 1 : -1;
+        p.s.setFlipX(dir < 0).play('pigeon_fly');
+        this.tweens.add({ targets: p.s, x: p.s.x + dir * 260, y: p.s.y - 170, duration: 1800, ease: 'Quad.easeIn', onComplete: () => p.s.destroy() });
+        continue;
+      }
+      p.s.x += p.vx * dt;
+      if (p.s.x < 200 || p.s.x > 480 || Math.random() < dt * 0.3) {
+        p.vx = (Math.random() - 0.5) * 10;
+        p.s.setFlipX(p.vx < 0);
+        p.s.play(Math.abs(p.vx) < 2 ? 'pigeon_peck' : 'pigeon_walk', true);
+      }
+    }
+  }
+
+  /** Efeitos de ambiente: fumaça na lareira, vapor nas termas e pássaros no céu. */
+  private ambientFx(loc: LocationId, outdoor: boolean): void {
+    if (loc === 'tavern') this.time.addEvent({ delay: 380, loop: true, callback: () => this.puff(140 + Math.random() * 24, 216, 0x8a8078, 0.45, -48, 3, 4) });
+    if (loc === 'baths') this.time.addEvent({ delay: 220, loop: true, callback: () => this.puff(190 + Math.random() * 330, 252 + Math.random() * 34, 0xf6f4ee, 0.18, -34, 2, 3) });
+    if (outdoor) this.time.addEvent({ delay: 3800, loop: true, callback: () => !this.raining && Math.random() < 0.55 && this.flock() });
+  }
+
+  private puff(x: number, y: number, color: number, alpha: number, rise: number, r: number, depth: number): void {
+    const c = this.add.circle(x, y, r, color, alpha).setDepth(depth);
+    this.tweens.add({ targets: c, y: y + rise, x: x + (Math.random() - 0.5) * 10, scale: 2.4, alpha: 0, duration: 2200, ease: 'Sine.Out', onComplete: () => c.destroy() });
+  }
+
+  /** Um bando de pássaros cruza o céu. */
+  private flock(): void {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const y = 30 + Math.random() * 60;
+    const n = 2 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++) {
+      const b = this.add.sprite(dir > 0 ? -20 - i * 12 : 660 + i * 12, y + (i % 2) * 6 + Math.random() * 4, 'fx:bird', 0).setDepth(-25).setFlipX(dir < 0);
+      b.play({ key: 'bird_fly', startFrame: i % 2 });
+      this.tweens.add({ targets: b, x: b.x + dir * 720, y: b.y - 20 + Math.random() * 40, duration: 11000 + Math.random() * 2000, onComplete: () => b.destroy() });
+    }
   }
 
   /** Começou ou parou de chover: refaz os figurantes. */
@@ -750,6 +873,8 @@ export class HubScene extends Phaser.Scene {
     const dt = Math.min(0.1, delta / 1000);
     this.hero?.tick(dt);
     this.updateNpcs(dt);
+    this.updatePigeons(dt);
+    if (this.hero) this.statusIcons.forEach((ic, i, all) => ic.setPosition(this.hero.x + (i - (all.length - 1) / 2) * 11, this.hero.y - 62 + Math.sin(this.time.now / 300 + i) * 1.5).setDepth(depthAt(this.hero.y) + 1));
     // ordem de desenho pela linha dos pés (quem está na frente cobre quem está atrás)
     if (this.hero) this.hero.setDepth(depthAt(this.hero.y) + 0.5);
     for (const n of this.npcs) n.v.setDepth(depthAt(n.v.y));

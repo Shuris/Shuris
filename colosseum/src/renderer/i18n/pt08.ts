@@ -151,4 +151,12 @@ export const PT08 = {
   'tavern.drinkDone': 'Você já pagou uma rodada hoje.',
   'tavern.drinkBtn': 'Pagar',
   'tavern.drinkLine': 'À sua saúde, {name}! Sem ressentimentos.',
+  'npc.senator': 'O Senado decide; o povo assiste. Assim é Roma.|Votei pelos jogos deste mês. Não me decepcione, gladiador.|Minha toga custou mais que a sua liberdade.|Política é uma arena sem areia.|Cuidado com quem aplaude: amanhã pode vaiar.|O editor dos jogos é meu cunhado. Falo bem de você.',
+  'npc.soldier': 'Circulando. Nada de confusão no fórum.|Lutei na Germânia. Lá a areia é lama.|Se for brigar, que seja na arena.|O pagamento atrasou de novo.|Vi sua última luta. Bom trabalho com o escudo.',
+  'npc.kid': 'Quando eu crescer vou ser gladiador!|Me ensina aquele golpe?|Meu pai disse que você é o melhor!|Pega! Pega! (corre atrás de um pombo)|É verdade que você já lutou com um leão?',
+  'npc.dog': 'Au! Au!|(abana o rabo)|Grrr... (fareja sua sandália)|Au!',
+  'npc.cat': 'Miau.|(ronrona)|(ignora você solenemente)|Mrrr...',
+  'status.injured': 'Ferido',
+  'status.tired': 'Cansado',
+  'status.motivated': 'Motivado',
 } as const;

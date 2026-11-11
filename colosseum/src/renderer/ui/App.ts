@@ -106,6 +106,15 @@ interface FightPlan {
 /** Notas extras da tela de resultado (plateia, missões, amizades, convites). */
 type Note = { text: string; bad?: boolean };
 
+/** Estados visíveis do gladiador: ferido, cansado (pouca energia) e motivado (vitórias seguidas). */
+export function playerStatus(p: PlayerState): Array<'injured' | 'tired' | 'motivated'> {
+  const out: Array<'injured' | 'tired' | 'motivated'> = [];
+  if (p.injury) out.push('injured');
+  if (p.energy < 35) out.push('tired');
+  if (p.streak >= 2) out.push('motivated');
+  return out;
+}
+
 const LOCATION_IDS: LocationId[] = ['ludus', 'home', 'market', 'arena', 'temple', 'forum', 'baths', 'tavern'];
 
 export class App implements AppActions {
@@ -237,6 +246,7 @@ export class App implements AppActions {
         <div id="hud" hidden></div>
         <div id="intro" hidden></div>
         <div id="title" hidden></div>
+        <div id="fade" hidden><div class="fade-name"></div><div class="fade-sub"></div></div>
         <div id="modal-root"></div>
         <div id="toast-root"></div>
         <div id="loading"><div class="loading-box">${t('app.loading')}</div></div>
@@ -571,6 +581,7 @@ export class App implements AppActions {
         armNight: isArmNight(p.day, p.minutes),
         injured: !!p.injury,
         heroLook: playerPortraitKey(p),
+        status: playerStatus(p),
         openNow: () => this.store.hasPlayer && isOpen(loc, this.store.state.minutes, this.store.state.day),
         rainyDay: weatherOfDay(p.createdAt, p.day).rainy,
         minutes: p.minutes,
@@ -633,10 +644,26 @@ export class App implements AppActions {
         this.checkNewInvites();
       }
       const loc = getLocation(to);
+      this.fadeIn(locationName(loc.id), hoursLabel(loc, this.store.state.day));
       if (!isOpen(loc, this.store.state.minutes, this.store.state.day)) toast(t('app.closedNow', { place: locationName(loc.id), hours: hoursLabel(loc, this.store.state.day) }), 'info');
       this.enterLocation();
     });
   }
+
+  /** Transição entre locais: escurece e mostra o nome do lugar. */
+  private fadeIn(name: string, sub: string): void {
+    const f = document.getElementById('fade');
+    if (!f) return;
+    (f.querySelector('.fade-name') as HTMLElement).textContent = name;
+    (f.querySelector('.fade-sub') as HTMLElement).textContent = sub;
+    f.hidden = false;
+    f.classList.remove('play');
+    void f.offsetWidth; // reinicia a animação
+    f.classList.add('play');
+    clearTimeout(this.fadeTimer);
+    this.fadeTimer = window.setTimeout(() => (f.hidden = true), 1500);
+  }
+  private fadeTimer = 0;
 
   sleep(): void {
     if (this.busy || this.store.state.location !== 'home') return;
@@ -1371,7 +1398,15 @@ export class App implements AppActions {
     this.renderStatus();
     this.view?.refreshMap();
     if (!this.battle) this.renderPanel();
+    if (!this.battle && this.store.hasPlayer) {
+      const st = playerStatus(this.store.state).join(',');
+      if (st !== this.lastStatus) {
+        this.lastStatus = st;
+        this.view?.updateStatus(st ? st.split(',') : []);
+      }
+    }
   }
+  private lastStatus = '';
 
   private renderStatus(): void {
     if (!this.store.hasPlayer) return;
@@ -1387,6 +1422,7 @@ export class App implements AppActions {
         ${weatherLabel(worldWeather.now()) ? `<div class="weather">${weatherLabel(worldWeather.now())}</div>` : ''}
         <div class="energy-row"><span>${t('common.energy')}</span>${bar(p.energy, 100, 'energy')}</div>
         <div class="row st-res"><span title="${t('common.coins')}">${icon('coin')} ${p.coins}</span><span title="${t('common.fame')}">${icon('laurel')} ${p.reputation}</span></div>
+        ${playerStatus(p).length ? `<div class="st-icons">${playerStatus(p).map((k) => `<span class="st-icon st-${k}" title="${t(`status.${k}` as 'status.injured')}">${icon(`st_${k}`)} ${t(`status.${k}` as 'status.injured')}</span>`).join('')}</div>` : ''}
         ${late ? `<div class="late">${t('status.late')}</div>` : ''}
         ${unread ? `<button class="btn btn-dark wide sm" data-st="news">${t('status.news')}</button>` : ''}
         ${p.unspentPoints ? `<button class="btn btn-gold wide sm" data-st="points">${t('status.attrPoints', { n: p.unspentPoints })}</button>` : ''}

@@ -1,4 +1,41 @@
-# Funcionalidades — versão 0.8.0
+# Funcionalidades — versão 0.9.0
+
+## Novidades da 0.9.0
+### Jogabilidade
+- **Convites por fama** (cartão "Convites" na Arena):
+  - 150 de fama: amistoso na **Villa de Lucullus**, uma arena no jardim de uma villa.
+  - 300 de fama: amistoso no **salão do Senador Varro**, um anfiteatro fechado, à luz de tochas.
+  - 400 de fama: **torneio de elite na Arena de Ouro de Baiae**, à beira-mar, com semifinal e final seguidas.
+  - Amistoso não fere nem tira fama; vencer paga bem e dá um item. Cada convite vale uma vez.
+- **Melhorias de segundo nível no ludus** (aparecem no Mercado depois da primeira): pesos de bronze, pista longa com obstáculos, estacas giratórias, palus com braços de bronze e doctore lendário. No ludus, o equipamento melhorado aparece em bronze.
+- **Venatio, lutas contra feras**: em alguns dias (cerca de 1 em cada 5, nunca aos sábados) a arena recebe lobo, javali, urso ou leão, conforme o seu nível. Uma fera por dia, e a vitória vale 2,5 vezes mais fama. O jornal avisa na manhã do dia.
+- **Amizade e lutas de dupla**:
+  - Adversários que você derrotou passam a respeitá-lo: pela vitória, por uma revanche vencida e por uma rodada paga na taverna (uma por dia). Com 60 de respeito, viram amigos.
+  - Escolha um amigo como parceiro. A luta de dupla é em **revezamento**: quem cai é substituído pelo parceiro, que espera no portão, e o vencedor continua com a vida que sobrou.
+- **Favor da plateia**: barra no alto da luta. Sobe com críticos, golpes fortes, contra-ataques e esquivas; cai quando você apanha, erra ou desiste.
+  - No fim da luta a plateia mostra o polegar: para cima dá fama extra.
+  - Numa derrota com polegar para cima a plateia poupa você (não perde fama); com polegar para baixo você perde um pouco mais.
+- **Missões curtas dos moradores**, uma por vez, com prazo de 3 dias:
+  - Quintus: vencer um rival ou desafiantes do dia.
+  - Taverneira: entregar uma ânfora em outro local.
+  - Monge: oferenda no altar.
+  - Instrutor: treinos.
+  - Ferreiro: vitórias.
+  - Pagam em moedas, fama ou itens.
+- **Ranking da cidade** no Fórum: os 10 melhores gladiadores e a sua posição, com setas de subida e descida. Os outros gladiadores lutam entre si todas as noites, e as zebras viram manchete.
+
+### Visual
+- **Arena mais viva**:
+  - A grade dos portões sobe quando os lutadores entram.
+  - Os estandartes ondulam ao vento.
+  - O editor dos jogos assiste do camarote e se levanta quando você vence.
+  - A plateia joga flores e moedas na vitória, e um polegar gigante mostra a decisão da plateia.
+- **Cenários animados**: fumaça na lareira da taverna, vapor nas termas, pombos no fórum, no templo e no mercado (voam quando você chega perto) e bandos de pássaros no céu.
+- **Mais figurantes**: crianças, soldados de capacete e escudo, senadores de toga, cães e gatos (o gato da taverna cochila perto da lareira). Todos falam quando clicados.
+- **Transição entre locais**: a tela escurece e mostra o nome e o horário do lugar.
+- **Ícones de estado** (ferido, cansado, motivado) no painel e sobre a cabeça do gladiador.
+- **Boneco do gladiador** na aba Equipamento, desenhado com tudo o que está vestindo.
+
 
 ## Novidades da 0.8.0
 - **Fama que também cai**:

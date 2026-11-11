@@ -28,7 +28,12 @@ export class BootScene extends Phaser.Scene {
     this.load.image('bg:map', 'assets/backgrounds/map.png');
     for (const k of ['sun', 'moon', 'cloud']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
-    for (const b of ['lion', 'bear', 'wolf', 'boar']) this.load.spritesheet(`beast:${b}`, `assets/sprites/beasts/beast_${b}.png`, { frameWidth: 112, frameHeight: 88 });
+    for (const b of ['lion', 'bear', 'wolf', 'boar', 'dog', 'cat']) this.load.spritesheet(`beast:${b}`, `assets/sprites/beasts/beast_${b}.png`, { frameWidth: 112, frameHeight: 88 });
+    for (const k of ['injured', 'tired', 'motivated']) this.load.image(`st:${k}`, `assets/ui/icons/st_${k}.png`);
+    this.load.spritesheet('fx:pigeon', 'assets/sprites/fx/pigeon.png', { frameWidth: 16, frameHeight: 12 });
+    this.load.spritesheet('fx:bird', 'assets/sprites/fx/bird.png', { frameWidth: 9, frameHeight: 5 });
+    this.load.spritesheet('fx:banner_wave', 'assets/sprites/fx/banner_wave.png', { frameWidth: 16, frameHeight: 34 });
+    for (const k of ['gate_bars', 'tribune']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:lamp_flame', 'assets/sprites/fx/lamp_flame.png', { frameWidth: 6, frameHeight: 8 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');
@@ -42,6 +47,13 @@ export class BootScene extends Phaser.Scene {
         frameRate: 8,
         repeat: -1,
       });
+      const sheetAnim = (key: string, tex: string, start: number, end: number, frameRate: number) =>
+        this.anims.create({ key, frames: this.anims.generateFrameNumbers(tex, { start, end }), frameRate, repeat: -1 });
+      sheetAnim('pigeon_walk', 'fx:pigeon', 0, 1, 6);
+      sheetAnim('pigeon_peck', 'fx:pigeon', 2, 3, 5);
+      sheetAnim('pigeon_fly', 'fx:pigeon', 4, 5, 10);
+      sheetAnim('bird_fly', 'fx:bird', 0, 1, 5);
+      sheetAnim('banner_wave', 'fx:banner_wave', 0, 3, 6);
       this.anims.create({
         key: 'lamp_flame',
         frames: this.anims.generateFrameNumbers('fx:lamp_flame', { start: 0, end: 3 }),

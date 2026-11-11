@@ -31,6 +31,7 @@ import gen_v05  # noqa: E402
 import gen_v06  # noqa: E402
 import gen_news  # noqa: E402
 import gen_beasts  # noqa: E402
+import gen_v09  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -114,6 +115,13 @@ def main():
         img.save(os.path.join(icons, name + ".png"))
     for name, img in gen_beasts.portraits().items():
         img.save(os.path.join(ASSETS, "portraits", name + ".png"))
+    for name, img in gen_v09.status_icons().items():
+        img.save(os.path.join(icons, name + ".png"))
+    gen_v09.pigeon_sheet().save(os.path.join(fx, "pigeon.png"))
+    gen_v09.bird_sheet().save(os.path.join(fx, "bird.png"))
+    gen_v09.banner_wave().save(os.path.join(fx, "banner_wave.png"))
+    gen_v09.gate_bars().save(os.path.join(fx, "gate_bars.png"))
+    gen_v09.tribune().save(os.path.join(fx, "tribune.png"))
     for name, img in {**gen_v06.props(), **gen_v06.home_props(), **gen_v06.place_props()}.items():
         img.save(os.path.join(fx, name + ".png"))
     people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))

@@ -76,6 +76,7 @@ export class ArenaScene extends Phaser.Scene {
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
   private crowd!: Phaser.GameObjects.Sprite;
   private crowdTimer = 0;
+  private editor: GladiatorView | null = null;
   private benchViews: Array<GladiatorView | null> = [];
   private crowdExcite = 0;
   private crowdFrame = 0;
@@ -153,6 +154,7 @@ export class ArenaScene extends Phaser.Scene {
       this.sky.addLight(x, 184, 130, 0xffb868, 1);
     }
 
+    this.decorateArena(setup.arena.id);
     this.views = this.engine.fighters.map((f, i) => {
       const v = new GladiatorView(this, f.x, GROUND_Y, setup.fighters[i].visual);
       v.setBaseScale(FIGHTER_SCALE);
@@ -317,6 +319,7 @@ export class ArenaScene extends Phaser.Scene {
       v.tick(dt);
     });
     for (const b of this.benchViews) b?.tick(dt);
+    this.editor?.tick(dt);
     const mid = (this.views[0].x + this.views[1].x) / 2;
     this.camX += (mid - this.camX) * Math.min(1, dt * 3);
     this.layout();
@@ -361,6 +364,52 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   /** Pétalas de flores caindo da arquibancada (festival e vitória). */
+  /** Estandartes ao vento, grade dos portões que sobe na entrada e o editor dos jogos no camarote. */
+  private decorateArena(id: string): void {
+    const color = BANNER_COLORS[id] ?? 0xa8322a;
+    [196, 432].forEach((bx, i) => this.add.sprite(bx - 1, 203, 'fx:banner_wave', 0).setOrigin(0).setTint(color).setDepth(2).play({ key: 'banner_wave', startFrame: i * 2 }));
+    for (const gx of [36, 568]) {
+      const bars = this.add.image(gx, 206, 'fx:gate_bars').setOrigin(0).setDepth(1.5);
+      const shape = this.make.graphics({}, false).fillStyle(0xffffff).fillRect(gx, 204, 36, 37);
+      bars.setMask(shape.createGeometryMask());
+      // a grade sobe para os lutadores entrarem e desce quando a luta começa
+      this.tweens.add({ targets: bars, y: 172, duration: 800, ease: 'Sine.Out' });
+      this.time.delayedCall(3700, () => this.tweens.add({ targets: bars, y: 206, duration: 600, ease: 'Bounce.Out' }));
+    }
+    const pulvinar = id === 'rome' || id === 'senator' || id === 'baiae';
+    if (!pulvinar) this.add.image(285, 157, 'fx:tribune').setOrigin(0).setDepth(1.2);
+    this.editor = new GladiatorView(this, 320, pulvinar ? 199 : 193, {
+      appearance: { skin: 0, hairStyle: 1, hairColor: 4, beard: true, clothColor: 0 },
+      gear: {},
+      extra: [{ sheet: 'robe', tint: 0xf2ece0 }],
+    });
+    this.editor.setBaseScale(0.42);
+    this.editor.setDepth(1.3);
+    this.editor.play('idle', { fps: 2 });
+  }
+
+  /** Flores (ou moedas) jogadas pela plateia; ficam na areia até o fim da luta. */
+  private throwGift(nearX: number, coin: boolean): void {
+    const colors = coin ? [0xf4c840, 0xe8b030, 0xfff0a0] : [0xe84a5a, 0xf4d06a, 0xf0f0e0, 0xd86ab0];
+    const x0 = 80 + Math.random() * 480;
+    const g = this.add.rectangle(x0, 188 + Math.random() * 12, coin ? 2 : 3, 2, colors[Math.floor(Math.random() * colors.length)]).setDepth(6);
+    const tx = nearX + (Math.random() - 0.5) * 120;
+    const ty = GROUND_Y - 4 + Math.random() * 26;
+    this.tweens.add({ targets: g, x: tx, duration: 900 + Math.random() * 500, ease: 'Linear' });
+    this.tweens.add({
+      targets: g,
+      y: ty,
+      angle: coin ? 720 : 300,
+      duration: 900 + Math.random() * 500,
+      ease: 'Quad.easeIn',
+      onComplete: () => {
+        g.setAngle(0);
+        if (coin) this.tweens.add({ targets: g, alpha: { from: 1, to: 0.5 }, duration: 300, yoyo: true, repeat: 3 });
+      },
+    });
+    if (coin && Math.random() < 0.3) sound.play('coin', 0.25);
+  }
+
   private petal(x = Math.random() * 640, y = 150 + Math.random() * 30): void {
     const colors = [0xe84a5a, 0xf4d06a, 0xf0f0e0, 0xd86ab0];
     const p = this.add.rectangle(x, y, 2, 2, colors[Math.floor(Math.random() * colors.length)]).setDepth(30);
@@ -755,7 +804,12 @@ export class ArenaScene extends Phaser.Scene {
         this.crowdExcite = 4;
         // o público se levanta (ovação maior quando o jogador vence)
         this.standing = 1;
-        if (e.winner === 0) for (let i = 0; i < 40; i++) this.time.delayedCall(i * 60, () => this.petal(this.views[0].x + (Math.random() - 0.5) * 160, 150 + Math.random() * 20));
+        if (e.winner === 0) {
+          for (let i = 0; i < 40; i++) this.time.delayedCall(i * 60, () => this.throwGift(this.views[0].x, false));
+          // a plateia joga moedas para o vencedor e o editor dos jogos se levanta
+          for (let i = 0; i < 22; i++) this.time.delayedCall(200 + i * 90, () => this.throwGift(this.views[0].x, true));
+          this.editor?.play('victory', { fps: 3 });
+        }
         if (this.zoomTarget === 1) {
           this.zoomTarget = 1.25;
           this.cineFocus = { x: this.views[e.winner].x, y: GROUND_Y - 34 };
@@ -824,3 +878,14 @@ function thumbTexture(scene: Phaser.Scene): string {
   return key;
 }
 
+/** Cor dos estandartes de cada arena (as mesmas do cenário). */
+const BANNER_COLORS: Record<string, number> = {
+  capua: 0x8a3a22,
+  pompeii: 0xa8322a,
+  verona: 0x3e6e40,
+  leptis: 0x2a5a9a,
+  rome: 0xa8322a,
+  villa: 0x4a7a4a,
+  senator: 0x6a1a22,
+  baiae: 0x5a2a7a,
+};

@@ -610,3 +610,15 @@ Notas secundárias (Senado, obras, comércio, costumes). Saem como as outras not
 | 18 | Vinho de Falerno direto do produtor. Ânforas lacradas. | Falernian wine straight from the vintner. Sealed amphorae. |
 | 19 | Ferreiro Vulcanus: armas afiadas, escudos consertados, preço honesto. | Vulcanus the blacksmith: sharp weapons, mended shields, honest prices. |
 
+
+## Notícias da carreira (0.9.0)
+Os textos completos estão em `src/renderer/i18n/pt08.ts` e `en08.ts`.
+
+| Grupo | Quando sai |
+|---|---|
+| `invite` | Chegou um convite de arena particular (150, 300 e 400 de fama) |
+| `inviteWin` | Vitória num amistoso ou título em Baiae |
+| `venatio` | Manhã de um dia de venatio |
+| `beastWin` | Vitória sobre uma fera |
+| `duoWin` | Vitória numa luta de dupla (cita o parceiro) |
+| `rankUpset` | Zebra no ranking: alguém venceu um gladiador de nível maior durante a noite |

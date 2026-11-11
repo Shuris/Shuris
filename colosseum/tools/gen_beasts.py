@@ -17,7 +17,11 @@ KINDS = {
     "bear": dict(body="5e3e26", belly="7a5638", extra="3e2818", length=52, height=26, leg=14, head=12),
     "wolf": dict(body="7c7a7e", belly="b4b0aa", extra="4e4c52", length=44, height=15, leg=15, head=9),
     "boar": dict(body="4e3c30", belly="6e5646", extra="e8e0c8", length=44, height=20, leg=10, head=11),
+    # bichos da cidade (figurantes): desenhados no mesmo formato e reduzidos na cena
+    "dog": dict(body="8a5a32", belly="c8a070", extra="5a3a1e", length=42, height=15, leg=15, head=9, style="wolf"),
+    "cat": dict(body="c87a3a", belly="e8c08a", extra="8a4a1e", length=36, height=13, leg=12, head=9, style="wolf", cat=True),
 }
+CITY_ANIMALS = ("dog", "cat")
 
 # (nome, quadros) na mesma ordem do gladiador: idle 4, walk 6, attack 4, block 2,
 # hit 2, dodge 3, victory 4, defeat 4
@@ -46,6 +50,8 @@ def _poses():
 
 def _draw(kind, pose):
     k = KINDS[kind]
+    cat = k.get("cat", False)
+    kind = k.get("style", kind)
     body, belly, extra = hexc(k["body"]), hexc(k["belly"]), hexc(k["extra"])
     img = new_img(FW, FH)
     d = ImageDraw.Draw(img)
@@ -88,6 +94,8 @@ def _draw(kind, pose):
         ex, ey = tx - 12, ty + 6 - tail * 5
         d.line([(tx, ty), (ex, ey)], fill=body, width=2)
         d.ellipse([ex - 3, ey - 3, ex + 2, ey + 2], fill=extra)
+    elif kind == "wolf" and cat:
+        d.line([(tx, ty + 2), (tx - 8, ty - 6 - tail * 2), (tx - 6, ty - 14 - tail * 2)], fill=body, width=3)
     elif kind == "wolf":
         d.polygon([(tx, ty), (tx - 14, ty + 8 - tail * 3), (tx - 10, ty + 11 - tail * 3), (tx, ty + 6)], fill=darker(body, 0.85))
     elif kind == "boar":
@@ -160,7 +168,7 @@ def icons():
     """Ícones 16x16 das feras (cabeça) para o painel e o HUD."""
     out = {}
     poses = _poses()
-    for kind in KINDS:
+    for kind in [k for k in KINDS if k not in CITY_ANIMALS]:
         frame = _draw(kind, poses[0])
         bbox = frame.getbbox()
         crop = frame.crop(bbox)
@@ -175,7 +183,7 @@ def portraits():
     """Retratos 48x48 (cabeça da fera), no mesmo fundo dos retratos dos gladiadores."""
     out = {}
     poses = _poses()
-    for kind in KINDS:
+    for kind in [k for k in KINDS if k not in CITY_ANIMALS]:
         frame = _draw(kind, dict(poses[25 - 4], mouth=0.8))  # vitória: rugindo
         bbox = frame.getbbox()
         # recorte 24x24 centrado na cabeça (canto superior direito do corpo), ampliado 2x

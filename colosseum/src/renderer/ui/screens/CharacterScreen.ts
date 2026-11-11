@@ -12,6 +12,8 @@ import { allocatePoints, computeCombatStats, equippedItems, finalAttributes, gea
 import { xpToNext } from '../../core/systems/ProgressionSystem';
 import { bar, esc, icon } from '../dom';
 import { toast } from '../components/feedback';
+import { playerDoll } from '../components/doll';
+import { playerCombatant } from '../../core/combat/CombatantFactory';
 import type { Screen, ScreenDeps } from './Screen';
 import { t } from '../../i18n';
 import { attrDesc, attrName, skillDesc, skillName } from '../../i18n/data';
@@ -53,7 +55,12 @@ export class CharacterScreen implements Screen {
         return item ? itemRow(p, item, `<button class="btn btn-gold sm" data-action="equip" data-id="${inv.uid}" ${p.level < item.minLevel ? 'disabled' : ''}>${t('char.equip')}</button>`) : '';
       })
       .join('');
-    return `<div class="slots card">${equippedSlots(p, true)}</div>
+    // o boneco é montado de forma assíncrona e entra no lugar quando fica pronto
+    void playerDoll(playerCombatant(p).visual).then((url) => {
+      const img = document.querySelector<HTMLImageElement>('[data-doll]');
+      if (img && img.getAttribute('src') !== url) img.src = url;
+    });
+    return `<div class="gear-layout"><div class="doll-wrap card"><img class="doll" data-doll alt="" draggable="false"></div><div class="slots card">${equippedSlots(p, true)}</div></div>
       <h3>${t('char.stored')}</h3>
       <div class="items">${items || `<p class="dim">${t('char.nothingStored')}</p>`}</div>`;
   }

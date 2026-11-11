@@ -96,6 +96,11 @@ export class GameView {
     if (this.current === 'map' && this.map.scene.isActive()) this.map.refreshLabels();
   }
 
+  /** Ícones de estado sobre o gladiador (ferido, cansado, motivado). */
+  updateStatus(list: string[]): void {
+    if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.setStatus(list);
+  }
+
   updateVisual(visual: FighterVisual): void {
     if (this.current === 'hub' && this.hub.scene.isActive()) this.hub.setVisual(visual);
   }
