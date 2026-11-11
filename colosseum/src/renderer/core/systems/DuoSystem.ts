@@ -9,6 +9,7 @@ import type { PlayerState } from '../model/types';
 import { getOpponent, type OpponentDef } from '../data/opponents';
 import { POOL, daySeed, poolOpponent, shuffle } from '../data/fighters';
 import { createRng } from './rng';
+import { weekdayIndex } from '../data/locations';
 import { isHater } from './RivalTownSystem';
 
 /** respeito necessário para virar amigo (0..100) */
@@ -50,9 +51,25 @@ export function partnerDef(p: PlayerState): OpponentDef | null {
   return { ...base, level: Math.max(base.level, p.level - 1) };
 }
 
-export type DuoCheck = 'noPartner' | 'done' | null;
+/** lutas de dupla só a partir deste dia, e só às terças e quintas */
+export const DUO_FROM_DAY = 9;
+const DUO_WEEKDAYS = [2, 4];
+
+/** A opção de dupla já existe (a partir do dia 9)? */
+export function duoUnlocked(p: PlayerState): boolean {
+  return p.day >= DUO_FROM_DAY;
+}
+
+/** Hoje é dia de dupla (terça ou quinta)? */
+export function isDuoDay(day: number): boolean {
+  return DUO_WEEKDAYS.includes(weekdayIndex(day));
+}
+
+export type DuoCheck = 'locked' | 'notToday' | 'noPartner' | 'done' | null;
 
 export function duoCheck(p: PlayerState): DuoCheck {
+  if (!duoUnlocked(p)) return 'locked';
+  if (!isDuoDay(p.day)) return 'notToday';
   if (!partnerDef(p)) return 'noPartner';
   if (p.career.duoDay === p.day) return 'done';
   return null;

@@ -77,7 +77,7 @@ export function duoCard(p: PlayerState, fightErr: string | null): string {
       <p class="tiny dim">${t('duo.rules')}</p>
       <div class="friends">${list}</div>
       ${partner ? foes : ''}
-      <button class="btn btn-red wide" data-action="career-duo" ${err || fightErr ? 'disabled' : ''}>${err === 'noPartner' ? t('duo.needPartner') : err === 'done' ? t('duo.done') : t('duo.fight', { n: DUO_ENERGY })}</button>
+      <button class="btn btn-red wide" data-action="career-duo" ${err || fightErr ? 'disabled' : ''}>${err === 'notToday' ? t('duo.notToday') : err === 'noPartner' ? t('duo.needPartner') : err === 'done' ? t('duo.done') : t('duo.fight', { n: DUO_ENERGY })}</button>
     </div>`;
 }
 

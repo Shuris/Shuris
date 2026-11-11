@@ -133,6 +133,12 @@ describe('amizade e duplas', () => {
     expect(setPartner(p, id)).toBe(false);
     expect(addRespect(p, id, FRIEND_RESPECT - 40)).toBe(true);
     expect(friends(p).map((f) => f.id)).toEqual([id]);
+    // duplas só a partir do dia 9, às terças (2) e quintas (4)
+    p.day = 3;
+    expect(duoCheck(p)).toBe('locked');
+    p.day = 10; // quarta
+    expect(duoCheck(p)).toBe('notToday');
+    p.day = 9; // terça
     expect(duoCheck(p)).toBe('noPartner');
     expect(setPartner(p, id)).toBe(true);
     expect(duoCheck(p)).toBeNull();

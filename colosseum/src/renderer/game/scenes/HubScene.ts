@@ -367,7 +367,6 @@ export class HubScene extends Phaser.Scene {
       add(animal('cat'), 214, GROUND - 4, 0.42, 'cat', 14);
     } else if (loc === 'temple') {
       add(senator(), 270, GROUND - 4, 1, 'senator', 46);
-      add(animal('cat'), 470, GROUND - 2, 0.42, 'cat', 14);
     } else if (loc === 'tavern') {
       // o gato da taverna cochila perto da lareira
       add(animal('cat'), 196, GROUND + 6, 0.42, 'cat', 14);

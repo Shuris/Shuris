@@ -26,6 +26,7 @@ import { t, tk } from '../../i18n';
 import { arenaName, opponentDesc, opponentEpithet, strategyName } from '../../i18n/data';
 import { portrait } from '../components/portraits';
 import { duoCard, inviteCards, venatioCard } from '../components/career';
+import { duoUnlocked } from '../../core/systems/DuoSystem';
 import { isVenatioDay, venatioCheck } from '../../core/systems/VenatioSystem';
 import { openInvites } from '../../core/systems/InviteSystem';
 
@@ -137,7 +138,7 @@ export class MainMenu implements Screen {
       : `<div class="opp-detail">
           ${portrait(sel.id, 'lg')}
           <div>
-            <div class="opp-title"><b>${esc(sel.name)}</b>, ${esc(opponentEpithet(sel))}</div>
+            <div class="opp-title"><b>${esc(sel.name)}</b>${opponentEpithet(sel) ? `, ${esc(opponentEpithet(sel))}` : ''}</div>
             <div class="tiny"><span class="tag">${esc(tk(`trait.${PERSONALITY[sel.id] ?? 'proud'}`))}</span> ${rec ? t('rival.record', { w: rec.wins, l: rec.losses }) : t('rival.firstMeet')}</div>
             <p class="tiny dim">${esc(opponentDesc(sel))}</p>
             ${boost > 0 ? `<p class="tiny red">${t('rival.trained', { n: boost })}</p>` : ''}
@@ -157,9 +158,11 @@ export class MainMenu implements Screen {
         </span>
         ${p.unspentPoints > 0 ? `<button class="btn btn-gold sm" data-action="goto">+${p.unspentPoints}</button>` : ''}
       </div>`;
-    const tabs = `<div class="subtabs arena-tabs">${tabBtn('fights', t('arena.tabFights'))}${tabBtn('events', t('arena.tabEvents'), eventsBadge)}${tabBtn('duo', t('arena.tabDuo'))}</div>`;
+    const tabs = `<div class="subtabs arena-tabs">${tabBtn('fights', t('arena.tabFights'))}${tabBtn('events', t('arena.tabEvents'), eventsBadge)}${duoUnlocked(p) ? tabBtn('duo', t('arena.tabDuo')) : ''}</div>`;
     const cost = `<p class="tiny center ${fightErr ? 'red' : 'dim'}">${fightErr ?? t('arena.cost', { energy: FIGHT_ENERGY })}</p>`;
     let content = '';
+    // a aba de duplas só existe a partir do dia 9
+    if (this.tab === 'duo' && !duoUnlocked(p)) this.tab = 'fights';
     if (this.tab === 'fights') {
       content = `
       <div class="row strategies">${strategies}</div>

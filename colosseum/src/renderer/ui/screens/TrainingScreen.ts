@@ -2,7 +2,7 @@
 import type { PlayerState, TrainingId } from '../../core/model/types';
 import { ATTRIBUTE_INFO } from '../../core/data/gladiators';
 import { TRAININGS, TRAINING_THRESHOLD, sessionsToNext } from '../../core/systems/TrainingSystem';
-import { TRAIN_MINUTES, canTrain, trainEnergy } from '../../core/systems/CalendarSystem';
+import { canTrain, trainEnergy, trainMinutes } from '../../core/systems/CalendarSystem';
 import { trainingMul } from '../../core/data/upgrades';
 import { canSeeMedic, medicCost, MEDIC_MINUTES } from '../../core/systems/RivalSystem';
 import { bar, esc, icon } from '../dom';
@@ -36,7 +36,7 @@ export class TrainingScreen implements Screen {
         <button class="btn btn-gold wide" data-action="train" data-id="${tr.id}" ${busy || err ? 'disabled' : ''}>${busy ? '…' : t('ludus.train')}</button>
       </div>`;
     }).join('');
-    return `${this.medic(p)}<p class="hint ${err ? 'red' : ''}">${err ?? t('ludus.cost', { icon: icon('attr_res', 'xs'), energy: trainEnergy(p), hours: TRAIN_MINUTES / 60 })}</p><div class="train-grid">${cards}</div>`;
+    return `${this.medic(p)}<p class="hint ${err ? 'red' : ''}">${err ?? t('ludus.cost', { icon: icon('attr_res', 'xs'), energy: trainEnergy(p), time: trainMinutes(p) >= 60 ? t('ludus.oneHour') : t('ludus.minutes', { n: trainMinutes(p) }) })}</p><div class="train-grid">${cards}</div>`;
   }
 
   /** Médico do ludus: cuida dos ferimentos de derrotas por nocaute ou desistência. */

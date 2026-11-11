@@ -1,6 +1,12 @@
 # Funcionalidades — versão 0.9.1
 
 ## Novidades da 0.9.1
+- **Menu inicial novo**: pôr do sol sobre a areia com o Coliseu ao longe, um gladiador em guarda e um adversário em silhueta em primeiro plano. Título no alto à esquerda, botões empilhados embaixo à esquerda (Continuar, Novo jogo, Carregar, Opções, idioma, Créditos e Sair) e a versão no canto inferior direito. "Continuar" abre o gladiador jogado por último; os três espaços de salvamento ficam no painel de Novo jogo/Carregar.
+- **Duplas a partir do dia 9**, e só às **terças e quintas**.
+- **Ferido**: entra na luta com 70% da vida e causa 70% do dano.
+- **Doctore lendário**: cada treino leva só 40 minutos.
+- **Flamma** perde o título depois de derrotado: passa a se chamar só "Flamma".
+- O gato do templo saiu, e a estação do ano não aparece mais no painel (as folhas de outono continuam).
 - **Rivais pela cidade**: cada adversário da escada que passou a respeitar você, depois de derrotado, aparece no cenário de um lugar fixo (Marcus na taverna, Cassius no mercado, Spiculus e Flamma no templo, Rufus e Verus nas termas). Clique em cada um (uma vez por dia por rival): ele fala, sobe um coraçãozinho e a amizade cresce de 10 a 15 (o valor não é mostrado). Com 100 de amizade ele vira amigo e aparece na aba Duplas. **Brutus, Crixus e Priscus odeiam você de verdade**: não aparecem pela cidade e nunca viram amigos. A rodada paga na taverna para rivais saiu.
 - **Missões removidas.**
 - **Estados (ferido, cansado, motivado) só no painel** do canto superior esquerdo, não mais sobre a cabeça.

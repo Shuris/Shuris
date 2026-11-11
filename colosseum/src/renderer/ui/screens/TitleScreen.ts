@@ -1,4 +1,6 @@
-// Menu principal: arte do jogo, três espaços de salvamento separados, opções e sair.
+// Menu principal: arte do jogo ao fundo, título no alto à esquerda, botões empilhados
+// embaixo à esquerda (continuar, novo jogo, carregar, opções, idioma, créditos e sair)
+// e a versão no canto. Os três espaços de salvamento abrem num painel.
 import type { PlayerState } from '../../core/model/types';
 import { parseSave } from '../../core/systems/SaveSystem';
 import { reputationTitle } from '../../core/systems/ProgressionSystem';
@@ -61,22 +63,51 @@ export class TitleScreen {
     this.root.innerHTML = '';
   }
 
+  /** painel dos espaços de salvamento aberto (Novo jogo / Carregar) */
+  private slotsOpen = false;
+  private credits = false;
+  private version = '';
+
   render(): void {
     if (this.root.hidden) return;
+    if (!this.version)
+      void bridge.app
+        .info()
+        .then((i) => {
+          this.version = i.version;
+          const el = this.root.querySelector('.title-version');
+          if (el) el.textContent = `v${i.version}`;
+        })
+        .catch(() => {});
+    const last = this.lastPlayed();
     const cards = this.slots.map((s) => this.slotCard(s)).join('');
+    const btn = (ts: string, label: string, extra = '') => `<button class="menu-btn" data-ts="${ts}" ${extra}><span>${label}</span></button>`;
     this.root.innerHTML = `
       <div class="title-art" style="background-image:url(assets/ui/title.png)"></div>
       <div class="title-shade"></div>
-      <div class="title-box">
+      <div class="title-logo">
         <h1 class="logo">COLOSSEUM</h1>
         <p class="logo-sub">${t('title.subtitle')}</p>
+      </div>
+      <nav class="title-menu">
+        ${last ? btn('play', t('title.continue'), `data-slot="${last.slot}"`) : ''}
+        ${btn('slots-new', t('title.newGame'))}
+        ${this.slots.some((s) => s.player) ? btn('slots', t('title.load')) : ''}
+        ${btn('options', t('app.options'))}
+        ${btn('lang', getLang() === 'pt' ? 'English' : 'Português')}
+        ${btn('credits', t('title.credits'))}
+        ${btn('quit', t('title.quit'))}
+      </nav>
+      <div class="title-version">${this.version ? `v${esc(this.version)}` : ''}</div>
+      <p class="tiny title-foot">${t('title.foot')}</p>
+      <div class="title-slots" ${this.slotsOpen ? '' : 'hidden'}>
+        <div class="row between"><h2>${t('title.saves')}</h2><button class="btn sm" data-ts="slots-close">${t('common.back')}</button></div>
         <div class="slots">${cards}</div>
-        <div class="title-actions">
-          <button class="btn" data-ts="options">${t('app.options')}</button>
-          <button class="btn" data-ts="lang">${getLang() === 'pt' ? 'English' : 'Português'}</button>
-          <button class="btn btn-dark" data-ts="quit">${t('title.quit')}</button>
-        </div>
-        <p class="tiny dim title-foot">${t('title.foot')}</p>
+      </div>
+      <div class="title-credits" ${this.credits ? '' : 'hidden'}>
+        <h2>${t('title.credits')}</h2>
+        <p>${t('title.creditsBody')}</p>
+        <button class="btn" data-ts="credits-close">${t('common.back')}</button>
       </div>`;
     // retratos dos gladiadores salvos
     for (const s of this.slots) {
@@ -87,6 +118,13 @@ export class TitleScreen {
         if (img) img.src = url;
       });
     }
+  }
+
+  /** O gladiador jogado por último (para "Continuar"). */
+  private lastPlayed(): SlotInfo | null {
+    const used = this.slots.filter((s) => s.player);
+    if (!used.length) return null;
+    return used.reduce((a, b) => ((b.player!.updatedAt ?? 0) > (a.player!.updatedAt ?? 0) ? b : a));
   }
 
   private slotCard(s: SlotInfo): string {
@@ -122,6 +160,17 @@ export class TitleScreen {
       if (info) this.h.onPlay(slot, info);
     } else if (a === 'delete') {
       if (await this.h.onDelete(slot)) await this.show();
+    } else if (a === 'slots' || a === 'slots-new') {
+      this.slotsOpen = true;
+      this.credits = false;
+      this.render();
+    } else if (a === 'slots-close') {
+      this.slotsOpen = false;
+      this.render();
+    } else if (a === 'credits' || a === 'credits-close') {
+      this.credits = a === 'credits';
+      this.slotsOpen = false;
+      this.render();
     } else if (a === 'options') this.h.onOptions();
     else if (a === 'quit') this.h.onQuit();
     else if (a === 'lang') this.h.onLang();

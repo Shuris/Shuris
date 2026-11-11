@@ -264,7 +264,9 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   // ---------------------------------------------------------------- ludus
   'ludus.title': 'Ludus',
   'ludus.tip': 'Training is free: it only costs energy and time. Attributes you already trained grow more slowly.',
-  'ludus.cost': 'Each session: {icon} −{energy} energy · {hours} hour',
+  'ludus.cost': 'Each session: {icon} −{energy} energy · {time}',
+  'ludus.oneHour': '1 hour',
+  'ludus.minutes': '{n} min',
   'ludus.leftOne': '{n} session left for +1',
   'ludus.leftMany': '{n} sessions left for +1',
   'ludus.boosted': 'equipment +35%',

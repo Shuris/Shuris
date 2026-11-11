@@ -12,7 +12,7 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'upgrade.bronze_palus.name': 'Palus with bronze arms',
   'upgrade.bronze_palus.desc': 'The training post strikes back with jointed arms: Technique training yields 30% more.',
   'upgrade.doctore_legend.name': 'Legendary doctore',
-  'upgrade.doctore_legend.desc': 'A former Colosseum champion takes over your training: each session costs 3 less energy again.',
+  'upgrade.doctore_legend.desc': 'A former Colosseum champion takes over your training: each session costs 3 less energy again and takes only 40 minutes.',
   'invite.title': 'Invitations',
   'invite.next': 'Next invitation at {n} fame.',
   'invite.semi': 'Semifinal',
@@ -61,7 +61,7 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'talk.beast.gloat': '*sniffs the air*',
   'duo.title': 'Duo fights',
   'duo.howTo': 'Rivals you beat start showing up around the city. Talk to them (click, once a day each): once they become friends, they team up with you. Some hate you and never will.',
-  'duo.rules': 'Two duels at once: you in front, your partner in the back. At one each, the survivors fight a decider.',
+  'duo.rules': 'Tuesdays and Thursdays. Two duels at once: you in front, your partner in the back. At one each, the survivors fight a decider.',
   'duo.friend': 'friend',
   'duo.partner': 'Partner',
   'duo.choose': 'Choose',
@@ -159,4 +159,5 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'season.summer': 'Summer',
   'season.autumn': 'Autumn',
   'season.winter': 'Winter',
+  'duo.notToday': 'Duos only on Tuesdays and Thursdays',
 };

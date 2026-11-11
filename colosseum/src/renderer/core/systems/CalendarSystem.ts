@@ -20,6 +20,12 @@ export const FIGHT_ENERGY = 35;
 export const FIGHT_MINUTES = 120;
 export const TRAIN_ENERGY = 12;
 export const TRAIN_MINUTES = 60;
+/** com o doctore lendário cada treino leva só 40 minutos */
+export const TRAIN_MINUTES_LEGEND = 40;
+
+export function trainMinutes(p: PlayerState): number {
+  return p.upgrades.includes('doctore_legend') ? TRAIN_MINUTES_LEGEND : TRAIN_MINUTES;
+}
 export const TRAVEL_MINUTES = 20;
 export const NAP_MINUTES = 120;
 export const NAP_ENERGY = 20;
@@ -45,7 +51,7 @@ export function canFight(p: PlayerState): Check {
 export function canTrain(p: PlayerState): Check {
   if (!isOpen(getLocation('ludus'), p.minutes, p.day)) return t('cal.ludusClosed');
   if (p.energy < trainEnergy(p)) return t('cal.tooTired');
-  return timeLeft(p, TRAIN_MINUTES);
+  return timeLeft(p, trainMinutes(p));
 }
 
 export function canTravel(p: PlayerState, to: LocationId): Check {
@@ -78,7 +84,7 @@ export function applyFight(p: PlayerState): void {
 
 export function applyTraining(p: PlayerState): void {
   spendEnergy(p, trainEnergy(p));
-  advance(p, TRAIN_MINUTES);
+  advance(p, trainMinutes(p));
 }
 
 /** Comprar e vender só com o mercado aberto (fecha à noite e aos domingos). */

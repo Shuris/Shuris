@@ -390,18 +390,36 @@ em.down { color: var(--red-hi); }
 /* ---- menu principal */
 #title { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .title-art { position: absolute; inset: 0; background: center / cover no-repeat; image-rendering: pixelated; }
-.title-shade { position: absolute; inset: 0; background: radial-gradient(ellipse at center, rgba(16, 10, 6, 0.25) 0%, rgba(16, 10, 6, 0.75) 80%); }
-.title-box { position: relative; text-align: center; max-width: 1100px; width: calc(100% - 40px); }
-.title-box .logo { font-family: var(--font-title); font-weight: 700; font-size: clamp(64px, 9vw, 128px); margin: 0; }
-.logo-sub { font-size: 30px; color: var(--cream); text-shadow: 2px 2px 0 #1a110c; margin: 0 0 22px; letter-spacing: 2px; }
-.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0 auto 18px; }
+.title-shade { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(20, 8, 4, 0.55) 0%, rgba(20, 8, 4, 0.1) 38%, rgba(20, 8, 4, 0) 60%); }
+/* título no alto à esquerda */
+.title-logo { position: absolute; left: 4vw; top: 5vh; text-align: left; }
+.title-logo .logo { font-family: var(--font-title); font-weight: 700; font-size: clamp(64px, 8.5vw, 150px); line-height: 0.9; margin: 0; color: #fff6e4; letter-spacing: 4px;
+  text-shadow: 4px 4px 0 #3a1608, -2px -2px 0 #3a1608, 2px -2px 0 #3a1608, -2px 2px 0 #3a1608, 0 0 28px rgba(255, 190, 90, 0.45); }
+.logo-sub { font-size: clamp(22px, 2vw, 34px); color: #ffe2a8; text-shadow: 2px 2px 0 #3a1608; margin: 10px 0 0 6px; letter-spacing: 3px; }
+/* botões empilhados embaixo à esquerda: placas de madeira com pontas */
+.title-menu { position: absolute; left: 4vw; bottom: 9vh; display: flex; flex-direction: column; gap: 12px; }
+.menu-btn { position: relative; width: clamp(240px, 17vw, 320px); height: 54px; border: 0; padding: 0; cursor: pointer; background: transparent; font-family: var(--font-title); font-size: clamp(24px, 1.7vw, 32px); color: #fff3d6; text-shadow: 2px 2px 0 #1a0c06; }
+.menu-btn::before { content: ''; position: absolute; inset: 0; clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%); background: #1a0c06; }
+.menu-btn::after { content: ''; position: absolute; inset: 3px; clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 12px 100%, 0 50%);
+  background: linear-gradient(180deg, #8a6040 0%, #6a4428 48%, #553620 52%, #4a2e1a 100%); box-shadow: inset 0 2px 0 rgba(255, 220, 160, 0.3); }
+.menu-btn span { position: relative; z-index: 1; }
+.menu-btn:hover::after, .menu-btn:focus-visible::after { background: linear-gradient(180deg, #c89048 0%, #a06a30 48%, #8a5424 52%, #74441c 100%); }
+.menu-btn:hover span { color: #fff; }
+.menu-btn:active { transform: translateY(1px); }
+.title-version { position: absolute; right: 2.5vw; bottom: 3vh; font-family: var(--font-title); font-size: 30px; color: #fff3d6; text-shadow: 2px 2px 0 #1a0c06; }
+.title-foot { position: absolute; left: 4vw; bottom: 3vh; margin: 0; color: #f4d8a8; text-shadow: 1px 1px 0 #000; }
+/* painel dos jogos salvos e dos créditos (à direita) */
+.title-slots, .title-credits { position: absolute; right: 3vw; top: 50%; transform: translateY(-50%); width: min(60vw, 1040px); background: rgba(24, 12, 6, 0.86); border: 3px solid var(--bronze); box-shadow: 0 0 0 3px #1a0c06, 8px 8px 0 rgba(0, 0, 0, 0.45); padding: 18px 20px; }
+.title-slots h2, .title-credits h2 { margin: 0 0 12px; color: var(--gold-hi); }
+.title-credits { width: min(44vw, 640px); }
+.title-credits p { font-size: 24px; line-height: 1.4; }
+.title-slots[hidden], .title-credits[hidden] { display: none; }
+.slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 0; }
 .slot-card { background: rgba(20, 13, 9, 0.88); border: 3px solid var(--bronze); box-shadow: 0 0 0 3px #1a110c, 6px 6px 0 rgba(0, 0, 0, 0.5); padding: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; min-height: 210px; }
 .slot-card.empty { border-style: dashed; justify-content: space-between; text-align: center; }
 .slot-label { color: var(--gold); font-size: 22px; letter-spacing: 1px; border-bottom: 1px solid #5a4430; }
 .slot-hero { display: flex; gap: 10px; align-items: center; flex: 1; }
 .slot-name { font-size: 30px; color: var(--gold-hi); font-weight: 400; }
-.title-actions { display: flex; gap: 12px; justify-content: center; }
-.title-foot { margin-top: 12px; text-shadow: 1px 1px 0 #000; }
 @media (max-width: 900px) { .slots { grid-template-columns: 1fr; } }
 
 /* ---- pausa */

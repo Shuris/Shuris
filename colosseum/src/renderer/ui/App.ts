@@ -46,9 +46,9 @@ import { playerHelmet, playerPortraitKey } from './components/playerLook';
 import { todaysChallenger } from './screens/MainMenu';
 import { music } from '../audio/Music';
 import { fxEnabled, setFxEnabled } from '../game/shaders';
-import { attrName, itemName, opponentEpithet, originName } from '../i18n/data';
+import { attrName, itemName, opponentEpithet, originName, setChampionBeaten } from '../i18n/data';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
-import { seasonOf, weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
+import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
 import { worldWeather } from '../game/DayNight';
 import { setSpeechObstacles } from '../game/speech';
 import { createRng, randomSeed } from '../core/systems/rng';
@@ -440,6 +440,7 @@ export class App implements AppActions {
       return;
     }
     this.title.hide();
+    setChampionBeaten(loaded.player.defeatedOpponents.includes('flamma'));
     if (loaded.player.settings.language !== getLang()) this.store.update((p) => (p.settings.language = getLang()));
     this.applySettings();
     this.enterLocation();
@@ -536,6 +537,7 @@ export class App implements AppActions {
 
   // ---------------------------------------------------------------- intro
   private startIntro(): void {
+    setChampionBeaten(false);
     const preview = (a: Appearance): FighterVisual => ({ appearance: a, gear: { mainHand: getItem('rudis') } });
     this.intro = new IntroScreen(
       $('#intro'),
@@ -848,7 +850,7 @@ export class App implements AppActions {
     }
     if (opts.mode === 'duo') {
       const d = duoCheck(p);
-      if (d) return t(d === 'noPartner' ? 'duo.needPartner' : 'duo.done');
+      if (d) return t(d === 'noPartner' ? 'duo.needPartner' : d === 'done' ? 'duo.done' : d === 'notToday' ? 'duo.notToday' : 'arena.unavailable');
       const err = canFight(p);
       if (err) return err;
       const [f1, f2] = duoFoes(p);
@@ -935,7 +937,7 @@ export class App implements AppActions {
           startHp[0] == null && startHp[1] == null
             ? [
                 { name: myName, sub: myName === p.name ? `${originName(getOrigin(p.origin))} · ${t('common.lv', { n: myLevel })}` : t('common.lv', { n: myLevel }) },
-                { name: fight.def.beast ? tk(`beast.${fight.def.beast}.name`) : fight.def.name, sub: `${opponentEpithet(fight.def)} · ${t('common.lv', { n: fight.def.level })}` },
+                { name: fight.def.beast ? tk(`beast.${fight.def.beast}.name`) : fight.def.name, sub: [opponentEpithet(fight.def), t('common.lv', { n: fight.def.level })].filter(Boolean).join(' · ') },
               ]
             : undefined,
         back: back ? { fighters: [{ spec: back[0].spec, visual: back[0].visual }, { spec: back[1].spec, visual: back[1].visual }], seed: randomSeed() } : undefined,
@@ -1377,6 +1379,7 @@ export class App implements AppActions {
 
   // ---------------------------------------------------------------- renderização
   private onStateChange(): void {
+    if (this.store.hasPlayer) setChampionBeaten(this.store.state.defeatedOpponents.includes('flamma'));
     this.applySettings();
     if (!this.battle) this.updateMusic();
     this.renderStatus();
@@ -1403,7 +1406,7 @@ export class App implements AppActions {
         <div class="row between"><b class="st-name">${esc(p.name)}</b><span class="lvl">${t('common.level', { n: p.level })}</span></div>
         ${p.level < MAX_LEVEL ? bar(p.xp, xpToNext(p.level), 'xp') : `<div class="tiny gold">${t('common.maxLevel')}</div>`}
         <div class="row between st-day"><span>${t('status.day', { weekday: weekdayName(p.day), day: p.day })}</span><span id="clock">${phaseName(tod)} ${clockLabel(tod)}</span></div>
-        <div class="weather">${[weatherLabel(worldWeather.now()), t(`season.${seasonOf(p.day)}` as 'season.spring')].filter(Boolean).join(' · ')}</div>
+        ${weatherLabel(worldWeather.now()) ? `<div class="weather">${weatherLabel(worldWeather.now())}</div>` : ''}
         <div class="energy-row"><span>${t('common.energy')}</span>${bar(p.energy, 100, 'energy')}</div>
         <div class="row st-res"><span>${icon('coin')} ${p.coins}</span><span>${icon('laurel')} ${p.reputation}</span></div>
         ${playerStatus(p).length ? `<div class="st-icons">${playerStatus(p).map((k) => `<span class="st-icon st-${k}">${icon(`st_${k}`)} ${t(`status.${k}` as 'status.injured')}</span>`).join('')}</div>` : ''}

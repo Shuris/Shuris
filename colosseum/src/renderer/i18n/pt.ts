@@ -263,7 +263,9 @@ export const PT_BASE = {
   // ---------------------------------------------------------------- ludus
   'ludus.title': 'Ludus',
   'ludus.tip': 'Treinar é de graça: gasta só energia e tempo. Atributos já treinados evoluem mais devagar.',
-  'ludus.cost': 'Cada treino: {icon} −{energy} energia · {hours} hora',
+  'ludus.cost': 'Cada treino: {icon} −{energy} energia · {time}',
+  'ludus.oneHour': '1 hora',
+  'ludus.minutes': '{n} min',
   'ludus.leftOne': 'falta {n} treino para +1',
   'ludus.leftMany': 'faltam {n} treinos para +1',
   'ludus.boosted': 'equipamento +35%',

@@ -80,10 +80,18 @@ async function openOptions() {
   await win.waitForSelector('[data-o="lang-en"]');
 }
 
+/** Abre o painel dos jogos salvos no menu principal (botão "Novo jogo"). */
+async function openSlots() {
+  await win.waitForSelector('#title [data-ts="slots-new"]', { timeout: 10000 });
+  if (!(await win.locator('#title .title-slots:not([hidden])').count())) await win.click('#title [data-ts="slots-new"]');
+  await win.waitForSelector('#title .title-slots .slot-card', { timeout: 5000 });
+}
+
 /** Continua o gladiador de um espaço do menu principal. */
 async function playSlot(n) {
-  await win.waitForSelector(`#title [data-ts="play"][data-slot="${n}"]`, { timeout: 10000 });
-  await win.click(`#title [data-ts="play"][data-slot="${n}"]`);
+  await openSlots();
+  await win.waitForSelector(`#title .title-slots [data-ts="play"][data-slot="${n}"]`, { timeout: 10000 });
+  await win.click(`#title .title-slots [data-ts="play"][data-slot="${n}"]`);
 }
 
 /** Desiste da luta atual (rápido) e espera o fim. */
@@ -109,8 +117,11 @@ console.log(`COLOSSEUM E2E — dados em ${USER_DATA}`);
 await launch();
 
 await step('1. Inicialização: tela cheia e menu principal com 3 espaços de save', async () => {
-  await win.waitForSelector('#title .slot-card', { timeout: 10000 });
+  await win.waitForSelector('#title .title-menu .menu-btn', { timeout: 10000 });
   assert((await win.title()) === 'Colosseum', 'título da janela');
+  assert((await win.locator('#title .title-menu [data-ts="play"]').count()) === 0, 'sem save: não mostra Continuar');
+  await shot('01-title');
+  await openSlots();
   assert((await win.locator('#title .slot-card').count()) === 3, 'três espaços de salvamento');
   assert((await win.locator('#titlebar').count()) === 0, 'sem barra de opções em cima do jogo');
   await win.waitForTimeout(1200);
@@ -699,7 +710,8 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   assert(afterInvite.reputation >= fameBefore - 0 && !afterInvite.injury, 'amistoso não fere nem tira fama');
   assert(afterInvite.career.invites.find((i) => i.id === 'villa').status === 'done', 'convite usado');
   // dupla: escolhe o amigo como parceiro; os dois duelos acontecem ao mesmo tempo
-  await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 11 * 60; p.energy = 100; p.injury = null; }));
+  // duplas: a partir do dia 9, só às terças e quintas
+  await win.evaluate(() => window.__colosseum.store.update((p) => { let d = Math.max(9, p.day); while (d % 7 !== 2 && d % 7 !== 4) d++; p.day = d; p.minutes = 11 * 60; p.energy = 100; p.injury = null; p.career.duoDay = 0; }));
   if (await win.locator('[data-action="tab"][data-id="duo"]').count()) await win.click('[data-action="tab"][data-id="duo"]');
   await win.click('[data-action="career-partner"][data-id="marcus"]');
   assert((await state()).career.partner === 'marcus', 'parceiro escolhido');
@@ -760,7 +772,8 @@ await step('20. Recuperação de salvamento corrompido via backup', async () => 
 await step('31. Menu principal: voltar e saves separados', async () => {
   await win.keyboard.press('Escape');
   await win.click('[data-p="menu"]');
-  await win.waitForSelector('#title .slot-card');
+  await win.waitForSelector('#title .title-menu [data-ts="play"]');
+  await openSlots();
   const txt = (await win.textContent('#title')) ?? '';
   assert(txt.includes(snapshot.name), 'espaço 1 mostra o gladiador');
   assert((await win.locator('#title .slot-card.empty').count()) === 2, 'espaços 2 e 3 vazios');

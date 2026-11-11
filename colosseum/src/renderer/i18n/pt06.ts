@@ -11,6 +11,11 @@ export const PT06 = {
   'title.deleteBody': 'Apagar para sempre o gladiador do espaço {n}? Isso não pode ser desfeito.',
   'title.dayInfo': 'Dia {day} · {wins} vitórias, {losses} derrotas',
   'title.lastPlayed': 'Jogado em {date}',
+  'title.newGame': 'Novo jogo',
+  'title.load': 'Carregar',
+  'title.saves': 'Jogos salvos',
+  'title.credits': 'Créditos',
+  'title.creditsBody': 'COLOSSEUM, um jogo de gladiadores em pixel art. Feito com Phaser e Electron; arte, sons e música gerados por código. Desenvolvido com o Claude Code.',
   'title.quit': 'Sair do jogo',
   'title.foot': 'Esc pausa o jogo · F11 alterna tela cheia',
   'pause.title': 'Jogo pausado',
@@ -138,7 +143,7 @@ export const PT06 = {
   'event.armLostToast': 'Perdeu a queda de braço. Domingo que vem tem mais.',
 
   // ---------------------------------------------------------------- ferimentos e médico
-  'injury.note': 'Ferido ({n} dia(s)): menos vida e menos força até sarar. Durma, vá às termas ou ao médico do ludus.',
+  'injury.note': 'Ferido ({n} dia(s)): 70% da vida e 70% do dano até sarar. Durma, vá às termas ou ao médico do ludus.',
   'injury.got': 'Você saiu ferido: {n} dia(s) para sarar.',
   'injury.days': '{n} dia(s)',
   'injury.none': 'Você não está ferido.',
@@ -147,7 +152,7 @@ export const PT06 = {
   'injury.treat': 'Tratar',
   'injury.healed': 'Ferimento tratado. Pronto para a luta!',
   'injury.fightTitle': 'Lutar ferido?',
-  'injury.fightBody': 'Você está ferido ({n} dia(s)): entra com menos vida e menos força nos golpes.',
+  'injury.fightBody': 'Você está ferido ({n} dia(s)): entra com só 70% da vida e causa só 70% do dano.',
   'injury.fightAnyway': 'Lutar assim mesmo',
 
   // ---------------------------------------------------------------- ferreiro

@@ -16,8 +16,8 @@ export const BEAST_STATS: Record<string, { damage: number; hp: number; reach: nu
 };
 
 /** penalidades do ferimento (vida e dano) */
-export const INJURY_HP = 0.85;
-export const INJURY_DAMAGE = 0.9;
+export const INJURY_HP = 0.7;
+export const INJURY_DAMAGE = 0.7;
 
 /** Informação visual para a renderização (independente da lógica). */
 export interface FighterVisual {

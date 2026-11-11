@@ -341,7 +341,7 @@ class Composer:
             self.cache[name] = Image.open(os.path.join(self.dir, name + ".png")).convert("RGBA")
         return self.cache[name]
 
-    def frame(self, anim, idx, skin=1, gear=("galea", "scutum", "gladius", "medium", "bronze"), hair=0, extra=None):
+    def frame(self, anim, idx, skin=1, gear=("galea", "scutum", "gladius", "medium", "bronze"), hair=0, extra=None, full=False, cloth_tint=None):
         m = self.m
         f = m["animations"][anim]["start"] + idx
         helmet, shield, weapon, armor, legs = gear
@@ -377,12 +377,17 @@ class Composer:
         for s in sheets:
             if m["sheets"][s]["layer"] == "body_main" and not top:
                 put_weapon()
-            out.alpha_composite(self.sheet(s).crop((f * m["frameWidth"], 0, (f + 1) * m["frameWidth"], m["frameHeight"])))
+            part = self.sheet(s).crop((f * m["frameWidth"], 0, (f + 1) * m["frameWidth"], m["frameHeight"]))
+            if s == "cloth" and cloth_tint:
+                # tanga colorida (como a tinta do jogo: multiplica a cor)
+                r, g, b, al = part.split()
+                part = Image.merge("RGBA", (r.point(lambda v: v * cloth_tint[0] // 255), g.point(lambda v: v * cloth_tint[1] // 255), b.point(lambda v: v * cloth_tint[2] // 255), al))
+            out.alpha_composite(part)
         if top:
             put_weapon()
         # folhas em resolução dupla: as ilustrações usam o quadro no tamanho original (112x88)
         res = m.get("res", 1)
-        if res > 1:
+        if res > 1 and not full:
             out = out.resize((m["frameWidth"] // res, m["frameHeight"] // res), Image.NEAREST)
         return out
 

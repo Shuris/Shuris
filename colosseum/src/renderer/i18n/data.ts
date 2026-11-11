@@ -173,7 +173,13 @@ export function itemName(item: ItemDef): string {
 export function itemDesc(item: ItemDef): string {
   return (en() && EN_ITEMS[item.id]?.description) || item.description;
 }
+/** O campeão perde o título quando o jogador o derrota: "Flamma, o Campeão" vira só "Flamma". */
+let championBeaten = false;
+export function setChampionBeaten(on: boolean): void {
+  championBeaten = on;
+}
 export function opponentEpithet(o: OpponentDef): string {
+  if (o.id === 'flamma' && championBeaten) return '';
   if (o.beast) return tk(`beast.${o.beast}.ep`);
   if (o.cls) return tk(`class.${o.cls}.ep`);
   return (en() && EN_OPPONENTS[o.id]?.epithet) || o.epithet;
@@ -184,7 +190,8 @@ export function moveName(skill: SkillId, beast?: string): string {
 }
 export function opponentFullName(o: OpponentDef): string {
   if (o.beast) return `${tk(`beast.${o.beast}.name`)}, ${opponentEpithet(o)}`;
-  return `${o.name}, ${opponentEpithet(o)}`;
+  const ep = opponentEpithet(o);
+  return ep ? `${o.name}, ${ep}` : o.name;
 }
 export function opponentDesc(o: OpponentDef): string {
   if (o.beast) return tk(`beast.${o.beast}.desc`);

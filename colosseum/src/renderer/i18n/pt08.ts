@@ -11,7 +11,7 @@ export const PT08 = {
   'upgrade.bronze_palus.name': 'Palus com braços de bronze',
   'upgrade.bronze_palus.desc': 'O poste de treino revida com braços articulados: Técnica rende mais 30%.',
   'upgrade.doctore_legend.name': 'Doctore lendário',
-  'upgrade.doctore_legend.desc': 'Um ex-campeão do Coliseu assume o seu treino: cada treino gasta mais 3 de energia a menos.',
+  'upgrade.doctore_legend.desc': 'Um ex-campeão do Coliseu assume o seu treino: cada treino gasta mais 3 de energia a menos e leva só 40 minutos.',
   // missões dos moradores
   // convites das arenas particulares
   'invite.title': 'Convites',
@@ -64,7 +64,7 @@ export const PT08 = {
   // duplas
   'duo.title': 'Lutas de dupla',
   'duo.howTo': 'Rivais que você venceu passam a aparecer pela cidade. Converse com eles (clique, uma vez por dia em cada um): quando virarem amigos, formam dupla com você. Alguns odeiam você e nunca aceitam.',
-  'duo.rules': 'Dois duelos ao mesmo tempo: você na frente, o parceiro ao fundo. Um a um, os sobreviventes desempatam.',
+  'duo.rules': 'Terças e quintas. Dois duelos ao mesmo tempo: você na frente, o parceiro ao fundo. Um a um, os sobreviventes desempatam.',
   'duo.friend': 'amigo',
   'duo.partner': 'Parceiro',
   'duo.choose': 'Escolher',
@@ -165,4 +165,5 @@ export const PT08 = {
   'season.summer': 'Verão',
   'season.autumn': 'Outono',
   'season.winter': 'Inverno',
+  'duo.notToday': 'Duplas só às terças e quintas',
 } as const;
