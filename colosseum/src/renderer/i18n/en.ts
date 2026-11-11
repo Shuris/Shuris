@@ -349,7 +349,7 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
   'forum.none': 'No editions yet.',
   'forum.new': 'new',
   'np.title': 'Capua Times',
-  'np.price': 'One as',
+  'np.price': 'Free at the Forum',
   'np.edition': 'Issue no. {n}',
   'np.year': 'Year {y} since the founding of Rome',
   'np.motto': 'All the news from the sand and the city',
@@ -453,7 +453,7 @@ const EN_BASE: Record<keyof typeof PT_BASE, string> = {
 
   // ---------------------------------------------------------------- tavern
   'tavern.title': 'The Boar Tavern',
-  'tavern.tip': 'Eat to recover energy and buy a round to hear gossip about your next rival.',
+  'tavern.tip': 'Eat to recover energy and buy a round to hear rumors about your next rival. Click the patrons to hear what they say.',
   'tavern.closed': 'The tavern is closed (opens at 11am).',
   'tavern.keeperName': 'Livia, the tavern keeper',
   'tavern.quintusName': 'Old Quintus',

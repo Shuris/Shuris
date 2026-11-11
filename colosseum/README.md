@@ -5,12 +5,14 @@ Você desenvolve **um único gladiador** numa carreira permanente: treina, distr
 compra e equipa armas e proteções, escolhe a estratégia — e assiste às lutas, que acontecem
 **automaticamente**, em tempo real, com animações e efeitos sonoros.
 
-> Versão: **0.6.2** · Windows 10/11 · Português (Brasil) e inglês · Funciona offline.
+> Versão: **0.7.0** · Windows 10/11 · Português (Brasil) e inglês · Funciona offline.
 
 ![Arena](docs/img/arena.png)
 
 ## Destaques
 
+- **Visual pintado** com pós-processamento em todas as cenas, público em silhueta, sangue nas lutas e um golpe final em câmera lenta com holofote.
+- **Moradores que falam quando você clica neles**, móveis com colisão e falas na luta uma de cada vez.
 - **Menu principal com 3 espaços de salvamento** separados e arte própria; o jogo abre em tela cheia e **Esc pausa**.
 - **Eventos da cidade**: mercador viajante (a cada 6 a 10 dias), queda de braço na taverna (domingo à noite) e festival a cada 14 dias (arquibancada lotada, fama em dobro).
 - **Torneio de sábado** às 14h, com inscrição antecipada e janela com a chave de 8 lutadores.
@@ -39,8 +41,8 @@ Detalhes em [docs/FUNCIONALIDADES.md](docs/FUNCIONALIDADES.md).
 
 ## Instalação (jogador)
 
-Execute `Colosseum-Setup-0.6.2.exe` e abra o jogo pelo atalho. Há também a versão portátil
-`Colosseum-Portatil-0.6.2.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
+Execute `Colosseum-Setup-0.7.0.exe` e abra o jogo pelo atalho. Há também a versão portátil
+`Colosseum-Portatil-0.7.0.exe`. Veja [docs/INSTALACAO.md](docs/INSTALACAO.md).
 
 ## Desenvolvimento
 

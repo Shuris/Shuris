@@ -403,3 +403,23 @@ describe('retratos e itens novos', () => {
     }
   });
 });
+
+describe('jornal: uma notícia por adversário (0.7)', () => {
+  it('não publica "vence" e "provoca" sobre o mesmo adversário, nem dois resultados', async () => {
+    const { editionItems } = await import('../../src/renderer/core/systems/NewsSystem');
+    const mk = (tpl: string, v: Record<string, string>) => ({ id: tpl, kind: 'city' as const, tpl, v, headline: '', body: '' });
+    const items = [
+      mk('rival.0', { name: 'Max', rival: 'brutus' }),
+      mk('victory.0', { name: 'Max', opp: 'brutus', arena: 'capua' }),
+      mk('lossKo.0', { name: 'Max', opp: 'pool_nubia', arena: 'capua' }),
+      mk('tourneyWin.0', { name: 'Max', opp: '' }),
+      mk('city.1', {}),
+    ];
+    const out = editionItems(items).map((n) => n.tpl);
+    expect(out[0]).toBe('tourneyWin.0');
+    expect(out).not.toContain('victory.0');
+    expect(out).not.toContain('lossKo.0');
+    expect(out.filter((x) => x === 'rival.0').length).toBeLessThanOrEqual(1);
+    expect(out).toContain('city.1');
+  });
+});

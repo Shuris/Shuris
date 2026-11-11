@@ -229,9 +229,62 @@ function cityEvents(p: PlayerState, rng: Rng): void {
   if (weekdayIndex(p.day) === 5) add(p, 'event', 'tourneySoon', rng);
 }
 
+/** Ordem de importância (a primeira vence quando duas notícias falam do mesmo assunto). */
+const PRIORITY: NewsGroup[] = [
+  'champion', 'tourneyWin', 'victory', 'rematchWin', 'streak10', 'streak5', 'comeback', 'streak3', 'tourneyFinal',
+  'rematchAsk', 'armWin', 'arena', 'level', 'fame', 'rival', 'tavern', 'lossKo', 'lossDecision', 'lossForfeit',
+  'rematchLose', 'slump', 'tourneyOut', 'rematchFled', 'tourneyNoShow',
+];
+/** Notícias sobre o resultado de lutas: só a mais importante sai na edição. */
+const RESULT: ReadonlySet<NewsGroup> = new Set<NewsGroup>([
+  'champion', 'tourneyWin', 'victory', 'rematchWin', 'streak10', 'streak5', 'comeback', 'streak3', 'tourneyFinal',
+  'lossKo', 'lossDecision', 'lossForfeit', 'rematchLose', 'slump', 'tourneyOut',
+]);
+
+const groupOf = (n: NewsItem) => (n.tpl ? (n.tpl.split('.')[0] as NewsGroup) : null);
+
+/** Adversários citados pelo texto da notícia ({opp} e {rival}). */
+function mentioned(n: NewsItem): string[] {
+  if (!n.tpl || !n.v) return [];
+  const raw = `${tk(`news.${n.tpl}.h`)} ${tk(`news.${n.tpl}.b`)}`;
+  const out: string[] = [];
+  if (raw.includes('{opp}') && n.v.opp) out.push(String(n.v.opp));
+  if (raw.includes('{rival}') && n.v.rival) out.push(String(n.v.rival));
+  return out;
+}
+
+/**
+ * Tira da edição as notícias que se contradizem: no máximo uma notícia sobre cada
+ * adversário (nada de "Brutus vence" e "Brutus provoca" juntos) e um único
+ * resultado de luta do gladiador.
+ */
+export function editionItems(items: NewsItem[]): NewsItem[] {
+  const rank = (n: NewsItem) => {
+    const g = groupOf(n);
+    const i = g ? PRIORITY.indexOf(g) : -1;
+    return i < 0 ? PRIORITY.length : i;
+  };
+  const sorted = [...items].sort((a, b) => rank(a) - rank(b));
+  const seen = new Set<string>();
+  let result = false;
+  const keep = new Set<NewsItem>();
+  for (const n of sorted) {
+    const g = groupOf(n);
+    const opps = mentioned(n);
+    if (opps.some((o) => seen.has(o))) continue;
+    if (g && RESULT.has(g)) {
+      if (result) continue;
+      result = true;
+    }
+    opps.forEach((o) => seen.add(o));
+    keep.add(n);
+  }
+  return sorted.filter((n) => keep.has(n));
+}
+
 /** Publica a edição do dia (ao acordar). Retorna a edição se houver notícias do gladiador. */
 export function publish(p: PlayerState, rng: Rng) {
-  const own = p.news.pending.splice(0, 5);
+  const own = editionItems(p.news.pending.splice(0)).slice(0, 5);
   p.news.pending = [];
   cityEvents(p, rng);
   own.push(...p.news.pending.splice(0));

@@ -197,31 +197,7 @@ def market(rng):
     for x in (60, 120, 220, 280, 390, 450, 540, 600):
         d.line([(x, 220), (x, 226)], fill=WOOD_D)
         d.rectangle([x - 2, 226, x + 2, 231], fill=hexc("e0a040"))
-    # fonte pública
-    fx0 = 430
-    d.rectangle([fx0 - 22, 296, fx0 + 22, 312], fill=hexc("c8beaa"))
-    d.rectangle([fx0 - 20, 298, fx0 + 20, 304], fill=hexc("3a7ab0"))
-    d.rectangle([fx0 - 3, 274, fx0 + 3, 298], fill=hexc("b9b1a0"))
-    d.ellipse([fx0 - 6, 270, fx0 + 6, 276], fill=hexc("c8beaa"))
-    d.line([(fx0 - 1, 276), (fx0 - 8, 298)], fill=hexc("8ac0e0"))
-    d.line([(fx0 + 1, 276), (fx0 + 8, 298)], fill=hexc("8ac0e0"))
-    # caixotes, barris e cestos
-    for (x, y) in ((196, 286), (208, 278), (220, 288)):
-        d.rectangle([x, y, x + 12, y + 12], fill=hexc("9a6a3a"))
-        d.line([(x, y), (x + 12, y + 12)], fill=hexc("6a4428"))
-        d.rectangle([x, y, x + 12, y + 12], outline=hexc("6a4428"))
-    for x in (480, 494):
-        d.rounded_rectangle([x, 282, x + 12, 302], radius=3, fill=hexc("7a5230"))
-        d.line([(x, 287), (x + 12, 287)], fill=hexc("4a3a2a"))
-        d.line([(x, 297), (x + 12, 297)], fill=hexc("4a3a2a"))
-    for x in (250, 268):
-        d.ellipse([x, 300, x + 14, 310], fill=hexc("b89a5a"))
-        for k in range(3):
-            d.ellipse([x + 2 + k * 4, 297, x + 6 + k * 4, 302], fill=[hexc("c84a2a"), hexc("e0b040"), hexc("6a9a3a")][k])
-    # pombos
-    for (x, y) in ((300, 330), (306, 333), (360, 326)):
-        d.ellipse([x, y, x + 4, y + 3], fill=hexc("8a8a92"))
-        d.point((x + 4, y), fill=hexc("6a6a72"))
+    # (caixotes, cestos e barris viraram objetos da cena, com colisão: ver gen_v06.props)
     return img
 
 

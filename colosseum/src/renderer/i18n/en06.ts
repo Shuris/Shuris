@@ -21,6 +21,7 @@ export const EN06: Record<keyof typeof PT06, string> = {
   'app.windowedToast': 'Windowed mode. Press F11 to go back to fullscreen.',
   'opt.music': 'Music',
   'opt.musicVolume': 'Music volume',
+  'opt.fx': 'Image effects',
   'opt.windowed': 'Windowed mode (F11)',
 
   'arena.challenger': 'Challenger of the day',

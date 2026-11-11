@@ -21,6 +21,8 @@ export class BootScene extends Phaser.Scene {
     }
     for (const a of ARENAS) this.load.spritesheet(`bg:crowdfest_${a.id}`, `assets/backgrounds/crowdfest_${a.id}.png`, { frameWidth: 640, frameHeight: 360 });
     for (const k of ['festival', 'merchant_cart', 'forge', 'arm_table']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
+    for (const k of ['prop_table', 'prop_stool', 'prop_crates', 'prop_basket_fruit', 'prop_basket_bread', 'prop_barrel', 'prop_sacks', 'prop_amphorae']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
+    this.load.spritesheet('fx:crowd_front', 'assets/sprites/fx/crowd_front.png', { frameWidth: 640, frameHeight: 44 });
     this.load.image('bg:ludus', 'assets/backgrounds/ludus.png');
     for (const k of ['home', 'market', 'temple', 'forum', 'baths', 'tavern']) this.load.image(`bg:loc_${k}`, `assets/backgrounds/loc_${k}.png`);
     this.load.image('bg:map', 'assets/backgrounds/map.png');

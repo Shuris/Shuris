@@ -21,6 +21,7 @@ export const PT06 = {
   'app.windowedToast': 'Modo janela. Aperte F11 para voltar à tela cheia.',
   'opt.music': 'Música',
   'opt.musicVolume': 'Volume da música',
+  'opt.fx': 'Efeitos de imagem',
   'opt.windowed': 'Modo janela (F11)',
 
   // ---------------------------------------------------------------- arena, rivais e revanche

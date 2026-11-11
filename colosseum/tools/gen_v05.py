@@ -77,16 +77,7 @@ def tavern(rng):
         for yy in (220, 233, 246):
             d.line([(bx + 2, yy), (bx + 26, yy)], fill=hexc("4a3a30"), width=2)
         d.ellipse([bx + 11, 230, bx + 17, 236], fill=WOOD_D)
-    # mesas e banquinhos (esquerda e centro)
-    for tx in (196, 268):
-        d.rectangle([tx, 284, tx + 40, 288], fill=WOOD_L)
-        d.rectangle([tx + 3, 288, tx + 6, 304], fill=WOOD_D)
-        d.rectangle([tx + 34, 288, tx + 37, 304], fill=WOOD_D)
-        d.rectangle([tx + 8, 279, tx + 13, 284], fill=hexc("8a8a9a"))  # caneca
-        d.ellipse([tx + 18, 280, tx + 30, 285], fill=hexc("c8903a"))  # pão
-        d.rectangle([tx - 12, 294, tx - 2, 297], fill=WOOD)
-        d.line([(tx - 10, 297), (tx - 10, 306)], fill=WOOD_D, width=2)
-        d.line([(tx - 4, 297), (tx - 4, 306)], fill=WOOD_D, width=2)
+    # (mesas e banquinhos viraram objetos da cena, com colisão: ver gen_v06.props)
     # lamparinas penduradas
     for lx in (262, 430):
         d.line([(lx, 128), (lx, 226)], fill=hexc("3a2a20"))

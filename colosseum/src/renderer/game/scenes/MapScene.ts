@@ -6,6 +6,7 @@ import { SkyLayer } from '../DayNight';
 import { FONT } from '../fx';
 import { frameCamera, type Insets } from '../layout';
 import { locationName } from '../../i18n/data';
+import { applyLook } from '../shaders';
 
 export interface MapData {
   current: LocationId;
@@ -74,6 +75,7 @@ export class MapScene extends Phaser.Scene {
     this.sky = new SkyLayer(this, data.time, 0, false);
     const cam = this.cameras.main;
     cam.setBackgroundColor('#1a110c');
+    applyLook(this, 'map');
     this.layout();
     this.refreshLabels();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.layout, this);

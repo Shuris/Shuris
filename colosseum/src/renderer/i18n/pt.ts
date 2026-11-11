@@ -348,7 +348,7 @@ export const PT_BASE = {
   'forum.none': 'Nenhuma edição ainda.',
   'forum.new': 'nova',
   'np.title': 'Cápua Times',
-  'np.price': 'Um asse',
+  'np.price': 'Grátis no Fórum',
   'np.edition': 'Edição nº {n}',
   'np.year': 'Ano {y} da fundação de Roma',
   'np.motto': 'Tudo o que acontece na areia e na cidade',
@@ -452,7 +452,7 @@ export const PT_BASE = {
 
   // ---------------------------------------------------------------- taverna
   'tavern.title': 'Taverna do Javali',
-  'tavern.tip': 'Coma para recuperar energia e pague uma rodada para ouvir boatos sobre o próximo rival.',
+  'tavern.tip': 'Coma para recuperar energia e pague uma rodada para ouvir boatos sobre o próximo rival. Clique nos fregueses para ouvir o que dizem.',
   'tavern.closed': 'A taverna está fechada (abre às 11h).',
   'tavern.keeperName': 'Lívia, a taverneira',
   'tavern.quintusName': 'Velho Quintus',

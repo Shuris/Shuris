@@ -310,8 +310,13 @@ await step('16. Dia e noite seguem o relógio do jogo', async () => {
   assert(day.light > 0.9 && day.ambient === 0xffffff, `dia claro (${JSON.stringify(day)})`);
   assert(night.light < 0.3, `noite escura (${JSON.stringify(night)})`);
   await win.waitForSelector('.modal-result', { timeout: 150000 });
-  const cine = await win.evaluate(() => ({ standing: window.__colosseum.view.arena.standing, music: window.__colosseum.music.track }));
+  const cine = await win.evaluate(() => {
+    const a = window.__colosseum.view.arena;
+    return { standing: a.standing, music: window.__colosseum.music.track, finale: !!a.finale, finaleOn: a.finaleOn, reason: a.engine.result?.reason, blood: a.bloodGround.commandBuffer.length };
+  });
   assert(cine.standing === 1, 'público de pé no fim da luta');
+  if (cine.reason === 'ko') assert(cine.finale && cine.finaleOn, `golpe final previsto e mostrado em câmera lenta (${JSON.stringify(cine)})`);
+  assert(cine.blood > 0, 'sangue na areia');
   assert(cine.music === 'arena', 'música da arena');
   await win.click('[data-r="close"]');
 });
@@ -413,7 +418,7 @@ await step('22. Melhorias do mercado: cama e equipamentos do ludus', async () =>
   assert(((await win.textContent('#panel')) ?? '').includes('+32 energia'), 'cochilo melhor com o colchão de lã');
 });
 
-await step('23. Taverna: comer, ouvir boatos e conversar', async () => {
+await step('23. Taverna: comer, ouvir boatos e clicar nos fregueses', async () => {
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 14 * 60; p.energy = 50; }));
   await goTo('tavern');
   const before = await state();
@@ -424,10 +429,27 @@ await step('23. Taverna: comer, ouvir boatos e conversar', async () => {
   p = await state();
   assert(p.reputation === before.reputation + 1 && p.tavern.rumorDay === p.day, 'boato ouvido (+1 fama)');
   assert(await win.locator('[data-action="rumor"][disabled]').count(), 'boato só 1x por dia');
-  await win.click('[data-action="talk"]');
+  assert(!(await win.locator('[data-action="talk"]').count()), 'sem a ação inútil de "conversar"');
+  // os fregueses falam quando clicados (destaque ao passar o mouse)
+  const pt = await win.evaluate(() => {
+    const h = window.__colosseum.view.game.scene.getScene('hub');
+    const cam = h.cameras.main;
+    const v = h.npcs[1].v;
+    const r = document.querySelector('#game canvas').getBoundingClientRect();
+    return { x: r.left + (v.x - cam.worldView.x) * cam.zoom, y: r.top + (v.y - 25 - cam.worldView.y) * cam.zoom };
+  });
+  await win.mouse.move(pt.x, pt.y);
+  await win.waitForTimeout(250);
+  await win.mouse.down();
+  await win.mouse.up();
   await win.waitForTimeout(600);
   const bubbles = await win.evaluate(() => window.__colosseum.view.game.scene.getScene('hub').children.list.filter((o) => o.depth === 1200).length);
-  assert(bubbles >= 1, 'conversa em balão de fala');
+  assert(bubbles >= 1, 'freguês clicado fala em balão');
+  const overlap = await win.evaluate(() => {
+    const h = window.__colosseum.view.game.scene.getScene('hub');
+    return h.npcs.filter((n) => h.blocked(n.v.x, n.v.y, 0)).length;
+  });
+  assert(overlap === 0, `ninguém dentro dos móveis (${overlap})`);
   await shot('23-tavern');
 });
 

@@ -628,3 +628,154 @@ def news_images_v06(assets_dir, out_dir):
     for name, pic in pics.items():
         engrave(pic).save(os.path.join(out_dir, f"{name}.png"))
     return list(pics)
+
+
+def crowd_front():
+    """Silhuetas do público em primeiro plano (embaixo da tela da luta), 2 quadros:
+    braços abaixados e braços erguidos."""
+    rng = random.Random(42)
+    W, H = 640, 44
+    sheet = new_img(W * 2, H)
+    people = []
+    x = -4
+    while x < W + 4:
+        people.append((x, rng.randint(6, 14), rng.choice((0, 1, 1, 2)), rng.random()))
+        x += rng.randint(13, 19)
+    for f in range(2):
+        img = new_img(W, H)
+        d = ImageDraw.Draw(img)
+        for (px, top, build, ph) in people:
+            col = (28 + int(ph * 14), 18 + int(ph * 8), 14, 255)
+            sw = 7 + build * 2
+            d.ellipse([px - 5, top, px + 5, top + 11], fill=col)                  # cabeça
+            d.rounded_rectangle([px - sw, top + 10, px + sw, H + 4], radius=5, fill=col)  # ombros
+            up = (f == 1) == (ph < 0.55)
+            if up:  # braços erguidos (punho para cima)
+                side = -1 if ph < 0.3 else 1
+                d.line([(px + side * (sw - 2), top + 13), (px + side * (sw + 3), top - 6)], fill=col, width=4)
+                d.ellipse([px + side * (sw + 3) - 3, top - 10, px + side * (sw + 3) + 3, top - 4], fill=col)
+                if ph < 0.15:
+                    d.line([(px - side * (sw - 2), top + 13), (px - side * (sw + 2), top - 4)], fill=col, width=4)
+            # contorno de luz quente no topo das cabeças
+            d.arc([px - 5, top, px + 5, top + 11], 200, 340, fill=(120, 74, 40, 255))
+        sheet.alpha_composite(img, (f * W, 0))
+    return sheet
+
+
+# ------------------------------------------------------------------ objetos de cena (com colisão)
+def _with_shadow(img, w=None):
+    """Objeto já sombreado + sombra suave no chão."""
+    out = new_img(img.width, img.height + 3)
+    d = ImageDraw.Draw(out)
+    sw = w or img.width
+    d.ellipse([(img.width - sw) // 2, img.height - 3, (img.width + sw) // 2, img.height + 2], fill=(0, 0, 0, 70))
+    out.alpha_composite(img, (0, 0))
+    return out
+
+
+def _wood(d, box, base, grain=True):
+    x0, y0, x1, y1 = box
+    d.rectangle(box, fill=base)
+    if grain:
+        for y in range(y0 + 2, y1, 3):
+            d.line([(x0 + 1, y), (x1 - 1, y)], fill=darker(base, 0.88))
+
+
+def props():
+    out = {}
+    W_ = hexc("8a5a32")
+    WD = hexc("5e3a1e")
+    WL = hexc("a8743e")
+    # mesa da taverna (altura da cintura) com caneca, pão e uma jarra
+    img = new_img(48, 26)
+    d = ImageDraw.Draw(img)
+    _wood(d, (1, 6, 46, 11), WL)
+    d.rectangle([1, 11, 46, 12], fill=WD)
+    for x in (4, 41):
+        d.rectangle([x, 12, x + 3, 25], fill=WD)
+    d.rectangle([8, 12, 39, 14], fill=W_)
+    img = finish(img, light=0.22, dark=0.7)
+    d = ImageDraw.Draw(img)
+    d.rectangle([9, 1, 14, 6], fill=hexc("8a8a9a"))
+    d.point((10, 2), fill=hexc("d8d8e0"))
+    d.ellipse([20, 2, 31, 7], fill=hexc("c8903a"))
+    d.line([(22, 4), (29, 4)], fill=hexc("e8b860"))
+    d.ellipse([35, -1, 42, 7], fill=hexc("b0603a"))
+    d.point((37, 1), fill=hexc("e0a080"))
+    out["prop_table"] = _with_shadow(img, 44)
+    # banquinho
+    img = new_img(14, 13)
+    d = ImageDraw.Draw(img)
+    _wood(d, (1, 2, 12, 5), WL, False)
+    for x in (2, 9):
+        d.rectangle([x, 5, x + 2, 12], fill=WD)
+    out["prop_stool"] = _with_shadow(finish(img, light=0.22), 12)
+    # pilha de caixotes
+    img = new_img(36, 32)
+    d = ImageDraw.Draw(img)
+    for (x, y, w) in ((1, 14, 17), (18, 16, 16), (9, 1, 16)):
+        _wood(d, (x, y, x + w, y + 15), W_)
+        d.line([(x + 1, y + 1), (x + w - 1, y + 14)], fill=WD)
+        d.line([(x + 1, y + 14), (x + w - 1, y + 1)], fill=WD)
+        d.rectangle([x, y, x + w, y + 15], outline=WD)
+    img = finish(img, light=0.24, dark=0.68)
+    d = ImageDraw.Draw(img)
+    for (x, y) in ((2, 15), (19, 17), (10, 2)):
+        d.line([(x, y), (x + 5, y)], fill=WL)
+    out["prop_crates"] = _with_shadow(img, 36)
+    # cesto de frutas e cesto de pães (vime trançado)
+    for key, fruits in (("prop_basket_fruit", (hexc("c84a2a"), hexc("e0b040"), hexc("6a9a3a"), hexc("c84a2a"))), ("prop_basket_bread", (hexc("c8903a"), hexc("b07a30"), hexc("d8a050")))):
+        img = new_img(22, 16)
+        d = ImageDraw.Draw(img)
+        for i, c in enumerate(fruits):
+            d.ellipse([2 + i * 5, 1 + (i % 2), 9 + i * 5, 8 + (i % 2)], fill=c)
+        d.polygon([(1, 6), (21, 6), (18, 15), (4, 15)], fill=hexc("b89a5a"))
+        img = finish(img, light=0.25, dark=0.7)
+        d = ImageDraw.Draw(img)
+        for y in (8, 11, 14):
+            for x in range(3 + (y % 2) * 2, 19, 4):
+                d.point((x, y), fill=hexc("8a6a3a"))
+        d.line([(2, 6), (20, 6)], fill=hexc("d8be7a"))
+        for i in range(len(fruits)):
+            d.point((4 + i * 5, 2 + (i % 2)), fill=(255, 240, 210))
+        out[key] = _with_shadow(img, 20)
+    # barril com aros de ferro
+    img = new_img(16, 22)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle([1, 1, 14, 21], radius=4, fill=W_)
+    for x in (4, 8, 11):
+        d.line([(x, 2), (x, 20)], fill=darker(W_, 0.85))
+    img = finish(img, light=0.25, dark=0.66)
+    d = ImageDraw.Draw(img)
+    for y in (5, 16):
+        d.line([(1, y), (14, y)], fill=hexc("4a4a52"))
+        d.point((3, y - 1), fill=hexc("9a9aa8"))
+    d.line([(4, 3), (4, 19)], fill=WL)
+    out["prop_barrel"] = _with_shadow(img, 15)
+    # sacos de grão
+    img = new_img(26, 15)
+    d = ImageDraw.Draw(img)
+    for (x, y) in ((1, 4), (12, 3)):
+        d.rounded_rectangle([x, y, x + 12, y + 11], radius=4, fill=hexc("c8b48a"))
+        d.rectangle([x + 4, y - 2, x + 8, y + 1], fill=hexc("b8a47a"))
+    img = finish(img, light=0.25, dark=0.72)
+    d = ImageDraw.Draw(img)
+    d.line([(15, 8), (21, 8)], fill=hexc("9a8460"))
+    d.point((6, 7), fill=hexc("8a7450"))
+    out["prop_sacks"] = _with_shadow(img, 24)
+    # ânforas encostadas
+    img = new_img(28, 26)
+    d = ImageDraw.Draw(img)
+    for i, x in enumerate((2, 10, 18)):
+        c = (hexc("b0603a"), hexc("c87a48"), hexc("9a5030"))[i]
+        d.ellipse([x, 6, x + 8, 22], fill=c)
+        d.rectangle([x + 3, 2, x + 5, 7], fill=c)
+        d.polygon([(x + 3, 22), (x + 5, 22), (x + 4, 25)], fill=c)
+        d.line([(x + 1, 4), (x + 3, 6)], fill=c)
+    img = finish(img, light=0.25, dark=0.7)
+    d = ImageDraw.Draw(img)
+    for x in (4, 12, 20):
+        d.line([(x, 9), (x, 14)], fill=hexc("e0a07a"))
+        d.line([(x - 1, 16), (x + 6, 16)], fill=hexc("6a3a20"))
+    out["prop_amphorae"] = _with_shadow(img, 26)
+    return out

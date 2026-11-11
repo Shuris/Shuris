@@ -99,6 +99,9 @@ def main():
     gen_v06.merchant_cart().save(os.path.join(fx, "merchant_cart.png"))
     gen_v06.forge().save(os.path.join(fx, "forge.png"))
     gen_v06.arm_table().save(os.path.join(fx, "arm_table.png"))
+    gen_v06.crowd_front().save(os.path.join(fx, "crowd_front.png"))
+    for name, img in gen_v06.props().items():
+        img.save(os.path.join(fx, name + ".png"))
     people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))
     print(f"retratos: {len(people)}")
     gen_v06.title_art(ASSETS).save(os.path.join(ASSETS, "ui", "title.png"))

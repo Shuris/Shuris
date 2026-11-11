@@ -26,6 +26,7 @@ import { playerPortrait } from './components/portraits';
 import { playerHelmet, playerPortraitKey } from './components/playerLook';
 import { todaysChallenger } from './screens/MainMenu';
 import { music } from '../audio/Music';
+import { fxEnabled, setFxEnabled } from '../game/shaders';
 import { itemName } from '../i18n/data';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
 import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
@@ -54,7 +55,7 @@ import { TempleScreen } from './screens/TempleScreen';
 import { TrainingScreen } from './screens/TrainingScreen';
 import type { AppActions, Screen, ScreenId } from './screens/Screen';
 import { TavernScreen } from './screens/TavernScreen';
-import { chat, eat, hearRumor } from '../core/systems/TavernSystem';
+import { eat, hearRumor } from '../core/systems/TavernSystem';
 import { npcLine } from '../core/data/dialogue';
 import { tk, variant } from '../i18n';
 import { getLang, setLang, t, type Lang } from '../i18n';
@@ -295,6 +296,7 @@ export class App implements AppActions {
         <div class="opt-row"><span>${t('opt.musicVolume')}</span><input type="range" min="0" max="100" step="5" value="${Math.round(music.volume * 100)}" data-o="music-volume"></div>
         <div class="opt-row"><span>${t('opt.sound')}</span><button class="btn sm ${sfxMuted ? '' : 'active'}" data-o="unmute">${t('opt.on')}</button><button class="btn sm ${sfxMuted ? 'active' : ''}" data-o="mute">${t('opt.off')}</button></div>
         <div class="opt-row"><span>${t('opt.volume')}</span><input type="range" min="0" max="100" step="5" value="${Math.round(sfxVol * 100)}" data-o="volume"></div>
+        <div class="opt-row"><span>${t('opt.fx')}</span><button class="btn sm ${fxEnabled() ? 'active' : ''}" data-o="fx-on">${t('opt.on')}</button><button class="btn sm ${fxEnabled() ? '' : 'active'}" data-o="fx-off">${t('opt.off')}</button></div>
         <div class="opt-row"><span>${t('opt.screen')}</span><button class="btn sm" data-o="fullscreen">${this.win.fullscreen ? t('opt.windowed') : t('opt.fullscreenF11')}</button></div>
         <p class="tiny dim">${t('opt.savedAt', { path: esc(info.savePath), version: esc(info.version) })}</p>
         <div class="row end"><button class="btn" data-o="close">${back ? t('common.back') : t('common.close')}</button></div>`,
@@ -329,6 +331,11 @@ export class App implements AppActions {
         if (a === 'music-on' || a === 'music-off') {
           music.setEnabled(a === 'music-on');
           if (a === 'music-on') this.updateMusic();
+          return reopen();
+        }
+        if (a === 'fx-on' || a === 'fx-off') {
+          setFxEnabled(a === 'fx-on');
+          if (this.store.hasPlayer && !this.battle) this.enterLocation();
           return reopen();
         }
         if (a === 'mute' || a === 'unmute') {
@@ -619,8 +626,8 @@ export class App implements AppActions {
     }
   }
 
-  /** Ações da taverna: comer, ouvir boatos (vinho) e conversar. */
-  tavern(action: 'eat' | 'rumor' | 'talk'): void {
+  /** Ações da taverna: comer e ouvir boatos (vinho). Os fregueses falam quando clicados na cena. */
+  tavern(action: 'eat' | 'rumor'): void {
     if (this.busy) return;
     const screen = this.screens.tavern as TavernScreen;
     const rng = createRng(randomSeed());
@@ -640,17 +647,6 @@ export class App implements AppActions {
       screen.last = { who: t('tavern.quintusName'), text };
       this.view.npcSay('quintus', text);
       toast(t('tavern.rumorHeard'), 'gold', 4000);
-    } else {
-      const err = this.store.update((p) => chat(p));
-      if (err) return (sound.play('error'), toast(err, 'bad'));
-      const n = Math.floor(rng() * 10);
-      const who = tk(`chat.${n}.who`);
-      const text = tk(`chat.${n}.text`, { name: this.store.state.name });
-      const reply = tk(`chat.${n}.reply`, { name: this.store.state.name });
-      const kind = who === 'quintus' ? 'quintus' : who === 'keeper' ? 'keeper' : 'patron';
-      screen.last = { who: kind === 'quintus' ? t('tavern.quintusName') : kind === 'keeper' ? t('tavern.keeperName') : t('tavern.patronName'), text };
-      this.view.npcSay(kind, text);
-      setTimeout(() => this.view.heroSay(reply), 2200);
     }
     this.renderPanel();
   }

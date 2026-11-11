@@ -21,13 +21,14 @@ Para mudar: reescreva, apague ou acrescente à vontade e me mande de volta. Dica
 - A primeira notícia vira a manchete principal (letra grande); as outras vão para as duas colunas, junto com um anúncio.
 - **Ilustrações em preto e branco:** a manchete principal ganha ilustração em 70% das edições; quando não ganha, a última notícia tem 40% de chance.
 - Notícias de sequência e de derrota não se repetem na mesma edição: só a mais recente sai.
+- **Uma notícia por adversário:** se duas notícias citarem o mesmo adversário (por exemplo "Brutus vence" e "Brutus provoca"), só a mais importante sai. E só um resultado de luta do gladiador aparece por edição (o mais importante: título, vitória, sequência... antes de derrotas).
 
 ## Cabeçalho e partes fixas
 
 | Onde | Português | Inglês |
 | --- | --- | --- |
 | Título | Cápua Times | Capua Times |
-| Preço (canto esquerdo) | Um asse | One as |
+| Canto esquerdo (antes "Um asse") | Grátis no Fórum | Free at the Forum |
 | Número da edição ({n} = dia) | Edição nº {n} | Issue no. {n} |
 | Ano ({y} = ano romano, DCCCXXX) | Ano {y} da fundação de Roma | Year {y} since the founding of Rome |
 | Lema (canto direito) | Tudo o que acontece na areia e na cidade | All the news from the sand and the city |

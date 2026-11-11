@@ -1,5 +1,15 @@
-# Funcionalidades — versão 0.6.2
+# Funcionalidades — versão 0.7.0
 
+## Novidades da 0.7.0
+- **Falas**: o monge fala sozinho a cada 30 segundos. Os outros moradores só falam quando você clica neles; ao passar o mouse, o morador ganha um anel nos pés e reticências sobre a cabeça. Na luta, cada um fala na sua vez: a resposta só aparece depois que o balão do outro some, e todo balão fica pelo menos 3 segundos no ar.
+- **Sangue nas lutas**: cada golpe faz o ferido sangrar; as gotas caem e mancham a areia até o fim da luta; quem está gravemente ferido pinga sangue; no nocaute, uma poça se espalha.
+- **Golpe final**: o jogo prevê o golpe que vai decidir a luta (o motor é determinístico) e, já no começo dele, aproxima a câmera, entra em câmera bem lenta e escurece todo o cenário; só a dupla fica sob um holofote. No impacto, a cena congela por um instante e depois volta ao normal.
+- **Visual pintado ("shaders")**: pós-processamento em todas as cenas (tons quentes, mais contraste e saturação, vinheta). Na arena, luz quente sobre a areia, raios de sol e o público em silhueta no primeiro plano, que vibra quando a luta esquenta (inspirado em Dominus Gladiatus, mantendo o pixel art).
+- **Móveis com colisão e proporção certa**: mesas, banquinhos, caixotes, cestos, barris, sacos e ânforas agora são objetos da cena (com sombra e sombreamento), no tamanho certo em relação às pessoas. Ninguém fica dentro dos móveis, quem anda dá meia-volta ao esbarrar e quem está mais à frente aparece na frente. O mercado perdeu a fonte e ganhou caixotes, cestos, barris, sacos e ânforas novos.
+- **Taverna**: a ação "conversar" (que só gastava tempo) saiu; para ouvir os fregueses, clique neles.
+- **Jornal**: "Um asse" virou "Grátis no Fórum". Cada edição traz no máximo uma notícia sobre cada adversário e um único resultado de luta (o mais importante), então não saem mais manchetes que se contradizem.
+
+## Novidades da 0.6.2
 ## Novidades da 0.6.2
 - **Ilustrações do jornal refeitas** em estilo gravura: o cenário fica claro e com poucas hachuras, e os personagens ganham contraste cheio, contorno e um halo de papel em volta. Cada cena foi recomposta, com gente nas ruas do fórum e do mercado, nas termas e na taverna, o monge no templo, o anfiteatro visto de fora e o rival em close. A imagem principal não é mais cortada.
 - **Mapa de Cápua repaginado**: cidade murada com torres e portões, rio atravessando a cidade com duas pontes e barcos, ruas de pedra (cardo, decumano e rua do sul), quarteirões de casas, colina do templo, campos de trigo e vinhedos fora dos muros, o anfiteatro do lado de fora, rosa dos ventos e moldura. Os prédios estão maiores e detalhados, e os nomes ficam em plaquinhas legíveis.

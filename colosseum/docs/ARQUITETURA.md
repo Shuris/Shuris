@@ -222,3 +222,12 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 
 - `tools/gen_map.py` desenha o mapa (`MAP_POS` precisa bater com `map` em `core/data/locations.ts`). `MapScene` usa a tabela `LABEL` para a distância do nome e a área clicável de cada prédio, e desenha a plaquinha atrás do nome.
 - `tools/gen_news.py` monta as ilustrações do jornal (`Scene`: fundo, camada intermediária e personagens) e converte em gravura: o fundo clareado, os personagens com contorno e halo. As imagens saem com ampliação 2x e o jornal as mostra suavizadas (`image-rendering: auto`) para não criar moiré.
+
+## Falas, sangue, golpe final, visual e colisão (0.7.0)
+
+- `speech()` aceita `onDone` e garante 3 s no ar. `ArenaScene.say` usa uma fila: uma fala por vez. Na cidade só quem tem `auto` (o monge) fala sozinho (`MONK_EVERY`); os outros moradores são interativos (`HubScene.makeClickable`).
+- `predictFinale(setup)` roda a mesma luta com a mesma semente e devolve o início do ataque fatal; `ArenaScene.startFinale` faz zoom, câmera lenta (0,2) e escurece o cenário (retângulo atrás dos lutadores + holofote).
+- Sangue: partículas em `ArenaScene.blood`, manchas desenhadas em `bloodGround` (fica até o fim da luta).
+- `game/shaders.ts`: `applyLook()` (ColorMatrix + vinheta da câmera) em todas as cenas; texturas de luz criadas em tempo de execução. Público em primeiro plano: `fx:crowd_front` (gerado em `gen_v06.crowd_front`).
+- Objetos de cena (`gen_v06.props`): `HubScene.addProp` registra a pegada; `blocked()` e `freeX()` evitam sobreposição; profundidade por `depthAt(y)`.
+- Jornal: `NewsSystem.editionItems()` remove notícias repetidas sobre o mesmo adversário e deixa só um resultado de luta por edição.

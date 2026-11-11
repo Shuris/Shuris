@@ -44,10 +44,11 @@ export function speech(
   scene: Phaser.Scene,
   who: Speaker,
   text: string,
-  opts: { head?: number; ms?: number; color?: string; maxW?: number; insetRight?: () => number } = {},
+  opts: { head?: number; ms?: number; color?: string; maxW?: number; insetRight?: () => number; onDone?: () => void } = {},
 ): void {
   const head = opts.head ?? 50;
-  const ms = opts.ms ?? Math.min(5200, 1800 + text.length * 45);
+  // cada balão fica pelo menos 3 segundos no ar
+  const ms = Math.max(3000, opts.ms ?? Math.min(5600, 2200 + text.length * 45));
   active.get(who)?.destroy();
   const zoom = scene.cameras.main.zoom;
   const res = Math.max(4, Math.ceil(zoom * (window.devicePixelRatio || 1)));
@@ -112,7 +113,12 @@ export function speech(
   };
   follow();
   scene.events.on(Phaser.Scenes.Events.UPDATE, follow);
+  let finished = false;
   const done = () => {
+    if (!finished) {
+      finished = true;
+      opts.onDone?.();
+    }
     placed.delete(me);
     scene.events.off(Phaser.Scenes.Events.UPDATE, follow);
     if (active.get(who) === c) active.delete(who);
@@ -123,6 +129,10 @@ export function speech(
     scene.tweens.add({ targets: c, alpha: 0, duration: 200, onComplete: done });
   });
   c.once(Phaser.GameObjects.Events.DESTROY, () => {
+    if (!finished) {
+      finished = true;
+      opts.onDone?.();
+    }
     placed.delete(me);
     scene.events.off(Phaser.Scenes.Events.UPDATE, follow);
   });
