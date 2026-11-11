@@ -28,6 +28,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image('bg:map', 'assets/backgrounds/map.png');
     for (const k of ['sun', 'moon', 'cloud']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:brazier', 'assets/sprites/fx/brazier.png', { frameWidth: 16, frameHeight: 32 });
+    this.load.spritesheet('fx:lamp_flame', 'assets/sprites/fx/lamp_flame.png', { frameWidth: 6, frameHeight: 8 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
     this.load.image('fx:glow', 'assets/sprites/fx/glow.png');
     this.load.spritesheet('fx:monk', 'assets/sprites/fx/monk.png', { frameWidth: 48, frameHeight: 44 });
@@ -38,6 +39,12 @@ export class BootScene extends Phaser.Scene {
         key: 'brazier',
         frames: this.anims.generateFrameNumbers('fx:brazier', { start: 0, end: 3 }),
         frameRate: 8,
+        repeat: -1,
+      });
+      this.anims.create({
+        key: 'lamp_flame',
+        frames: this.anims.generateFrameNumbers('fx:lamp_flame', { start: 0, end: 3 }),
+        frameRate: 7,
         repeat: -1,
       });
       this.game.events.emit('assets-ready');

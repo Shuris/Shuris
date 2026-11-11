@@ -77,13 +77,20 @@ export interface BattleRewards {
   mode: FightMode;
 }
 
+/** Fama perdida numa derrota comum (bem menos que os 50 de faltar ao torneio). */
+export function lossFame(oppLevel: number): number {
+  return Math.min(10, 2 + Math.floor(oppLevel / 4));
+}
+
 export function computeRewards(p: PlayerState, opp: OpponentDef, won: boolean, rng: Rng, mode: FightMode = 'ladder') {
   const f = levelDiffFactor(p.level, opp.level);
   const firstVictory = mode === 'ladder' && won && !p.defeatedOpponents.includes(opp.id);
   // festival: a plateia lotada dobra a fama da luta
   const fameMul = isFestival(p.day) ? FESTIVAL_FAME_MUL : 1;
   if (!won) {
-    return { xp: Math.max(5, Math.round((30 + 12 * opp.level) * f * 0.2)), coins: 5 + opp.level, reputation: 0, itemId: null, firstVictory };
+    // derrota custa um pouco de fama (no torneio, não: lá o castigo é faltar)
+    const reputation = mode === 'tournament' ? 0 : -lossFame(opp.level);
+    return { xp: Math.max(5, Math.round((30 + 12 * opp.level) * f * 0.2)), coins: 5 + opp.level, reputation, itemId: null, firstVictory };
   }
   const mul = mode === 'rematch' ? REMATCH_REWARD_MUL : mode === 'free' ? 0.9 : 1;
   const xp = Math.round((30 + 12 * opp.level) * f * mul);
@@ -133,7 +140,7 @@ export function applyBattleResult(p: PlayerState, input: BattleOutcomeInput): Ba
   const r = computeRewards(p, opp, won, rng, mode);
   const levelUps = grantXp(p, r.xp);
   p.coins += r.coins;
-  p.reputation += r.reputation;
+  p.reputation = Math.max(0, p.reputation + r.reputation);
   if (r.itemId) addItem(p, r.itemId);
   let unlocked: OpponentDef | null = null;
   if (mode === 'ladder' && won && !p.defeatedOpponents.includes(opp.id)) {

@@ -17,12 +17,12 @@ export function resultHtml(res: CombatResult, rw: BattleRewards, opp: OpponentDe
       <div class="rewards-box">
         <div class="reward">${icon('xp')} <b>+${rw.xp}</b> XP</div>
         <div class="reward">${icon('coin')} <b>+${rw.coins}</b> ${t('common.coinsLower')}</div>
-        ${rw.reputation ? `<div class="reward">${icon('laurel')} <b>+${rw.reputation}</b> ${t('common.fameLower')}</div>` : ''}
+        ${rw.reputation ? `<div class="reward${rw.reputation < 0 ? ' loss' : ''}">${icon('laurel')} <b>${rw.reputation > 0 ? '+' : ''}${rw.reputation}</b> ${t('common.fameLower')}</div>` : ''}
         ${item ? `<div class="reward">${itemIcon(item)} ${rarityName(item)}</div>` : ''}
       </div>
       ${rw.levelUps ? `<div class="levelup">${t('app.levelUp', { level: rw.newLevel, points: rw.pointsGained, skill: rw.levelUps })}</div>` : ''}
       ${rw.unlockedOpponent ? `<div class="unlock">${t('result.newRival')} <b>${esc(rw.unlockedOpponent.name)}</b></div>` : ''}
-      ${rw.festival && rw.reputation ? `<div class="unlock festival">${t('result.festival')}</div>` : ''}
+      ${rw.festival && rw.reputation > 0 ? `<div class="unlock festival">${t('result.festival')}</div>` : ''}
       ${rw.mode === 'rematch' && won ? `<div class="unlock">${t('result.rematchWon')}</div>` : ''}
       ${rw.rematchAsked ? `<div class="unlock red">${t('result.rematchAsked', { name: esc(opp.name) })}</div>` : ''}
       ${rw.injuryDays ? `<div class="injury-note">${t('injury.got', { n: rw.injuryDays })}</div>` : ''}

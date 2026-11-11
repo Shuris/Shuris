@@ -19,6 +19,8 @@ export const TOURNAMENT_LATE = 16 * 60;
 export const TOURNAMENT_ENERGY = 15;
 export const TOURNAMENT_MIN_ENERGY = 45;
 export const TOURNAMENT_FIGHT_MINUTES = 40;
+/** fama perdida por se inscrever e não aparecer no sábado */
+export const NO_SHOW_FAME = 50;
 export const ROUND_KEYS = ['tour.round0', 'tour.round1', 'tour.round2'] as const;
 
 export function isSaturday(day: number): boolean {
@@ -201,13 +203,14 @@ export function closeTournament(p: PlayerState, rng: Rng): TournamentPrize | nul
   return { reached, ...pr, itemId, champion, levelUps };
 }
 
-/** Não apareceu no sábado: perde a inscrição. Retorna true se aconteceu agora. */
+/** Não apareceu no sábado: perde a inscrição e 50 de fama. Retorna true se aconteceu agora. */
 export function checkNoShow(p: PlayerState): boolean {
   const reg = p.tournament.registered;
   if (!reg || p.tournament.run) return false;
   const missed = p.day > reg || (p.day === reg && p.minutes >= TOURNAMENT_LATE);
   if (!missed) return false;
   p.tournament.registered = 0;
+  p.reputation = Math.max(0, p.reputation - NO_SHOW_FAME);
   return true;
 }
 

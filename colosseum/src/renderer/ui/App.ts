@@ -590,6 +590,7 @@ export class App implements AppActions {
     if (this.busy || this.store.state.location !== 'home') return;
     this.busy = true;
     const apply = () => {
+      let noShow = false;
       const edition = this.store.update((p) => {
         const rng = createRng(randomSeed());
         // torneio largado no meio e inscrição esquecida
@@ -599,7 +600,10 @@ export class App implements AppActions {
           if (r) onEvent(p, r.reached === 3 ? 'tourneyWin' : 'tourneyOut', rng, { opp: r.champion === 'player' ? '' : r.champion });
         }
         sleep(p);
-        if (checkNoShow(p)) onEvent(p, 'tourneyNoShow', rng);
+        if (checkNoShow(p)) {
+          onEvent(p, 'tourneyNoShow', rng);
+          noShow = true;
+        }
         const fled = expireRematch(p);
         if (fled) onEvent(p, 'rematchFled', rng, { opp: fled });
         return publish(p, rng);
@@ -607,6 +611,7 @@ export class App implements AppActions {
       void this.store.flush();
       this.busy = false;
       this.renderPanel();
+      if (noShow) toast(t('tour.noShowToast'), 'bad', 5000);
       if (edition) setTimeout(() => this.readEdition(edition.day), 1800);
     };
     if (!this.view.playSleep(this.store.state.day + 1, apply)) apply();

@@ -44,6 +44,7 @@ export const NEWS_TPL = {
   merchant: 2,
   armWin: 2,
   tourneySoon: 1,
+  tourneyToday: 2,
   tourneyWin: 2,
   tourneyFinal: 1,
   tourneyOut: 1,
@@ -78,6 +79,7 @@ const IMAGES: Partial<Record<NewsGroup, string[]>> = {
   merchant: ['merchant'],
   armWin: ['armwrestle'],
   tourneySoon: ['tournament'],
+  tourneyToday: ['tournament'],
   tourneyWin: ['tournament'],
   tourneyFinal: ['tournament'],
   tourneyOut: ['tournament'],
@@ -230,7 +232,9 @@ function cityEvents(p: PlayerState, rng: Rng): void {
   if (isFestival(p.day)) illustrate(add(p, 'event', 'festival', rng), rng, 0.8);
   else if (isFestival(p.day + 1)) add(p, 'event', 'festivalSoon', rng);
   if (isMerchantDay(p.createdAt, p.day)) illustrate(add(p, 'event', 'merchant', rng), rng, 0.5);
-  if (weekdayIndex(p.day) === 5) add(p, 'event', 'tourneySoon', rng);
+  // inscrito: na manhã de sábado o jornal lembra que o torneio é hoje
+  if (weekdayIndex(p.day) === 6 && p.tournament.registered === p.day) illustrate(add(p, 'tournament', 'tourneyToday', rng), rng, 0.8);
+  else if (weekdayIndex(p.day) === 5) add(p, 'event', 'tourneySoon', rng);
 }
 
 /** Ordem de importância (a primeira vence quando duas notícias falam do mesmo assunto). */

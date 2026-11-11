@@ -123,7 +123,7 @@ export function validatePlayer(p: Obj): ParseResult {
         strategy: isStrategy(h.strategy) ? h.strategy : 'balanced',
         xp: int(h.xp, 0, 0, 1e7, w, 'history.xp'),
         coins: int(h.coins, 0, 0, 1e7, w, 'history.coins'),
-        reputation: int(h.reputation, 0, 0, 1e6, w, 'history.reputation'),
+        reputation: int(h.reputation, 0, -1e6, 1e6, w, 'history.reputation'),
         itemId: typeof h.itemId === 'string' && getItem(h.itemId) ? h.itemId : null,
         levelUps: int(h.levelUps, 0, 0, MAX_LEVEL, w, 'history.levelUps'),
       });

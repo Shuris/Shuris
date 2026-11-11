@@ -76,4 +76,14 @@ export const PT07 = {
   'ad.17': 'Óleo para massagem dos atletas: deixa os músculos soltos para a arena.',
   'ad.18': 'Vinho de Falerno direto do produtor. Ânforas lacradas.',
   'ad.19': 'Ferreiro Vulcanus: armas afiadas, escudos consertados, preço honesto.',
+  // 0.8: fama perdida em derrotas e por faltar ao torneio
+  'result.noLoss': 'Derrota custa um pouco de fama. Treine e tente de novo!',
+  'tour.registerHint': 'Inscrição antecipada até sexta. O torneio é no dia {day}, às {hour}h. Quem se inscreve e falta perde 50 de fama.',
+  'tour.registered': 'Inscrito! Apareça na arena no dia {day}, às {hour}h (faltar custa 50 de fama).',
+  'tour.noShowToast': 'Você faltou ao torneio: -50 de fama.',
+  'news.tourneyNoShow.0.b': 'A vaga ficou vazia, a plateia vaiou o nome dele e a inscrição foi perdida. A cidade não perdoa quem foge da areia.',
+  'news.tourneyToday.0.h': 'Hoje é dia de torneio: {name} está na chave',
+  'news.tourneyToday.0.b': 'Oito lutadores, três rodadas, a partir das 14h na arena. A plateia espera ver {name} na areia; faltar seria uma vergonha.',
+  'news.tourneyToday.1.h': 'Torneio de sábado começa às 14h',
+  'news.tourneyToday.1.b': '{name} se inscreveu e a cidade já faz apostas. Quem não aparecer perde o respeito da arena.',
 } as const;

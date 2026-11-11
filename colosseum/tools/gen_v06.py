@@ -829,16 +829,28 @@ def home_props():
         d.rectangle([229, 287, 233, 307], fill=WOOD_D)
         d.rectangle([261, 287, 265, 307], fill=WOOD_D)
         d.rectangle([232, 289, 262, 291], fill=WOOD)
-        d.ellipse([232, 277, 243, 283], fill=hexc("c08a3e"))
-        d.rectangle([241, 277, 245, 280], fill=hexc("c08a3e"))
+        # lucerna (lamparina de barro): corpo, bico e alça
+        d.ellipse([231, 278, 241, 283], fill=hexc("a0522d"))
+        d.polygon([(239, 279), (244, 279), (245, 281), (239, 282)], fill=hexc("a0522d"))
+        d.rectangle([229, 279, 231, 281], fill=hexc("8a4426"))
+        d.point((235, 279), fill=hexc("4a2414"))
         d.ellipse([247, 278, 257, 284], fill=hexc("c8903a"))
         d.rectangle([259, 277, 264, 283], fill=hexc("8a8a9a"))
     img = _shaded_crop(table, (224, 270, 270, 307), (226, 268))
     d = ImageDraw.Draw(img)
-    d.point((236 - 224, 275 - 270), fill=(255, 200, 80))
-    d.point((236 - 224, 274 - 270), fill=(255, 236, 160))
+    d.point((244 - 224, 279 - 270), fill=hexc("3a2a1a"))  # pavio
     d.line([(249 - 224, 280 - 270), (255 - 224, 280 - 270)], fill=hexc("e8b860"))
     out["prop_home_table"] = img
+
+    # chama da lucerna (4 quadros de 6x8, animada pela cena)
+    sheet = new_img(24, 8)
+    sd = ImageDraw.Draw(sheet)
+    for f, (sway, h) in enumerate([(0, 7), (1, 8), (0, 6), (-1, 8)]):
+        ox = f * 6
+        sd.polygon([(ox + 1, 7), (ox + 5, 7), (ox + 4 + sway // 2, 7 - h // 2), (ox + 3 + sway, 7 - h + 1), (ox + 2 + sway // 2, 7 - h // 2)], fill=hexc("e2702a"))
+        sd.polygon([(ox + 2, 7), (ox + 4, 7), (ox + 3 + sway, 7 - h + 3)], fill=hexc("f8c040"))
+        sd.point((ox + 3, 6), fill=hexc("fff4c0"))
+    out["lamp_flame"] = sheet
 
     def stool(d):
         d.rectangle([269, 293, 285, 297], fill=hexc("9a6a3e"))

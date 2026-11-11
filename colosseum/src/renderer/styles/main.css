@@ -252,6 +252,7 @@ em.down { color: var(--red-hi); }
 .rewards-box { display: inline-flex; flex-direction: column; gap: 6px; text-align: left; margin: 10px auto; }
 .reward { display: flex; align-items: center; gap: 10px; font-size: 30px; }
 .reward .px-icon { width: 30px; height: 30px; }
+.reward.loss b { color: #e07060; }
 .levelup, .unlock { margin: 8px 0; padding: 8px; border: 2px solid var(--gold); background: rgba(224, 184, 80, 0.16); color: var(--gold-hi); font-size: 27px; }
 .unlock { border-color: var(--blue); color: #cfe6ff; background: rgba(106, 176, 255, 0.12); }
 

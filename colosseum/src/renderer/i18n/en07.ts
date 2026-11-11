@@ -76,4 +76,14 @@ export const EN07: Record<keyof typeof PT07, string> = {
   'ad.17': 'Massage oil for athletes: keeps muscles loose for the arena.',
   'ad.18': 'Falernian wine straight from the vintner. Sealed amphorae.',
   'ad.19': 'Vulcanus the blacksmith: sharp weapons, mended shields, honest prices.',
+  // 0.8: fame lost on defeats and for missing the tournament
+  'result.noLoss': 'A defeat costs a little fame. Train and try again!',
+  'tour.registerHint': 'Sign up until Friday. The tournament is on day {day}, at {hour}:00. Signing up and not showing costs 50 fame.',
+  'tour.registered': 'Signed up! Be at the arena on day {day}, at {hour}:00 (missing it costs 50 fame).',
+  'tour.noShowToast': 'You missed the tournament: -50 fame.',
+  'news.tourneyNoShow.0.b': 'The spot stayed empty, the crowd booed his name and the sign-up was lost. The city does not forgive those who flee the sand.',
+  'news.tourneyToday.0.h': 'Tournament day: {name} is in the bracket',
+  'news.tourneyToday.0.b': 'Eight fighters, three rounds, from 14:00 at the arena. The crowd expects {name} on the sand; missing it would be a disgrace.',
+  'news.tourneyToday.1.h': 'Saturday tournament starts at 14:00',
+  'news.tourneyToday.1.b': '{name} signed up and the city is already betting. Whoever fails to show loses the respect of the arena.',
 };

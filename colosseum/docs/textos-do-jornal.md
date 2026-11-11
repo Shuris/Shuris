@@ -387,6 +387,17 @@ As notícias abaixo vieram com os eventos da cidade, o torneio e os rivais. Vale
    **Texto:** Na noite de domingo, a força de {name} rendeu moedas e aplausos.  
    *EN:* Iron arm: {name} topples the tavern champion — On Sunday night, {name}’s strength earned coins and applause.
 
+### Torneio: hoje é o dia (`tourneyToday`)
+
+**Quando sai:** Manhã de sábado, só para quem se inscreveu no torneio.
+
+**Ilustração possível:** tournament
+
+1. **Manchete:** Hoje é dia de torneio: {name} está na chave
+   **Texto:** Oito lutadores, três rodadas, a partir das 14h na arena. A plateia espera ver {name} na areia; faltar seria uma vergonha.
+2. **Manchete:** Torneio de sábado começa às 14h
+   **Texto:** {name} se inscreveu e a cidade já faz apostas. Quem não aparecer perde o respeito da arena.
+
 ### Torneio: últimas inscrições (`tourneySoon`)
 
 **Quando sai:** Toda sexta-feira.

@@ -53,6 +53,31 @@ export function skyAt(t: number): SkyState {
   return KEYS[0][1];
 }
 
+const LIGHT_KEY = 'fx:lightpool';
+const LIGHT_SIZE = 128;
+
+/** Textura da poça de luz: degradê radial em faixas (combina com o pixel art). */
+function ensureLightTexture(scene: Phaser.Scene): void {
+  if (scene.textures.exists(LIGHT_KEY)) return;
+  const tex = scene.textures.createCanvas(LIGHT_KEY, LIGHT_SIZE, LIGHT_SIZE);
+  if (!tex) return;
+  const ctx = tex.getContext();
+  const img = ctx.createImageData(LIGHT_SIZE, LIGHT_SIZE);
+  const c = LIGHT_SIZE / 2;
+  for (let y = 0; y < LIGHT_SIZE; y++) {
+    for (let x = 0; x < LIGHT_SIZE; x++) {
+      const d = Math.hypot(x + 0.5 - c, y + 0.5 - c) / c;
+      // queda suave, quantizada em 7 degraus
+      const v = d >= 1 ? 0 : Math.round(Math.pow(1 - d, 1.6) * 7) / 7;
+      const i = (y * LIGHT_SIZE + x) * 4;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = Math.round(v * 255);
+      img.data[i + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  tex.refresh();
+}
+
 /** Camadas do céu e da iluminação para uma cena. */
 export class SkyLayer {
   private gfx: Phaser.GameObjects.Graphics;
@@ -140,6 +165,63 @@ export class SkyLayer {
     this.update(0);
   }
 
+  /** fontes de luz que clareiam o ambiente à noite (lamparinas, braseiros, lareira) */
+  private lights: Array<{ x: number; y: number; r: number; color: number; phase: number; power: number }> = [];
+  private lightRT: Phaser.GameObjects.RenderTexture | null = null;
+  private stamp: Phaser.GameObjects.Image | null = null;
+  private lightClock = 0;
+  private lastAmbient = -1;
+  private lastLightDraw = -1;
+
+  /**
+   * Acrescenta uma luz ao mapa de iluminação: em vez de só escurecer tudo, a cena
+   * fica com a luz ambiente e "furos" de luz quente em volta de cada fonte.
+   * @param power 1 = lamparina comum; maior = ilumina mais (lareira, braseiro)
+   */
+  addLight(x: number, y: number, radius: number, color = 0xffb868, power = 1): void {
+    if (!this.lightRT) {
+      ensureLightTexture(this.scene);
+      this.lightRT = this.scene.add
+        .renderTexture(0, 0, WORLD.width, WORLD.height)
+        .setOrigin(0)
+        .setDepth(500)
+        .setBlendMode(Phaser.BlendModes.MULTIPLY);
+      this.stamp = this.scene.make.image({ x: 0, y: 0, key: LIGHT_KEY, add: false }).setBlendMode(Phaser.BlendModes.ADD);
+      this.overlay.setVisible(false);
+    }
+    this.lights.push({ x, y, r: radius, color, phase: Math.random() * 10, power });
+  }
+
+  /** Quanto as luzes clareiam agora (nada de dia, tudo à noite). */
+  get lightAmount(): number {
+    return Phaser.Math.Clamp((1 - this.state.light) * 1.15, 0, 1);
+  }
+
+  private drawLights(dt: number, ambient: number): void {
+    const rt = this.lightRT;
+    const stamp = this.stamp;
+    if (!rt || !stamp) return;
+    this.lightClock += dt;
+    const k = this.lightAmount;
+    // redesenha só quando a luz ambiente muda ou, à noite, ~12 vezes por segundo (tremulação)
+    const lit = k > 0.01;
+    if (ambient === this.lastAmbient && (!lit || this.lightClock - this.lastLightDraw < 1 / 12)) return;
+    this.lastAmbient = ambient;
+    this.lastLightDraw = this.lightClock;
+    rt.clear();
+    rt.fill(ambient, 1);
+    if (!lit) return;
+    for (const l of this.lights) {
+      // tremulação suave da chama
+      const flick = 0.9 + 0.06 * Math.sin(this.lightClock * 7 + l.phase) + 0.04 * Math.sin(this.lightClock * 13.3 + l.phase * 2);
+      stamp
+        .setScale(((l.r * 2) / LIGHT_SIZE) * (0.97 + 0.03 * flick))
+        .setTint(l.color)
+        .setAlpha(Math.min(1, k * l.power * flick));
+      rt.draw(stamp, l.x, l.y);
+    }
+  }
+
   private skyless = false;
   private outdoorGround = false;
   private puddles: Phaser.GameObjects.Graphics | null = null;
@@ -173,6 +255,7 @@ export class SkyLayer {
       light: base.light * (1 - w.cloud * 0.35),
     });
     this.overlay.setFillStyle(s.ambient, 1);
+    this.drawLights(dt, s.ambient);
     this.updateRain(dt, w);
     if (this.skyless) return;
     for (const c of this.extraClouds) {

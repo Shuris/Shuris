@@ -73,15 +73,19 @@ const GROUND = 312;
 /** intensidade de chuva que tira (e devolve) os figurantes da rua */
 const RAIN_ON = 0.08;
 const RAIN_OFF = 0.03;
-/** fontes de luz de cada local (braseiros/lamparinas) */
-const LIGHTS: Partial<Record<LocationId, Array<[number, number, boolean]>>> = {
-  ludus: [[430, 240, true]],
-  home: [[236, 290, false]],
-  tavern: [[262, 236, false], [430, 236, false]],
-  temple: [[320, 258, true]],
-  arena: [[112, 200, true], [528, 200, true]],
-  forum: [[300, 240, true]],
-  market: [[170, 240, true], [470, 240, true]],
+/**
+ * Fontes de luz de cada local: [x, y da base, braseiro?, raio da luz, força].
+ * À noite cada uma clareia o ambiente em volta (mapa de iluminação do SkyLayer).
+ */
+const LIGHTS: Partial<Record<LocationId, Array<[number, number, boolean, number, number]>>> = {
+  ludus: [[430, 240, true, 120, 1.1]],
+  home: [[244, 291, false, 220, 1.1]],
+  tavern: [[262, 236, false, 140, 1.1], [430, 236, false, 140, 1.1]],
+  temple: [[320, 258, true, 120, 1.1]],
+  arena: [[112, 200, true, 120, 1], [528, 200, true, 120, 1]],
+  forum: [[300, 240, true, 120, 1.1], [556, 302, true, 120, 1.05]],
+  market: [[170, 240, true, 120, 1.05], [470, 240, true, 120, 1.05]],
+  baths: [[236, 242, true, 130, 1.05], [466, 242, true, 130, 1.05]],
 };
 
 export class HubScene extends Phaser.Scene {
@@ -132,9 +136,10 @@ export class HubScene extends Phaser.Scene {
       this.add.sprite(0, 0, fest ? `bg:crowdfest_${id}` : data.crowd, 0).setOrigin(0);
       if (fest) this.add.image(0, 0, 'fx:festival').setOrigin(0).setDepth(1);
     }
-    for (const [x, y, brazier] of LIGHTS[data.location] ?? []) {
+    for (const [x, y, brazier, radius, power] of LIGHTS[data.location] ?? []) {
       if (brazier) this.add.sprite(x, y, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(3);
       this.glows.push(this.add.image(x, y - 16, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
+      this.sky.addLight(x, y - 16, radius, 0xffb868, power);
     }
     this.heroX = data.location === 'ludus' ? 318 : data.location === 'home' ? 340 : data.location === 'temple' ? 360 : data.location === 'tavern' ? 344 : 300;
     this.data_ = data;
@@ -212,6 +217,8 @@ export class HubScene extends Phaser.Scene {
       this.add.image(384, 316, 'fx:prop_home_sandals').setOrigin(0.5, 1).setDepth(99);
       this.addProp('fx:prop_home_amphora', 193, 309, 7);
       this.addProp('fx:prop_home_table', 247, 308, 21);
+      // chama da lucerna em cima da mesa (é ela que ilumina o quarto à noite)
+      this.add.sprite(244, 280, 'fx:lamp_flame').setOrigin(0.5, 1).play('lamp_flame').setDepth(depthAt(308) + 1);
       this.addProp('fx:prop_home_stool', 277, 308, 9);
       this.addProp('fx:prop_home_chest', 466, 309, 15);
       const ups = new Set(this.data_.upgrades ?? []);
@@ -454,6 +461,7 @@ export class HubScene extends Phaser.Scene {
   private spawnMarketExtras(open: boolean, merchant: boolean): void {
     const glow = this.add.image(526, GROUND - 14, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501).setScale(0.6);
     this.glows.push(glow);
+    this.sky.addLight(526, GROUND - 14, 80, 0xff9850, 1.1);
     if (open && !this.raining) {
       const smith = new GladiatorView(this, 584, GROUND + 2, { ...this.person({ tint: 0x6a4a30 }), gear: {} });
       smith.setFacing(-1);

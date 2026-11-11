@@ -146,6 +146,7 @@ export class ArenaScene extends Phaser.Scene {
     for (const x of [112, 528]) {
       this.add.sprite(x, 200, 'fx:brazier').setOrigin(0.5, 1).play('brazier').setDepth(2);
       this.glows.push(this.add.image(x, 184, 'fx:glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(501));
+      this.sky.addLight(x, 184, 130, 0xffb868, 1);
     }
 
     this.views = this.engine.fighters.map((f, i) => {

@@ -1,4 +1,14 @@
-# Funcionalidades — versão 0.7.3
+# Funcionalidades — versão 0.8.0
+
+## Novidades da 0.8.0
+- **Fama que também cai**:
+  - Inscreveu-se no torneio e não apareceu? Perde **50 de fama** (aviso na tela ao acordar e manchete no jornal). A inscrição já avisa da penalidade.
+  - Derrotas em lutas comuns (escada, desafiantes e revanches) tiram de 2 a 10 de fama, conforme o nível do adversário. Derrota dentro do torneio não tira fama. A fama nunca fica negativa.
+  - A tela de resultado mostra a fama perdida em vermelho.
+- **Jornal do sábado**: quem está inscrito recebe, na manhã do torneio, a manchete "Hoje é dia de torneio".
+- **Iluminação noturna de verdade**: lamparinas, braseiros, a lareira e a forja agora clareiam o ambiente em volta (poças de luz quente com leve tremulação), em vez de só brilhar. A taverna fica iluminada à noite; termas e fórum ganharam braseiros.
+- **Alojamento**: a luz do quarto vem de uma lucerna (lamparina de barro) com chama animada em cima da mesa.
+
 
 ## Novidades da 0.7.3
 - **Mobília de todos os locais refeita** no mesmo padrão do mercado: peças com volume e sombreamento, sombra no chão, proporção de acordo com as pessoas e colisão (o gladiador e os moradores contornam os móveis em vez de atravessá-los).
