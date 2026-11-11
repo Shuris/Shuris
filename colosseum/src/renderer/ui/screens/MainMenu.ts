@@ -59,7 +59,7 @@ export class MainMenu implements Screen {
   private chanceTag(def: OpponentDef): string {
     const chance = this.d.actions.winChance(def);
     const diff = difficulty(chance);
-    return `<span class="diff ${diff.cls}" title="${t('arena.chance')}">${diff.label} ${Math.round(chance * 100)}%</span>`;
+    return `<span class="diff ${diff.cls}">${diff.label} ${Math.round(chance * 100)}%</span>`;
   }
 
   private tournamentCard(p: PlayerState): string {
@@ -119,7 +119,7 @@ export class MainMenu implements Screen {
             .map((it) => (it ? itemIcon(it, 'xs') : ''))
             .join('');
           const rec = p.rivals[o.id];
-          return `<button class="opp ${o.id === sel.id ? 'selected' : ''} ${beaten && !rematch ? 'beaten' : ''} ${rematch ? 'rematch' : ''}" data-action="select" data-id="${o.id}" title="${esc(`${o.name}, ${opponentEpithet(o)} — ${opponentDesc(o)}`)}">
+          return `<button class="opp ${o.id === sel.id ? 'selected' : ''} ${beaten && !rematch ? 'beaten' : ''} ${rematch ? 'rematch' : ''}" data-action="select" data-id="${o.id}">
             ${portrait(o.id, 'sm')}
             <span class="opp-name">${esc(o.name)} ${beaten ? icon('laurel', 'sm') : ''}${rematch ? ` <span class="tag red">${t('rival.rematchTag')}</span>` : ''}</span>
             <span class="opp-gear">${gear}</span>
@@ -151,9 +151,9 @@ export class MainMenu implements Screen {
     const hero = `<div class="card hero-card compact">
         <span class="hero-name">${esc(p.name)}</span><span class="lvl">${t('common.lv', { n: p.level })}</span>
         <span class="big-stats">
-          <span title="${t('stat.maxHp')}">${icon('attr_vit', 'xs')} ${stats.maxHp}</span>
-          <span title="${t('stat.baseDamage')}">${icon('attr_str', 'xs')} ${Math.round(stats.baseDamage)}</span>
-          <span title="${t('stat.reduction')}">${icon('attr_res', 'xs')} ${Math.round(stats.damageReduction * 100)}%</span>
+          <span>${icon('attr_vit', 'xs')} ${stats.maxHp}</span>
+          <span>${icon('attr_str', 'xs')} ${Math.round(stats.baseDamage)}</span>
+          <span>${icon('attr_res', 'xs')} ${Math.round(stats.damageReduction * 100)}%</span>
         </span>
         ${p.unspentPoints > 0 ? `<button class="btn btn-gold sm" data-action="goto">+${p.unspentPoints}</button>` : ''}
       </div>`;

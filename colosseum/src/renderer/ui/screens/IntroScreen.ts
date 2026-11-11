@@ -5,7 +5,7 @@ import { MAX_NAME_LENGTH, validateName } from '../../core/systems/PlayerFactory'
 import type { AttributeKey } from '../../core/model/types';
 import { esc } from '../dom';
 import { getLang, t, type Lang } from '../../i18n';
-import { attrShort, hairName, originDesc, originName, skinName } from '../../i18n/data';
+import { attrShort, hairName, originName, skinName } from '../../i18n/data';
 
 export interface CreationResult {
   name: string;
@@ -74,13 +74,13 @@ export class IntroScreen {
       return;
     }
     if (this.step === 'create') {
-      const swatch = (key: string, i: number, color: string, active: boolean, title: string) =>
-        `<button class="swatch ${active ? 'active' : ''}" style="background:${color}" data-i="${key}" data-v="${i}" title="${esc(title)}"></button>`;
+      const swatch = (key: string, i: number, color: string, active: boolean, _title: string) =>
+        `<button class="swatch ${active ? 'active' : ''}" style="background:${color}" data-i="${key}" data-v="${i}"></button>`;
       const origins = ORIGINS.map((o) => {
         const bonus = Object.entries(o.bonus)
           .map(([k, v]) => `${attrShort(k as AttributeKey)} +${v}`)
           .join(', ');
-        return `<button class="origin ${o.id === this.origin ? 'active' : ''}" data-i="origin" data-v="${o.id}" title="${esc(originDesc(o))}"><b>${esc(originName(o))}</b><em>${bonus}</em></button>`;
+        return `<button class="origin ${o.id === this.origin ? 'active' : ''}" data-i="origin" data-v="${o.id}"><b>${esc(originName(o))}</b><em>${bonus}</em></button>`;
       }).join('');
       this.root.innerHTML = `
         <div class="create panel">

@@ -1,5 +1,6 @@
 // Amizade e lutas de dupla. Adversários da escada que você já derrotou passam a
-// respeitá-lo (vitória limpa, revanche vencida, conversa na taverna). Com respeito
+// respeitá-lo (vitória limpa, revanche vencida, conversa onde eles costumam estar).
+// Alguns odeiam o jogador e nunca viram amigos (RivalTownSystem). Com respeito
 // suficiente viram amigos e aceitam formar dupla. A luta de dupla é simultânea: o
 // jogador enfrenta um adversário na frente e o parceiro enfrenta o outro mais ao
 // fundo da arena. Se uma dupla vence os dois duelos, vence a luta; se cada dupla
@@ -8,12 +9,12 @@ import type { PlayerState } from '../model/types';
 import { getOpponent, type OpponentDef } from '../data/opponents';
 import { POOL, daySeed, poolOpponent, shuffle } from '../data/fighters';
 import { createRng } from './rng';
+import { isHater } from './RivalTownSystem';
 
 /** respeito necessário para virar amigo (0..100) */
 export const FRIEND_RESPECT = 60;
 export const RESPECT_FIRST_WIN = 40;
 export const RESPECT_REMATCH_WIN = 20;
-export const RESPECT_TAVERN = 20;
 export const RESPECT_DUO = 10;
 export const DUO_ENERGY = 35;
 
@@ -22,7 +23,8 @@ export function respectOf(p: PlayerState, id: string): number {
 }
 
 export function addRespect(p: PlayerState, id: string, n: number): boolean {
-  if (!p.defeatedOpponents.includes(id)) return false;
+  // quem odeia o jogador nunca passa a respeitá-lo
+  if (!p.defeatedOpponents.includes(id) || isHater(id)) return false;
   const before = respectOf(p, id);
   p.career.respect[id] = Math.min(100, before + n);
   return before < FRIEND_RESPECT && p.career.respect[id] >= FRIEND_RESPECT;
@@ -30,7 +32,7 @@ export function addRespect(p: PlayerState, id: string, n: number): boolean {
 
 export function friends(p: PlayerState): OpponentDef[] {
   return Object.keys(p.career.respect)
-    .filter((id) => respectOf(p, id) >= FRIEND_RESPECT)
+    .filter((id) => respectOf(p, id) >= FRIEND_RESPECT && !isHater(id))
     .map((id) => getOpponent(id))
     .filter((o): o is OpponentDef => !!o);
 }
@@ -43,7 +45,7 @@ export function setPartner(p: PlayerState, id: string): boolean {
 
 /** Parceiro com o nível acompanhando o jogador (os amigos também treinam). */
 export function partnerDef(p: PlayerState): OpponentDef | null {
-  const base = p.career.partner ? getOpponent(p.career.partner) : null;
+  const base = p.career.partner && !isHater(p.career.partner) ? getOpponent(p.career.partner) : null;
   if (!base) return null;
   return { ...base, level: Math.max(base.level, p.level - 1) };
 }

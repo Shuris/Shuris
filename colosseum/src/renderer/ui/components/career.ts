@@ -1,59 +1,19 @@
-// Cartões da carreira (versão 0.9): missões dos moradores, convites das arenas
+// Cartões da carreira (versão 0.9): convites das arenas
 // particulares, venatio (feras), duplas com amigos e o ranking da cidade.
 // As ações (data-action="career-...") são tratadas pela App, em qualquer tela.
-import type { LocationId, PlayerState, QuestState } from '../../core/model/types';
+import type { LocationId, PlayerState } from '../../core/model/types';
+import { RESPECT_CHAT, isHater, rivalsAt } from '../../core/systems/RivalTownSystem';
 import { getOpponent } from '../../core/data/opponents';
 import { getPoolFighter } from '../../core/data/fighters';
 import { getArena } from '../../core/data/arenas';
 import { INVITES, getInviteDef, inviteFoe, openInvites } from '../../core/systems/InviteSystem';
 import { beastOfDay, isVenatioDay, nextVenatioDay, venatioCheck, BEAST_FAME_MUL } from '../../core/systems/VenatioSystem';
 import { FRIEND_RESPECT, DUO_ENERGY, duoCheck, duoFoes, friends, partnerDef, respectOf } from '../../core/systems/DuoSystem';
-import { offeringCost, questOffer } from '../../core/systems/QuestSystem';
 import { rankTable } from '../../core/systems/RankingSystem';
 import { esc, icon } from '../dom';
 import { portrait } from './portraits';
 import { t, tk } from '../../i18n';
-import { arenaName, locationName, opponentEpithet } from '../../i18n/data';
-
-const giverName = (npc: string) => tk(`quest.npc.${npc}`);
-
-export function questText(q: QuestState): string {
-  const target =
-    q.kind === 'beat' ? getOpponent(q.target)?.name ?? q.target : q.kind === 'deliver' ? locationName(q.target as LocationId) : '';
-  return tk(`quest.${q.kind}.${q.npc}`, { target, n: q.need }, '') || tk(`quest.${q.kind}`, { target, n: q.need });
-}
-
-function rewardText(q: QuestState): string {
-  const parts: string[] = [];
-  if (q.reward.coins) parts.push(`${icon('coin', 'xs')} ${q.reward.coins}`);
-  if (q.reward.fame) parts.push(`${icon('laurel', 'xs')} ${q.reward.fame}`);
-  if (q.reward.item) parts.push(t('quest.itemReward'));
-  return parts.join(' · ');
-}
-
-/** Missão ativa (em qualquer tela) e oferta do morador do local. */
-export function questCard(p: PlayerState, loc: LocationId | null): string {
-  const q = p.career.quest;
-  if (q) {
-    const offering = q.kind === 'offering' && loc === 'temple';
-    const prog = q.need > 1 ? ` <span class="tag">${q.progress}/${q.need}</span>` : '';
-    return `<div class="card quest-card active">
-      <div class="row between"><b>${t('quest.active', { npc: esc(giverName(q.npc)) })}</b><span class="tiny dim">${t('quest.until', { day: q.expires })}</span></div>
-      <p class="tiny">${esc(questText(q))}${prog}</p>
-      <p class="tiny gold">${t('quest.reward')} ${rewardText(q)}</p>
-      ${offering ? `<button class="btn btn-gold wide" data-action="career-offering" ${p.coins < offeringCost(p) ? 'disabled' : ''}>${t('quest.offer', { n: offeringCost(p) })}</button>` : ''}
-    </div>`;
-  }
-  if (!loc) return '';
-  const offer = questOffer(p, loc);
-  if (!offer) return '';
-  return `<div class="card quest-card offer">
-    <div class="row between"><b>${t('quest.asks', { npc: esc(giverName(offer.npc)) })}</b><span class="tiny dim">${t('quest.days', { n: offer.expires - offer.day })}</span></div>
-    <p class="tiny">${esc(tk(`quest.pitch.${offer.npc}`, {}, ''))} ${esc(questText(offer))}</p>
-    <p class="tiny gold">${t('quest.reward')} ${rewardText(offer)}</p>
-    <div class="row"><button class="btn btn-gold" data-action="career-accept">${t('quest.accept')}</button><button class="btn" data-action="career-decline">${t('quest.decline')}</button></div>
-  </div>`;
-}
+import { arenaName, opponentEpithet } from '../../i18n/data';
 
 /** Convites abertos das arenas particulares. */
 export function inviteCards(p: PlayerState, fightErr: string | null): string {
@@ -149,3 +109,20 @@ export function rankingHtml(p: PlayerState): string {
   </div>`;
 }
 
+
+/** Rivais derrotados que estão neste local: conversar (uma vez por dia) ou o desprezo de quem odeia você. */
+export function rivalsCard(p: PlayerState, loc: LocationId, open: boolean): string {
+  const list = open ? rivalsAt(p, loc) : [];
+  if (!list.length) return '';
+  const done = p.career.talkDay === p.day;
+  const rows = list
+    .map((o) => {
+      const hate = isHater(o.id);
+      const r = respectOf(p, o.id);
+      const friend = !hate && r >= FRIEND_RESPECT;
+      const state = hate ? `<span class="tag red">${t('rivals.hates')}</span>` : friend ? `<span class="tag gold">${t('duo.friend')}</span>` : `<span class="dim">${r}/${FRIEND_RESPECT}</span>`;
+      return `<div class="drink-row">${portrait(o.id, 'xs')}<span class="tiny"><b>${esc(o.name)}</b> ${state}</span><button class="btn sm" data-action="career-chat" data-id="${o.id}" ${done ? 'disabled' : ''}>${hate ? t('rivals.face') : t('rivals.talk')}</button></div>`;
+    })
+    .join('');
+  return `<div class="card rivals-card"><b>${t('rivals.title')}</b><p class="tiny dim">${done ? t('rivals.done') : t('rivals.desc', { n: RESPECT_CHAT })}</p>${rows}</div>`;
+}

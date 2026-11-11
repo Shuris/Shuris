@@ -82,9 +82,12 @@ export function speech(
     const cam = scene.cameras.main;
     const half = w / 2 + 2;
     const right = cam.worldView.right - (opts.insetRight?.() ?? 0) / cam.zoom;
-    const x = Phaser.Math.Clamp(who.x, cam.worldView.x + half, Math.max(cam.worldView.x + half, right - half));
+    // o balão fica preso à cabeça; só a caixa desliza para dentro da tela quando falta espaço
+    const hx = Math.round(Phaser.Math.Clamp(who.x, cam.worldView.x + 6, right - 6));
+    const x = Phaser.Math.Clamp(hx, cam.worldView.x + half, Math.max(cam.worldView.x + half, right - half));
+    const slide = (x - hx) / (c.scale || 1);
     const y = who.y - head;
-    c.setPosition(Math.round(x), Math.round(y));
+    c.setPosition(hx, Math.round(y));
     // desvia das janelas da interface (convertendo o balão para pixels da tela)
     const canvas = scene.game.canvas.getBoundingClientRect();
     const toScreenX = (wx: number) => canvas.left + (wx - cam.worldView.x) * cam.zoom;
@@ -92,13 +95,13 @@ export function speech(
     const s = c.scale;
     const boxScreen = { left: toScreenX(x - (w / 2 + 1) * s), right: toScreenX(x + (w / 2 + 1) * s), top: toScreenY(y - (h + 6) * s), bottom: toScreenY(y - 4 * s) };
     const off = avoidOffset(boxScreen, obstacleRects(), { left: canvas.left, right: canvas.right, bottom: canvas.bottom });
-    const bx = Math.round(off.dx / cam.zoom / s);
+    const bx = Math.round(off.dx / cam.zoom / s + slide);
     let by = Math.round(off.dy / cam.zoom / s);
     // não cobre um balão mais antigo: sobe acima dele
     const bw = w + 2;
     const bh = h + 2;
     for (let k = 0; k < 3; k++) {
-      const left = x + (bx - bw / 2) * s;
+      const left = hx + (bx - bw / 2) * s;
       const top = y + (by - h - 6) * s;
       const hit = [...placed].find(
         (o) => o !== me && o.scene === scene && o.id < me.id && o.rect && left < o.rect.x + o.rect.w && left + bw * s > o.rect.x && top < o.rect.y + o.rect.h && top + bh * s > o.rect.y,
@@ -107,7 +110,7 @@ export function speech(
       by -= Math.ceil((top + bh * s - hit.rect.y) / s) + 2;
     }
     box.setPosition(bx, by);
-    me.rect = { x: x + (bx - bw / 2) * s, y: y + (by - h - 6) * s, w: bw * s, h: bh * s };
+    me.rect = { x: hx + (bx - bw / 2) * s, y: y + (by - h - 6) * s, w: bw * s, h: bh * s };
     // empurrado, o rabicho deixaria de apontar para a boca: esconde
     tail.setVisible(off.dy === 0 && by === Math.round(off.dy / cam.zoom / s));
   };

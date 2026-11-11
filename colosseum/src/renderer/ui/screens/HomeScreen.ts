@@ -28,7 +28,7 @@ export class HomeScreen implements Screen {
       </div>
       <button class="btn btn-gold btn-big wide" data-action="sleep">${t('home.sleep')}</button>
       <p class="hint center">${t('home.sleepHint')}</p>
-      <button class="btn wide" data-action="nap" ${napErr ? `disabled title="${napErr}"` : ''}>${t('home.nap', { hours: NAP_MINUTES / 60, energy: napEnergy(p) })}</button>
+      <button class="btn wide" data-action="nap" ${napErr ? `disabled` : ''}>${t('home.nap', { hours: NAP_MINUTES / 60, energy: napEnergy(p) })}</button>
       <p class="tiny dim center">${t('home.bed', { bed })}</p>`;
   }
 

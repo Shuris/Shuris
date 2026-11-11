@@ -45,7 +45,7 @@ export class MarketScreen implements Screen {
       const err = closed ?? this.upgradeErr(p, u.id);
       const btn = owned
         ? `<span class="tag gold">${t('market.owned')}</span>`
-        : `<button class="btn btn-gold sm" data-action="upgrade" data-id="${u.id}" ${err ? `disabled title="${esc(err)}"` : ''}>${icon('coin', 'xs')} ${u.price}</button>`;
+        : `<button class="btn btn-gold sm" data-action="upgrade" data-id="${u.id}" ${err ? `disabled` : ''}>${icon('coin', 'xs')} ${u.price}</button>`;
       return `<div class="item-row upgrade ${owned ? 'owned' : ''}">
         <span class="item-icon">${icon(u.icon)}</span>
         <div class="item-info"><div><b>${esc(tk(`upgrade.${u.id}.name`))}</b> <span class="tag">${esc(locationName(u.place))}</span>${u.tier === 2 ? ` <span class="tag gold">${t('market.tier2')}</span>` : ''}${!owned && p.level < u.minLevel ? ` <span class="tag red">${t('common.lv', { n: u.minLevel })}</span>` : ''}</div>
@@ -67,7 +67,7 @@ export class MarketScreen implements Screen {
         const btn =
           plus >= MAX_PLUS
             ? `<span class="tag gold">${t('forge.max')}</span>`
-            : `<button class="btn btn-gold sm" data-action="forge" data-id="${inv.uid}" ${err ? `disabled title="${esc(err)}"` : ''}>${t('forge.improve', { n: plus + 1 })} ${icon('coin', 'xs')} ${forgeCost(base, plus)}</button>`;
+            : `<button class="btn btn-gold sm" data-action="forge" data-id="${inv.uid}" ${err ? `disabled` : ''}>${t('forge.improve', { n: plus + 1 })} ${icon('coin', 'xs')} ${forgeCost(base, plus)}</button>`;
         const need = plus < MAX_PLUS && p.level < forgeLevel(base, plus) ? ` <span class="tag red">${t('common.lv', { n: forgeLevel(base, plus) })}</span>` : '';
         return `<div class="item-row">${itemIcon(item)}<div class="item-info"><div>${rarityName(item)}${need}${isEquipped(p, inv.uid) ? ` <span class="tag">${t('forge.equipped')}</span>` : ''}</div>
           <div class="item-delta"><em class="dim">${esc(this.forgeHint(item))}</em></div></div><div class="item-actions">${btn}</div></div>`;
@@ -89,7 +89,7 @@ export class MarketScreen implements Screen {
         const err = canBuyFromMerchant(p, o.item.id);
         const btn = sold
           ? `<span class="tag">${t('event.soldOut')}</span>`
-          : `<button class="btn btn-gold sm" data-action="merchant-buy" data-id="${o.item.id}" ${err ? `disabled title="${esc(err)}"` : ''}>${icon('coin', 'xs')} ${o.price}</button>`;
+          : `<button class="btn btn-gold sm" data-action="merchant-buy" data-id="${o.item.id}" ${err ? `disabled` : ''}>${icon('coin', 'xs')} ${o.price}</button>`;
         return itemRow(p, o.item, `${o.exotic ? `<span class="tag gold">${t('event.exotic')}</span>` : `<span class="tag">${t('event.discount')}</span>`} ${btn}`);
       })
       .join('');
@@ -112,7 +112,7 @@ export class MarketScreen implements Screen {
         .sort((a, b) => a.minLevel - b.minLevel || a.price - b.price)
         .map((item) => {
           const err = closed ?? canBuy(p, item.id);
-          return itemRow(p, item, `<button class="btn btn-gold sm" data-action="buy" data-id="${item.id}" ${err ? `disabled title="${esc(err)}"` : ''}>${icon('coin', 'xs')} ${item.price}</button>`);
+          return itemRow(p, item, `<button class="btn btn-gold sm" data-action="buy" data-id="${item.id}" ${err ? `disabled` : ''}>${icon('coin', 'xs')} ${item.price}</button>`);
         })
         .join('');
       return tabs + banner + coins + `<div class="items">${items}</div>`;
@@ -121,7 +121,7 @@ export class MarketScreen implements Screen {
       .filter((i) => !isEquipped(p, i.uid))
       .map((inv) => {
         const item = invItem(inv);
-        return item ? itemRow(p, item, `<button class="btn sm" data-action="sell" data-id="${inv.uid}" ${closed ? `disabled title="${esc(closed)}"` : ''}>${t('market.sellFor', { n: sellPrice(item, inv.plus) })}</button>`) : '';
+        return item ? itemRow(p, item, `<button class="btn sm" data-action="sell" data-id="${inv.uid}" ${closed ? `disabled` : ''}>${t('market.sellFor', { n: sellPrice(item, inv.plus) })}</button>`) : '';
       })
       .join('');
     return tabs + banner + coins + `<div class="items">${items || `<p class="dim">${t('market.nothingToSell')}</p>`}</div>`;

@@ -8,9 +8,9 @@ import { WORLD } from '../assets';
 import { SkyLayer } from '../DayNight';
 import { GladiatorView } from '../entities/Gladiator';
 import { CLOTH_COLORS, HAIR_COLORS } from '../../core/data/gladiators';
-import { dust, floatText, bigText } from '../fx';
+import { FONT, dust, floatText, bigText } from '../fx';
 import { frameCamera, type Insets } from '../layout';
-import { t } from '../../i18n';
+import { t, tk as tkey } from '../../i18n';
 import { getItem } from '../../core/data/equipment';
 import { npcLine } from '../../core/data/dialogue';
 import { speech } from '../speech';
@@ -44,8 +44,10 @@ export interface HubData {
   injured?: boolean;
   /** aparência do jogador para o retrato nos balões */
   heroLook?: PlayerLook;
-  /** estados do gladiador (ícones sobre a cabeça) */
+  /** estados do gladiador (só no painel; mantido por compatibilidade) */
   status?: string[];
+  /** rivais derrotados que costumam ficar neste local */
+  rivals?: Array<{ id: string; name: string; visual: FighterVisual; hater: boolean }>;
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */
@@ -55,6 +57,8 @@ interface Talker {
   head: number;
   /** fala sozinho de tempos em tempos (só o monge); os outros falam ao serem clicados */
   auto?: boolean;
+  /** nome mostrado ao passar o mouse (personagens principais e rivais) */
+  name?: string;
 }
 
 /** Profundidade pela linha dos pés: quem está mais à frente (y maior) fica por cima. */
@@ -271,9 +275,25 @@ export class HubScene extends Phaser.Scene {
       this.talkers.push({ who: this.monk, line: 'monk', head: 46, auto: true });
     }
     if (open || data.location === 'forum' || data.location === 'temple') this.spawnCityFolk(data.location);
+    if (open) this.spawnRivals();
     this.hovers = [];
     this.makeClickable();
     this.people = this.children.list.filter((o) => !before.has(o));
+  }
+
+  /** Rivais derrotados neste local: parados, de braços cruzados (quem odeia o jogador fica de costas). */
+  private spawnRivals(): void {
+    const list = this.data_.rivals ?? [];
+    list.forEach((r, i) => {
+      const y = GROUND + 6 + (i % 2) * 10;
+      const v = new GladiatorView(this, this.freeX(176 + i * 96, y), y, r.visual);
+      v.setBaseScale(1);
+      v.setFacing(r.hater ? -1 : 1);
+      v.setDepth(depthAt(y));
+      v.play('idle');
+      this.npcs.push({ v, speed: 0, min: v.x, max: v.x, pause: 0 });
+      this.talkers.push({ who: v, line: `rival.${r.id}`, head: 50, name: r.name });
+    });
   }
 
   /** Figurantes da cidade: crianças, soldados, senadores de toga, cães, gatos e pombos. */
@@ -312,7 +332,7 @@ export class HubScene extends Phaser.Scene {
     if (loc === 'forum') {
       add(senator(), 250, GROUND - 6, 1, 'senator', 46, 14);
       add(senator(), 430, GROUND + 4, 1, 'senator', 46, -11);
-      add(soldier(), 470, GROUND - 16, 1, 'soldier', 50);
+      add(soldier(), 372, GROUND - 16, 1, 'soldier', 50);
       add(kid(), 300, GROUND + 14, 0.68, 'kid', 32, 26);
       add(animal('dog'), 360, GROUND + 18, 0.5, 'dog', 18, -30);
     } else if (loc === 'market') {
@@ -342,10 +362,12 @@ export class HubScene extends Phaser.Scene {
   private statusIcons: Phaser.GameObjects.Image[] = [];
 
   /** Ícones de estado sobre a cabeça do gladiador. */
-  setStatus(list: string[]): void {
+  /** Estados do gladiador: aparecem só no painel (canto superior esquerdo), não sobre a cabeça. */
+  setStatus(_list: string[]): void {
     for (const i of this.statusIcons) i.destroy();
-    this.statusIcons = list.filter((k) => this.textures.exists(`st:${k}`)).map((k) => this.add.image(0, 0, `st:${k}`).setScale(0.6).setAlpha(0.95));
+    this.statusIcons = [];
   }
+
 
   private pigeons: Array<{ s: Phaser.GameObjects.Sprite; vx: number; flying: boolean }> = [];
 
@@ -652,7 +674,10 @@ export class HubScene extends Phaser.Scene {
       else obj.setInteractive({ pixelPerfect: false });
       (obj as unknown as Phaser.GameObjects.GameObject).input!.cursor = 'pointer';
       const ring = this.add.ellipse(obj.x, obj.y, 26, 7).setStrokeStyle(1.5, 0xffe49a, 1).setFillStyle(0xffe49a, 0.18).setDepth(99).setVisible(false);
-      const mark = this.add.text(obj.x, obj.y - tk.head - 6, '…', { fontFamily: 'monospace', fontSize: '10px', color: '#ffe49a', stroke: '#1a0e08', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(1199).setResolution(4).setVisible(false);
+      // personagens principais mostram o nome sobre a cabeça; os figurantes, reticências
+      const name = tk.name ?? tkey(`npcName.${tk.line}`, {}, '');
+      const mark = this.add
+        .text(obj.x, obj.y - tk.head - 6, name || '…', { fontFamily: name ? FONT : 'monospace', fontSize: name ? '8px' : '10px', color: '#ffe49a', stroke: '#1a0e08', strokeThickness: 3 }).setOrigin(0.5, 1).setDepth(1199).setResolution(4).setVisible(false);
       this.hovers.push({ obj, ring, mark, head: tk.head });
       obj.on('pointerover', () => {
         ring.setVisible(true);

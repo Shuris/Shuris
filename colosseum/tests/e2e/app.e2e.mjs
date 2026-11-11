@@ -715,23 +715,13 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   await win.waitForSelector('.modal-result', { timeout: 60000 });
   await win.click('[data-r="close"]');
   assert((await state()).career.duoDay === (await state()).day, 'luta de dupla registrada');
-  // missão do instrutor no ludus
-  await win.evaluate(() => window.__colosseum.store.update((p) => {
-    p.career.quest = { id: 'q-e2e', npc: 'trainer', kind: 'train', target: 'any', need: 1, progress: 0, day: p.day, expires: p.day + 3, reward: { coins: 33, fame: 2, item: null } };
-    p.minutes = 15 * 60; p.energy = 100;
-  }));
-  await goTo('ludus');
-  assert((await win.locator('.quest-card.active').count()) === 1, 'missão ativa no painel');
-  const coins = (await state()).coins;
-  await win.click('[data-action="train"][data-id="str"]');
-  await win.waitForFunction(() => window.__colosseum.store.state.career.quest === null, null, { timeout: 10000 });
-  assert((await state()).coins === coins + 33, 'recompensa da missão paga');
   // ranking no fórum, boneco e ícones de estado
   await goTo('forum');
   assert((await win.locator('.rank-table tr.me').count()) === 1, 'jogador na tabela do ranking');
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.energy = 20; p.streak = 3; }));
   await win.waitForTimeout(300);
   assert((await win.locator('#statusbar .st-icon').count()) >= 2, 'ícones de estado (cansado, motivado)');
+  assert((await win.evaluate(() => window.__colosseum.view.hub?.statusIcons?.length ?? 0)) === 0, 'estados não aparecem sobre a cabeça');
   await win.click('[data-nav="gladiator"]');
   await win.click('[data-action="tab"][data-id="gear"]');
   await win.waitForFunction(() => (document.querySelector('[data-doll]')?.getAttribute('src') ?? '').startsWith('data:image'), null, { timeout: 8000 });

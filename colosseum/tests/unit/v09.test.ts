@@ -10,11 +10,10 @@ import { opponentCombatant, BEAST_STATS } from '../../src/renderer/core/combat/C
 import { CombatEngine } from '../../src/renderer/core/combat/CombatEngine';
 import { FRIEND_RESPECT, addRespect, duoClash, duoCheck, duoDecider, duoFoes, friends, newDuoRun, partnerDef, setPartner } from '../../src/renderer/core/systems/DuoSystem';
 import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../../src/renderer/core/systems/CrowdSystem';
-import { acceptQuest, expireQuest, makeOffering, offeringCost, questOffer, questOnArrive, questOnFight, questOnTrain } from '../../src/renderer/core/systems/QuestSystem';
+import type { PlayerState } from '../../src/renderer/core/model/types';
 import { CHAMPION_ID, nightlyRanking, playerPosition, rankTable } from '../../src/renderer/core/systems/RankingSystem';
 import { parseSave, serialize } from '../../src/renderer/core/systems/SaveSystem';
 import { getArena } from '../../src/renderer/core/data/arenas';
-import type { PlayerState, QuestState } from '../../src/renderer/core/model/types';
 import { APPEARANCE } from './helpers';
 
 const fresh = () => createPlayer('Maximus', 'gaul', APPEARANCE, 1000);
@@ -180,69 +179,6 @@ describe('favor da plateia', () => {
   });
 });
 
-describe('missões dos moradores', () => {
-  const offerAt = (p: PlayerState, loc: 'tavern' | 'temple' | 'ludus' | 'market'): QuestState | null => {
-    for (let d = 2; d < 60; d++) {
-      p.day = d;
-      const q = questOffer(p, loc);
-      if (q) return q;
-    }
-    return null;
-  };
-
-  it('treino do instrutor: aceita, progride e paga', () => {
-    const p = fresh();
-    let q = offerAt(p, 'ludus');
-    expect(q && q.npc).toBe('trainer');
-    acceptQuest(p, q!);
-    expect(questOffer(p, 'ludus')).toBeNull(); // uma de cada vez
-    const coins = p.coins;
-    expect(questOnTrain(p)).toBeNull();
-    questOnTrain(p);
-    const done = questOnTrain(p)!;
-    expect(done.coins).toBeGreaterThan(0);
-    expect(p.coins).toBe(coins + done.coins);
-    expect(p.career.quest).toBeNull();
-    q = null;
-  });
-
-  it('entrega da taverneira e oferenda do monge', () => {
-    const p = fresh();
-    let q: QuestState | null = null;
-    for (let d = 2; d < 80 && !q; d++) {
-      p.day = d;
-      const o = questOffer(p, 'tavern');
-      if (o?.kind === 'deliver') q = o;
-    }
-    expect(q).toBeTruthy();
-    acceptQuest(p, q!);
-    expect(questOnArrive(p, q!.target === 'forum' ? 'baths' : 'forum')).toBeNull();
-    expect(questOnArrive(p, q!.target as 'forum')).toBeTruthy();
-    const m = fresh();
-    const mq = offerAt(m, 'temple')!;
-    acceptQuest(m, mq);
-    m.location = 'temple';
-    m.coins = 0;
-    expect(makeOffering(m)).toBe('noCoins');
-    m.coins = offeringCost(m);
-    const r = makeOffering(m);
-    expect(typeof r === 'object' && r.fame > 0).toBe(true);
-  });
-
-  it('missão de vitórias avança com lutas e expira depois de alguns dias', () => {
-    const p = fresh();
-    const q: QuestState = { id: 'q', npc: 'smith', kind: 'wins', target: 'any', need: 2, progress: 0, day: 2, expires: 4, reward: { coins: 10, fame: 1, item: null } };
-    acceptQuest(p, q);
-    expect(questOnFight(p, false, 'x', 'free')).toBeNull();
-    questOnFight(p, true, 'x', 'free');
-    expect(questOnFight(p, true, 'y', 'ladder')!.coins).toBe(10);
-    acceptQuest(p, { ...q, progress: 0 });
-    p.day = 5;
-    expect(expireQuest(p)).toBeTruthy();
-    expect(p.career.quest).toBeNull();
-  });
-});
-
 describe('ranking da cidade', () => {
   it('tabela com o jogador; rivais lutam entre si à noite; posições mudam', () => {
     const p = fresh();
@@ -289,14 +225,13 @@ describe('ranking da cidade', () => {
 });
 
 describe('salvamento da carreira', () => {
-  it('convites, amizade, missão e ranking sobrevivem ao salvar e carregar', () => {
+  it('convites, amizade e ranking sobrevivem ao salvar e carregar', () => {
     const p = fresh();
     p.reputation = 400;
     checkInvites(p);
     p.defeatedOpponents.push(OPPONENTS[0].id);
     addRespect(p, OPPONENTS[0].id, 70);
     setPartner(p, OPPONENTS[0].id);
-    acceptQuest(p, { id: 'q', npc: 'monk', kind: 'offering', target: 'temple', need: 1, progress: 0, day: 1, expires: 4, reward: { coins: 0, fame: 8, item: null } });
     rankTable(p);
     const back = parseSave(serialize(p));
     expect(back.ok).toBe(true);

@@ -7,7 +7,7 @@ import { trainingMul } from '../../core/data/upgrades';
 import { canSeeMedic, medicCost, MEDIC_MINUTES } from '../../core/systems/RivalSystem';
 import { bar, esc, icon } from '../dom';
 import { t } from '../../i18n';
-import { attrName, trainingDesc } from '../../i18n/data';
+import { attrName } from '../../i18n/data';
 import type { Screen, ScreenDeps } from './Screen';
 
 export class TrainingScreen implements Screen {
@@ -29,7 +29,7 @@ export class TrainingScreen implements Screen {
       const info = ATTRIBUTE_INFO[tr.id];
       const left = sessionsToNext(p, tr.id);
       const boosted = trainingMul(p, tr.id) > 1;
-      return `<div class="card train-card" title="${esc(trainingDesc(tr.id))}">
+      return `<div class="card train-card">
         <div class="train-head">${icon(info.icon)}<span>${esc(attrName(tr.id))}</span><b>${p.baseAttributes[tr.id] + p.trainedBonus[tr.id]}</b></div>
         ${bar(tp.progress, TRAINING_THRESHOLD, 'train', false)}
         <div class="tiny dim center">${t(left > 1 ? 'ludus.leftMany' : 'ludus.leftOne', { n: left })}${boosted ? ` · <span class="gold">${t('ludus.boosted')}</span>` : ''}</div>
@@ -46,7 +46,7 @@ export class TrainingScreen implements Screen {
     return `<div class="card medic-card">
       <div class="row between"><b>${t('injury.medicName')}</b><span class="tag red">${t('injury.days', { n: p.injury.days })}</span></div>
       <p class="tiny dim">${t('injury.medicDesc', { min: MEDIC_MINUTES })}</p>
-      <button class="btn btn-gold wide" data-action="medic" ${err ? `disabled title="${esc(err)}"` : ''}>${t('injury.treat')} ${icon('coin', 'xs')} ${medicCost(p)}</button>
+      <button class="btn btn-gold wide" data-action="medic" ${err ? `disabled` : ''}>${t('injury.treat')} ${icon('coin', 'xs')} ${medicCost(p)}</button>
     </div>`;
   }
 

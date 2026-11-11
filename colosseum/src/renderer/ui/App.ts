@@ -21,7 +21,6 @@ import {
   RESPECT_DUO,
   RESPECT_FIRST_WIN,
   RESPECT_REMATCH_WIN,
-  RESPECT_TAVERN,
   addRespect,
   duoCheck,
   duoClash,
@@ -34,9 +33,7 @@ import {
   type DuoRun,
 } from '../core/systems/DuoSystem';
 import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../core/systems/CrowdSystem';
-import { acceptQuest, declineQuest, expireQuest, makeOffering, questOffer, questOnArrive, questOnFight, questOnTrain, type QuestDone } from '../core/systems/QuestSystem';
 import { nightlyRanking } from '../core/systems/RankingSystem';
-import { questCard, questText } from './components/career';
 import { recordFightOnly } from '../core/systems/ProgressionSystem';
 import { abandonTournament, checkNoShow, closeTournament, playerMatch, recordPlayerFight, register, startTournament, timeForFight, TOURNAMENT_ENERGY } from '../core/systems/TournamentSystem';
 import { expireRematch, fightDef, introMoment, ladderCheck, rematchActive, seeMedic } from '../core/systems/RivalSystem';
@@ -49,7 +46,7 @@ import { playerHelmet, playerPortraitKey } from './components/playerLook';
 import { todaysChallenger } from './screens/MainMenu';
 import { music } from '../audio/Music';
 import { fxEnabled, setFxEnabled } from '../game/shaders';
-import { itemName } from '../i18n/data';
+import { attrName, itemName } from '../i18n/data';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
 import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
 import { worldWeather } from '../game/DayNight';
@@ -79,6 +76,8 @@ import type { AppActions, Screen, ScreenId } from './screens/Screen';
 import { TavernScreen } from './screens/TavernScreen';
 import { eat, hearRumor } from '../core/systems/TavernSystem';
 import { npcLine } from '../core/data/dialogue';
+import { RESPECT_CHAT, chatWithRival, isHater, rivalsAt } from '../core/systems/RivalTownSystem';
+import { rivalsCard } from './components/career';
 import { tk, variant } from '../i18n';
 import { getLang, setLang, t, type Lang } from '../i18n';
 import { locationName } from '../i18n/data';
@@ -590,6 +589,11 @@ export class App implements AppActions {
         openNow: () => this.store.hasPlayer && isOpen(loc, this.store.state.minutes, this.store.state.day),
         rainyDay: weatherOfDay(p.createdAt, p.day).rainy,
         minutes: p.minutes,
+        // rivais pela cidade, à paisana: sem armas nem escudo
+        rivals: rivalsAt(p, loc.id).map((o) => {
+          const v = opponentCombatant(o).visual;
+          return { id: o.id, name: o.name, visual: { ...v, gear: { ...v.gear, mainHand: undefined, offHand: undefined } }, hater: isHater(o.id) };
+        }),
       });
     }
     $('#side').hidden = false;
@@ -639,15 +643,7 @@ export class App implements AppActions {
     sound.play('step');
     this.view.travelOnMap(to, () => {
       this.busy = false;
-      const delivered = this.store.update((pl) => {
-        travel(pl, to);
-        return questOnArrive(pl, to);
-      });
-      if (delivered) {
-        sound.play('coin');
-        toast(this.questDoneText(delivered), 'gold', 5000);
-        this.checkNewInvites();
-      }
+      this.store.update((pl) => travel(pl, to));
       const loc = getLocation(to);
       this.fadeIn(locationName(loc.id), hoursLabel(loc, this.store.state.day));
       if (!isOpen(loc, this.store.state.minutes, this.store.state.day)) toast(t('app.closedNow', { place: locationName(loc.id), hours: hoursLabel(loc, this.store.state.day) }), 'info');
@@ -675,7 +671,6 @@ export class App implements AppActions {
     this.busy = true;
     const apply = () => {
       let noShow = false;
-      let lostQuest: string | null = null;
       const edition = this.store.update((p) => {
         const rng = createRng(randomSeed());
         // torneio largado no meio e inscrição esquecida
@@ -687,7 +682,7 @@ export class App implements AppActions {
         sleep(p);
         const upset = nightlyRanking(p);
         if (upset) onCareer(p, 'rankUpset', rng, { opp: upset.winner, rival: upset.loser });
-        lostQuest = expireQuest(p)?.npc ?? null;
+        p.career.quest = null;
         if (checkNoShow(p)) {
           onEvent(p, 'tourneyNoShow', rng);
           noShow = true;
@@ -700,7 +695,6 @@ export class App implements AppActions {
       this.busy = false;
       this.renderPanel();
       if (noShow) toast(t('tour.noShowToast'), 'bad', 5000);
-      if (lostQuest) toast(t('quest.failed', { npc: tk(`quest.npc.${lostQuest}`) }), 'bad', 5000);
       if (edition) setTimeout(() => this.readEdition(edition.day), 1800);
     };
     if (!this.view.playSleep(this.store.state.day + 1, apply)) apply();
@@ -801,12 +795,8 @@ export class App implements AppActions {
       const r = this.store.update((pl) => {
         const res = doTrain(pl, id);
         if (res.ok) applyTraining(pl);
-        return { ...res, quest: res.ok ? questOnTrain(pl) : null };
+        return res;
       });
-      if (r.ok && r.quest) {
-        toast(this.questDoneText(r.quest), 'gold', 5000);
-        this.checkNewInvites();
-      }
       if (!r.ok) {
         toast(r.message, 'bad');
         sound.play('error');
@@ -815,13 +805,14 @@ export class App implements AppActions {
       }
       toast(r.attributeGained ? t('train.attrGained') : t('train.done', { xp: r.xp }), r.attributeGained ? 'gold' : 'good');
       this.view.showGain(r.attributeGained ? t('train.attrGained') : `+${r.xp} XP`);
-      if (r.attributeGained) sound.play('levelup');
+      if (r.attributeGained) {
+        sound.play('levelup');
+        // o treinador do ludus comenta cada atributo que sobe (força, resistência, agilidade...)
+        const who = this.store.state.upgrades.includes('doctore') ? 'doctore' : 'instructor';
+        this.view.npcSay(who, npcLine(`attrUp.${id}`, Math.floor(Math.random() * 1000), { name: this.store.state.name, attr: attrName(id) }));
+      }
       if (r.levelUps) {
         sound.play('levelup');
-        // o doctore particular (comprado no mercado) comenta cada nível ganho no treino
-        if (this.store.state.upgrades.includes('doctore')) {
-          this.view.npcSay('doctore', npcLine('doctoreLevel', Math.floor(Math.random() * 1000), { name: this.store.state.name, level: this.store.state.level }));
-        }
         toast(t('app.levelUp', { level: this.store.state.level, points: r.levelUps * 3, skill: r.levelUps }), 'gold', 5000);
       }
     };
@@ -1064,21 +1055,11 @@ export class App implements AppActions {
       notes.push(fx > 0 ? { text: t('result.thumbUp', { n: fx }) } : { text: t('result.thumbDown', { n: fx }), bad: true });
     }
     p.career.thumbsUp = Math.max(p.career.thumbsUp, Math.round(ctx.favor));
-    const q = questOnFight(p, won, ctx.opponent.id, ctx.mode);
-    if (q) notes.push({ text: this.questDoneText(q) });
     for (const inv of checkInvites(p)) {
       onCareer(p, 'invite', rng, { arena: inv.id });
       notes.push({ text: t('invite.arrived', { title: tk(`invite.${inv.id}.title`) }) });
     }
     return extra;
-  }
-
-  private questDoneText(q: QuestDone): string {
-    const parts = [t('quest.doneToast', { npc: tk(`quest.npc.${q.quest.npc}`) })];
-    if (q.coins) parts.push(`+${q.coins} ${t('common.coinsLower')}`);
-    if (q.fame) parts.push(`+${q.fame} ${t('common.fameLower')}`);
-    if (q.itemId) parts.push(itemName(getItem(q.itemId)!));
-    return parts.join(' · ');
   }
 
   /** Convite: amistoso nas arenas particulares ou o torneio de Baiae (semifinal e final). */
@@ -1240,30 +1221,10 @@ export class App implements AppActions {
     this.launchBout(me, mine ? p.level : (partnerDef(p)?.level ?? p.level), mine ? p.name : d.partner.name, plan, [d.run.ours[d.run.a], d.run.theirs[d.run.b]]);
   }
 
-  /** Ações da carreira (cartões de missão, convites, venatio, duplas e taverna). */
+  /** Ações da carreira (convites, venatio, duplas e rivais pela cidade). */
   private careerAction(action: string, id: string): void {
     const p = this.store.state;
     switch (action) {
-      case 'accept': {
-        const q = questOffer(p, p.location);
-        if (!q) return;
-        this.store.update((pl) => acceptQuest(pl, q));
-        sound.play('equip');
-        toast(`${t('quest.accepted')} ${questText(q)}`, 'good', 4000);
-        return;
-      }
-      case 'decline':
-        this.store.update((pl) => declineQuest(pl));
-        return;
-      case 'offering': {
-        const r = this.store.update((pl) => makeOffering(pl));
-        if (typeof r === 'string') return (sound.play('error'), toast(t(r === 'noCoins' ? 'quest.noCoins' : 'arena.unavailable'), 'bad'));
-        sound.play('levelup');
-        this.view.npcSay('monk', npcLine('monk', Math.floor(Math.random() * 1000)));
-        toast(this.questDoneText(r), 'gold', 5000);
-        this.checkNewInvites();
-        return;
-      }
       case 'partner':
         if (this.store.update((pl) => setPartner(pl, id))) {
           sound.play('equip');
@@ -1276,20 +1237,15 @@ export class App implements AppActions {
         return this.startBattle({ mode: 'invite', inviteId: id });
       case 'duo':
         return this.startBattle({ mode: 'duo' });
-      case 'drink': {
-        // pagar uma rodada para um rival já vencido (amizade), uma vez por dia
-        const cost = 8 + p.level * 2;
-        if (p.career.talkDay === p.day) return (sound.play('error'), toast(t('tavern.drinkDone'), 'bad'));
-        if (p.coins < cost) return (sound.play('error'), toast(t('err.noCoins'), 'bad'));
-        const friend = this.store.update((pl) => {
-          pl.coins -= cost;
-          pl.career.talkDay = pl.day;
-          return addRespect(pl, id, RESPECT_TAVERN);
-        });
-        sound.play('coin');
+      case 'chat': {
+        // conversa com um rival onde ele costuma estar (uma por dia); alguns odeiam você
         const name = getOpponent(id)?.name ?? id;
-        this.view.npcSay('patron', t('tavern.drinkLine', { name }));
-        toast(friend ? t('duo.newFriend', { name }) : t('duo.respect', { n: RESPECT_TAVERN, name }), friend ? 'gold' : 'good', 4000);
+        const r = this.store.update((pl) => chatWithRival(pl, id, addRespect));
+        if (r === 'done') return (sound.play('error'), toast(t('rivals.done'), 'bad'));
+        this.view.npcSay(`rival.${id}`, npcLine(`rival.${id}`, Math.floor(Math.random() * 1000), { name: p.name }));
+        if (r === 'hate') return void toast(t('rivals.hateToast', { name }), 'bad', 4000);
+        sound.play('equip');
+        toast(r.friend ? t('duo.newFriend', { name }) : t('duo.respect', { n: RESPECT_CHAT, name }), r.friend ? 'gold' : 'good', 4000);
         return;
       }
     }
@@ -1439,8 +1395,8 @@ export class App implements AppActions {
         <div class="row between st-day"><span>${t('status.day', { weekday: weekdayName(p.day), day: p.day })}</span><span id="clock">${phaseName(tod)} ${clockLabel(tod)}</span></div>
         ${weatherLabel(worldWeather.now()) ? `<div class="weather">${weatherLabel(worldWeather.now())}</div>` : ''}
         <div class="energy-row"><span>${t('common.energy')}</span>${bar(p.energy, 100, 'energy')}</div>
-        <div class="row st-res"><span title="${t('common.coins')}">${icon('coin')} ${p.coins}</span><span title="${t('common.fame')}">${icon('laurel')} ${p.reputation}</span></div>
-        ${playerStatus(p).length ? `<div class="st-icons">${playerStatus(p).map((k) => `<span class="st-icon st-${k}" title="${t(`status.${k}` as 'status.injured')}">${icon(`st_${k}`)} ${t(`status.${k}` as 'status.injured')}</span>`).join('')}</div>` : ''}
+        <div class="row st-res"><span>${icon('coin')} ${p.coins}</span><span>${icon('laurel')} ${p.reputation}</span></div>
+        ${playerStatus(p).length ? `<div class="st-icons">${playerStatus(p).map((k) => `<span class="st-icon st-${k}">${icon(`st_${k}`)} ${t(`status.${k}` as 'status.injured')}</span>`).join('')}</div>` : ''}
         ${late ? `<div class="late">${t('status.late')}</div>` : ''}
         ${unread ? `<button class="btn btn-dark wide sm" data-st="news">${t('status.news')}</button>` : ''}
         ${p.unspentPoints ? `<button class="btn btn-gold wide sm" data-st="points">${t('status.attrPoints', { n: p.unspentPoints })}</button>` : ''}
@@ -1468,8 +1424,8 @@ export class App implements AppActions {
     const loc = (LOCATION_IDS as string[]).includes(this.screen) ? getLocation(this.screen as LocationId) : null;
     const closed = loc && !isOpen(loc, p.minutes, p.day) ? `<div class="closed-note">${t('status.closedNow', { hours: hoursLabel(loc, p.day) })}</div>` : '';
     const head = `<div class="panel-head"><h2>${esc(screen.title)}</h2>${isSheet ? `<button class="btn sm" data-action="back">${t('common.back')}</button>` : ''}</div>`;
-    const quest = loc || this.screen === 'map' ? questCard(p, loc ? loc.id : null) : '';
-    panel.innerHTML = `${head}${tip}${closed}${quest}${screen.render(p)}`;
+    const rivals = loc ? rivalsCard(p, loc.id, !closed) : '';
+    panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}${rivals}`;
     panel.scrollTop = scroll;
   }
 }

@@ -3,9 +3,9 @@ import type { ItemDef, PlayerState } from '../../core/model/types';
 import { SLOTS } from '../../core/model/types';
 import { invItem } from '../../core/data/equipment';
 import { t } from '../../i18n';
-import { itemDesc, rarityLabel, slotLabel } from '../../i18n/data';
+import { slotLabel } from '../../i18n/data';
 import { computeCombatStats, equippedItems, finalAttributes, naturalAttributes } from '../../core/systems/AttributeSystem';
-import { esc, itemIcon, modsSummary, rarityName } from '../dom';
+import { itemIcon, rarityName } from '../dom';
 
 
 /** Ganho/perda nas estatísticas principais se o item for equipado. */
@@ -33,7 +33,7 @@ export function itemDelta(p: PlayerState, item: ItemDef): string {
 }
 
 export function itemRow(p: PlayerState, item: ItemDef, actions: string): string {
-  return `<div class="item-row" title="${esc(`${itemDesc(item)} (${rarityLabel(item.rarity)}) — ${modsSummary(item.mods)}`)}">
+  return `<div class="item-row">
     ${itemIcon(item)}
     <div class="item-info">
       <div>${rarityName(item)}${item.minLevel > p.level ? ` <span class="tag red">${t('common.lv', { n: item.minLevel })}</span>` : ''}</div>

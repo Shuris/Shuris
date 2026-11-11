@@ -38,12 +38,12 @@ export class BattleHud {
         <div class="bar st"><div class="bar-fill" data-st="${side}"></div></div>
       </div>`;
     this.root.innerHTML = `
-      <div class="hud-top">${plate(engine.fighters[0], 0)}<div class="hud-mid"><div class="hud-timer" data-timer>2:00</div><div class="favor" title="${t('favor.label')}"><span class="favor-label">${t('favor.label')}</span><div class="favor-bar"><div class="favor-fill" data-favor></div><span class="favor-mark up"></span><span class="favor-mark down"></span></div></div></div>${plate(engine.fighters[1], 1)}</div>
+      <div class="hud-top">${plate(engine.fighters[0], 0)}<div class="hud-mid"><div class="hud-timer" data-timer>2:00</div><div class="favor"><span class="favor-label">${t('favor.label')}</span><div class="favor-bar"><div class="favor-fill" data-favor></div><span class="favor-mark up"></span><span class="favor-mark down"></span></div></div></div>${plate(engine.fighters[1], 1)}</div>
       <div class="hud-bottom">
         <div class="hud-log" data-log></div>
         <div class="hud-controls">
           <span class="speed">${[1, 2, 3].map((s) => `<button class="btn sm ${s === speed ? 'active' : ''}" data-hud="speed" data-v="${s}">${s}x</button>`).join('')}</span>
-          <button class="btn sm btn-dark" data-hud="forfeit" title="${t('battle.forfeitHint')}">${t('battle.forfeit')}</button>
+          <button class="btn sm btn-dark" data-hud="forfeit">${t('battle.forfeit')}</button>
         </div>
       </div>`;
     this.root.hidden = false;

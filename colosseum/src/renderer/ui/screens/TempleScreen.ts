@@ -26,7 +26,7 @@ export class TempleScreen implements Screen {
     const owned = p.perks.includes(perk.id);
     const err = canLearn(p, perk.id);
     const state = owned ? 'owned' : !err ? 'available' : perk.requires.some((r) => p.perks.includes(r)) || !perk.requires.length ? 'poor' : 'locked';
-    return `<button class="perk perk-${state} ${this.selected === perk.id ? 'sel' : ''}" data-action="select" data-id="${perk.id}" title="${esc(perkShort(perk))}">
+    return `<button class="perk perk-${state} ${this.selected === perk.id ? 'sel' : ''}" data-action="select" data-id="${perk.id}">
       ${icon(perk.icon)}<span>${esc(perkName(perk))}</span><i>${'●'.repeat(perk.cost)}</i></button>`;
   }
 

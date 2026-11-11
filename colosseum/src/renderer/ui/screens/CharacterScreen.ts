@@ -16,7 +16,7 @@ import { playerDoll } from '../components/doll';
 import { playerCombatant } from '../../core/combat/CombatantFactory';
 import type { Screen, ScreenDeps } from './Screen';
 import { t } from '../../i18n';
-import { attrDesc, attrName, skillDesc, skillName } from '../../i18n/data';
+import { attrName, skillName } from '../../i18n/data';
 
 const attrHint = (k: AttributeKey) => t(`attr.hint.${k}` as 'attr.hint.str');
 const skillHint = (id: SkillId) => t(`skill.hint.${id}` as 'skill.hint.counter');
@@ -80,7 +80,7 @@ export class CharacterScreen implements Screen {
       const value = p.baseAttributes[k] + p.trainedBonus[k];
       const canAdd = left > 0 && value + this.pending[k] < MAX_ATTRIBUTE;
       const extra = gb[k] ? ` <em class="${gb[k] > 0 ? 'up' : 'down'}">${gb[k] > 0 ? '+' : ''}${gb[k]}</em>` : '';
-      return `<div class="attr-row" title="${esc(attrDesc(k))}">
+      return `<div class="attr-row">
         ${icon(info.icon)}
         <span class="attr-name">${esc(attrName(k))}<small>${attrHint(k)}</small></span>
         <span class="attr-val">${value + this.pending[k]}${this.pending[k] ? `<em class="up"> +${this.pending[k]}</em>` : ''}${extra}</span>
@@ -98,7 +98,7 @@ export class CharacterScreen implements Screen {
       ? learned
           .map((id) => {
             const s = SKILLS[id];
-            return `<div class="skill" title="${esc(skillDesc(id))}">${icon(s.icon)}<div><b>${esc(skillName(id))}</b><p>${skillHint(id)}</p></div></div>`;
+            return `<div class="skill">${icon(s.icon)}<div><b>${esc(skillName(id))}</b><p>${skillHint(id)}</p></div></div>`;
           })
           .join('')
       : `<p class="dim">${t('char.noSkills')}</p>`;
