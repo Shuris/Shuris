@@ -300,7 +300,13 @@ await step('15. Arena certa a cada dois adversários', async () => {
 await step('16. Dia e noite seguem o relógio do jogo', async () => {
   const sample = (minutes) =>
     win.evaluate(async (m) => {
-      window.__colosseum.store.update((p) => (p.minutes = m));
+      // o clima é sorteado por gladiador: usa um dia de sol para medir a luz do dia
+      window.__colosseum.store.update((p) => {
+        let d = p.day;
+        while (window.__colosseum.weatherOfDay(d).kind !== 'sun') d++;
+        p.day = d;
+        p.minutes = m;
+      });
       await new Promise((r) => setTimeout(r, 2500));
       const s = window.__colosseum.view.sky;
       return { light: s.state.light, ambient: s.state.ambient };
