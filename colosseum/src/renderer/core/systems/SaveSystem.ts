@@ -359,6 +359,10 @@ function careerFields(v: unknown, w: string[]): CareerState {
   c.rankPts = n(v.rankPts, 1e6, 'rankPts');
   c.rankPrev = n(v.rankPrev, 100, 'rankPrev');
   c.talkDay = n(v.talkDay, 1e7, 'talkDay');
+  c.chatDays = {};
+  if (isObj(v.chatDays)) {
+    for (const [id, d] of Object.entries(v.chatDays).slice(0, 100)) if (/^[a-z0-9_]{1,30}$/.test(id)) c.chatDays[id] = n(d, 1e7, 'chatDays');
+  }
   c.beastDay = n(v.beastDay, 1e7, 'beastDay');
   c.beastWins = n(v.beastWins, 1e5, 'beastWins');
   c.duoWins = n(v.duoWins, 1e5, 'duoWins');

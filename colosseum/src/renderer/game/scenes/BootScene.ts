@@ -35,6 +35,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('fx:banner_wave', 'assets/sprites/fx/banner_wave.png', { frameWidth: 16, frameHeight: 34 });
     this.load.spritesheet('fx:editor_group', 'assets/sprites/fx/editor_group.png', { frameWidth: 72, frameHeight: 50 });
     this.load.spritesheet('fx:editor_box', 'assets/sprites/fx/editor_box.png', { frameWidth: 80, frameHeight: 64 });
+    this.load.spritesheet('fx:editor_wood', 'assets/sprites/fx/editor_wood.png', { frameWidth: 80, frameHeight: 64 });
     for (const k of ['gate_bars', 'tribune']) this.load.image(`fx:${k}`, `assets/sprites/fx/${k}.png`);
     this.load.spritesheet('fx:lamp_flame', 'assets/sprites/fx/lamp_flame.png', { frameWidth: 6, frameHeight: 8 });
     this.load.spritesheet('fx:palus', 'assets/sprites/fx/palus.png', { frameWidth: 24, frameHeight: 56 });
@@ -56,7 +57,7 @@ export class BootScene extends Phaser.Scene {
       sheetAnim('pigeon_fly', 'fx:pigeon', 4, 5, 10);
       sheetAnim('bird_fly', 'fx:bird', 0, 1, 5);
       sheetAnim('banner_wave', 'fx:banner_wave', 0, 3, 6);
-      for (const k of ['group', 'box']) {
+      for (const k of ['group', 'box', 'wood']) {
         sheetAnim(`editor_${k}_watch`, `fx:editor_${k}`, 0, 1, 1.2);
         sheetAnim(`editor_${k}_cheer`, `fx:editor_${k}`, 2, 3, 4);
       }

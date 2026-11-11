@@ -49,7 +49,9 @@ export interface HubData {
   /** estados do gladiador (só no painel; mantido por compatibilidade) */
   status?: string[];
   /** rivais derrotados que costumam ficar neste local */
-  rivals?: Array<{ id: string; name: string; visual: FighterVisual; hater: boolean }>;
+  rivals?: Array<{ id: string; name: string; visual: FighterVisual }>;
+  /** clique num rival: a interface registra a conversa (null = já conversou hoje) e devolve a fala */
+  onRivalTalk?: (id: string) => { line: string } | null;
   /** dia do jogo (estação: folhas no outono) */
   day?: number;
   /** nome do jogador (citado nas falas dos moradores e rivais) */
@@ -65,6 +67,8 @@ interface Talker {
   auto?: boolean;
   /** nome mostrado ao passar o mouse (personagens principais e rivais) */
   name?: string;
+  /** rival pela cidade (amizade ao conversar) */
+  rivalId?: string;
 }
 
 /** Profundidade pela linha dos pés: quem está mais à frente (y maior) fica por cima. */
@@ -302,18 +306,18 @@ export class HubScene extends Phaser.Scene {
     this.people = this.children.list.filter((o) => !before.has(o));
   }
 
-  /** Rivais derrotados neste local: parados, de braços cruzados (quem odeia o jogador fica de costas). */
+  /** Rivais que passaram a respeitar o jogador: parados neste local, clicáveis (conversa e amizade). */
   private spawnRivals(): void {
     const list = this.data_.rivals ?? [];
     list.forEach((r, i) => {
       const y = GROUND + 12 + (i % 2) * 8;
       const v = new GladiatorView(this, this.freeX(236 + i * 88, y), y, r.visual);
       v.setBaseScale(1);
-      v.setFacing(r.hater ? -1 : 1);
+      v.setFacing(1);
       v.setDepth(depthAt(y));
       v.play('idle');
       this.npcs.push({ v, speed: 0, min: v.x, max: v.x, pause: 0 });
-      this.talkers.push({ who: v, line: `rival.${r.id}`, head: 50, name: r.name });
+      this.talkers.push({ who: v, line: `rival.${r.id}`, head: 50, name: r.name, rivalId: r.id });
     });
   }
 
@@ -681,6 +685,14 @@ export class HubScene extends Phaser.Scene {
   }
 
   private talk(tk: Talker): void {
+    // rival: uma conversa por dia com cada um; a amizade sobe e aparece só um sinalzinho
+    if (tk.rivalId) {
+      const r = this.data_.onRivalTalk?.(tk.rivalId);
+      if (!r) return;
+      speech(this, tk.who, r.line, { head: tk.head, insetRight: () => this.insets.right });
+      this.friendSign(tk.who.x, tk.who.y - tk.head - 4);
+      return;
+    }
     // falas que citam o jogador ("Ria enquanto pode, {name}") recebem o nome dele
     const line = npcLine(tk.line, Math.floor(Math.random() * 1000), { name: this.data_.playerName ?? '' });
     if (line) speech(this, tk.who, line, { head: tk.head, insetRight: () => this.insets.right });
@@ -713,6 +725,31 @@ export class HubScene extends Phaser.Scene {
         if (!this.busy) this.talk(tk);
       });
     }
+  }
+
+  /** Coraçãozinho que sobe da cabeça de quem gostou da conversa. */
+  private friendSign(x: number, y: number): void {
+    const key = 'fx:heart';
+    if (!this.textures.exists(key)) {
+      const rows = ['.XX.XX.', 'XooXooX', 'XoooooX', '.XoooX.', '..XoX..', '...X...'];
+      const tex = this.textures.createCanvas(key, 7, 6);
+      if (tex) {
+        const ctx = tex.getContext();
+        rows.forEach((r, j) =>
+          [...r].forEach((c, i) => {
+            if (c === '.') return;
+            ctx.fillStyle = c === 'X' ? '#5a1010' : '#e8485a';
+            ctx.fillRect(i, j, 1, 1);
+          }),
+        );
+        tex.refresh();
+      }
+    }
+    const h = this.add.image(x + 10, y, key).setDepth(1201).setAlpha(0);
+    this.tweens.add({ targets: h, alpha: 1, duration: 150 });
+    this.tweens.add({ targets: h, y: y - 16, duration: 1400, ease: 'Sine.Out' });
+    this.tweens.add({ targets: h, alpha: 0, delay: 1000, duration: 400, onComplete: () => h.destroy() });
+    sound.play('equip', 0.6);
   }
 
   /** usado pelos testes: faz o morador n falar como se tivesse sido clicado */

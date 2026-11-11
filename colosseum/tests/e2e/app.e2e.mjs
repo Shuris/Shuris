@@ -668,7 +668,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   await win.evaluate((d) => window.__colosseum.store.update((p) => {
     p.day = d; p.minutes = 9 * 60; p.energy = 100; p.injury = null; p.reputation = 120;
     if (!p.defeatedOpponents.includes('marcus')) p.defeatedOpponents.push('marcus');
-    p.career.respect = { marcus: 70 }; p.career.partner = null; p.career.beastDay = 0; p.career.duoDay = 0;
+    p.career.respect = { marcus: 100 }; p.career.partner = null; p.career.beastDay = 0; p.career.duoDay = 0;
   }), vday);
   await goTo('arena');
   // venatio: a fera do dia

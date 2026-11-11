@@ -76,8 +76,7 @@ import type { AppActions, Screen, ScreenId } from './screens/Screen';
 import { TavernScreen } from './screens/TavernScreen';
 import { eat, hearRumor } from '../core/systems/TavernSystem';
 import { npcLine } from '../core/data/dialogue';
-import { RESPECT_CHAT, chatWithRival, isHater, rivalsAt } from '../core/systems/RivalTownSystem';
-import { rivalsCard } from './components/career';
+import { chatWithRival, rivalsAt } from '../core/systems/RivalTownSystem';
 import { tk, variant } from '../i18n';
 import { getLang, setLang, t, type Lang } from '../i18n';
 import { locationName } from '../i18n/data';
@@ -591,11 +590,12 @@ export class App implements AppActions {
         minutes: p.minutes,
         day: p.day,
         playerName: p.name,
-        // rivais pela cidade, à paisana: sem armas nem escudo
+        // rivais que passaram a respeitar o jogador, à paisana (sem armas nem escudo)
         rivals: rivalsAt(p, loc.id).map((o) => {
           const v = opponentCombatant(o).visual;
-          return { id: o.id, name: o.name, visual: { ...v, gear: { ...v.gear, mainHand: undefined, offHand: undefined } }, hater: isHater(o.id) };
+          return { id: o.id, name: o.name, visual: { ...v, gear: { ...v.gear, mainHand: undefined, offHand: undefined } } };
         }),
+        onRivalTalk: (id) => this.rivalTalk(id),
       });
     }
     $('#side').hidden = false;
@@ -1231,9 +1231,20 @@ export class App implements AppActions {
     this.launchBout(me, mine ? p.level : (partnerDef(p)?.level ?? p.level), mine ? p.name : d.partner.name, plan, [d.run.ours[d.run.a], d.run.theirs[d.run.b]]);
   }
 
-  /** Ações da carreira (convites, venatio, duplas e rivais pela cidade). */
-  private careerAction(action: string, id: string): void {
+  /** Clique num rival pela cidade: uma vez por dia em cada um; a amizade sobe sem mostrar números. */
+  private rivalTalk(id: string): { line: string } | null {
     const p = this.store.state;
+    const r = this.store.update((pl) => chatWithRival(pl, id, addRespect));
+    if (typeof r === 'string') return null;
+    if (r.friend) {
+      sound.play('levelup');
+      toast(t('duo.newFriend', { name: getOpponent(id)?.name ?? id }), 'gold', 5000);
+    }
+    return { line: npcLine(`rival.${id}`, Math.floor(Math.random() * 1000), { name: p.name }) };
+  }
+
+  /** Ações da carreira (convites, venatio e duplas). */
+  private careerAction(action: string, id: string): void {
     switch (action) {
       case 'partner':
         if (this.store.update((pl) => setPartner(pl, id))) {
@@ -1247,17 +1258,6 @@ export class App implements AppActions {
         return this.startBattle({ mode: 'invite', inviteId: id });
       case 'duo':
         return this.startBattle({ mode: 'duo' });
-      case 'chat': {
-        // conversa com um rival onde ele costuma estar (uma por dia); alguns odeiam você
-        const name = getOpponent(id)?.name ?? id;
-        const r = this.store.update((pl) => chatWithRival(pl, id, addRespect));
-        if (r === 'done') return (sound.play('error'), toast(t('rivals.done'), 'bad'));
-        this.view.npcSay(`rival.${id}`, npcLine(`rival.${id}`, Math.floor(Math.random() * 1000), { name: p.name }));
-        if (r === 'hate') return void toast(t('rivals.hateToast', { name }), 'bad', 4000);
-        sound.play('equip');
-        toast(r.friend ? t('duo.newFriend', { name }) : t('duo.respect', { n: RESPECT_CHAT, name }), r.friend ? 'gold' : 'good', 4000);
-        return;
-      }
     }
   }
 
@@ -1434,8 +1434,7 @@ export class App implements AppActions {
     const loc = (LOCATION_IDS as string[]).includes(this.screen) ? getLocation(this.screen as LocationId) : null;
     const closed = loc && !isOpen(loc, p.minutes, p.day) ? `<div class="closed-note">${t('status.closedNow', { hours: hoursLabel(loc, p.day) })}</div>` : '';
     const head = `<div class="panel-head"><h2>${esc(screen.title)}</h2>${isSheet ? `<button class="btn sm" data-action="back">${t('common.back')}</button>` : ''}</div>`;
-    const rivals = loc ? rivalsCard(p, loc.id, !closed) : '';
-    panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}${rivals}`;
+    panel.innerHTML = `${head}${tip}${closed}${screen.render(p)}`;
     panel.scrollTop = scroll;
   }
 }

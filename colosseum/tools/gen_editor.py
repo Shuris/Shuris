@@ -240,6 +240,53 @@ def _interior(d):
     d.polygon([(FW - 15, 31), (FW - 14, 26), (FW - 13, 31)], fill=GOLD)
 
 
+WOOD, WOOD_D, WOOD_L = hexc("8a5a32"), hexc("5e3a1e"), hexc("a8723e")
+
+
+def _interior_wood(d):
+    # fundo simples de tábuas (arena de madeira de Cápua)
+    d.rectangle([1, 4, FW - 2, 40], fill=WOOD_D)
+    for x in range(1, FW - 1, 5):
+        d.line([(x, 4), (x, 40)], fill=hexc("4e3018"))
+    d.rectangle([1, 4, FW - 2, 5], fill=WOOD)
+
+
+def _front_wood(d):
+    # parapeito de tábuas com um pano vermelho simples pendurado
+    d.rectangle([0, 38, 71, 49], fill=WOOD)
+    d.rectangle([0, 38, 71, 39], fill=WOOD_L)
+    for x in range(0, 72, 6):
+        d.line([(x, 40), (x, 49)], fill=WOOD_D)
+    d.rectangle([22, 40, 49, 46], fill=RED)
+    d.rectangle([22, 46, 49, 46], fill=RED_D)
+
+
+def _roof_wood(img):
+    """Cobertura de tábuas inclinadas e dois postes de madeira (sem ouro nem toldo listrado)."""
+    out = new_img(FW + 8, FH + 14)
+    lay = new_img(FW + 8, FH + 14)
+    d = ImageDraw.Draw(lay)
+    d.rectangle([2, 12, FW + 5, FH + 10], fill=hexc("4e3018"))
+    d.polygon([(0, 13), (4, 5), (FW + 4, 5), (FW + 7, 13)], fill=WOOD)
+    for x in range(3, FW + 6, 6):
+        d.line([(x, 6), (x - 1, 12)], fill=WOOD_D)
+    d.rectangle([0, 12, FW + 7, 13], fill=WOOD_D)
+    d.rectangle([3, 14, 5, FH + 10], fill=WOOD_D)
+    d.rectangle([FW + 2, 14, FW + 4, FH + 10], fill=WOOD_D)
+    out.alpha_composite(finish(lay, light=0.2, dark=0.7))
+    out.alpha_composite(img, (4, 12))
+    return out
+
+
+def frame_wood(f):
+    img = new_img(FW, FH)
+    img.alpha_composite(_part(_interior_wood, light=0.15, dark=0.75, ol=False))
+    occ = _shrink(_occupants(f), SCALE)
+    img.alpha_composite(occ, ((FW - occ.width) // 2, 38 - occ.height + 2))
+    img.alpha_composite(_part(_front_wood, light=0.25, dark=0.65))
+    return _roof_wood(img)
+
+
 def frame(f):
     img = new_img(FW, FH)
     img.alpha_composite(_part(_interior, light=0.15, dark=0.75, ol=False))
@@ -258,4 +305,8 @@ def sheets():
     box = new_img(bw * 4, bh)
     for i, fr in enumerate(boxed):
         box.alpha_composite(fr, (i * bw, 0))
-    return {"editor_group": group, "editor_box": box}, (FW, FH), (bw, bh)
+    woods = [frame_wood(f) for f in range(4)]
+    wood = new_img(bw * 4, bh)
+    for i, fr in enumerate(woods):
+        wood.alpha_composite(fr, (i * bw, 0))
+    return {"editor_group": group, "editor_box": box, "editor_wood": wood}, (FW, FH), (bw, bh)

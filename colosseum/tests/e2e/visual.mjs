@@ -61,6 +61,18 @@ if (want('battle') || want('rain')) {
     await shot(`${want('rain') ? 'rain' : 'battle'}-${ms}`);
   }
 }
+if (want('rivalclick')) {
+  await goTo('tavern');
+  const r = await win.evaluate(() => {
+    const hub = window.__colosseum.view.game.scene.getScene('hub');
+    const i = hub.talkers.findIndex((t) => t.rivalId);
+    const first = i >= 0 && (hub.clickTalker(i), window.__colosseum.store.state.career.respect.marcus);
+    return { i, first, names: hub.talkers.filter((t) => t.rivalId).map((t) => t.rivalId) };
+  });
+  console.log('RIVAL', JSON.stringify(r));
+  await win.waitForTimeout(500);
+  await shot('rival-click');
+}
 if (want('gear')) {
   await win.click('[data-nav="gladiator"]');
   await win.click('[data-action="tab"][data-id="gear"]');

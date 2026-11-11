@@ -236,8 +236,10 @@ export interface CareerState {
   /** pontos do jogador no ranking e posição de ontem */
   rankPts: number;
   rankPrev: number;
-  /** último dia em que conversou com cada rival na taverna (amizade) */
+  /** (antigo) último dia de conversa com um rival; mantido por compatibilidade */
   talkDay: number;
+  /** último dia em que conversou com cada rival pela cidade (um clique por dia em cada um) */
+  chatDays: Record<string, number>;
   /** último dia em que enfrentou uma fera */
   beastDay: number;
   beastWins: number;

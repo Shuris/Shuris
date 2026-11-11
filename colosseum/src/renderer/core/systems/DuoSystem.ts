@@ -12,7 +12,7 @@ import { createRng } from './rng';
 import { isHater } from './RivalTownSystem';
 
 /** respeito necessário para virar amigo (0..100) */
-export const FRIEND_RESPECT = 60;
+export const FRIEND_RESPECT = 100;
 export const RESPECT_FIRST_WIN = 40;
 export const RESPECT_REMATCH_WIN = 20;
 export const RESPECT_DUO = 10;

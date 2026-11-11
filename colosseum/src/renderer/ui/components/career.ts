@@ -1,14 +1,13 @@
 // Cartões da carreira (versão 0.9): convites das arenas
 // particulares, venatio (feras), duplas com amigos e o ranking da cidade.
 // As ações (data-action="career-...") são tratadas pela App, em qualquer tela.
-import type { LocationId, PlayerState } from '../../core/model/types';
-import { RESPECT_CHAT, isHater, rivalsAt } from '../../core/systems/RivalTownSystem';
+import type { PlayerState } from '../../core/model/types';
 import { getOpponent } from '../../core/data/opponents';
 import { getPoolFighter } from '../../core/data/fighters';
 import { getArena } from '../../core/data/arenas';
 import { INVITES, getInviteDef, inviteFoe, openInvites } from '../../core/systems/InviteSystem';
 import { beastOfDay, isVenatioDay, nextVenatioDay, venatioCheck, BEAST_FAME_MUL } from '../../core/systems/VenatioSystem';
-import { FRIEND_RESPECT, DUO_ENERGY, duoCheck, duoFoes, friends, partnerDef, respectOf } from '../../core/systems/DuoSystem';
+import { DUO_ENERGY, duoCheck, duoFoes, friends, partnerDef } from '../../core/systems/DuoSystem';
 import { rankTable } from '../../core/systems/RankingSystem';
 import { esc, icon } from '../dom';
 import { portrait } from './portraits';
@@ -59,19 +58,15 @@ export function venatioCard(p: PlayerState, fightErr: string | null): string {
 
 /** Duplas: amigos (respeito), parceiro escolhido e a dupla adversária do dia. */
 export function duoCard(p: PlayerState, fightErr: string | null): string {
+  // só os amigos aparecem (a amizade não é mostrada em números)
   const fr = friends(p);
-  const known = Object.keys(p.career.respect).filter((id) => respectOf(p, id) < FRIEND_RESPECT && getOpponent(id));
-  if (!fr.length && !known.length) return `<h3>${t('duo.title')}</h3><p class="tiny dim">${t('duo.howTo', { n: FRIEND_RESPECT })}</p>`;
+  if (!fr.length) return `<h3>${t('duo.title')}</h3><p class="tiny dim">${t('duo.howTo')}</p>`;
   const partner = partnerDef(p);
-  const list = [...fr.map((o) => o.id), ...known]
-    .map((id) => {
-      const o = getOpponent(id)!;
-      const r = respectOf(p, id);
-      const friend = r >= FRIEND_RESPECT;
-      const chosen = partner?.id === id;
-      return `<div class="friend-row ${chosen ? 'chosen' : ''}">${portrait(id, 'xs')}<span class="tiny"><b>${esc(o.name)}</b> ${friend ? `<span class="tag gold">${t('duo.friend')}</span>` : ''}</span>
-        <span class="respect"><span style="width:${r}%"></span></span>
-        ${friend ? `<button class="btn sm ${chosen ? 'btn-gold' : ''}" data-action="career-partner" data-id="${id}">${chosen ? t('duo.partner') : t('duo.choose')}</button>` : `<span class="tiny dim">${r}/${FRIEND_RESPECT}</span>`}</div>`;
+  const list = fr
+    .map((o) => {
+      const chosen = partner?.id === o.id;
+      return `<div class="friend-row ${chosen ? 'chosen' : ''}">${portrait(o.id, 'xs')}<span class="tiny"><b>${esc(o.name)}</b> <span class="tag gold">${t('duo.friend')}</span></span>
+        <button class="btn sm ${chosen ? 'btn-gold' : ''}" data-action="career-partner" data-id="${o.id}">${chosen ? t('duo.partner') : t('duo.choose')}</button></div>`;
     })
     .join('');
   const err = duoCheck(p);
@@ -110,19 +105,3 @@ export function rankingHtml(p: PlayerState): string {
 }
 
 
-/** Rivais derrotados que estão neste local: conversar (uma vez por dia) ou o desprezo de quem odeia você. */
-export function rivalsCard(p: PlayerState, loc: LocationId, open: boolean): string {
-  const list = open ? rivalsAt(p, loc) : [];
-  if (!list.length) return '';
-  const done = p.career.talkDay === p.day;
-  const rows = list
-    .map((o) => {
-      const hate = isHater(o.id);
-      const r = respectOf(p, o.id);
-      const friend = !hate && r >= FRIEND_RESPECT;
-      const state = hate ? `<span class="tag red">${t('rivals.hates')}</span>` : friend ? `<span class="tag gold">${t('duo.friend')}</span>` : `<span class="dim">${r}/${FRIEND_RESPECT}</span>`;
-      return `<div class="drink-row">${portrait(o.id, 'xs')}<span class="tiny"><b>${esc(o.name)}</b> ${state}</span><button class="btn sm" data-action="career-chat" data-id="${o.id}" ${done ? 'disabled' : ''}>${hate ? t('rivals.face') : t('rivals.talk')}</button></div>`;
-    })
-    .join('');
-  return `<div class="card rivals-card"><b>${t('rivals.title')}</b><p class="tiny dim">${done ? t('rivals.done') : t('rivals.desc', { n: RESPECT_CHAT })}</p>${rows}</div>`;
-}

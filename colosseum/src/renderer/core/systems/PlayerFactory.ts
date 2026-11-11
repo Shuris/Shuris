@@ -96,6 +96,7 @@ export function emptyCareer(): CareerState {
     rankPts: 0,
     rankPrev: 0,
     talkDay: 0,
+    chatDays: {},
     beastDay: 0,
     beastWins: 0,
     duoWins: 0,
