@@ -178,6 +178,10 @@ export function opponentEpithet(o: OpponentDef): string {
   if (o.cls) return tk(`class.${o.cls}.ep`);
   return (en() && EN_OPPONENTS[o.id]?.epithet) || o.epithet;
 }
+/** Nome do golpe: as feras têm os próprios (mordida, investida, patada, bote...). */
+export function moveName(skill: SkillId, beast?: string): string {
+  return (beast && tk(`beast.${beast}.${skill}`, {}, '')) || skillName(skill);
+}
 export function opponentFullName(o: OpponentDef): string {
   if (o.beast) return `${tk(`beast.${o.beast}.name`)}, ${opponentEpithet(o)}`;
   return `${o.name}, ${opponentEpithet(o)}`;

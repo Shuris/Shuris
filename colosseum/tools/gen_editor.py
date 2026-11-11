@@ -80,53 +80,83 @@ def _editor(d, f):
         d.point((cx + 3, 30), fill=GOLD_L)
 
 
+HAIR, HAIR_L, HAIR_D = hexc("6a3a1e"), hexc("9a5a2e"), hexc("3a1e0e")
+SILK, SILK_L, SILK_D = hexc("8a6ad8"), hexc("c0a8f0"), hexc("5a3e9a")
+TOP, TOP_L = hexc("9a80e8"), hexc("d8c8f8")
+SKIN_C, SKIN_CD = hexc("f0c8a0"), hexc("d8a47c")
+
+
+def _dancer(d, cx, f, side):
+    """Cortesã em pé, no estilo da referência: cabelos castanhos volumosos em dois
+    rabos ondulados, top curto com bordado dourado, barriga à mostra, calça larga de seda
+    lilás com brilhos, faixa esvoaçante e joias douradas. side=-1 olha para a direita."""
+    sway = 1 if f in (1, 3) else 0
+    # calça larga (bufante) e faixa de seda
+    d.polygon([(cx - 7, 26), (cx + 7, 26), (cx + 9, 36), (cx + 6, 40), (cx + 1, 40), (cx, 33), (cx - 1, 40), (cx - 6, 40), (cx - 9, 36)], fill=SILK)
+    d.line([(cx - 6, 28), (cx - 7, 38)], fill=SILK_L)
+    d.line([(cx + 3, 28), (cx + 5, 38)], fill=SILK_D)
+    for (x, y) in ((cx - 5, 31), (cx + 4, 34), (cx - 3, 37), (cx + 6, 30)):
+        d.point((x, y), fill=hexc("f8f0ff"))  # brilhos no tecido
+    d.rectangle([cx - 7, 25, cx + 7, 26], fill=GOLD)  # cinto dourado
+    d.point((cx, 25), fill=hexc("40c0a0"))  # pedra do cinto
+    sash_x = cx + 9 * (-side)
+    d.polygon([(cx + 6 * (-side), 26), (sash_x + 3 * (-side), 29 + sway), (sash_x + 4 * (-side), 34 + sway), (cx + 7 * (-side), 30)], fill=SILK_L)
+    d.line([(sash_x + 3 * (-side), 33 + sway), (sash_x + 4 * (-side), 35 + sway)], fill=GOLD)
+    # barriga à mostra e top curto com bordado dourado
+    d.rectangle([cx - 4, 20, cx + 4, 25], fill=SKIN_C)
+    d.point((cx, 23), fill=SKIN_CD)
+    d.polygon([(cx - 6, 15), (cx + 6, 15), (cx + 5, 20), (cx - 5, 20)], fill=TOP)
+    d.line([(cx - 5, 20), (cx + 5, 20)], fill=GOLD)
+    d.line([(cx - 3, 16), (cx + 3, 16)], fill=TOP_L)
+    # mangas bufantes nos ombros
+    d.ellipse([cx - 9, 14, cx - 4, 19], fill=TOP)
+    d.ellipse([cx + 4, 14, cx + 9, 19], fill=TOP)
+    d.point((cx - 7, 18), fill=GOLD)
+    d.point((cx + 7, 18), fill=GOLD)
+    # pescoço, colar e rosto
+    d.rectangle([cx - 1, 11, cx + 1, 14], fill=SKIN_C)
+    d.line([(cx - 3, 14), (cx + 3, 14)], fill=GOLD_L)
+    d.ellipse([cx - 4, 4, cx + 4, 12], fill=SKIN_C)
+    eye = cx + (1 if side < 0 else -2)
+    d.point((eye, 8), fill=hexc("6a3a10"))
+    d.point((eye + 2, 8), fill=hexc("6a3a10"))
+    d.point((cx + (1 if side < 0 else -1), 10), fill=hexc("c8484a"))  # lábios
+    # cabelo: franja e dois rabos volumosos e ondulados
+    d.ellipse([cx - 5, 2, cx + 5, 7], fill=HAIR)
+    for s in (-1, 1):
+        x0 = cx + s * 5
+        d.ellipse([x0 - 4, 1, x0 + 4, 7], fill=HAIR)  # prende alto
+        d.polygon([(x0 - 2, 5), (x0 + 3 * s + 2, 9 + sway), (x0 + 4 * s, 16), (x0 + 2 * s, 21 + sway), (x0 - 1 * s, 16), (x0 - 2 * s, 10)], fill=HAIR)
+        d.line([(x0 + s, 4), (x0 + 3 * s, 13 + sway)], fill=HAIR_L)
+        d.point((x0 + 2 * s, 18 + sway), fill=HAIR_D)
+    d.line([(cx - 3, 3), (cx + 3, 3)], fill=HAIR_L)
+    d.point((cx - 4, 9), fill=GOLD_L)  # brincos
+    d.point((cx + 4, 9), fill=GOLD_L)
+
+
 def _courtesan_left(d, f):
-    # inclinada para o editor: cabelos escuros presos, diadema, ombros à mostra
+    # inclinada para o editor, rindo com a mão perto da boca (como a referência)
+    cx = 14
+    _dancer(d, cx, f, -1)
     lean = 1 if f in (1, 3) else 0
-    hx = 18 + lean
-    d.polygon([(7, 40), (9, 27), (14, 23), (21, 25), (23, 40)], fill=hexc("4a9a9a"))  # estola turquesa
-    d.line([(10, 33), (22, 31)], fill=GOLD)  # cinto
-    d.polygon([(11, 24), (15, 22), (21, 24), (22, 27), (10, 27)], fill=SKIN_W1)  # ombros nus
-    d.line([(15, 22), (16, 27)], fill=hexc("4a9a9a"))  # alça drapeada num ombro só
-    d.rectangle([hx - 1, 19, hx + 1, 23], fill=SKIN_W1)  # pescoço
-    d.ellipse([hx - 3, 12, hx + 4, 20], fill=SKIN_W1)  # rosto inclinado
-    d.ellipse([hx - 4, 9, hx + 2, 15], fill=hexc("2a1a14"))  # coque alto
-    d.ellipse([hx - 6, 8, hx - 1, 13], fill=hexc("2a1a14"))
-    d.line([(hx - 3, 12), (hx + 3, 11)], fill=GOLD_L)  # diadema
-    d.point((hx + 2, 15), fill=hexc("2a1a12"))  # olhar de lado, para o editor
-    d.point((hx + 3, 17), fill=hexc("b0403a"))  # lábios
-    d.point((hx - 2, 17), fill=GOLD_L)  # brinco
-    d.line([(13, 24), (19, 24)], fill=GOLD_L)  # colar
-    # braço apoiado no ombro do editor
-    d.line([(20, 26), (29 + lean, 24)], fill=SKIN_W1, width=2)
-    d.point((22, 25), fill=GOLD)  # bracelete
+    d.line([(cx + 6, 17), (cx + 3 + lean, 11)], fill=SKIN_C, width=2)  # mão no rosto
+    d.point((cx + 4, 13), fill=GOLD)  # bracelete
+    d.line([(cx - 6, 17), (cx - 8, 24)], fill=SKIN_C, width=2)
+    d.point((cx - 8, 22), fill=GOLD)
 
 
 def _courtesan_right(d, f):
-    # assiste à luta com a taça dourada; cabelos ruivos trançados com fitas
-    cx = 56
-    sip = f in (1,)
-    d.polygon([(48, 40), (50, 27), (54, 23), (59, 23), (64, 27), (65, 40)], fill=hexc("e8b84a"))  # vestido açafrão
-    d.line([(50, 33), (64, 33)], fill=GOLD_D)
-    d.polygon([(51, 25), (55, 22), (59, 22), (63, 25), (63, 27), (51, 27)], fill=SKIN_W2)  # ombros nus
-    d.line([(60, 22), (59, 27)], fill=hexc("e8b84a"))
-    d.rectangle([cx - 1, 19, cx + 1, 23], fill=SKIN_W2)
-    d.ellipse([cx - 4, 11, cx + 3, 20], fill=SKIN_W2)
-    d.ellipse([cx - 4, 8, cx + 4, 14], fill=hexc("8a3a1a"))  # penteado ruivo
-    d.ellipse([cx + 1, 9, cx + 6, 15], fill=hexc("8a3a1a"))
-    d.point((cx + 4, 10), fill=hexc("e0e0f0"))  # fita
-    d.line([(cx - 3, 12), (cx + 2, 12)], fill=GOLD_L)
-    d.point((cx - 2, 15), fill=hexc("2a1a12"))  # olhando para a arena
-    d.point((cx, 15), fill=hexc("2a1a12"))
-    d.point((cx - 1, 18), fill=hexc("b0403a"))
-    d.line([(53, 23), (59, 23)], fill=GOLD_L)  # colar
-    # taça dourada (perto da boca quando bebe)
-    tx, ty = (cx - 4, 16) if sip else (cx - 7, 22)
-    d.line([(cx + 3, 26), (tx + 2, ty + 3)], fill=SKIN_W2, width=2)
+    # assiste à luta segurando a taça dourada de vinho
+    cx = 58
+    _dancer(d, cx, f, 1)
+    sip = f == 1
+    tx, ty = (cx - 3, 9) if sip else (cx - 9, 15)
+    d.line([(cx - 6, 17), (tx + 1, ty + 3)], fill=SKIN_C, width=2)
+    d.point((cx - 6, 19), fill=GOLD)
     d.polygon([(tx - 2, ty), (tx + 2, ty), (tx + 1, ty + 2), (tx - 1, ty + 2)], fill=GOLD)
     d.line([(tx, ty + 2), (tx, ty + 4)], fill=GOLD_D)
-    d.point((tx - 1, ty), fill=hexc("6a1020"))  # vinho
-    d.point((cx + 4, 28), fill=GOLD)  # bracelete
+    d.point((tx - 1, ty), fill=hexc("6a1020"))
+    d.line([(cx + 6, 17), (cx + 8, 24)], fill=SKIN_C, width=2)
 
 
 def _front(d):

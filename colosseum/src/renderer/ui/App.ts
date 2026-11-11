@@ -933,7 +933,7 @@ export class App implements AppActions {
         onReady: (engine) => {
           if (!this.battle) return;
           this.battle.engine = engine;
-          this.hud.show(engine, this.store.state.settings.battleSpeed, [myLevel, fight.def.level]);
+          this.hud.show(engine, this.store.state.settings.battleSpeed, [myLevel, fight.def.level], [me.visual.beast, them.visual.beast]);
           this.hud.setFavor(this.battle.favor);
         },
         onEvent: (e, engine) => {

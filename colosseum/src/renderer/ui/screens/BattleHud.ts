@@ -2,7 +2,7 @@
 import type { CombatEngine } from '../../core/combat/CombatEngine';
 import type { CombatEvent, FighterState } from '../../core/combat/CombatTypes';
 import { t } from '../../i18n';
-import { skillName } from '../../i18n/data';
+import { moveName } from '../../i18n/data';
 import { esc, fmtDuration } from '../dom';
 
 export interface HudCallbacks {
@@ -26,7 +26,10 @@ export class BattleHud {
     });
   }
 
-  show(engine: CombatEngine, speed: number, levels: [number, number]): void {
+  private beasts: Array<string | undefined> = [];
+
+  show(engine: CombatEngine, speed: number, levels: [number, number], beasts: Array<string | undefined> = []): void {
+    this.beasts = beasts;
     this.log = [];
     const plate = (f: FighterState, side: 0 | 1) => `
       <div class="plate plate-${side}">
@@ -98,7 +101,7 @@ export class BattleHud {
         this.push(`<b>${t('battle.fight')}</b>`);
         break;
       case 'skill':
-        this.push(`${name(e.side)}: <span class="gold">${esc(skillName(e.skill))}</span>`);
+        this.push(`${name(e.side)}: <span class="gold">${esc(moveName(e.skill, this.beasts[e.side]))}</span>`);
         break;
       case 'impact':
         if (e.crit && e.outcome === 'hit') this.push(t('battle.critBy', { name: name(e.side) }));

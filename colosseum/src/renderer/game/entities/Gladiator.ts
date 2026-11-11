@@ -11,7 +11,7 @@ interface Step {
 }
 
 /** escala das feras em relação ao quadro do gladiador */
-const BEAST_SCALE: Record<string, number> = { wolf: 0.62, boar: 0.62, bear: 0.78, lion: 0.72, dog: 0.9, cat: 0.8 };
+const BEAST_SCALE: Record<string, number> = { wolf: 0.66, boar: 0.66, bear: 0.95, lion: 0.74, dog: 0.9, cat: 0.8 };
 
 export class GladiatorView extends Phaser.GameObjects.Container {
   private manifest: GladiatorManifest;

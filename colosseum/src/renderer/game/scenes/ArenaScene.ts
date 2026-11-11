@@ -6,7 +6,7 @@ import type { FighterVisual } from '../../core/combat/CombatantFactory';
 import type { ActionKind, CombatantSpec, CombatEvent, CombatResult, FighterState, Side } from '../../core/combat/CombatTypes';
 import type { ArenaDef } from '../../core/data/arenas';
 import { t } from '../../i18n';
-import { arenaName, skillName } from '../../i18n/data';
+import { arenaName, moveName } from '../../i18n/data';
 import { sound } from '../../audio/SoundManager';
 import { WORLD } from '../assets';
 import { SkyLayer } from '../DayNight';
@@ -79,6 +79,8 @@ export class ArenaScene extends Phaser.Scene {
   private editor: Phaser.GameObjects.Sprite | null = null;
   private editorKind: 'group' | 'box' = 'box';
   private benchViews: Array<GladiatorView | null> = [];
+  /** fera de cada lado (nomes dos golpes) */
+  private beasts: Array<string | undefined> = [];
   private crowdExcite = 0;
   private crowdFrame = 0;
   private endTimer = -1;
@@ -156,6 +158,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     this.decorateArena(setup.arena.id);
+    this.beasts = setup.fighters.map((f) => f.visual.beast);
     this.views = this.engine.fighters.map((f, i) => {
       const v = new GladiatorView(this, f.x, GROUND_Y, setup.fighters[i].visual);
       v.setBaseScale(FIGHTER_SCALE);
@@ -776,7 +779,7 @@ export class ArenaScene extends Phaser.Scene {
       }
       case 'skill': {
         const v = this.viewOf(e.side);
-        if (e.skill !== 'counter') floatText(this, v.x, HEAD_Y - 12, skillName(e.skill), '#ffd36a', 12, 12, 1100);
+        if (e.skill !== 'counter') floatText(this, v.x, HEAD_Y - 12, moveName(e.skill, this.beasts[e.side]), '#ffd36a', 12, 12, 1100);
         if (e.skill === 'iron_guard') {
           v.setAura(true);
           sound.play('guard');
