@@ -110,7 +110,7 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'rank.level': 'Lv.',
   'rank.record': 'W–L',
   'rank.points': 'Pts',
-  'rank.hint': 'A win is worth 3 points and a loss 1. The other gladiators fight each other every night.',
+  'rank.hint': 'Points for your whole career: a win is worth 3 and a loss costs 1. The other gladiators fight each other every night, and the champion rarely loses.',
   'favor.label': 'Crowd favor',
   'result.thumbUp': 'Thumbs up! The crowd loved it: +{n} fame.',
   'result.thumbDown': 'Thumbs down: the crowd booed ({n} fame).',

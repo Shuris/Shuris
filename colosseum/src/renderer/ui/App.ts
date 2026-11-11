@@ -34,7 +34,7 @@ import {
 } from '../core/systems/DuoSystem';
 import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../core/systems/CrowdSystem';
 import { acceptQuest, declineQuest, expireQuest, makeOffering, questOffer, questOnArrive, questOnFight, questOnTrain, type QuestDone } from '../core/systems/QuestSystem';
-import { nightlyRanking, rankFight } from '../core/systems/RankingSystem';
+import { nightlyRanking } from '../core/systems/RankingSystem';
 import { questCard, questText } from './components/career';
 import { recordFightOnly } from '../core/systems/ProgressionSystem';
 import { abandonTournament, checkNoShow, closeTournament, playerMatch, recordPlayerFight, register, startTournament, timeForFight, TOURNAMENT_ENERGY } from '../core/systems/TournamentSystem';
@@ -1049,7 +1049,6 @@ export class App implements AppActions {
       notes.push(fx > 0 ? { text: t('result.thumbUp', { n: fx }) } : { text: t('result.thumbDown', { n: fx }), bad: true });
     }
     p.career.thumbsUp = Math.max(p.career.thumbsUp, Math.round(ctx.favor));
-    rankFight(p, won);
     const q = questOnFight(p, won, ctx.opponent.id, ctx.mode);
     if (q) notes.push({ text: this.questDoneText(q) });
     for (const inv of checkInvites(p)) {

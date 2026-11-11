@@ -11,7 +11,7 @@ import { CombatEngine } from '../../src/renderer/core/combat/CombatEngine';
 import { FRIEND_RESPECT, addRespect, duoBout, duoCheck, duoFoes, friends, newDuoRun, partnerDef, setPartner } from '../../src/renderer/core/systems/DuoSystem';
 import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../../src/renderer/core/systems/CrowdSystem';
 import { acceptQuest, expireQuest, makeOffering, offeringCost, questOffer, questOnArrive, questOnFight, questOnTrain } from '../../src/renderer/core/systems/QuestSystem';
-import { nightlyRanking, playerPosition, rankFight, rankTable } from '../../src/renderer/core/systems/RankingSystem';
+import { CHAMPION_ID, nightlyRanking, playerPosition, rankTable } from '../../src/renderer/core/systems/RankingSystem';
 import { parseSave, serialize } from '../../src/renderer/core/systems/SaveSystem';
 import { getArena } from '../../src/renderer/core/data/arenas';
 import type { PlayerState, QuestState } from '../../src/renderer/core/model/types';
@@ -254,9 +254,36 @@ describe('ranking da cidade', () => {
     expect(p.career.rank.reduce((s, e) => s + e.w + e.l, 0)).toBeGreaterThan(before);
     expect(nightlyRanking(p)).toBeNull(); // uma vez por noite
     const pos = playerPosition(p);
-    for (let i = 0; i < 40; i++) rankFight(p, true);
+    p.stats.wins += 40;
     expect(playerPosition(p)).toBeLessThan(pos);
     expect(getOpponent(p.career.rank[0].id) || true).toBeTruthy();
+  });
+
+  it('pontos saem do cartel: mais vitórias e menos derrotas ficam acima; Flamma lidera', () => {
+    const p = fresh();
+    p.stats.wins = 59;
+    p.stats.losses = 9;
+    const rows = rankTable(p);
+    expect(rows[0].id).toBe(CHAMPION_ID);
+    const me = rows.find((r) => r.player)!;
+    // ninguém com cartel pior fica à frente do jogador
+    for (const r of rows.slice(0, me.pos - 1)) expect(r.w * 3 - r.l).toBeGreaterThanOrEqual(59 * 3 - 9);
+    expect(me.pos).toBeLessThan(10);
+    // o campeão segue muito à frente mesmo depois de semanas de lutas noturnas
+    for (let d = 2; d < 60; d++) {
+      p.day = d;
+      nightlyRanking(p);
+    }
+    const champ = rankTable(p)[0];
+    expect(champ.id).toBe(CHAMPION_ID);
+    expect(champ.pts).toBeGreaterThan(me.pts * 3);
+  });
+
+  it('saves da 0.9.0 sem o campeão refazem a tabela', () => {
+    const p = fresh();
+    rankTable(p);
+    p.career.rank = p.career.rank.filter((e) => e.id !== CHAMPION_ID);
+    expect(rankTable(p)[0].id).toBe(CHAMPION_ID);
   });
 });
 

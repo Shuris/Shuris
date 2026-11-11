@@ -26,7 +26,9 @@ PAL = {
     "lion": dict(base="c8964e", hi="eec080", lo="8a5c2c", deep="5a3818", belly="e6c48e", muzzle="f0d8a8", nose="5a2a1e", claw="f2ecdc",
                  mane="8a4a1c", mane_hi="b8702e", mane_lo="4e2610"),
     "dog": dict(base="9a4e26", hi="c06a38", lo="6a3218", deep="3a1a0e", belly="a85a30", muzzle="a85a30", nose="2a140a", claw="e8dcc8"),
-    "cat": dict(base="d0843c", hi="eeaa62", lo="8e5222", deep="5a3010", belly="f2d6a8", muzzle="f2d6a8", nose="c86a6a", claw="f0e8d8"),
+    # gato malhado cinza (tabby): listras escuras, olhos verdes, focinho rosado
+    "cat": dict(base="9a948c", hi="d0cac0", lo="625c56", deep="34302c", belly="ece6da", muzzle="f2ece2", nose="e48a94", claw="f4f0e8",
+                stripe="3c3632", eye="9ad848", ear="e8a0a4"),
 }
 CITY_ANIMALS = ("dog", "cat")
 KINDS = list(PAL.keys())
@@ -400,9 +402,135 @@ def _bear_fallen(fall):
     return P.image()
 
 
+
+# ------------------------------------------------------------------ gato
+def _cat(pose):
+    """Gato: corpo esguio e baixo, cabeça redonda erguida com orelhas grandes em
+    triângulo, focinho curto, olhos verdes, bigodes e cauda longa erguida em gancho.
+    Malhado (listras escuras no dorso, nas pernas e anéis na cauda)."""
+    c = PAL["cat"]
+    fall = pose.get("fall", 0)
+    P = Painter()
+    dx = pose.get("dx", 0)
+    lift = pose.get("lift", 0)
+    crouch = pose.get("crouch", 0)
+    rear = pose.get("rear", 0)
+    breath = pose.get("breath", 0)
+    phase, walk = pose.get("phase", 0), pose.get("walk", 0)
+    claws = pose.get("claws", 0)
+    leg = max(2, int(10 * (1 - fall * 0.8)))
+    L = 26
+    cx = FEET[0] + dx - 2
+    ground = FEET[1]
+    hip_y = ground - leg - lift + crouch + fall * 2
+    top = hip_y - 8 + int(breath * 0.6)
+    back_x, front_x = cx - L / 2, cx + L / 2
+
+    def leg_draw(i, lx, ph, far):
+        front = i >= 2
+        hx = cx + lx
+        hy = hip_y - 2 - (rear if front else 0)
+        swing = math.sin(phase + ph) * 4 * walk
+        fx = hx + swing + (claws * 5 if front else 0)
+        fy = ground - max(0, math.cos(phase + ph)) * 2 * walk - (lift * 0.9 if front and claws else lift * 0.3)
+        if fall:
+            fx, fy = hx + (4 if front else -4) * fall, ground - 1
+        col = (c["lo"], c["deep"], c["lo"]) if far else (c["base"], c["lo"], c["hi"])
+        kx = (hx + fx) / 2 + (1.5 if not front else -1)
+
+        def draw(d):
+            capsule(d, (hx, hy), (kx, (hy + fy) / 2), 2.6 if not front else 2.1, 1.7)
+            capsule(d, (kx, (hy + fy) / 2), (fx, fy - 1), 1.7, 1.5)
+        P.part(draw, col[0], col[2], col[1], fur=0.15, seed=i + 3)
+        # patinha clara e listras na perna
+        P.line([(fx - 1, fy), (fx + 2, fy)], c["belly"] if not far else c["lo"], 1)
+        if not far:
+            P.px((hx + kx) / 2, (hy + (hy + fy) / 2) / 2, c["stripe"])
+        if claws and front:
+            for k in range(3):
+                P.px(fx + 2 + k % 2, fy - 2 + k, c["claw"])
+
+    legs = [(-L * 0.34, 0, True), (-L * 0.24, math.pi, False), (L * 0.30, math.pi, True), (L * 0.38, 0, False)]
+    for i, (lx, ph, far) in enumerate(legs):
+        if far:
+            leg_draw(i, lx, ph, True)
+
+    # cauda longa: sobe da garupa e faz um gancho no alto (abaixada na derrota)
+    tail = pose.get("tail", 0)
+    tx, ty = back_x + 1, top + 3
+    if fall:
+        pts = [(tx, ty + 2), (tx - 8, ty + 5 + fall * 3), (tx - 16, ty + 6 + fall * 4)]
+    else:
+        pts = [(tx, ty + 1), (tx - 4, ty - 6), (tx - 5 - tail, ty - 14), (tx - 3 - tail * 1.5, ty - 20), (tx + 1 - tail, ty - 22)]
+    P.part(lambda d: [capsule(d, a, b, 2.0, 1.8) for a, b in zip(pts, pts[1:])], c["base"], c["hi"], c["lo"], fur=0.15, seed=5)
+    for a, b in list(zip(pts, pts[1:]))[1:]:  # anéis escuros
+        mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+        P.line([(mx - 1.5, my), (mx + 1.5, my)], c["stripe"], 1)
+    P.px(pts[-1][0], pts[-1][1], c["stripe"])  # ponta escura
+
+    # corpo esguio, dorso levemente arqueado
+    def body(d):
+        d.ellipse([back_x - 2, top, back_x + 13, hip_y + 1], fill=255)
+        d.ellipse([front_x - 13, top - rear - 1, front_x + 2, hip_y - rear / 2 + 1], fill=255)
+        d.polygon([(back_x + 4, top + 1), (front_x - 6, top - rear), (front_x - 3, hip_y - rear / 2), (back_x + 5, hip_y + 1)], fill=255)
+    P.part(body, c["base"], c["hi"], c["lo"], fur=0.25, seed=11)
+    P.part(lambda d: d.polygon([(back_x + 6, hip_y - 2), (front_x - 4, hip_y - 3 - rear / 2), (front_x - 5, hip_y - rear / 2 + 1), (back_x + 7, hip_y + 1)], fill=255),
+           c["belly"], c["belly"], c["hi"], seed=12)
+    # listras do dorso (tigrado)
+    for k in range(5):
+        x = back_x + 4 + k * 4.5
+        y = top + 1 - rear * (k / 5)
+        P.line([(x, y), (x + 1, y + 4)], c["stripe"], 1)
+
+    for i, (lx, ph, far) in enumerate(legs):
+        if not far:
+            leg_draw(i, lx, ph, False)
+
+    # cabeça redonda erguida acima do peito
+    hx = front_x + 2 + claws
+    hy = top - 4 - rear + pose.get("head_dy", 0) + fall * 7
+    mouth = pose.get("mouth", 0)
+    # orelhas grandes em triângulo (atrás da cabeça), com miolo rosado
+    for ox, sh in ((-4, c["lo"]), (1, c["base"])):
+        P.part(lambda d, ox=ox: d.polygon([(hx + ox - 1, hy - 3), (hx + ox + 1, hy - 11), (hx + ox + 4, hy - 3)], fill=255), sh, c["hi"], c["deep"])
+    P.part(lambda d: d.polygon([(hx + 1, hy - 4), (hx + 2, hy - 8), (hx + 3, hy - 4)], fill=255), c["ear"], c["ear"], c["nose"])
+    P.part(lambda d: d.ellipse([hx - 5, hy - 6, hx + 6, hy + 4], fill=255), c["base"], c["hi"], c["lo"], fur=0.2, seed=22)
+    # bochecha e focinho curto claros
+    P.part(lambda d: d.ellipse([hx + 1, hy - 1, hx + 7, hy + 4], fill=255), c["muzzle"], c["muzzle"], c["belly"], seed=23)
+    # testa listrada ("M" do gato malhado)
+    P.line([(hx - 1, hy - 5), (hx, hy - 3)], c["stripe"])
+    P.line([(hx + 2, hy - 5), (hx + 2, hy - 3)], c["stripe"])
+    # olho grande verde com pupila em fenda
+    if fall < 0.75:
+        P.px(hx + 3, hy - 2, c["eye"])
+        P.px(hx + 4, hy - 2, c["eye"])
+        P.px(hx + 4, hy - 1, c["deep"])
+        P.px(hx + 3, hy - 1, c["eye"])
+    else:
+        P.line([(hx + 3, hy - 1), (hx + 5, hy - 1)], c["deep"])
+    P.px(hx + 6, hy, c["nose"])  # narizinho rosado
+    if mouth > 0:  # boca aberta sibilando, com presinhas
+        mo = 1 + mouth * 2.5
+        P.part(lambda d: d.polygon([(hx + 3, hy + 2), (hx + 8, hy + 1), (hx + 7, hy + 2 + mo), (hx + 3, hy + 3)], fill=255), "7a1c22", "9a2a30", "4a0c10")
+        P.px(hx + 7, hy + 2, c["claw"])
+        P.px(hx + 6, hy + 1 + mo, c["claw"])
+    # bigodes longos
+    for wy in (0, 2):
+        P.line([(hx + 6, hy + 1 + wy * 0.5), (hx + 11, hy + wy - 1)], "f6f2ea")
+    img = P.image()
+    tilt = pose.get("tilt", 0) - fall * 4
+    if tilt:
+        img = img.rotate(tilt, resample=Image.NEAREST, center=FEET)
+    return img
+
+
 # ------------------------------------------------------------------ saída
 def _draw(kind, pose):
-    return _bear(pose) if kind == "bear" else _quadruped(kind, pose)
+    if kind == "bear":
+        return _bear(pose)
+    if kind == "cat":
+        return _cat(pose)
+    return _quadruped(kind, pose)
 
 
 def sheets():

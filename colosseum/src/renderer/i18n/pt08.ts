@@ -114,7 +114,7 @@ export const PT08 = {
   'rank.level': 'Nív.',
   'rank.record': 'V–D',
   'rank.points': 'Pts',
-  'rank.hint': 'Vitória vale 3 pontos e derrota 1. Os outros gladiadores lutam entre si todas as noites.',
+  'rank.hint': 'Pontos pela carreira inteira: vitória vale 3 e derrota tira 1. Os outros gladiadores lutam entre si todas as noites, e o campeão não costuma perder.',
   // favor da plateia
   'favor.label': 'Favor da plateia',
   'result.thumbUp': 'Polegar para cima! A plateia adorou: +{n} de fama.',
