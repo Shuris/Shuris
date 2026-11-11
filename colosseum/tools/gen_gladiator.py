@@ -282,18 +282,15 @@ def layer_arm_top(s, skin):
 
 
 def layer_cloth(s):
-    """Subligáculo (tanga) com dobras e aba da frente — cinza para tingir."""
     img, d = draw_canvas(FW, FH)
     hx, hy = R(s["hip"])
     g = (215, 215, 215)
     poly(d, [(hx - 4, hy - 1), (hx + 4, hy - 1), (hx + 4, hy + 3), (hx + 2, hy + 7),
              (hx - 1, hy + 6), (hx - 4, hy + 3)], g)
-    poly(d, [(hx, hy + 1), (hx + 3, hy + 1), (hx + 2, hy + 9), (hx + 1, hy + 9)], (200, 200, 200))  # aba
     img = finish(img)
     d = _d(img)
-    for p in ((hx - 2, hy + 1), (hx - 2, hy + 3), (hx + 1, hy + 3), (hx + 2, hy + 6)):
-        px(d, p, (160, 160, 160))  # dobras
-    d.line([(hx - 3, hy - 1), (hx + 3, hy - 1)], fill=(236, 236, 236))
+    px(d, (hx + 1, hy + 2), (170, 170, 170))
+    px(d, (hx + 1, hy + 4), (170, 170, 170))
     return img
 
 
