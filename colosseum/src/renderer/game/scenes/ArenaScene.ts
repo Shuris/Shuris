@@ -76,7 +76,8 @@ export class ArenaScene extends Phaser.Scene {
   private insets: Insets = { right: 0, top: 0, bottom: 0 };
   private crowd!: Phaser.GameObjects.Sprite;
   private crowdTimer = 0;
-  private editor: GladiatorView | null = null;
+  private editor: Phaser.GameObjects.Sprite | null = null;
+  private editorKind: 'group' | 'box' = 'box';
   private benchViews: Array<GladiatorView | null> = [];
   private crowdExcite = 0;
   private crowdFrame = 0;
@@ -319,7 +320,6 @@ export class ArenaScene extends Phaser.Scene {
       v.tick(dt);
     });
     for (const b of this.benchViews) b?.tick(dt);
-    this.editor?.tick(dt);
     const mid = (this.views[0].x + this.views[1].x) / 2;
     this.camX += (mid - this.camX) * Math.min(1, dt * 3);
     this.layout();
@@ -376,16 +376,11 @@ export class ArenaScene extends Phaser.Scene {
       this.tweens.add({ targets: bars, y: 172, duration: 800, ease: 'Sine.Out' });
       this.time.delayedCall(3700, () => this.tweens.add({ targets: bars, y: 206, duration: 600, ease: 'Bounce.Out' }));
     }
+    // o editor dos jogos no camarote, recostado entre duas cortesãs
     const pulvinar = id === 'rome' || id === 'senator' || id === 'baiae';
-    if (!pulvinar) this.add.image(285, 157, 'fx:tribune').setOrigin(0).setDepth(1.2);
-    this.editor = new GladiatorView(this, 320, pulvinar ? 199 : 193, {
-      appearance: { skin: 0, hairStyle: 1, hairColor: 4, beard: true, clothColor: 0 },
-      gear: {},
-      extra: [{ sheet: 'robe', tint: 0xf2ece0 }],
-    });
-    this.editor.setBaseScale(0.42);
-    this.editor.setDepth(1.3);
-    this.editor.play('idle', { fps: 2 });
+    this.editorKind = pulvinar ? 'group' : 'box';
+    this.editor = this.add.sprite(320, pulvinar ? 205 : 203, `fx:editor_${this.editorKind}`, 0).setOrigin(0.5, 1).setDepth(1.3);
+    this.editor.play(`editor_${this.editorKind}_watch`);
   }
 
   /** Flores (ou moedas) jogadas pela plateia; ficam na areia até o fim da luta. */
@@ -808,7 +803,7 @@ export class ArenaScene extends Phaser.Scene {
           for (let i = 0; i < 40; i++) this.time.delayedCall(i * 60, () => this.throwGift(this.views[0].x, false));
           // a plateia joga moedas para o vencedor e o editor dos jogos se levanta
           for (let i = 0; i < 22; i++) this.time.delayedCall(200 + i * 90, () => this.throwGift(this.views[0].x, true));
-          this.editor?.play('victory', { fps: 3 });
+          this.editor?.play(`editor_${this.editorKind}_cheer`);
         }
         if (this.zoomTarget === 1) {
           this.zoomTarget = 1.25;

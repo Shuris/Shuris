@@ -32,6 +32,7 @@ import gen_v06  # noqa: E402
 import gen_news  # noqa: E402
 import gen_beasts  # noqa: E402
 import gen_v09  # noqa: E402
+import gen_editor  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ASSETS = os.path.join(ROOT, "src", "renderer", "public", "assets")
@@ -122,6 +123,10 @@ def main():
     gen_v09.banner_wave().save(os.path.join(fx, "banner_wave.png"))
     gen_v09.gate_bars().save(os.path.join(fx, "gate_bars.png"))
     gen_v09.tribune().save(os.path.join(fx, "tribune.png"))
+    # camarote do editor dos jogos com as cortesãs (4 quadros)
+    eds, _, _ = gen_editor.sheets()
+    for name, img in eds.items():
+        img.save(os.path.join(fx, name + ".png"))
     for name, img in {**gen_v06.props(), **gen_v06.home_props(), **gen_v06.place_props()}.items():
         img.save(os.path.join(fx, name + ".png"))
     people = gen_v06.portraits(os.path.join(ASSETS, "portraits"))
