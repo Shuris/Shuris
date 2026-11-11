@@ -321,7 +321,7 @@ export class ArenaScene extends Phaser.Scene {
       const v = this.views[i];
       const c = this.choreo[i];
       const d = this.dirTo[i];
-      const x = Phaser.Math.Clamp(ex[i] - d * SPREAD + d * (c.lunge - c.push), 30, WORLD.width - 30);
+      const x = Phaser.Math.Clamp(ex[i] + (this.back ? DUO_FRONT_SHIFT : 0) - d * SPREAD + d * (c.lunge - c.push), 30, WORLD.width - 30);
       v.setPose(c.lift, c.tilt);
       if (Math.abs(x - v.x) > 0.01 && (f.action === 'advance' || f.action === 'retreat' || f.action === 'intro')) {
         this.dustTimer[i] -= dt;
@@ -892,8 +892,11 @@ export class ArenaScene extends Phaser.Scene {
 
 
 /** escala e recuo do duelo do fundo (luta de dupla) */
-const BACK_SCALE = FIGHTER_SCALE * 0.8;
-const BACK_Y = GROUND_Y - 30;
+const BACK_SCALE = FIGHTER_SCALE * 0.78;
+const BACK_Y = GROUND_Y - 38;
+/** na dupla, os dois duelos ficam em diagonal: o da frente à esquerda, o do fundo à direita */
+const DUO_FRONT_SHIFT = -56;
+const DUO_BACK_SHIFT = 64;
 
 /**
  * Segundo duelo da luta de dupla: o parceiro do jogador contra o outro adversário,
@@ -927,7 +930,7 @@ export class BackDuel {
 
   /** posição do motor -> tela (um pouco mais fechado, como em perspectiva) */
   private mapX(x: number): number {
-    return 320 + (x - 320) * 0.86;
+    return 320 + DUO_BACK_SHIFT + (x - 320) * 0.86;
   }
 
   setSpeed(s: number): void {
