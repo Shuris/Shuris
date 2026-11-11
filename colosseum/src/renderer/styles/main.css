@@ -526,3 +526,14 @@ em.down { color: var(--red-hi); }
 .hero-card.compact .big-stats .px-icon { width: 16px; height: 16px; }
 .arena-tabs .btn { position: relative; }
 .arena-tabs .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #e8b040; box-shadow: 0 0 4px #e8b040; vertical-align: middle; }
+
+/* Intro da luta: nomes e epítetos dos dois lutadores */
+.fight-intro { position: absolute; left: 0; right: 0; bottom: 5%; display: flex; justify-content: center; align-items: center; gap: 28px; pointer-events: none; z-index: 6; opacity: 0; transition: opacity 0.4s; }
+.fight-intro.on { opacity: 1; }
+.fight-intro.off { opacity: 0; }
+.fi-card { display: flex; flex-direction: column; gap: 2px; padding: 8px 18px; background: linear-gradient(180deg, rgba(42, 24, 14, 0.92), rgba(20, 12, 8, 0.92)); border: 2px solid var(--bronze); box-shadow: 0 0 0 2px #000; min-width: 220px; transform: translateX(-40px); transition: transform 0.45s ease-out; }
+.fi-card.fi-1 { text-align: right; transform: translateX(40px); }
+.fight-intro.on .fi-card { transform: none; }
+.fi-card b { font-size: 34px; color: var(--gold-hi); text-shadow: 2px 2px 0 #000; }
+.fi-card span { font-size: 22px; color: var(--cream); }
+.fi-vs { font-size: 46px; color: #e06a5a; text-shadow: 3px 3px 0 #000; }

@@ -168,4 +168,8 @@ export const PT08 = {
   'npc.rival.verus': 'Velocidade não foi suficiente contra você. Interessante.|Termas, vinho e um bom rival. A vida é boa.|Me ensina aquela esquiva?',
   'npc.rival.priscus': 'Não fale comigo.|Você roubou a minha glória. Não esqueço.|Ria enquanto pode, {name}.|Cada vez que te vejo, o sangue ferve.',
   'npc.rival.flamma': 'Faz tempo que ninguém me derrubava. Bem-vindo ao topo, {name}.|O povo agora grita o seu nome. Aproveite, passa rápido.|Os deuses gostam de você. Eu também.',
+  'season.spring': 'Primavera',
+  'season.summer': 'Verão',
+  'season.autumn': 'Outono',
+  'season.winter': 'Inverno',
 } as const;

@@ -1,6 +1,17 @@
 # Funcionalidades — versão 0.9.1
 
 ## Novidades da 0.9.1
+- **Rivais pela cidade**: cada adversário da escada, depois de derrotado, passa a ser encontrado num lugar fixo (Marcus e Crixus na taverna, Cassius e Priscus no mercado, Brutus no ludus, Spiculus e Flamma no templo, Rufus e Verus nas termas). O cartão "Rivais por aqui" permite uma conversa por dia (+20 de respeito). **Brutus, Crixus e Priscus odeiam você de verdade**: só respondem com desprezo e nunca viram amigos nem parceiros. A rodada paga na taverna para rivais saiu.
+- **Missões removidas.**
+- **Estados (ferido, cansado, motivado) só no painel** do canto superior esquerdo, não mais sobre a cabeça.
+- **Treinador comenta cada atributo que sobe** (força, resistência, agilidade ou técnica), sem anunciar o nível do personagem.
+- **Nomes ao passar o mouse** sobre os personagens principais (Quintus, Lívia, Irmão Silvano, Doctore Aurelius ou Instrutor Gaius, Tito, Zenon, Galeno e os rivais).
+- **Balões presos à cabeça**: o rabicho fica sempre sobre quem fala; só a caixa desliza para dentro da tela. O guarda do fórum ficou mais perto do centro.
+- **Aba Gladiador**: boneco em cima e equipamentos empilhados, sem barra de rolagem lateral. Os textos de dica que apareciam ao passar o mouse foram removidos.
+- **Sombras suaves** sob cada lutador, **poças que refletem** os lutadores na chuva e **pegadas na areia**.
+- **Arquibancada viva**: bandeirinhas acenando (à esquerda torcem por você, à direita pelo adversário), vendedores com cestos na cabeça passando pelos corredores e a torcida do lado de quem acerta se agitando.
+- **Intro cinematográfica**: a câmera passa pela plateia, pelo camarote e pela outra arquibancada enquanto os lutadores entram; depois aparecem os nomes e epítetos. Clicar pula.
+- **Clima e estações**: neblina de manhã, quatro estações de 10 dias (a estação aparece no painel), folhas caindo no outono e guirlandas na cidade e no mapa nos dias de festa.
 - **Lutas de dupla simultâneas**: você enfrenta um adversário na frente e o seu parceiro luta com o outro ao mesmo tempo, mais ao fundo da arena. O HUD mostra duas barras de vida de cada lado (a de baixo é a do duelo do fundo). Quem vencer os dois duelos vence a luta. Se cada dupla vencer um, os dois sobreviventes lutam um desempate com a vida que sobrou. Desistir encerra os dois duelos.
 - **Ranking corrigido**: os pontos saem do cartel da carreira inteira (vitória vale 3, derrota tira 1), inclusive das lutas anteriores à tabela. Todos os rivais da escada estão na tabela. **Flamma**, o campeão, começa muito à frente (214–11) e luta e quase sempre vence todas as noites: alcançá-lo exige uma carreira longa. Saves da 0.9.0 têm a tabela refeita.
 - **Gato redesenhado**: malhado cinza com listras, cabeça redonda, orelhas grandes, olhos verdes, bigodes e cauda longa erguida em gancho. Não se confunde mais com o cão.
@@ -23,13 +34,6 @@
 - **Favor da plateia**: barra no alto da luta. Sobe com críticos, golpes fortes, contra-ataques e esquivas; cai quando você apanha, erra ou desiste.
   - No fim da luta a plateia mostra o polegar: para cima dá fama extra.
   - Numa derrota com polegar para cima a plateia poupa você (não perde fama); com polegar para baixo você perde um pouco mais.
-- **Missões curtas dos moradores**, uma por vez, com prazo de 3 dias:
-  - Quintus: vencer um rival ou desafiantes do dia.
-  - Taverneira: entregar uma ânfora em outro local.
-  - Monge: oferenda no altar.
-  - Instrutor: treinos.
-  - Ferreiro: vitórias.
-  - Pagam em moedas, fama ou itens.
 - **Ranking da cidade** no Fórum: os 10 melhores gladiadores e a sua posição, com setas de subida e descida. Os outros gladiadores lutam entre si todas as noites, e as zebras viram manchete.
 
 ### Visual

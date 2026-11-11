@@ -15,6 +15,8 @@ import { getItem } from '../../core/data/equipment';
 import { npcLine } from '../../core/data/dialogue';
 import { speech } from '../speech';
 import { applyLook } from '../shaders';
+import { addAmbience, type Ambience } from '../ambience';
+import { seasonOf } from '../../core/systems/WeatherSystem';
 import type { PlayerLook } from '../portraits';
 
 export interface HubData {
@@ -48,6 +50,8 @@ export interface HubData {
   status?: string[];
   /** rivais derrotados que costumam ficar neste local */
   rivals?: Array<{ id: string; name: string; visual: FighterVisual; hater: boolean }>;
+  /** dia do jogo (estação: folhas no outono) */
+  day?: number;
 }
 
 /** Figurante com falas próprias (balões de vez em quando). */
@@ -110,6 +114,7 @@ export class HubScene extends Phaser.Scene {
   private monk: Phaser.GameObjects.Sprite | null = null;
   private monkTimer = 0;
   private talkers: Talker[] = [];
+  private ambience: Ambience | null = null;
   private data_!: HubData;
   /** objetos criados por spawnPeople (refeitos quando começa/para a chuva) */
   private people: Phaser.GameObjects.GameObject[] = [];
@@ -159,6 +164,20 @@ export class HubScene extends Phaser.Scene {
     this.baseProps = this.props.length;
     this.spawnPeople();
     this.ambientFx(data.location, data.outdoor);
+    // neblina da manhã, folhas no outono e guirlandas nos dias de festa (só ao ar livre)
+    this.ambience = data.outdoor
+      ? addAmbience(this, {
+          minutes: () => data.time() * 1440,
+          season: seasonOf(data.day ?? 1),
+          festival: !!data.festival && data.location !== 'arena',
+          area: { x: 0, y: 140, w: WORLD.width, h: 230 },
+          garlands: [
+            [10, 168, 210, 172],
+            [210, 172, 430, 170],
+            [430, 170, 632, 168],
+          ],
+        })
+      : null;
     if (data.location === 'ludus') {
       this.palus = this.add.sprite(352, GROUND, ups.has('iron_palus') ? 'fx:palus_iron' : 'fx:palus', 0).setOrigin(0.5, 1).setDepth(depthAt(GROUND));
       if (ups.has('bronze_palus')) this.palus.setTint(0xe8a860);
@@ -285,8 +304,8 @@ export class HubScene extends Phaser.Scene {
   private spawnRivals(): void {
     const list = this.data_.rivals ?? [];
     list.forEach((r, i) => {
-      const y = GROUND + 6 + (i % 2) * 10;
-      const v = new GladiatorView(this, this.freeX(176 + i * 96, y), y, r.visual);
+      const y = GROUND + 12 + (i % 2) * 8;
+      const v = new GladiatorView(this, this.freeX(236 + i * 88, y), y, r.visual);
       v.setBaseScale(1);
       v.setFacing(r.hater ? -1 : 1);
       v.setDepth(depthAt(y));
@@ -896,6 +915,7 @@ export class HubScene extends Phaser.Scene {
 
   update(_t: number, delta: number): void {
     const dt = Math.min(0.1, delta / 1000);
+    this.ambience?.update(dt);
     this.hero?.tick(dt);
     this.updateNpcs(dt);
     this.updatePigeons(dt);

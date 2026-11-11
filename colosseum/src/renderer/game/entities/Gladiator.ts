@@ -22,7 +22,11 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   private weaponIndex = 0;
   private weaponTop = new Set<number>();
   private baseTints: number[] = [];
-  private shadow: Phaser.GameObjects.Ellipse;
+  private shadow: Phaser.GameObjects.Image;
+  /** reflexo (cópia espelhada que segue os quadros deste lutador) */
+  private mirrorSrc: GladiatorView | null = null;
+  private shadowW = 32;
+  private shadowH = 8;
   /** corpo (camadas + arma + aura): pode subir (salto) e inclinar sem mover a sombra */
   private rig: Phaser.GameObjects.Container;
   private anim = 'idle';
@@ -43,7 +47,8 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     super(scene, x, y);
     this.manifest = getManifest(scene);
     this.weaponTop = new Set(this.manifest.weaponTop ?? []);
-    this.shadow = scene.add.ellipse(0, 0, 26, 6, 0x000000, 0.28);
+    // sombra suave (degradê radial) sob os pés
+    this.shadow = scene.add.image(0, 0, softShadowTexture(scene)).setDisplaySize(this.shadowW, this.shadowH).setAlpha(0.9);
     this.add(this.shadow);
     this.rig = scene.add.container(0, 0);
     // folhas em resolução dupla: o corpo é desenhado na escala 1/res
@@ -71,7 +76,9 @@ export class GladiatorView extends Phaser.GameObjects.Container {
       this.layers.push(s);
       this.baseTints.push(0xffffff);
       this.rig.add(s);
-      this.shadow.setSize(34, 6);
+      this.shadowW = 42;
+      this.shadowH = 9;
+      this.shadow.setDisplaySize(this.shadowW, this.shadowH);
       this.applyFrame();
       return;
     }
@@ -128,7 +135,8 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   setPose(lift: number, tilt: number): void {
     this.rig.y = -lift;
     this.rig.angle = -tilt;
-    this.shadow.setScale(1 - Math.min(0.5, lift / 30));
+    const k = 1 - Math.min(0.5, lift / 30);
+    this.shadow.setDisplaySize(this.shadowW * k, this.shadowH * k);
   }
 
   setBaseScale(s: number): void {
@@ -207,8 +215,39 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     }
   }
 
+  /**
+   * Vira o reflexo de outro lutador (poças na chuva): sem sombra, de cabeça para baixo,
+   * copiando o quadro, a arma e a pose do original a cada tick.
+   */
+  mirror(src: GladiatorView): void {
+    this.mirrorSrc = src;
+    this.shadow.setVisible(false);
+  }
+
+  private copyFrom(src: GladiatorView): void {
+    this.layers.forEach((l, i) => {
+      const o = src.layers[i];
+      if (o) l.setFrame(o.frame.name);
+    });
+    if (this.weapon && src.weapon) {
+      this.weapon.setPosition(src.weapon.x, src.weapon.y).setAngle(src.weapon.angle).setVisible(src.weapon.visible);
+      const si = src.rig.getIndex(src.weapon);
+      if (this.rig.getIndex(this.weapon) !== si) this.rig.moveTo(this.weapon, si);
+    }
+    // o espelhamento (escala Y negativa) já inverte a altura do salto e a inclinação
+    this.rig.setPosition(src.rig.x, src.rig.y);
+    this.rig.angle = src.rig.angle;
+    this.x = src.x;
+    const sx = src.scaleX;
+    this.setScale(sx, -Math.abs(src.scaleY));
+  }
+
   tick(dt: number): void {
     if (!this.active) return;
+    if (this.mirrorSrc) {
+      if (this.mirrorSrc.active) this.copyFrom(this.mirrorSrc);
+      return;
+    }
     if (this.flashTime > 0) {
       this.flashTime -= dt;
       if (this.flashTime <= 0) {
@@ -239,4 +278,24 @@ export class GladiatorView extends Phaser.GameObjects.Container {
       this.applyFrame();
     }
   }
+}
+
+/** Textura da sombra suave: elipse com degradê radial (escura no centro, some na borda). */
+export function softShadowTexture(scene: Phaser.Scene): string {
+  const key = 'fx:softshadow';
+  if (scene.textures.exists(key)) return key;
+  const tex = scene.textures.createCanvas(key, 64, 16);
+  if (!tex) return key;
+  const ctx = tex.getContext();
+  ctx.save();
+  ctx.scale(1, 0.25);
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(0,0,0,0.5)');
+  g.addColorStop(0.55, 'rgba(0,0,0,0.3)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  ctx.restore();
+  tex.refresh();
+  return key;
 }

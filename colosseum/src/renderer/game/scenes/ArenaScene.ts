@@ -55,6 +55,8 @@ export interface BattleSetup {
   bench?: [FighterVisual | null, FighterVisual | null];
   /** luta de dupla: o segundo duelo (parceiro x outro adversário), ao mesmo tempo, mais ao fundo */
   back?: { fighters: [{ spec: CombatantSpec; visual: FighterVisual }, { spec: CombatantSpec; visual: FighterVisual }]; seed: number };
+  /** apresentação dos lutadores na intro (nome e epíteto de cada lado); sem isso, não há intro */
+  cards?: [{ name: string; sub: string }, { name: string; sub: string }];
 }
 
 export interface BattleHandlers {
@@ -167,6 +169,7 @@ export class ArenaScene extends Phaser.Scene {
     }
 
     this.decorateArena(setup.arena.id);
+    this.liveStands();
     this.beasts = setup.fighters.map((f) => f.visual.beast);
     this.views = this.engine.fighters.map((f, i) => {
       const v = new GladiatorView(this, f.x, GROUND_Y, setup.fighters[i].visual);
@@ -177,6 +180,7 @@ export class ArenaScene extends Phaser.Scene {
       return v;
     });
     this.prevX = this.engine.fighters.map((f) => f.x);
+    this.makeWetGround(setup);
     // dupla: quem espera a vez fica no portão do seu lado, torcendo
     this.benchViews = (setup.bench ?? [null, null]).map((vis, i) => {
       if (!vis) return null;
@@ -226,11 +230,69 @@ export class ArenaScene extends Phaser.Scene {
     this.lastQuip = -99;
     this.talkQueue = [];
     this.talking = false;
-    this.time.delayedCall(900, () => {
+    this.time.delayedCall(setup.cards ? 2600 : 900, () => {
       this.say(1, setup.talk?.intro ?? 'intro');
       this.say(0, 'reply');
     });
     bigText(this, 320, 230, arenaName(this.arenaDef), '#f4dc8a', 22);
+    this.startIntroCine(setup);
+  }
+
+  // ------------------------------------------------------------------ intro cinematográfica
+  private cine: { t: number; dur: number } | null = null;
+  private cineCards: HTMLElement | null = null;
+
+  /**
+   * A câmera passa pela plateia, pelo camarote do editor e pela outra arquibancada
+   * enquanto os lutadores entram; ao chegar neles, aparecem os nomes e epítetos.
+   * Clicar pula a intro.
+   */
+  private startIntroCine(setup: BattleSetup): void {
+    this.cine = null;
+    this.cineCards?.remove();
+    this.cineCards = null;
+    if (!setup.cards) return;
+    this.cine = { t: 0, dur: 3.3 };
+    const host = this.game.canvas.parentElement;
+    if (host) {
+      const el = document.createElement('div');
+      el.className = 'fight-intro';
+      el.innerHTML = setup.cards
+        .map((c, i) => `<div class="fi-card fi-${i}"><b>${escapeHtml(c.name)}</b><span>${escapeHtml(c.sub)}</span></div>`)
+        .join('<div class="fi-vs">VS</div>');
+      host.appendChild(el);
+      this.cineCards = el;
+      this.time.delayedCall(2100, () => el.classList.add('on'));
+      this.time.delayedCall(5200, () => el.classList.add('off'));
+      this.time.delayedCall(6000, () => el.remove());
+    }
+    this.input.once('pointerdown', () => this.endCine());
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cineCards?.remove());
+  }
+
+  private endCine(): void {
+    if (!this.cine) return;
+    this.cine = null;
+    this.layout();
+  }
+
+  /** Posição da câmera da intro: (x, y, zoom) ao longo do tempo. */
+  private cineView(): { x: number; y: number; zoom: number } | null {
+    if (!this.cine) return null;
+    const k = Math.min(1, this.cine.t / this.cine.dur);
+    const keys: Array<[number, number, number, number]> = [
+      [0, 120, 202, 2.3],
+      [0.32, 320, 198, 2.6],
+      [0.58, 520, 204, 2.2],
+      [1, this.camX, 252, 1],
+    ];
+    let i = 0;
+    while (i < keys.length - 2 && k > keys[i + 1][0]) i++;
+    const [k0, x0, y0, z0] = keys[i];
+    const [k1, x1, y1, z1] = keys[i + 1];
+    const u = Phaser.Math.Clamp((k - k0) / Math.max(0.001, k1 - k0), 0, 1);
+    const e = u * u * (3 - 2 * u);
+    return { x: x0 + (x1 - x0) * e, y: y0 + (y1 - y0) * e, zoom: z0 + (z1 - z0) * e };
   }
 
   setSpeed(s: number): void {
@@ -252,6 +314,11 @@ export class ArenaScene extends Phaser.Scene {
 
   layout(): void {
     if (!this.cameras?.main) return;
+    const cv = this.cineView();
+    if (cv) {
+      frameCamera(this.cameras.main, { x: 0, y: 160, w: 460 / cv.zoom, h: 175 / cv.zoom }, this.insets, { x: cv.x, y: cv.y }, 6 * cv.zoom);
+      return;
+    }
     const b = this.zoomBoost;
     const c = this.cineFocus;
     const cx = c ? this.camX + (c.x - this.camX) * Math.min(1, (b - 1) / 0.6) : this.camX;
@@ -285,6 +352,10 @@ export class ArenaScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     // passo real limitado a 1/4 s: em PCs lentos a luta não fica mais lenta que o relógio
     const realDt = Math.min(0.25, delta / 1000);
+    if (this.cine) {
+      this.cine.t += realDt;
+      if (this.cine.t >= this.cine.dur) this.endCine();
+    }
     // câmera lenta do nocaute (volta ao normal aos poucos)
     if (this.slowTimer > 0) {
       this.slowTimer -= realDt;
@@ -328,6 +399,7 @@ export class ArenaScene extends Phaser.Scene {
         if (this.dustTimer[i] <= 0) {
           if (this.sky.weather.rain > 0.15) this.sky.splash(x, GROUND_Y, 1.2);
           else dust(this, x, GROUND_Y, 1);
+          this.footprint(x, GROUND_Y, f.facing);
           sound.play('step', 0.6);
           this.dustTimer[i] = 0.3;
         }
@@ -337,6 +409,7 @@ export class ArenaScene extends Phaser.Scene {
       v.tick(dt);
     });
     for (const b of this.benchViews) b?.tick(dt);
+    this.updateWet(dt);
     if (this.back) {
       const was = this.back.engine.finished;
       this.back.update(dt);
@@ -401,6 +474,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private updateCrowd(dt: number): void {
     this.beamT += dt;
+    this.updateStands(dt);
     const day = this.sky.state.light;
     this.beams.forEach((b, i) => b.setAlpha((0.06 + 0.06 * Math.sin(this.beamT * 0.7 + i * 1.7)) * day * (1 - this.sky.weather.cloud)));
     const cheering = this.standing > 0 || this.crowdExcite > 0.6;
@@ -421,6 +495,142 @@ export class ArenaScene extends Phaser.Scene {
       this.crowd.setFrame(this.crowdFrame);
       this.crowdTimer = excited ? 0.15 : 0.7;
     }
+  }
+
+  // ------------------------------------------------------------------ arquibancada viva
+  private flags: Array<{ img: Phaser.GameObjects.Image; side: Side; phase: number; boost: number; y0: number }> = [];
+  private vendors: Array<{ img: Phaser.GameObjects.Image; speed: number; min: number; max: number; pause: number; bob: number; y0: number }> = [];
+
+  /**
+   * Gente na arquibancada: bandeirinhas acenando (à esquerda torcem pelo jogador, à
+   * direita pelo adversário) e vendedores com cestos na cabeça passando pelos corredores.
+   */
+  private liveStands(): void {
+    this.flags = [];
+    this.vendors = [];
+    const flagTex = standFlagTexture(this);
+    const ours = [0xd8b040, 0x3a7ac8, 0xe8e0d0];
+    const theirs = [0xb83228, 0x5a8a3a, 0x7a3a9a];
+    for (let i = 0; i < 18; i++) {
+      const side: Side = i % 2 ? 1 : 0;
+      const x = side === 0 ? 30 + Math.random() * 230 : 380 + Math.random() * 230;
+      const y = 184 + Math.random() * 36;
+      if (Math.abs(x - 320) < 64 && y < 212) continue; // não cobre o camarote
+      const pal = side === 0 ? ours : theirs;
+      const img = this.add.image(x, y, flagTex).setOrigin(0, 1).setTint(pal[i % pal.length]).setDepth(1.2);
+      this.flags.push({ img, side, phase: Math.random() * 6, boost: 0, y0: y });
+    }
+    const vendorTex = vendorTexture(this);
+    for (const [y, x0] of [
+      [204, 80],
+      [222, 520],
+    ] as const) {
+      const img = this.add.image(x0, y, vendorTex).setOrigin(0.5, 1).setDepth(1.25);
+      const speed = (Math.random() < 0.5 ? -1 : 1) * (7 + Math.random() * 5);
+      this.vendors.push({ img, speed, min: 26, max: 614, pause: 0, bob: Math.random() * 6, y0: y });
+    }
+  }
+
+  private updateStands(dt: number): void {
+    const hype = Math.min(1.5, this.crowdExcite + this.standing);
+    for (const f of this.flags) {
+      f.boost = Math.max(0, f.boost - dt);
+      const amp = 0.5 + hype * 0.6 + f.boost * 2;
+      f.phase += dt * (3 + amp * 4);
+      f.img.setAngle(Math.sin(f.phase) * 18 * amp - 6);
+      f.img.y = f.y0 - (f.boost > 0 ? Math.round(Math.abs(Math.sin(f.phase * 1.5)) * 3) : 0);
+    }
+    for (const v of this.vendors) {
+      if (v.pause > 0) {
+        v.pause -= dt;
+        continue;
+      }
+      v.bob += dt * 8;
+      v.img.x += v.speed * dt;
+      v.img.setFlipX(v.speed < 0);
+      v.img.y = v.y0 - (Math.sin(v.bob) > 0.7 ? 1 : 0);
+      if (v.img.x < v.min || v.img.x > v.max) v.speed = -v.speed;
+      // de vez em quando para e vende para alguém
+      else if (Math.random() < dt * 0.12) v.pause = 1.5 + Math.random() * 2;
+    }
+  }
+
+  /** A torcida do lado de quem acertou se agita: bandeiras pulam e braços sobem. */
+  private sideCheer(side: Side, big: boolean): void {
+    for (const f of this.flags) if (f.side === side) f.boost = big ? 1.4 : 0.8;
+    const n = big ? 14 : 7;
+    for (let i = 0; i < n; i++) {
+      const x = side === 0 ? 24 + Math.random() * 250 : 366 + Math.random() * 250;
+      const y = 188 + Math.random() * 34;
+      if (Math.abs(x - 320) < 64 && y < 214) continue;
+      const arm = this.add.rectangle(x, y, 1, 3, [0xe8c8a0, 0xc89870, 0x8a5a3a][i % 3]).setOrigin(0.5, 1).setDepth(1.22);
+      this.tweens.add({ targets: arm, y: y - 3, duration: 120, yoyo: true, repeat: big ? 3 : 1, ease: 'Sine.Out', onComplete: () => arm.destroy() });
+    }
+    if (big) sound.cheer(0.5);
+  }
+
+  // ------------------------------------------------------------------ chão molhado e pegadas
+  private puddleG: Phaser.GameObjects.Graphics | null = null;
+  private reflections: GladiatorView[] = [];
+  private reflectLayer: Phaser.GameObjects.Container | null = null;
+  private prints: Phaser.GameObjects.Graphics | null = null;
+  private printCount = 0;
+
+  /**
+   * Poças na faixa da luta (aparecem com a chuva) e o reflexo de cada lutador dentro
+   * delas: uma cópia espelhada, azulada e translúcida, recortada pelo formato das poças.
+   */
+  private makeWetGround(setup: BattleSetup): void {
+    this.prints = this.add.graphics().setDepth(4.8);
+    this.printCount = 0;
+    const spots: Array<[number, number, number]> = [
+      [150, GROUND_Y + 9, 70],
+      [268, GROUND_Y + 8, 100],
+      [372, GROUND_Y + 10, 88],
+      [488, GROUND_Y + 8, 74],
+      [214, GROUND_Y + 26, 60],
+      [430, GROUND_Y + 28, 66],
+    ];
+    const g = this.add.graphics().setDepth(4.9).setAlpha(0);
+    const mask = this.make.graphics({}, false);
+    for (const [x, y, w] of spots) {
+      g.fillStyle(0x4a5e74, 0.5).fillEllipse(x, y, w, w * 0.3);
+      g.fillStyle(0xa8c0d8, 0.3).fillEllipse(x - w * 0.18, y - 2, w * 0.4, w * 0.06);
+      mask.fillStyle(0xffffff).fillEllipse(x, y, w, w * 0.3);
+    }
+    this.puddleG = g;
+    const layer = this.add.container(0, 0).setDepth(4.95).setAlpha(0);
+    layer.setMask(mask.createGeometryMask());
+    this.reflections = this.views.map((src, i) => {
+      const r = new GladiatorView(this, src.x, GROUND_Y, setup.fighters[i].visual);
+      r.mirror(src);
+      layer.add(r);
+      return r;
+    });
+    this.reflectLayer = layer;
+  }
+
+  private updateWet(_dt: number): void {
+    const rain = this.sky.weather.rain;
+    const wet = Math.min(1, Math.max(0, (rain - 0.1) * 1.6));
+    this.puddleG?.setAlpha(wet);
+    if (this.reflectLayer) {
+      this.reflectLayer.setAlpha(wet * 0.6);
+      this.reflectLayer.setVisible(wet > 0.02);
+      if (wet > 0.02) for (const r of this.reflections) r.tick(0);
+    }
+  }
+
+  /** Pegada na areia (fica até o fim da luta; some na chuva forte). */
+  private footprint(x: number, y: number, facing: number): void {
+    const g = this.prints;
+    if (!g || this.printCount > 260) return;
+    this.printCount++;
+    const side = this.printCount % 2 ? -2 : 2;
+    const px = Math.round(x + facing * 2);
+    const py = Math.round(y + 1 + side * 0.5);
+    g.fillStyle(0x6a4a2a, 0.32).fillRect(px, py, 3, 1);
+    g.fillStyle(0x6a4a2a, 0.22).fillRect(px + facing * 3, py, 1, 1);
   }
 
   /** Pétalas de flores caindo da arquibancada (festival e vitória). */
@@ -804,6 +1014,7 @@ export class ArenaScene extends Phaser.Scene {
           this.move(e.target, 'tilt', e.stagger ? 14 : 8, 90, 300, e.stagger ? 200 : 60);
           if (e.stagger) dust(this, tx, GROUND_Y, 5);
           const color = enemyHitsPlayer ? '#ff6a5a' : '#ffe08a';
+          this.sideCheer(e.side, e.crit || !!e.stagger);
           floatText(this, tx, ty - 6, e.crit ? `${e.damage}!` : `${e.damage}`, color, e.crit ? 19 : 15);
           if (e.crit) {
             floatText(this, tx, ty - 26, t('fx.crit'), '#ffb03a', 12, 14, 800);
@@ -1126,3 +1337,60 @@ const BANNER_COLORS: Record<string, number> = {
   senator: 0x6a1a22,
   baiae: 0x5a2a7a,
 };
+
+/** Bandeirinha de torcida (haste + pano), branca para receber a cor do lado. */
+function standFlagTexture(scene: Phaser.Scene): string {
+  const key = 'fx:standflag';
+  if (scene.textures.exists(key)) return key;
+  const tex = scene.textures.createCanvas(key, 7, 9);
+  if (!tex) return key;
+  const ctx = tex.getContext();
+  ctx.fillStyle = '#5a3a20';
+  ctx.fillRect(0, 0, 1, 9);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(1, 0, 5, 4);
+  ctx.fillStyle = '#d0d0d0';
+  ctx.fillRect(5, 1, 2, 2);
+  ctx.fillRect(1, 3, 4, 1);
+  tex.refresh();
+  return key;
+}
+
+/** Vendedor da arquibancada: túnica, cesto de pães e frutas na cabeça (pixel art 9x14). */
+function vendorTexture(scene: Phaser.Scene): string {
+  const key = 'fx:standvendor';
+  if (scene.textures.exists(key)) return key;
+  const rows = [
+    '.BBBBBBB.',
+    'BYRYGYRYB',
+    '.BBBBBBB.',
+    '...SSS...',
+    '...SSS...',
+    '..TTTTT..',
+    '.STTTTTS.',
+    '.STTTTTS.',
+    '..TTTTT..',
+    '..TtttT..',
+    '..TTTTT..',
+    '...S.S...',
+    '...S.S...',
+    '..dd.dd..',
+  ];
+  const col: Record<string, string> = { B: '#8a5a2a', Y: '#e8c050', R: '#c83a2a', G: '#5a9a3a', S: '#c89870', T: '#c8b890', t: '#8a7a5a', d: '#4a3020' };
+  const tex = scene.textures.createCanvas(key, 9, 14);
+  if (!tex) return key;
+  const ctx = tex.getContext();
+  rows.forEach((r, y) =>
+    [...r].forEach((c, x) => {
+      if (c === '.') return;
+      ctx.fillStyle = col[c];
+      ctx.fillRect(x, y, 1, 1);
+    }),
+  );
+  tex.refresh();
+  return key;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+}

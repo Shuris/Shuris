@@ -162,4 +162,8 @@ export const EN08: Record<keyof typeof PT08, string> = {
   'npc.rival.verus': 'Speed wasn’t enough against you. Interesting.|Baths, wine and a good rival. Life is good.|Will you teach me that dodge?',
   'npc.rival.priscus': 'Don’t talk to me.|You stole my glory. I won’t forget.|Laugh while you can, {name}.|Every time I see you, my blood boils.',
   'npc.rival.flamma': 'It’s been a long time since anyone beat me. Welcome to the top, {name}.|The people chant your name now. Enjoy it, it passes quickly.|The gods like you. So do I.',
+  'season.spring': 'Spring',
+  'season.summer': 'Summer',
+  'season.autumn': 'Autumn',
+  'season.winter': 'Winter',
 };

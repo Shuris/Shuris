@@ -7,6 +7,9 @@ import { FONT } from '../fx';
 import { frameCamera, type Insets } from '../layout';
 import { locationName } from '../../i18n/data';
 import { applyLook } from '../shaders';
+import { addAmbience, type Ambience } from '../ambience';
+import { seasonOf } from '../../core/systems/WeatherSystem';
+import { isFestival } from '../../core/systems/EventSystem';
 
 export interface MapData {
   current: LocationId;
@@ -36,6 +39,7 @@ export class MapScene extends Phaser.Scene {
   private labels: Array<{ id: LocationId; text: Phaser.GameObjects.Text; ring: Phaser.GameObjects.Ellipse; plate: Phaser.GameObjects.Graphics }> = [];
   sky!: SkyLayer;
   traveling = false;
+  private ambience: Ambience | null = null;
 
   constructor() {
     super('map');
@@ -73,6 +77,17 @@ export class MapScene extends Phaser.Scene {
     this.token = this.add.container(cx, cy, [shadow, dot, marker]).setDepth(603);
     this.tweens.add({ targets: marker, y: -20, duration: 500, yoyo: true, repeat: -1 });
     this.sky = new SkyLayer(this, data.time, 0, false);
+    // clima no mapa: neblina de manhã, folhas no outono e guirlandas ligando os prédios na festa
+    const at = (id: LocationId) => LOCATIONS.find((l) => l.id === id)!.map;
+    const link = (a: LocationId, b: LocationId): [number, number, number, number] => [at(a)[0], at(a)[1] - 18, at(b)[0], at(b)[1] - 18];
+    this.ambience = addAmbience(this, {
+      minutes: () => data.minutes(),
+      season: seasonOf(data.day()),
+      festival: isFestival(data.day()),
+      area: { x: 0, y: 0, w: 640, h: 360 },
+      garlands: [link('forum', 'market'), link('forum', 'tavern'), link('forum', 'baths'), link('forum', 'temple'), link('market', 'arena'), link('ludus', 'market')],
+      depth: 590,
+    });
     const cam = this.cameras.main;
     cam.setBackgroundColor('#1a110c');
     applyLook(this, 'map');
@@ -128,5 +143,6 @@ export class MapScene extends Phaser.Scene {
 
   update(_t: number, delta: number): void {
     this.sky?.update(Math.min(0.1, delta / 1000));
+    this.ambience?.update(Math.min(0.1, delta / 1000));
   }
 }

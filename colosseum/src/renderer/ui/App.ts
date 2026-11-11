@@ -46,13 +46,13 @@ import { playerHelmet, playerPortraitKey } from './components/playerLook';
 import { todaysChallenger } from './screens/MainMenu';
 import { music } from '../audio/Music';
 import { fxEnabled, setFxEnabled } from '../game/shaders';
-import { attrName, itemName } from '../i18n/data';
+import { attrName, itemName, opponentEpithet, originName } from '../i18n/data';
 import { clockLabel, dayFraction, phaseName } from '../core/systems/TimeOfDay';
-import { weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
+import { seasonOf, weatherAt, weatherLabel, weatherOfDay } from '../core/systems/WeatherSystem';
 import { worldWeather } from '../game/DayNight';
 import { setSpeechObstacles } from '../game/speech';
 import { createRng, randomSeed } from '../core/systems/rng';
-import { MAX_LEVEL } from '../core/data/gladiators';
+import { MAX_LEVEL, getOrigin } from '../core/data/gladiators';
 import { bridge } from '../platform/bridge';
 import { sound } from '../audio/SoundManager';
 import { GameView } from '../game/Game';
@@ -589,6 +589,7 @@ export class App implements AppActions {
         openNow: () => this.store.hasPlayer && isOpen(loc, this.store.state.minutes, this.store.state.day),
         rainyDay: weatherOfDay(p.createdAt, p.day).rainy,
         minutes: p.minutes,
+        day: p.day,
         // rivais pela cidade, à paisana: sem armas nem escudo
         rivals: rivalsAt(p, loc.id).map((o) => {
           const v = opponentCombatant(o).visual;
@@ -928,6 +929,14 @@ export class App implements AppActions {
         talk: { opponentId: fight.voice, playerName: myName, intro: fight.intro, portrait: fight.def.id, player: playerPortraitKey(p) },
         startHp,
         bench: fight.bench ? [fight.bench[0] ? opponentCombatant(fight.bench[0]).visual : null, fight.bench[1] ? opponentCombatant(fight.bench[1]).visual : null] : undefined,
+        // intro cinematográfica com nome e epíteto (não no desempate da dupla)
+        cards:
+          startHp[0] == null && startHp[1] == null
+            ? [
+                { name: myName, sub: myName === p.name ? `${originName(getOrigin(p.origin))} · ${t('common.lv', { n: myLevel })}` : t('common.lv', { n: myLevel }) },
+                { name: fight.def.beast ? tk(`beast.${fight.def.beast}.name`) : fight.def.name, sub: `${opponentEpithet(fight.def)} · ${t('common.lv', { n: fight.def.level })}` },
+              ]
+            : undefined,
         back: back ? { fighters: [{ spec: back[0].spec, visual: back[0].visual }, { spec: back[1].spec, visual: back[1].visual }], seed: randomSeed() } : undefined,
       },
       {
@@ -1393,7 +1402,7 @@ export class App implements AppActions {
         <div class="row between"><b class="st-name">${esc(p.name)}</b><span class="lvl">${t('common.level', { n: p.level })}</span></div>
         ${p.level < MAX_LEVEL ? bar(p.xp, xpToNext(p.level), 'xp') : `<div class="tiny gold">${t('common.maxLevel')}</div>`}
         <div class="row between st-day"><span>${t('status.day', { weekday: weekdayName(p.day), day: p.day })}</span><span id="clock">${phaseName(tod)} ${clockLabel(tod)}</span></div>
-        ${weatherLabel(worldWeather.now()) ? `<div class="weather">${weatherLabel(worldWeather.now())}</div>` : ''}
+        <div class="weather">${[weatherLabel(worldWeather.now()), t(`season.${seasonOf(p.day)}` as 'season.spring')].filter(Boolean).join(' · ')}</div>
         <div class="energy-row"><span>${t('common.energy')}</span>${bar(p.energy, 100, 'energy')}</div>
         <div class="row st-res"><span>${icon('coin')} ${p.coins}</span><span>${icon('laurel')} ${p.reputation}</span></div>
         ${playerStatus(p).length ? `<div class="st-icons">${playerStatus(p).map((k) => `<span class="st-icon st-${k}">${icon(`st_${k}`)} ${t(`status.${k}` as 'status.injured')}</span>`).join('')}</div>` : ''}

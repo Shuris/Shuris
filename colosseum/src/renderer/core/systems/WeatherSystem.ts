@@ -43,3 +43,21 @@ export function weatherLabel(now: WeatherNow): string | null {
   if (now.cloud > 0.3) return t('weather.cloudy');
   return null;
 }
+
+// ------------------------------------------------------------------ estações
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter';
+const SEASONS: Season[] = ['spring', 'summer', 'autumn', 'winter'];
+/** dias de cada estação */
+export const SEASON_DAYS = 10;
+
+/** Estação do dia (ciclo de 4 estações de 10 dias, começando na primavera). */
+export function seasonOf(day: number): Season {
+  return SEASONS[Math.floor((Math.max(1, day) - 1) / SEASON_DAYS) % SEASONS.length];
+}
+
+/** Neblina da manhã (0..1): começa ao amanhecer, mais densa até umas 8h, some até as 10h. */
+export function morningFog(minutes: number, season: Season): number {
+  const m = ((minutes % 1440) + 1440) % 1440;
+  const f = m < 300 ? 0 : m < 360 ? (m - 300) / 60 : m < 480 ? 1 : m < 600 ? 1 - (m - 480) / 120 : 0;
+  return f * (season === 'summer' ? 0.45 : season === 'autumn' || season === 'winter' ? 1 : 0.75);
+}
