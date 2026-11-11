@@ -51,7 +51,35 @@ export class BattleHud {
     this.update(engine);
   }
 
+  /** Dupla: barras menores do duelo do fundo (parceiro e o outro adversário), abaixo de cada placa. */
+  showBack(engine: CombatEngine, levels: [number, number]): void {
+    for (const f of engine.fighters) {
+      const plate = this.root.querySelector(`.plate-${f.side}`);
+      if (!plate) continue;
+      plate.querySelector('.plate-sub')?.remove();
+      plate.insertAdjacentHTML(
+        'beforeend',
+        `<div class="plate-sub"><div class="plate-name"><span>${esc(f.spec.name)}</span><span class="lvl">${t('common.lv', { n: levels[f.side] })}</span></div>
+        <div class="bar hp sub"><div class="bar-fill" data-bhp="${f.side}"></div><span class="bar-label" data-bhpt="${f.side}"></span></div></div>`,
+      );
+    }
+    this.root.classList.add('duo');
+    this.updateBack(engine);
+  }
+
+  updateBack(engine: CombatEngine): void {
+    if (this.root.hidden) return;
+    for (const f of engine.fighters) {
+      const hp = this.root.querySelector<HTMLElement>(`[data-bhp="${f.side}"]`);
+      const ht = this.root.querySelector<HTMLElement>(`[data-bhpt="${f.side}"]`);
+      if (hp) hp.style.width = `${(f.hp / f.spec.stats.maxHp) * 100}%`;
+      if (ht) ht.textContent = `${Math.ceil(f.hp)} / ${f.spec.stats.maxHp}`;
+      hp?.closest('.plate-sub')?.classList.toggle('down', f.hp <= 0);
+    }
+  }
+
   hide(): void {
+    this.root.classList.remove('duo');
     this.root.hidden = true;
     this.root.innerHTML = '';
   }

@@ -698,19 +698,19 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   const afterInvite = await state();
   assert(afterInvite.reputation >= fameBefore - 0 && !afterInvite.injury, 'amistoso não fere nem tira fama');
   assert(afterInvite.career.invites.find((i) => i.id === 'villa').status === 'done', 'convite usado');
-  // dupla: escolhe o amigo como parceiro e luta em revezamento
+  // dupla: escolhe o amigo como parceiro; os dois duelos acontecem ao mesmo tempo
   await win.evaluate(() => window.__colosseum.store.update((p) => { p.minutes = 11 * 60; p.energy = 100; p.injury = null; }));
   if (await win.locator('[data-action="tab"][data-id="duo"]').count()) await win.click('[data-action="tab"][data-id="duo"]');
   await win.click('[data-action="career-partner"][data-id="marcus"]');
   assert((await state()).career.partner === 'marcus', 'parceiro escolhido');
   await win.click('[data-action="career-duo"]');
-  await win.waitForSelector('#hud .plate-0', { timeout: 10000 });
-  const bench = await win.evaluate(() => window.__colosseum.view.arena.benchViews.filter(Boolean).length);
-  assert(bench === 2, `parceiros esperando no portão (${bench})`);
+  await win.waitForSelector('#hud .plate-0 .plate-sub', { timeout: 10000 });
+  const backViews = await win.evaluate(() => window.__colosseum.view.arena.back?.views.length ?? 0);
+  assert(backViews === 2, `duelo do fundo com 2 lutadores (${backViews})`);
+  assert((await win.locator('#hud .plate-sub').count()) === 2, 'duas barras de vida de cada lado');
+  assert((await win.locator('#hud .plate-0 .plate-sub').innerText()).includes('Marcus'), 'parceiro na barra de baixo');
+  await win.waitForTimeout(5500);
   await shot('35-dupla');
-  await forfeitNow();
-  // o parceiro entra no segundo assalto
-  await win.waitForFunction(() => document.querySelector('#hud .plate-0 .plate-name span')?.textContent?.includes('Marcus'), null, { timeout: 60000 });
   await forfeitNow();
   await win.waitForSelector('.modal-result', { timeout: 60000 });
   await win.click('[data-r="close"]');

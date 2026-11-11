@@ -23,8 +23,9 @@ import {
   RESPECT_REMATCH_WIN,
   RESPECT_TAVERN,
   addRespect,
-  duoBout,
   duoCheck,
+  duoClash,
+  duoDecider,
   duoFoes,
   duoPrize,
   newDuoRun,
@@ -101,6 +102,8 @@ interface FightPlan {
   voice: string;
   intro: TalkMoment;
   bench?: [OpponentDef | null, OpponentDef | null];
+  /** dupla: o duelo do fundo (parceiro x outro adversário), ao mesmo tempo */
+  back?: [OpponentDef, OpponentDef];
 }
 
 /** Notas extras da tela de resultado (plateia, missões, amizades, convites). */
@@ -144,6 +147,8 @@ export class App implements AppActions {
   private screen: ScreenId = 'home';
   private win: WindowState = { maximized: false, fullscreen: false };
   private battle: BattleCtx | null = null;
+  /** motor do duelo do fundo (luta de dupla) */
+  private backEngine: CombatEngine | null = null;
   private hud!: BattleHud;
   private intro: IntroScreen | null = null;
   private busy = false;
@@ -854,7 +859,9 @@ export class App implements AppActions {
       const err = canFight(p);
       if (err) return err;
       const [f1, f2] = duoFoes(p);
-      return { def: f1, mode: 'duo', arena: cityArena, voice: 'pool', intro: 'intro', bench: [partnerDef(p), f2] };
+      const partner = partnerDef(p);
+      if (!partner) return t('duo.needPartner');
+      return { def: f1, mode: 'duo', arena: cityArena, voice: 'pool', intro: 'intro', back: [partner, f2] };
     }
     if (opts.mode === 'tournament') {
       const run = p.tournament.run;
@@ -898,7 +905,7 @@ export class App implements AppActions {
       engine: null,
       favor: FAVOR_START,
       inviteId: opts.inviteId,
-      duo: fight.mode === 'duo' && fight.bench?.[0] && fight.bench[1] ? { run: newDuoRun(), partner: fight.bench[0], foes: [fight.def, fight.bench[1]] } : undefined,
+      duo: fight.mode === 'duo' && fight.back ? { run: newDuoRun(), partner: fight.back[0], foes: [fight.def, fight.back[1]] } : undefined,
     };
     this.root.classList.add('in-battle');
     $('#side').hidden = true;
@@ -918,6 +925,8 @@ export class App implements AppActions {
   ): void {
     const p = this.store.state;
     const them = opponentCombatant(fight.def);
+    const back = fight.back ? ([opponentCombatant(fight.back[0]), opponentCombatant(fight.back[1])] as const) : null;
+    this.backEngine = null;
     this.view.startBattle(
       {
         fighters: [me, them],
@@ -928,6 +937,7 @@ export class App implements AppActions {
         talk: { opponentId: fight.voice, playerName: myName, intro: fight.intro, portrait: fight.def.id, player: playerPortraitKey(p) },
         startHp,
         bench: fight.bench ? [fight.bench[0] ? opponentCombatant(fight.bench[0]).visual : null, fight.bench[1] ? opponentCombatant(fight.bench[1]).visual : null] : undefined,
+        back: back ? { fighters: [{ spec: back[0].spec, visual: back[0].visual }, { spec: back[1].spec, visual: back[1].visual }], seed: randomSeed() } : undefined,
       },
       {
         onReady: (engine) => {
@@ -935,6 +945,7 @@ export class App implements AppActions {
           this.battle.engine = engine;
           this.hud.show(engine, this.store.state.settings.battleSpeed, [myLevel, fight.def.level], [me.visual.beast, them.visual.beast]);
           this.hud.setFavor(this.battle.favor);
+          if (fight.back && this.backEngine) this.hud.showBack(this.backEngine, [fight.back[0].level, fight.back[1].level]);
         },
         onEvent: (e, engine) => {
           this.hud.event(e, engine);
@@ -943,7 +954,11 @@ export class App implements AppActions {
           this.hud.setFavor(this.battle.favor);
         },
         onFrame: (engine) => this.hud.update(engine),
-        onEnd: (res) => this.finishBattle(res),
+        onBackReady: (engine) => {
+          if (fight.back) this.backEngine = engine;
+        },
+        onBackFrame: (engine) => this.hud.updateBack(engine),
+        onEnd: (res, backRes) => this.finishBattle(res, backRes),
         onSpeedReset: () => this.hud.setSpeed(1),
       },
     );
@@ -957,17 +972,17 @@ export class App implements AppActions {
   }
 
   private async forfeit(): Promise<void> {
-    if (!this.battle?.engine || this.battle.engine.finished) return;
+    if (!this.battle?.engine || (this.battle.engine.finished && (!this.backEngine || this.backEngine.finished))) return;
     const ok = await confirmModal(t('battle.forfeitTitle'), t('battle.forfeitBody'), t('battle.forfeit'));
     if (ok) this.view.forfeit();
   }
 
-  private finishBattle(res: CombatResult): void {
+  private finishBattle(res: CombatResult, backRes?: CombatResult): void {
     const ctx = this.battle;
     if (!ctx) return;
     const won = res.winner === 0;
     const rng = createRng(randomSeed());
-    if (ctx.mode === 'duo' && ctx.duo) return this.finishDuoBout(res, ctx, rng);
+    if (ctx.mode === 'duo' && ctx.duo) return this.finishDuoBout(res, ctx, rng, backRes);
     this.view.showThumb(thumbOf(ctx.favor));
     if (ctx.mode === 'invite' && ctx.inviteId) return this.finishInvite(res, ctx, rng);
     if (ctx.mode === 'tournament') {
@@ -1131,14 +1146,20 @@ export class App implements AppActions {
     });
   }
 
-  /** Fim de um assalto da luta de dupla: entra o próximo lutador ou a luta acaba. */
-  private finishDuoBout(res: CombatResult, ctx: BattleCtx, rng: ReturnType<typeof createRng>): void {
+  /** Fim dos duelos simultâneos da dupla (ou do desempate): desempate ou resultado. */
+  private finishDuoBout(res: CombatResult, ctx: BattleCtx, rng: ReturnType<typeof createRng>, backRes?: CombatResult): void {
     const d = ctx.duo!;
-    const hp: [number, number] = [res.fighters[0].hp, res.fighters[1].hp];
-    const outcome = duoBout(d.run, res.winner, hp);
-    if (outcome === 'next') {
-      const entering = res.winner === 1 ? d.partner.name : d.foes[d.run.b].name;
-      toast(t('duo.next', { name: entering }), 'info', 3000);
+    const outcome =
+      d.run.bouts === 0 && backRes
+        ? duoClash(
+            d.run,
+            { winner: res.winner, hp: [res.fighters[0].hp, res.fighters[1].hp] },
+            { winner: backRes.winner, hp: [backRes.fighters[0].hp, backRes.fighters[1].hp] },
+          )
+        : duoDecider(d.run, res.winner);
+    if (outcome === 'decider') {
+      const name = d.run.playerOut ? d.partner.name : this.store.state.name;
+      toast(t('duo.next', { name, foe: d.foes[d.run.b].name }), 'info', 3500);
       setTimeout(() => this.nextDuoBout(), 1800);
       return;
     }
@@ -1215,8 +1236,6 @@ export class App implements AppActions {
       arena: cityArena,
       voice: 'pool',
       intro: 'intro',
-      // no portão fica só quem ainda não lutou
-      bench: [mine ? d.partner : null, d.run.b === 0 ? d.foes[1] : null],
     };
     this.launchBout(me, mine ? p.level : (partnerDef(p)?.level ?? p.level), mine ? p.name : d.partner.name, plan, [d.run.ours[d.run.a], d.run.theirs[d.run.b]]);
   }

@@ -1,4 +1,12 @@
-# Funcionalidades — versão 0.9.0
+# Funcionalidades — versão 0.9.1
+
+## Novidades da 0.9.1
+- **Lutas de dupla simultâneas**: você enfrenta um adversário na frente e o seu parceiro luta com o outro ao mesmo tempo, mais ao fundo da arena. O HUD mostra duas barras de vida de cada lado (a de baixo é a do duelo do fundo). Quem vencer os dois duelos vence a luta. Se cada dupla vencer um, os dois sobreviventes lutam um desempate com a vida que sobrou. Desistir encerra os dois duelos.
+- **Ranking corrigido**: os pontos saem do cartel da carreira inteira (vitória vale 3, derrota tira 1), inclusive das lutas anteriores à tabela. Todos os rivais da escada estão na tabela. **Flamma**, o campeão, começa muito à frente (214–11) e luta e quase sempre vence todas as noites: alcançá-lo exige uma carreira longa. Saves da 0.9.0 têm a tabela refeita.
+- **Gato redesenhado**: malhado cinza com listras, cabeça redonda, orelhas grandes, olhos verdes, bigodes e cauda longa erguida em gancho. Não se confunde mais com o cão.
+- **Arena em abas**: Lutas, Eventos (feras, torneio e convites, com aviso dourado quando há novidade) e Duplas.
+- **Feras redesenhadas** com volume e sombreamento; o urso luta em pé e cada fera tem animação e golpes próprios (lobo: salto com mordida; javali: investida com as presas; urso: patada e arranhão; leão: bote com as garras).
+- **Personagens em resolução dupla**, com rosto, musculatura e sandálias amarradas; 5 tons de pele e 7 penteados (curto, longo, raspado, cacheado, rabo de cavalo, crista e coque).
 
 ## Novidades da 0.9.0
 ### Jogabilidade
@@ -11,7 +19,7 @@
 - **Venatio, lutas contra feras**: em alguns dias (cerca de 1 em cada 5, nunca aos sábados) a arena recebe lobo, javali, urso ou leão, conforme o seu nível. Uma fera por dia, e a vitória vale 2,5 vezes mais fama. O jornal avisa na manhã do dia.
 - **Amizade e lutas de dupla**:
   - Adversários que você derrotou passam a respeitá-lo: pela vitória, por uma revanche vencida e por uma rodada paga na taverna (uma por dia). Com 60 de respeito, viram amigos.
-  - Escolha um amigo como parceiro. A luta de dupla é em **revezamento**: quem cai é substituído pelo parceiro, que espera no portão, e o vencedor continua com a vida que sobrou.
+  - Escolha um amigo como parceiro para as lutas de dupla (simultâneas desde a 0.9.1).
 - **Favor da plateia**: barra no alto da luta. Sobe com críticos, golpes fortes, contra-ataques e esquivas; cai quando você apanha, erra ou desiste.
   - No fim da luta a plateia mostra o polegar: para cima dá fama extra.
   - Numa derrota com polegar para cima a plateia poupa você (não perde fama); com polegar para baixo você perde um pouco mais.

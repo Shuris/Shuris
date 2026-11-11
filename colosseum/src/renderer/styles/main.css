@@ -229,6 +229,11 @@ em.down { color: var(--red-hi); }
 .plate-1 .plate-name { flex-direction: row-reverse; }
 .bar.hp { height: 24px; }
 .bar.st { height: 10px; }
+.plate-sub { margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(184, 136, 74, 0.45); opacity: 0.92; }
+.plate-sub .plate-name { font-size: 20px; color: var(--dim); }
+.plate-sub .bar.hp.sub { height: 14px; }
+.plate-sub .bar-label { font-size: 15px; line-height: 14px; }
+.plate-sub.down { opacity: 0.45; filter: grayscale(1); }
 .hud-timer { font-size: 36px; color: var(--gold-hi); background: rgba(20, 13, 9, 0.88); border: 2px solid var(--bronze); padding: 2px 14px; min-width: 96px; text-align: center; white-space: nowrap; }
 .hud-bottom { position: absolute; left: 10px; right: 10px; bottom: 10px; display: flex; align-items: flex-end; gap: 12px; }
 .hud-log { flex: 1; font-size: 25px; text-shadow: 2px 2px 0 #000, -1px 0 0 #000; color: var(--dim); }

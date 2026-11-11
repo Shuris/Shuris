@@ -50,16 +50,23 @@ export interface BattleSetup {
   talk?: { opponentId: string; playerName: string; intro?: TalkMoment; portrait?: string; player?: PlayerLook };
   /** dia de festival: arquibancada lotada e enfeitada */
   festival?: boolean;
-  /** luta de dupla: vida inicial de cada lado e os parceiros esperando nos portões */
+  /** desempate da dupla: vida inicial de cada lado e quem ficou de fora no portão */
   startHp?: [number | null, number | null];
   bench?: [FighterVisual | null, FighterVisual | null];
+  /** luta de dupla: o segundo duelo (parceiro x outro adversário), ao mesmo tempo, mais ao fundo */
+  back?: { fighters: [{ spec: CombatantSpec; visual: FighterVisual }, { spec: CombatantSpec; visual: FighterVisual }]; seed: number };
 }
 
 export interface BattleHandlers {
   onReady(engine: CombatEngine): void;
   onEvent(e: CombatEvent, engine: CombatEngine): void;
   onFrame(engine: CombatEngine): void;
-  onEnd(result: CombatResult): void;
+  /** fim da luta (na dupla, depois dos dois duelos; `back` = resultado do duelo do fundo) */
+  onEnd(result: CombatResult, back?: CombatResult): void;
+  /** duelo do fundo (dupla) */
+  onBackReady?(engine: CombatEngine): void;
+  onBackFrame?(engine: CombatEngine): void;
+  onBackEvent?(e: CombatEvent, engine: CombatEngine): void;
   /** a cena voltou a luta para 1x (depois do golpe final) */
   onSpeedReset?(): void;
 }
@@ -79,6 +86,8 @@ export class ArenaScene extends Phaser.Scene {
   private editor: Phaser.GameObjects.Sprite | null = null;
   private editorKind: 'group' | 'box' = 'box';
   private benchViews: Array<GladiatorView | null> = [];
+  /** duelo simultâneo do fundo (luta de dupla) */
+  back: BackDuel | null = null;
   /** fera de cada lado (nomes dos golpes) */
   private beasts: Array<string | undefined> = [];
   private crowdExcite = 0;
@@ -178,6 +187,7 @@ export class ArenaScene extends Phaser.Scene {
       b.play('victory', { fps: 3 });
       return b;
     });
+    this.back = setup.back ? new BackDuel(this, setup.back, this.handlers) : null;
     this.choreo = [0, 1].map(() => ({ lunge: 0, push: 0, lift: 0, tilt: 0 }));
     // sangue: gotas e manchas na areia; escuro do golpe final (atrás dos lutadores)
     this.blood = [];
@@ -230,6 +240,7 @@ export class ArenaScene extends Phaser.Scene {
 
   private applySpeed(): void {
     for (const v of this.views) v.speedMul = this.speed;
+    this.back?.setSpeed(this.speed);
     this.anims.globalTimeScale = this.speed;
     this.tweens.timeScale = this.speed;
   }
@@ -263,6 +274,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   forfeit(): void {
+    if (this.engine.finished && (!this.back || this.back.engine.finished)) return;
+    // na dupla, desistir encerra os dois duelos
+    this.back?.forfeit();
     if (this.engine.finished) return;
     this.engine.forfeit(0);
     for (const e of this.engine.drainEvents()) this.handleEvent(e);
@@ -323,7 +337,14 @@ export class ArenaScene extends Phaser.Scene {
       v.tick(dt);
     });
     for (const b of this.benchViews) b?.tick(dt);
-    const mid = (this.views[0].x + this.views[1].x) / 2;
+    if (this.back) {
+      const was = this.back.engine.finished;
+      this.back.update(dt);
+      if (!was && this.back.engine.finished) this.duelEnded();
+    }
+    const mid = this.back
+      ? (this.views[0].x + this.views[1].x + this.back.views[0].x + this.back.views[1].x) / 4
+      : (this.views[0].x + this.views[1].x) / 2;
     this.camX += (mid - this.camX) * Math.min(1, dt * 3);
     this.layout();
     this.updateCrowd(dt);
@@ -332,13 +353,49 @@ export class ArenaScene extends Phaser.Scene {
     for (const g of this.glows) g.setAlpha(lamp * (0.8 + Math.random() * 0.2)).setScale(0.9 + lamp * 0.8);
     this.handlers.onFrame(this.engine);
 
-    if (this.engine.finished && !this.ended) {
+    if (this.engine.finished && (!this.back || this.back.engine.finished) && !this.ended) {
       if (this.endTimer < 0) this.endTimer = 6.2;
       this.endTimer -= realDt;
       if (this.endTimer <= 0) {
         this.ended = true;
-        this.handlers.onEnd(this.engine.result as CombatResult);
+        this.handlers.onEnd(this.engine.result as CombatResult, this.back?.engine.result ?? undefined);
       }
+    }
+  }
+
+  /**
+   * Dupla: um dos duelos terminou. Enquanto o outro continua, só um aviso; com os
+   * dois encerrados, a plateia reage ao resultado da dupla (ou anuncia o desempate).
+   */
+  private duelEnded(): void {
+    const back = this.back;
+    if (!back) return;
+    const a = this.engine.result;
+    const b = back.engine.result;
+    if (!a || !b) {
+      const eng = a ? this.engine : back.engine;
+      const done = (a ?? b)!.winner;
+      const name = eng.fighters[done].spec.name.split(',')[0];
+      floatText(this, this.cameras.main.midPoint.x, HEAD_Y - 30, t('duo.duelEnd', { name }), done === 0 ? '#ffd36a' : '#e06a5a', 14, 16, 1800);
+      return;
+    }
+    const ours = (a.winner === 0 ? 1 : 0) + (b.winner === 0 ? 1 : 0);
+    this.standing = 1;
+    this.crowdExcite = 4;
+    sound.cheer(1.5);
+    if (ours === 1) {
+      bigText(this, this.cameras.main.midPoint.x, HEAD_Y - 24, t('duo.deciderBig'), '#f4dc8a');
+      sound.play('horn');
+      return;
+    }
+    const won = ours === 2;
+    sound.play(won ? 'victory' : 'defeat');
+    bigText(this, this.cameras.main.midPoint.x, HEAD_Y - 24, won ? t('result.victory') : t('result.defeat'), won ? '#ffd36a' : '#e06a5a');
+    if (won) {
+      const x = (this.views[0].x + back.views[0].x) / 2;
+      for (let i = 0; i < 40; i++) this.time.delayedCall(i * 60, () => this.throwGift(x, false));
+      for (let i = 0; i < 22; i++) this.time.delayedCall(200 + i * 90, () => this.throwGift(x, true));
+      this.editor?.play(`editor_${this.editorKind}_cheer`);
     }
   }
 
@@ -799,6 +856,15 @@ export class ArenaScene extends Phaser.Scene {
         break;
       case 'end':
         this.views.forEach((v) => v.setAura(false));
+        if (this.back) {
+          if (this.zoomTarget === 1) this.zoomTarget = 1.1;
+          this.time.delayedCall(900, () => {
+            this.say(e.winner, 'win');
+            this.say((1 - e.winner) as Side, 'lose');
+          });
+          this.duelEnded();
+          break;
+        }
         this.crowdExcite = 4;
         // o público se levanta (ovação maior quando o jogador vence)
         this.standing = 1;
@@ -819,6 +885,176 @@ export class ArenaScene extends Phaser.Scene {
           this.say((1 - e.winner) as Side, 'lose');
         });
         bigText(this, this.cameras.main.midPoint.x, HEAD_Y - 24, e.winner === 0 ? t('result.victory') : t('result.defeat'), e.winner === 0 ? '#ffd36a' : '#e06a5a');
+        break;
+    }
+  }
+}
+
+
+/** escala e recuo do duelo do fundo (luta de dupla) */
+const BACK_SCALE = FIGHTER_SCALE * 0.8;
+const BACK_Y = GROUND_Y - 30;
+
+/**
+ * Segundo duelo da luta de dupla: o parceiro do jogador contra o outro adversário,
+ * ao mesmo tempo e mais ao fundo da arena (menores, atrás). Usa o mesmo motor de
+ * combate, com animações mais simples e sem câmera lenta.
+ */
+export class BackDuel {
+  engine: CombatEngine;
+  views: GladiatorView[];
+  private prevX: number[];
+  private acc = 0;
+  private dust = [0, 0];
+
+  constructor(
+    private readonly scene: ArenaScene,
+    setup: NonNullable<BattleSetup['back']>,
+    private readonly handlers: BattleHandlers,
+  ) {
+    this.engine = new CombatEngine(setup.fighters[0].spec, setup.fighters[1].spec, { seed: setup.seed });
+    this.views = this.engine.fighters.map((f, i) => {
+      const v = new GladiatorView(scene, this.mapX(f.x), BACK_Y, setup.fighters[i].visual);
+      v.setBaseScale(BACK_SCALE);
+      v.setFacing(f.facing);
+      v.setDepth(7 + i * 0.1);
+      v.play('walk', { fps: 8 });
+      return v;
+    });
+    this.prevX = this.engine.fighters.map((f) => f.x);
+    handlers.onBackReady?.(this.engine);
+  }
+
+  /** posição do motor -> tela (um pouco mais fechado, como em perspectiva) */
+  private mapX(x: number): number {
+    return 320 + (x - 320) * 0.86;
+  }
+
+  setSpeed(s: number): void {
+    for (const v of this.views) v.speedMul = s;
+  }
+
+  forfeit(): void {
+    if (this.engine.finished) return;
+    this.engine.forfeit(0);
+    for (const e of this.engine.drainEvents()) this.handle(e);
+  }
+
+  update(dt: number): void {
+    if (!this.engine.finished && dt > 0) {
+      this.acc += dt;
+      while (this.acc >= TICK && !this.engine.finished) {
+        this.prevX = this.engine.fighters.map((f) => f.x);
+        for (const e of this.engine.step()) this.handle(e);
+        this.acc -= TICK;
+      }
+    }
+    const alpha = this.engine.finished ? 1 : Math.min(1, this.acc / TICK);
+    const ex = this.engine.fighters.map((f, i) => this.prevX[i] + (f.x - this.prevX[i]) * alpha);
+    this.engine.fighters.forEach((f, i) => {
+      const v = this.views[i];
+      const d = ex[1 - i] >= ex[i] ? 1 : -1;
+      const x = Phaser.Math.Clamp(this.mapX(ex[i]) - d * SPREAD * 0.8, 30, WORLD.width - 30);
+      if (Math.abs(x - v.x) > 0.01 && (f.action === 'advance' || f.action === 'retreat' || f.action === 'intro')) {
+        this.dust[i] -= dt;
+        if (this.dust[i] <= 0) {
+          dust(this.scene, x, BACK_Y, 1);
+          this.dust[i] = 0.35;
+        }
+      }
+      v.x = x;
+      if (f.action !== 'victory' && f.action !== 'defeat') v.setFacing(f.facing);
+      v.tick(dt);
+    });
+    this.handlers.onBackFrame?.(this.engine);
+  }
+
+  private anim(f: FighterState, action: ActionKind, duration: number): void {
+    const v = this.views[f.side];
+    switch (action) {
+      case 'intro':
+      case 'advance':
+        v.play('walk', { fps: 10 });
+        break;
+      case 'retreat':
+        v.play('walk', { fps: 7 });
+        break;
+      case 'idle':
+        v.play('idle');
+        break;
+      case 'windup':
+        v.sequence([
+          ['attack', 0, duration * 0.65],
+          ['attack', 1, duration * 0.35],
+        ]);
+        break;
+      case 'recover':
+        v.sequence([
+          ['attack', 2, Math.min(0.14, duration * 0.5)],
+          ['attack', 3, 9],
+        ]);
+        break;
+      case 'block':
+        v.play('block', { restart: true });
+        break;
+      case 'dodge':
+        v.sequence([
+          ['dodge', 0, duration * 0.25],
+          ['dodge', 1, duration * 0.45],
+          ['dodge', 2, 9],
+        ]);
+        break;
+      case 'hitstun':
+        v.sequence([
+          ['hit', 0, duration * 0.5],
+          ['hit', 1, 9],
+        ]);
+        break;
+      case 'exhausted':
+        v.hold('defeat', 0);
+        break;
+      case 'buff':
+        v.hold('block', 0);
+        break;
+      case 'victory':
+        v.play('victory', { restart: true });
+        break;
+      case 'defeat':
+        v.sequence([
+          ['defeat', 0, 0.3],
+          ['defeat', 1, 0.3],
+          ['defeat', 2, 0.4],
+          ['defeat', 3, 99],
+        ]);
+        break;
+    }
+  }
+
+  private handle(e: CombatEvent): void {
+    this.handlers.onBackEvent?.(e, this.engine);
+    const top = BACK_Y - 44 * BACK_SCALE;
+    switch (e.type) {
+      case 'action':
+        this.anim(this.engine.fighters[e.side], e.action, e.duration);
+        break;
+      case 'impact': {
+        const tv = this.views[e.target];
+        if (e.outcome === 'hit') {
+          tv.flash();
+          sparks(this.scene, tv.x, top + 14, 0xc83a2a, e.crit ? 5 : 3);
+          floatText(this.scene, tv.x, top, e.crit ? `${e.damage}!` : `${e.damage}`, e.target === 0 ? '#ff8a7a' : '#f0d890', e.crit ? 13 : 11);
+          sound.play('hit', 0.45);
+        } else if (e.outcome === 'block') {
+          sparks(this.scene, tv.x, top + 14, 0xfff0a0, 4);
+          sound.play('block', 0.4);
+        } else floatText(this.scene, tv.x, top, e.outcome === 'dodge' ? t('fx.dodge') : t('fx.miss'), '#d8d0c0', 10);
+        break;
+      }
+      case 'skill':
+        if (e.skill !== 'counter') floatText(this.scene, this.views[e.side].x, top - 8, moveName(e.skill), '#ffd36a', 10, 10, 1000);
+        break;
+      case 'end':
+        sound.cheer(0.9);
         break;
     }
   }

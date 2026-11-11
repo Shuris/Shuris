@@ -243,10 +243,10 @@ interface toca cliques, moedas, equipar e subir de nível. Volume e mudo ficam n
 - **Carreira** (`PlayerState.career`, save versão 5, validado em `SaveSystem.careerFields`). Saves antigos começam com a carreira vazia. Os sistemas puros ficam em `core/systems/`:
   - `InviteSystem`: convites por fama, amistosos e o torneio de Baiae (semifinal e final; a outra semifinal é simulada pelo motor).
   - `VenatioSystem`: dias de feras, sorteados de forma estável por gladiador. As feras são `OpponentDef` com `beast`. `CombatantFactory.BEAST_STATS` dá alcance das garras e multiplicadores de dano e vida, calibrados para cerca de 40% de vitória de um gladiador médio.
-  - `DuoSystem`: respeito, amigos, parceiro e o revezamento. O motor aceita `startHp`, e a interface encadeia os assaltos.
+  - `DuoSystem`: respeito, amigos e parceiro. A luta é simultânea: `ArenaScene` roda um segundo `CombatEngine` (`BackDuel`, mais ao fundo e menor) junto com o principal e só chama `onEnd(result, back)` quando os dois acabam; `duoClash` decide vitória, derrota ou desempate (1 a 1), e o desempate usa `startHp` com a vida que sobrou.
   - `CrowdSystem`: favor da plateia, uma função pura sobre os eventos do motor; polegar e fama.
   - `QuestSystem`: missões dos moradores.
-  - `RankingSystem`: tabela da cidade; lutas noturnas simuladas ao dormir.
+  - `RankingSystem`: tabela da cidade; pontos derivados do cartel (`rankPoints`: 3 por vitória, -1 por derrota), o do jogador vem de `stats`; Flamma (campeão) entra com cartel lendário e luta toda noite; lutas noturnas simuladas ao dormir.
 - **Feras e bichos na cena**: folhas `sprites/beasts/beast_<tipo>.png` com exatamente os mesmos 29 quadros e animações do gladiador (`tools/gen_beasts.py`). A `GladiatorView` com `visual.beast` usa uma única folha, e a cena da arena não precisa saber que é um animal.
 - **Arenas particulares**: temas `PRIVATE` em `tools/gen_arenas.py`, gerados com RNG próprio (não alteram os outros cenários), e `PRIVATE_ARENAS` em `core/data/arenas.ts`.
 - **Boneco** (`ui/components/doll.ts`): monta as mesmas camadas num canvas. O manifesto é lido por XHR, porque `fetch` não lê `file://` no Electron.

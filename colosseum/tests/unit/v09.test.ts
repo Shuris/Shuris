@@ -8,7 +8,7 @@ import { INVITES, checkInvites, finishInviteFight, inviteFoe, openInvites } from
 import { BEASTS, beastOfDay, isVenatioDay, venatioCheck } from '../../src/renderer/core/systems/VenatioSystem';
 import { opponentCombatant, BEAST_STATS } from '../../src/renderer/core/combat/CombatantFactory';
 import { CombatEngine } from '../../src/renderer/core/combat/CombatEngine';
-import { FRIEND_RESPECT, addRespect, duoBout, duoCheck, duoFoes, friends, newDuoRun, partnerDef, setPartner } from '../../src/renderer/core/systems/DuoSystem';
+import { FRIEND_RESPECT, addRespect, duoClash, duoCheck, duoDecider, duoFoes, friends, newDuoRun, partnerDef, setPartner } from '../../src/renderer/core/systems/DuoSystem';
 import { FAVOR_START, favorAfter, favorFame, sparedByCrowd, thumbOf } from '../../src/renderer/core/systems/CrowdSystem';
 import { acceptQuest, expireQuest, makeOffering, offeringCost, questOffer, questOnArrive, questOnFight, questOnTrain } from '../../src/renderer/core/systems/QuestSystem';
 import { CHAMPION_ID, nightlyRanking, playerPosition, rankTable } from '../../src/renderer/core/systems/RankingSystem';
@@ -141,15 +141,16 @@ describe('amizade e duplas', () => {
     expect(duoFoes(p)).toHaveLength(2);
   });
 
-  it('revezamento: quem cai é substituído; perde quem fica sem lutadores', () => {
+  it('duelos simultâneos: 2 vitórias vencem, 2 derrotas perdem, 1 a 1 vai ao desempate', () => {
     const run = newDuoRun();
-    expect(duoBout(run, 1, [0, 40])).toBe('next'); // jogador caiu
-    expect(run.playerOut && run.a === 1 && run.theirs[0] === 40).toBe(true);
-    expect(duoBout(run, 0, [30, 0])).toBe('next'); // parceiro venceu o 1º adversário
-    expect(duoBout(run, 0, [10, 0])).toBe('win');
-    const r2 = newDuoRun();
-    duoBout(r2, 1, [0, 50]);
-    expect(duoBout(r2, 1, [0, 20])).toBe('loss');
+    // os dois duelos ao mesmo tempo: jogador perde, parceiro vence -> desempate
+    expect(duoClash(run, { winner: 1, hp: [0, 40] }, { winner: 0, hp: [30, 0] })).toBe('decider');
+    expect(run.playerOut).toBe(true);
+    expect([run.a, run.b]).toEqual([1, 0]);
+    expect([run.ours[run.a], run.theirs[run.b]]).toEqual([30, 40]);
+    expect(duoDecider(run, 0)).toBe('win');
+    expect(duoClash(newDuoRun(), { winner: 0, hp: [20, 0] }, { winner: 0, hp: [10, 0] })).toBe('win');
+    expect(duoClash(newDuoRun(), { winner: 1, hp: [0, 20] }, { winner: 1, hp: [0, 10] })).toBe('loss');
   });
 
   it('o motor aceita vida inicial (o vencedor do assalto anterior continua ferido)', () => {
