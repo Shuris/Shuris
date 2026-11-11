@@ -88,8 +88,12 @@ async function playSlot(n) {
 async function forfeitNow() {
   await win.waitForSelector('#hud [data-hud="forfeit"]', { timeout: 10000 });
   await win.waitForTimeout(3000);
-  await win.click('[data-hud="forfeit"]');
-  await win.click('.modal [data-a="ok"]');
+  // a luta pode ter acabado sozinha antes (ex.: nocaute rápido)
+  if (await win.locator('.modal-result').count()) return;
+  await win.click('[data-hud="forfeit"]', { timeout: 10000 }).catch(() => {});
+  await win.waitForSelector('.modal [data-a="ok"], .modal-result', { timeout: 30000 });
+  const ok = win.locator('.modal [data-a="ok"]');
+  if (await ok.count()) await ok.click();
 }
 
 async function fightToEnd() {
