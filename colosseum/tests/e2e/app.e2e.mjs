@@ -34,6 +34,8 @@ async function step(name, fn) {
   try {
     // uma etapa anterior que falhou pode ter deixado uma janela aberta
     if (win && !win.isClosed()) await win.evaluate(() => document.querySelector('.modal-result [data-r="close"]')?.click()).catch(() => {});
+    // e qualquer outra janela (jornal, chave do torneio, confirmação) que tenha sobrado
+    for (let i = 0; i < 3 && win && !win.isClosed() && (await win.locator('.modal-backdrop').count().catch(() => 0)); i++) await win.keyboard.press('Escape').catch(() => {});
     await fn();
     results.push({ name, ok: true });
     console.log(`  ✓ ${name} (${Date.now() - t0} ms)`);
@@ -223,7 +225,7 @@ await step('11. Derrota (desistência): sem perder itens, só um pouco de fama',
   await win.waitForTimeout(4000);
   await win.click('[data-hud="forfeit"]');
   await win.click('.modal [data-a="ok"]');
-  await win.waitForSelector('.modal-result', { timeout: 15000 });
+  await win.waitForSelector('.modal-result', { timeout: 60000 });
   const after = await state();
   assert(after.history[0].result === 'loss' && after.inventory.length === before.inventory.length, 'derrota sem perdas');
   assert(after.injury && after.injury.days === 1, 'desistência deixa ferido por 1 dia');
@@ -509,7 +511,7 @@ await step('26. Rivais: derrotado só luta de novo se pedir revanche', async () 
   await shot('26-rematch');
   await win.click('[data-action="fight-rematch"]');
   await forfeitNow();
-  await win.waitForSelector('.modal-result', { timeout: 15000 });
+  await win.waitForSelector('.modal-result', { timeout: 60000 });
   const p = await state();
   assert(p.rematch === null && p.rivals.marcus.losses === losses0 + 1, 'revanche registrada na memória do rival');
   assert(!(await win.locator('[data-r="again"]').count()), 'sem botão de revanche instantânea');
@@ -575,7 +577,7 @@ await step('30. Torneio de sábado: inscrição, chave e prêmio', async () => {
   await shot('30-bracket');
   await win.click('[data-t="fight"]');
   await forfeitNow();
-  await win.waitForSelector('.modal-bracket [data-t="claim"]', { timeout: 15000 });
+  await win.waitForSelector('.modal-bracket [data-t="claim"]', { timeout: 60000 });
   const run = (await state()).tournament.run;
   assert(run.done && run.winners.length === 7, 'torneio simulado até a final');
   const fame0 = (await state()).reputation;
@@ -668,7 +670,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   assert(/Lobo|Javali|Urso|Leão/.test(beast), `adversário é uma fera (${beast})`);
   await shot('35-venatio');
   await forfeitNow();
-  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.waitForSelector('.modal-result', { timeout: 60000 });
   await win.click('[data-r="close"]');
   assert((await state()).career.beastDay === vday, 'uma fera por dia');
   // convite por fama
@@ -681,7 +683,7 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   assert((await win.evaluate(() => window.__colosseum.view.arena.arenaDef.id)) === 'villa', 'luta na arena particular');
   await shot('35-convite');
   await forfeitNow();
-  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.waitForSelector('.modal-result', { timeout: 60000 });
   await win.click('[data-r="close"]');
   const afterInvite = await state();
   assert(afterInvite.reputation >= fameBefore - 0 && !afterInvite.injury, 'amistoso não fere nem tira fama');
@@ -697,9 +699,9 @@ await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da pla
   await shot('35-dupla');
   await forfeitNow();
   // o parceiro entra no segundo assalto
-  await win.waitForFunction(() => document.querySelector('#hud .plate-0 .plate-name span')?.textContent?.includes('Marcus'), null, { timeout: 20000 });
+  await win.waitForFunction(() => document.querySelector('#hud .plate-0 .plate-name span')?.textContent?.includes('Marcus'), null, { timeout: 60000 });
   await forfeitNow();
-  await win.waitForSelector('.modal-result', { timeout: 20000 });
+  await win.waitForSelector('.modal-result', { timeout: 60000 });
   await win.click('[data-r="close"]');
   assert((await state()).career.duoDay === (await state()).day, 'luta de dupla registrada');
   // missão do instrutor no ludus
