@@ -652,6 +652,8 @@ await step('33. Rede de segurança: um erro na cena não congela o jogo', async 
 
 await step('35. Carreira 0.9: venatio, convite, dupla com parceiro, favor da plateia, missão, ranking, boneco e estados', async () => {
   const errs0 = errors.length;
+  // uma etapa anterior pode ter deixado uma janela aberta (jornal, resultado...)
+  for (let i = 0; i < 3 && (await win.locator('.modal-backdrop').count()); i++) await win.keyboard.press('Escape');
   const vday = await win.evaluate(() => { let d = 3; while (!window.__colosseum.isVenatio(d)) d++; return d; });
   await win.evaluate((d) => window.__colosseum.store.update((p) => {
     p.day = d; p.minutes = 9 * 60; p.energy = 100; p.injury = null; p.reputation = 120;
