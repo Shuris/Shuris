@@ -14,7 +14,7 @@ export interface CreationResult {
 }
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
-const SKIN_SWATCH = ['#eebe94', '#c88e62', '#8c5c3c'];
+const SKIN_SWATCH = ['#eebe94', '#c88e62', '#8c5c3c', '#fad8ba', '#623e28'];
 
 export class IntroScreen {
   private step: 'title' | 'create' | 'story' = 'title';

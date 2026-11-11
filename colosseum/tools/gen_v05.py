@@ -380,6 +380,10 @@ class Composer:
             out.alpha_composite(self.sheet(s).crop((f * m["frameWidth"], 0, (f + 1) * m["frameWidth"], m["frameHeight"])))
         if top:
             put_weapon()
+        # folhas em resolução dupla: as ilustrações usam o quadro no tamanho original (112x88)
+        res = m.get("res", 1)
+        if res > 1:
+            out = out.resize((m["frameWidth"] // res, m["frameHeight"] // res), Image.NEAREST)
         return out
 
 

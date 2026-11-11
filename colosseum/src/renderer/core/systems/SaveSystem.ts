@@ -143,8 +143,8 @@ export function validatePlayer(p: Obj): ParseResult {
     name,
     origin: typeof p.origin === 'string' && ORIGINS.some((o) => o.id === p.origin) ? p.origin : ORIGINS[0].id,
     appearance: {
-      skin: int(appearance.skin, 0, 0, 2, w, 'appearance.skin'),
-      hairStyle: int(appearance.hairStyle, 0, 0, 2, w, 'appearance.hairStyle'),
+      skin: int(appearance.skin, 0, 0, 4, w, 'appearance.skin'),
+      hairStyle: int(appearance.hairStyle, 0, 0, 6, w, 'appearance.hairStyle'),
       hairColor: int(appearance.hairColor, 0, 0, 5, w, 'appearance.hairColor'),
       beard: appearance.beard === true,
       clothColor: int(appearance.clothColor, 0, 0, 5, w, 'appearance.clothColor'),

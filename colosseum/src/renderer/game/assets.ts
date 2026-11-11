@@ -9,6 +9,8 @@ export interface AnimDef {
 }
 
 export interface GladiatorManifest {
+  /** resolução das folhas (2 = dobro; o jogo desenha na escala 1/res) */
+  res?: number;
   frameWidth: number;
   frameHeight: number;
   originX: number;

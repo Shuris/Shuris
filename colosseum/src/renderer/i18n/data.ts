@@ -162,8 +162,8 @@ export const EN_TRAININGS: Record<TrainingId, ND> = {
 
 export const EN_RARITY: Record<Rarity, string> = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', epic: 'Epic' };
 export const EN_SLOTS: Record<Slot, string> = { mainHand: 'Weapon', offHand: 'Shield', head: 'Helmet', body: 'Armor', legs: 'Legs' };
-export const EN_SKIN = ['Fair', 'Tan', 'Dark'];
-export const EN_HAIR = ['Short', 'Long', 'Shaved'];
+export const EN_SKIN = ['Fair', 'Tan', 'Dark', 'Very fair', 'Deep'];
+export const EN_HAIR = ['Short', 'Long', 'Shaved', 'Curly', 'Ponytail', 'Crest', 'Bun'];
 
 const en = () => getLang() === 'en';
 

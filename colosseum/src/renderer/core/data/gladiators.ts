@@ -39,5 +39,5 @@ export function getOrigin(id: string): OriginDef {
 /** Paletas usadas para tingir cabelo e tecido (hex numérico para Phaser). */
 export const HAIR_COLORS = [0x3a2616, 0x6e4422, 0x1e1812, 0xa87a3e, 0x8a3a1e, 0x9a958c];
 export const CLOTH_COLORS = [0xc8483a, 0xe8dcc0, 0x4a6aa8, 0x5a8a4a, 0xd8a440, 0x7a4a8a];
-export const SKIN_NAMES = ['Clara', 'Morena', 'Escura'];
-export const HAIR_STYLE_NAMES = ['Curto', 'Longo', 'Raspado'];
+export const SKIN_NAMES = ['Clara', 'Morena', 'Escura', 'Muito clara', 'Retinta'];
+export const HAIR_STYLE_NAMES = ['Curto', 'Longo', 'Raspado', 'Cacheado', 'Rabo de cavalo', 'Crista', 'Coque'];

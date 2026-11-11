@@ -1,8 +1,9 @@
 {
-  "frameWidth": 112,
-  "frameHeight": 88,
-  "originX": 56,
-  "originY": 83,
+  "frameWidth": 224,
+  "frameHeight": 176,
+  "originX": 112,
+  "originY": 166,
+  "res": 2,
   "frameCount": 29,
   "animations": {
     "idle": {
@@ -108,6 +109,30 @@
       "file": "sprites/gladiator/body_front_2.png",
       "layer": "body_front"
     },
+    "body_back_3": {
+      "file": "sprites/gladiator/body_back_3.png",
+      "layer": "body_back"
+    },
+    "body_main_3": {
+      "file": "sprites/gladiator/body_main_3.png",
+      "layer": "body_main"
+    },
+    "body_front_3": {
+      "file": "sprites/gladiator/body_front_3.png",
+      "layer": "body_front"
+    },
+    "body_back_4": {
+      "file": "sprites/gladiator/body_back_4.png",
+      "layer": "body_back"
+    },
+    "body_main_4": {
+      "file": "sprites/gladiator/body_main_4.png",
+      "layer": "body_main"
+    },
+    "body_front_4": {
+      "file": "sprites/gladiator/body_front_4.png",
+      "layer": "body_front"
+    },
     "arm_top_0": {
       "file": "sprites/gladiator/arm_top_0.png",
       "layer": "arm_top"
@@ -118,6 +143,14 @@
     },
     "arm_top_2": {
       "file": "sprites/gladiator/arm_top_2.png",
+      "layer": "arm_top"
+    },
+    "arm_top_3": {
+      "file": "sprites/gladiator/arm_top_3.png",
+      "layer": "arm_top"
+    },
+    "arm_top_4": {
+      "file": "sprites/gladiator/arm_top_4.png",
       "layer": "arm_top"
     },
     "cloth": {
@@ -146,6 +179,22 @@
     },
     "hair_2": {
       "file": "sprites/gladiator/hair_2.png",
+      "layer": "hair"
+    },
+    "hair_3": {
+      "file": "sprites/gladiator/hair_3.png",
+      "layer": "hair"
+    },
+    "hair_4": {
+      "file": "sprites/gladiator/hair_4.png",
+      "layer": "hair"
+    },
+    "hair_5": {
+      "file": "sprites/gladiator/hair_5.png",
+      "layer": "hair"
+    },
+    "hair_6": {
+      "file": "sprites/gladiator/hair_6.png",
       "layer": "hair"
     },
     "beard": {
@@ -232,38 +281,38 @@
   "weapons": {
     "rudis": {
       "file": "sprites/gladiator/weapon_rudis.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "gladius": {
       "file": "sprites/gladiator/weapon_gladius.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "shortsword": {
       "file": "sprites/gladiator/weapon_shortsword.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "sica": {
       "file": "sprites/gladiator/weapon_sica.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "spear": {
       "file": "sprites/gladiator/weapon_spear.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "trident": {
       "file": "sprites/gladiator/weapon_trident.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     },
     "arbelas": {
       "file": "sprites/gladiator/weapon_arbelas.png",
-      "gripX": 12,
-      "gripY": 7
+      "gripX": 24,
+      "gripY": 14
     }
   },
   "weaponTop": [
@@ -273,148 +322,148 @@
   ],
   "hands": [
     [
-      59,
-      54,
+      118,
+      108,
       -30
     ],
     [
-      59,
-      55,
+      118,
+      110,
       -30
     ],
     [
-      59,
-      55,
+      118,
+      110,
       -30
     ],
     [
-      59,
-      54,
+      118,
+      108,
       -30
     ],
     [
-      59.0,
-      53,
+      118.0,
+      106,
       -30
     ],
     [
-      57.27,
-      54,
+      114.54,
+      108,
       -30
     ],
     [
-      57.27,
-      54,
+      114.54,
+      108,
       -30
     ],
     [
-      59.0,
-      53,
+      118.0,
+      106,
       -30
     ],
     [
-      60.73,
-      54,
+      121.46,
+      108,
       -30
     ],
     [
-      60.73,
-      54,
+      121.46,
+      108,
       -30
     ],
     [
-      48,
-      41,
+      96,
+      82,
       -140
     ],
     [
-      61.84,
-      40.31,
+      123.69,
+      80.62,
       -62
     ],
     [
-      72.41,
-      52.95,
+      144.82,
+      105.91,
       4
     ],
     [
-      66.57,
-      58.78,
+      133.15,
+      117.55,
       32
     ],
     [
-      53,
-      59,
+      106,
+      118,
       -70
     ],
     [
-      53,
-      60,
+      106,
+      120,
       -68
     ],
     [
-      49,
-      56,
+      98,
+      112,
       -130
     ],
     [
-      51,
-      58,
+      102,
+      116,
       -100
     ],
     [
-      49,
-      58,
+      98,
+      116,
       -60
     ],
     [
-      46,
-      54,
+      92,
+      108,
       -60
     ],
     [
-      50,
-      58,
+      100,
+      116,
       -55
     ],
     [
-      56.46,
-      39.21,
+      112.93,
+      78.43,
       -85
     ],
     [
-      57.05,
-      38.33,
+      114.11,
+      76.65,
       -88
     ],
     [
-      56.46,
-      39.21,
+      112.93,
+      78.43,
       -85
     ],
     [
-      57.05,
-      38.33,
+      114.11,
+      76.65,
       -88
     ],
     [
-      50,
-      60,
+      100,
+      120,
       30
     ],
     [
-      59.84,
-      70.69,
+      119.69,
+      141.38,
       8
     ],
     [
-      60.48,
-      71.86,
+      120.96,
+      143.73,
       8
     ],
     [
-      60.48,
-      71.86,
+      120.96,
+      143.73,
       8
     ]
   ]

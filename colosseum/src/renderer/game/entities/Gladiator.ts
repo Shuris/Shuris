@@ -35,6 +35,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
   private flashTime = 0;
   private facingDir: 1 | -1 = 1;
   private baseScale = 1;
+  private res = 1;
   speedMul = 1;
   aura: Phaser.GameObjects.Ellipse;
 
@@ -45,8 +46,11 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     this.shadow = scene.add.ellipse(0, 0, 26, 6, 0x000000, 0.28);
     this.add(this.shadow);
     this.rig = scene.add.container(0, 0);
+    // folhas em resolução dupla: o corpo é desenhado na escala 1/res
+    this.res = this.manifest.res ?? 1;
+    this.rig.setScale(1 / this.res);
     this.add(this.rig);
-    this.aura = scene.add.ellipse(0, -22, 30, 50, 0xffd36a, 0);
+    this.aura = scene.add.ellipse(0, -22 * this.res, 30 * this.res, 50 * this.res, 0xffd36a, 0);
     this.aura.setBlendMode(Phaser.BlendModes.ADD);
     this.rig.add(this.aura);
     this.setVisual(visual);
@@ -63,7 +67,7 @@ export class GladiatorView extends Phaser.GameObjects.Container {
     if (v.beast) {
       // fera: uma folha só, com os mesmos quadros e animações do gladiador
       // as folhas das feras são desenhadas maiores; reduzidas para ficar na proporção de um homem
-      const s = this.scene.add.sprite(0, 0, `beast:${v.beast}`, 0).setOrigin(m.originX / m.frameWidth, m.originY / m.frameHeight).setScale(BEAST_SCALE[v.beast] ?? 0.7);
+      const s = this.scene.add.sprite(0, 0, `beast:${v.beast}`, 0).setOrigin(m.originX / m.frameWidth, m.originY / m.frameHeight).setScale((BEAST_SCALE[v.beast] ?? 0.7) * this.res);
       this.layers.push(s);
       this.baseTints.push(0xffffff);
       this.rig.add(s);

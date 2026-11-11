@@ -10,7 +10,7 @@ from pixel import new_img, finish, darker, lighter, hexc, mix
 from gen_v05 import Composer, _bg, _place, engrave
 
 PW, PH = 48, 48
-SKINS = [(238, 190, 148), (200, 142, 98), (140, 92, 60)]
+SKINS = [(238, 190, 148), (200, 142, 98), (140, 92, 60), (250, 216, 186), (98, 62, 40)]
 HAIR = [hexc("3a2616"), hexc("6e4422"), hexc("1e1812"), hexc("a87a3e"), hexc("8a3a1e"), hexc("9a958c")]
 CLOTH = [hexc("c8483a"), hexc("e8dcc0"), hexc("4a6aa8"), hexc("5a8a4a"), hexc("d8a440"), hexc("7a4a8a")]
 BRONZE = (196, 142, 64)
@@ -236,6 +236,17 @@ def _hair(d, style, color, woman=False, bald=False):
     if style == 2:  # raspado: sombra curta
         d.chord([16, 10, 32, 22], 180, 360, fill=darker(color, 0.85))
         return
+    if style == 5:  # crista: laterais raspadas e faixa alta no meio
+        d.chord([16, 10, 32, 22], 180, 360, fill=darker(color, 0.8))
+        d.polygon([(21, 12), (23, 4), (26, 4), (28, 12)], fill=color)
+        return
+    if style == 3:  # cacheado: volume em bolinhas
+        for cx, cy in ((16, 14), (19, 9), (24, 7), (29, 9), (32, 14), (14, 20), (34, 20)):
+            d.ellipse([cx - 4, cy - 4, cx + 4, cy + 4], fill=color)
+    if style == 6:  # coque no alto
+        d.ellipse([19, 2, 29, 11], fill=color)
+    if style == 4:  # rabo de cavalo caindo de lado
+        d.polygon([(31, 14), (36, 18), (37, 32), (34, 34), (32, 22)], fill=color)
     d.chord([15, 8, 33, 24], 180, 360, fill=color)
     d.rectangle([15, 14, 18, 20], fill=color)
     d.rectangle([30, 14, 33, 20], fill=color)
@@ -403,7 +414,7 @@ def locked_portrait():
 
 def player_layers(out):
     """Camadas do retrato do jogador (montadas no jogo com a cor do cabelo)."""
-    for skin in range(3):
+    for skin in range(len(SKINS)):
         sp = dict(skin=skin, hair=0, color=0, beard=None, helmet=None, body="tunic", cloth=1, brow="calm", mouth="flat")
         img = _backdrop("default")
         layer = new_img(PW, PH)
@@ -416,7 +427,7 @@ def player_layers(out):
         img.alpha_composite(layer)
         img.save(os.path.join(out, f"layer_base_{skin}.png"))
     white = (236, 236, 236)
-    for style in range(3):
+    for style in range(7):
         layer = new_img(PW, PH)
         d = ImageDraw.Draw(layer)
         _hair(d, style, white)

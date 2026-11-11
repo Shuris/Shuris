@@ -152,6 +152,15 @@ def torso_poly(s, w1=4.5, w2=3.5, inset=0.0, top=0.0, bottom=0.0):
 
 # ---------------------------------------------------------------- partes do corpo
 SANDAL = (112, 72, 42)
+SANDAL_D = (74, 46, 26)
+
+
+def _d(img):
+    return ImageDraw.Draw(img)
+
+
+def _at(a, b, t):
+    return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
 
 
 def part_leg(s, side, skin):
@@ -162,7 +171,19 @@ def part_leg(s, side, skin):
     f = R(ft)
     d.rectangle([f[0] - 1, f[1] - 1, f[0] + 3, f[1]], fill=SANDAL)
     px(d, (f[0], f[1] - 2), SANDAL)
-    return finish(img)
+    img = finish(img)
+    d = _d(img)
+    # joelho marcado e coxa iluminada
+    k = R(kn)
+    px(d, (k[0] + 1, k[1]), darker(skin, 0.78))
+    px(d, _at(hip, kn, 0.4), lighter(skin, 0.18))
+    # tiras da sandália amarradas na canela (zigue-zague)
+    for t, off in ((0.62, 1), (0.74, -1), (0.86, 1)):
+        p = _at(kn, ft, t)
+        px(d, (p[0] + off, p[1]), SANDAL_D)
+        px(d, (p[0] - off, p[1] + 1), SANDAL)
+    px(d, (f[0] + 2, f[1] - 1), lighter(SANDAL, 0.3))
+    return img
 
 
 def part_arm(s, side, skin):
@@ -172,24 +193,38 @@ def part_arm(s, side, skin):
     limb(d, el, ha, 3, skin)
     h = R(ha)
     d.ellipse([h[0] - 1, h[1] - 1, h[0] + 1, h[1] + 1], fill=darker(skin, 0.95))
-    return finish(img)
+    img = finish(img)
+    d = _d(img)
+    px(d, _at(sh, el, 0.45), lighter(skin, 0.22))  # bíceps
+    px(d, R(el), darker(skin, 0.8))  # cotovelo
+    px(d, _at(el, ha, 0.75), darker(skin, 0.86))  # punho
+    return img
 
 
 def part_torso(s, skin):
     img, d = draw_canvas(FW, FH)
     poly(d, torso_poly(s), skin)
     img = finish(img, ol=False)
-    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-    # musculatura: peitoral e abdômen
+    d = _d(img)
     nx, ny = s["neck"]
     hx, hy = s["hip"]
-    mus = darker(skin, 0.80)
-    for t in (0.35, 0.6, 0.8):
-        x = nx + (hx - nx) * t + 1.5
-        y = ny + (hy - ny) * t
-        px(d, (x, y), mus)
-    px(d, (nx + (hx - nx) * 0.22 + 3, ny + (hy - ny) * 0.22 + 1), mus)
-    px(d, (nx + (hx - nx) * 0.22 + 2, ny + (hy - ny) * 0.22 + 2), mus)
+    at = lambda t, ox=0.0, oy=0.0: (nx + (hx - nx) * t + ox, ny + (hy - ny) * t + oy)
+    mus, hi = darker(skin, 0.78), lighter(skin, 0.2)
+    # clavícula e peitoral
+    px(d, at(0.08, 1.5), hi)
+    px(d, at(0.08, 3.0), hi)
+    for ox in (1.0, 2.0, 3.0):
+        px(d, at(0.3, ox), mus)
+    px(d, at(0.22, 2.0), hi)
+    # abdômen em gomos (sombra embaixo, luz em cima)
+    for t in (0.48, 0.64, 0.8):
+        px(d, at(t, 1.0), mus)
+        px(d, at(t, 3.0), mus)
+        px(d, at(t - 0.07, 2.0), hi)
+    px(d, at(0.88, 2.0), darker(skin, 0.7))  # umbigo
+    # costela/lateral sombreada
+    px(d, at(0.42, -2.5), mus)
+    px(d, at(0.55, -2.5), mus)
     from pixel import outline
     return outline(img)
 
@@ -199,14 +234,23 @@ def part_head(s, skin):
     hx, hy = R(s["head"])
     limb(d, s["neck"], (hx, hy + 3), 3, skin)
     d.ellipse([hx - 3, hy - 4, hx + 4, hy + 4], fill=skin)
-    px(d, (hx + 4, hy + 3), skin)  # queixo
+    poly(d, [(hx + 1, hy + 2), (hx + 4, hy + 2), (hx + 4, hy + 4), (hx + 1, hy + 4)], skin)  # mandíbula
     px(d, (hx + 5, hy + 1), skin)  # nariz
+    px(d, (hx + 5, hy), skin)
     img = finish(img, ol=False)
-    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-    px(d, (hx + 2, hy - 1), (30, 20, 16))  # olho
-    px(d, (hx + 3, hy - 2), darker(skin, 0.6))  # sobrancelha
-    px(d, (hx - 1, hy), darker(skin, 0.7))  # orelha
-    px(d, (hx + 3, hy + 2), darker(skin, 0.75))  # boca
+    d = _d(img)
+    # olho (branco + pupila), sobrancelha marcada, nariz com luz, boca, orelha
+    px(d, (hx + 2, hy - 1), (238, 232, 222))
+    px(d, (hx + 3, hy - 1), (28, 20, 16))
+    d.line([(hx + 1, hy - 3), (hx + 4, hy - 3)], fill=darker(skin, 0.5))
+    px(d, (hx + 5, hy - 1), lighter(skin, 0.25))
+    px(d, (hx + 4, hy + 1), darker(skin, 0.8))  # narina
+    d.line([(hx + 3, hy + 3), (hx + 4, hy + 3)], fill=darker(skin, 0.58))
+    px(d, (hx - 1, hy), darker(skin, 0.72))  # orelha
+    px(d, (hx - 1, hy + 1), darker(skin, 0.82))
+    px(d, (hx, hy), lighter(skin, 0.15))
+    px(d, (hx + 1, hy + 1), darker(skin, 0.9))  # maçã do rosto
+    px(d, (hx + 2, hy + 4), darker(skin, 0.75))  # sombra do queixo
     from pixel import outline
     return outline(img)
 
@@ -238,20 +282,23 @@ def layer_arm_top(s, skin):
 
 
 def layer_cloth(s):
+    """Subligáculo (tanga) com dobras e aba da frente — cinza para tingir."""
     img, d = draw_canvas(FW, FH)
     hx, hy = R(s["hip"])
     g = (215, 215, 215)
     poly(d, [(hx - 4, hy - 1), (hx + 4, hy - 1), (hx + 4, hy + 3), (hx + 2, hy + 7),
              (hx - 1, hy + 6), (hx - 4, hy + 3)], g)
+    poly(d, [(hx, hy + 1), (hx + 3, hy + 1), (hx + 2, hy + 9), (hx + 1, hy + 9)], (200, 200, 200))  # aba
     img = finish(img)
-    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-    px(d, (hx + 1, hy + 2), (170, 170, 170))
-    px(d, (hx + 1, hy + 4), (170, 170, 170))
+    d = _d(img)
+    for p in ((hx - 2, hy + 1), (hx - 2, hy + 3), (hx + 1, hy + 3), (hx + 2, hy + 6)):
+        px(d, p, (160, 160, 160))  # dobras
+    d.line([(hx - 3, hy - 1), (hx + 3, hy - 1)], fill=(236, 236, 236))
     return img
 
 
 def layer_tunic(s, long=False):
-    """Túnica (ou estola longa) dos moradores da cidade — tons de cinza para tingir."""
+    """Túnica (ou estola longa) dos moradores — tons de cinza para tingir, com barra e dobras."""
     img, d = draw_canvas(FW, FH)
     g = (214, 214, 214)
     poly(d, torso_poly(s, 5.5, 5.5, top=0.5, bottom=-1), g)
@@ -261,39 +308,83 @@ def layer_tunic(s, long=False):
     sh = R(s["fsh"])
     d.ellipse([sh[0] - 2, sh[1] - 2, sh[0] + 3, sh[1] + 2], fill=g)  # manga curta
     img = finish(img, light=0.22)
-    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-    d.line([(hx - 1, hy + 1), (hx - 1, hy + hem - 1)], fill=(176, 176, 176))
+    d = _d(img)
+    for x in (hx - 3, hx, hx + 3):
+        d.line([(x, hy + 1), (x + (1 if x > hx else 0), hy + hem - 1)], fill=(178, 178, 178))
+    d.line([(hx - 6 - (1 if long else 0), hy + hem - 1), (hx + 6 + (1 if long else 0), hy + hem - 1)], fill=(150, 150, 150))  # barra
+    nx, ny = R(s["neck"])
+    d.line([(nx - 2, ny + 1), (nx + 2, ny + 1)], fill=(160, 160, 160))  # decote
+    if long:  # estola: drapeado em diagonal
+        d.line([(nx - 3, ny + 3), (hx + 4, hy + 4)], fill=(190, 190, 190))
     return img
 
 
 def layer_belt(s):
+    """Cinturão de couro largo com tachas e fivela."""
     img, d = draw_canvas(FW, FH)
     hx, hy = R(s["hip"])
-    d.rectangle([hx - 4, hy - 3, hx + 4, hy - 1], fill=(184, 136, 60))
+    d.rectangle([hx - 5, hy - 4, hx + 5, hy - 1], fill=(150, 102, 52))
     img = finish(img)
-    d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-    for x in (hx - 2, hx + 1, hx + 3):
-        px(d, (x, hy - 2), (240, 210, 120))
+    d = _d(img)
+    for x in (hx - 3, hx - 1, hx + 3):
+        px(d, (x, hy - 3), (240, 210, 120))
+        px(d, (x, hy - 2), (184, 136, 60))
+    d.rectangle([hx + 1, hy - 4, hx + 2, hy - 1], fill=(226, 186, 84))  # fivela
     return img
 
 
+HAIR_STYLES = 7
+
+
 def layer_hair(s, style):
+    """0 curto, 1 longo, 2 raspado, 3 cacheado, 4 rabo de cavalo, 5 crista, 6 coque.
+    Cinza claro para tingir; luz em cima e sombra embaixo."""
     img, d = draw_canvas(FW, FH)
     hx, hy = R(s["head"])
     g = (205, 205, 205)
-    if style == 0:  # curto
-        poly(d, [(hx - 4, hy + 2), (hx - 4, hy - 3), (hx - 2, hy - 5), (hx + 2, hy - 5),
-                 (hx + 4, hy - 3), (hx + 4, hy - 2), (hx + 1, hy - 3), (hx - 1, hy - 1), (hx - 2, hy + 2)], g)
-    elif style == 1:  # longo / encaracolado
-        poly(d, [(hx - 5, hy + 5), (hx - 5, hy - 3), (hx - 2, hy - 6), (hx + 2, hy - 6),
-                 (hx + 5, hy - 3), (hx + 4, hy - 1), (hx + 1, hy - 3), (hx - 1, hy), (hx - 2, hy + 5)], g)
-    else:  # raspado com topete
+    cap = [(hx - 4, hy + 2), (hx - 4, hy - 3), (hx - 2, hy - 5), (hx + 2, hy - 5),
+           (hx + 4, hy - 3), (hx + 4, hy - 2), (hx + 1, hy - 3), (hx - 1, hy - 1), (hx - 2, hy + 2)]
+    if style == 0:
+        poly(d, cap, g)
+    elif style == 1:
+        poly(d, [(hx - 5, hy + 6), (hx - 5, hy - 3), (hx - 2, hy - 6), (hx + 2, hy - 6),
+                 (hx + 5, hy - 3), (hx + 4, hy - 1), (hx + 1, hy - 3), (hx - 1, hy), (hx - 2, hy + 6)], g)
+    elif style == 2:
         poly(d, [(hx - 3, hy - 3), (hx - 1, hy - 5), (hx + 2, hy - 5), (hx + 3, hy - 4), (hx - 2, hy - 3)], g)
+    elif style == 3:  # cacheado: volume em bolinhas
+        for cx, cy in ((hx - 4, hy - 2), (hx - 2, hy - 5), (hx + 1, hy - 6), (hx + 4, hy - 4), (hx - 5, hy + 1), (hx - 3, hy + 2)):
+            d.ellipse([cx - 2, cy - 2, cx + 2, cy + 2], fill=g)
+        poly(d, cap, g)
+    elif style == 4:  # rabo de cavalo
+        poly(d, cap, g)
+        poly(d, [(hx - 4, hy - 2), (hx - 7, hy + 1), (hx - 7, hy + 7), (hx - 5, hy + 8), (hx - 5, hy + 2)], g)
+    elif style == 5:  # crista no alto, laterais raspadas
+        poly(d, [(hx - 3, hy - 3), (hx - 1, hy - 5), (hx + 2, hy - 5), (hx + 3, hy - 4), (hx - 2, hy - 3)], (176, 176, 176))
+        poly(d, [(hx - 3, hy - 4), (hx - 1, hy - 8), (hx + 1, hy - 8), (hx + 3, hy - 5), (hx + 1, hy - 4)], g)
+    else:  # coque alto atrás
+        poly(d, cap, g)
+        d.ellipse([hx - 6, hy - 7, hx - 2, hy - 3], fill=g)
     img = finish(img)
+    d = _d(img)
+    hi, lo = (238, 238, 238), (150, 150, 150)
+    if style in (0, 1, 3, 4, 6):  # brilho do cabelo e mechas
+        d.line([(hx - 1, hy - 4), (hx + 2, hy - 4)], fill=hi)
+        px(d, (hx - 3, hy - 1), lo)
+        px(d, (hx, hy - 3), lo)
     if style == 1:
-        d = __import__("PIL.ImageDraw", fromlist=["ImageDraw"]).Draw(img)
-        for p in ((hx - 3, hy - 2), (hx - 4, hy + 1), (hx, hy - 4), (hx - 3, hy + 3)):
-            px(d, p, (150, 150, 150))
+        for p in ((hx - 4, hy + 2), (hx - 3, hy + 4), (hx - 4, hy - 1)):
+            px(d, p, lo)
+    if style == 3:
+        for p in ((hx - 4, hy - 3), (hx - 1, hy - 6), (hx + 3, hy - 5), (hx - 5, hy + 1)):
+            px(d, p, hi)
+    if style == 4:
+        d.line([(hx - 6, hy + 2), (hx - 6, hy + 6)], fill=lo)
+        px(d, (hx - 4, hy - 2), (226, 186, 84))  # presilha
+    if style == 5:
+        d.line([(hx - 1, hy - 7), (hx + 1, hy - 7)], fill=hi)
+    if style == 6:
+        px(d, (hx - 4, hy - 6), hi)
+        px(d, (hx - 4, hy - 4), lo)
     return img
 
 
@@ -302,7 +393,12 @@ def layer_beard(s):
     hx, hy = R(s["head"])
     g = (205, 205, 205)
     poly(d, [(hx, hy + 1), (hx + 1, hy + 2), (hx + 4, hy + 2), (hx + 5, hy + 4), (hx + 2, hy + 6), (hx - 1, hy + 4)], g)
-    return finish(img, ol=False)
+    img = finish(img, ol=False)
+    d = _d(img)
+    d.line([(hx + 3, hy + 2), (hx + 5, hy + 2)], fill=(232, 232, 232))  # bigode
+    for p in ((hx + 1, hy + 4), (hx + 3, hy + 5), (hx, hy + 3)):
+        px(d, p, (150, 150, 150))  # textura
+    return img
 
 
 # ---------------------------------------------------------------- equipamentos
@@ -693,7 +789,7 @@ def layer_greave(s, side, kind):
 
 
 # ---------------------------------------------------------------- folhas
-SKINS = [(238, 190, 148), (200, 142, 98), (140, 92, 60)]
+SKINS = [(238, 190, 148), (200, 142, 98), (140, 92, 60), (250, 216, 186), (98, 62, 40)]  # os 3 primeiros mantêm os saves antigos
 
 SHEETS = {}
 for i, sk in enumerate(SKINS):
@@ -706,7 +802,7 @@ SHEETS["cloth"] = ("cloth", layer_cloth)
 SHEETS["tunic"] = ("tunic", lambda s: layer_tunic(s))
 SHEETS["robe"] = ("tunic", lambda s: layer_tunic(s, True))
 SHEETS["belt"] = ("belt", layer_belt)
-for st in range(3):
+for st in range(HAIR_STYLES):
     SHEETS[f"hair_{st}"] = ("hair", lambda s, st=st: layer_hair(s, st))
 SHEETS["beard"] = ("beard", layer_beard)
 WEAPON_KINDS = ("rudis", "gladius", "shortsword", "sica", "spear", "trident", "arbelas")
@@ -737,6 +833,112 @@ LAYER_ORDER = ["body_back", "legs_back", "weapon", "body_main", "cloth", "tunic"
                "armor", "hair", "beard", "helmet", "body_front", "shield", "arm_top"]
 
 
+# ---------------------------------------------------------------- resolução dupla
+RES = 2  # as folhas saem com o dobro da resolução; o jogo desenha na metade da escala
+
+
+def scale2x(img):
+    """Scale2x (EPX): dobra a resolução arredondando as diagonais, sem borrar o pixel art."""
+    import numpy as np
+    a = np.array(img)
+    h, w = a.shape[:2]
+    pad = np.pad(a, ((1, 1), (1, 1), (0, 0)), mode="edge")
+    P_ = pad[1:-1, 1:-1]
+    A = pad[:-2, 1:-1]  # cima
+    B = pad[1:-1, 2:]   # direita
+    C = pad[1:-1, :-2]  # esquerda
+    D = pad[2:, 1:-1]   # baixo
+    eq = lambda x, y: np.all(x == y, axis=-1)
+    out = np.zeros((h * 2, w * 2, 4), dtype=a.dtype)
+    e0 = np.where((eq(C, A) & ~eq(C, D) & ~eq(A, B))[..., None], A, P_)
+    e1 = np.where((eq(A, B) & ~eq(A, C) & ~eq(B, D))[..., None], B, P_)
+    e2 = np.where((eq(D, C) & ~eq(D, B) & ~eq(C, A))[..., None], C, P_)
+    e3 = np.where((eq(B, D) & ~eq(B, A) & ~eq(D, C))[..., None], D, P_)
+    out[0::2, 0::2] = e0
+    out[0::2, 1::2] = e1
+    out[1::2, 0::2] = e2
+    out[1::2, 1::2] = e3
+    return Image.fromarray(out, "RGBA")
+
+
+def thin_outline(img):
+    """Na resolução dupla o contorno fica com 2 px: remove o anel externo (fica com 1 px)."""
+    import numpy as np
+    a = np.array(img)
+    m = a[..., 3] > 0
+    inner = np.zeros_like(m)
+    inner[1:-1, 1:-1] = m[1:-1, 1:-1] & m[:-2, 1:-1] & m[2:, 1:-1] & m[1:-1, :-2] & m[1:-1, 2:]
+    ring = m & ~inner
+    # só tira o anel onde por dentro ainda há contorno (não apaga detalhes finos)
+    lum = a[..., :3].astype(np.int32).sum(axis=-1)
+    dark_in = np.zeros_like(m)
+    dark_in[1:-1, 1:-1] = (lum[1:-1, 1:-1] < 300) & ring[1:-1, 1:-1]
+    a[dark_in & ring, 3] = 0
+    return Image.fromarray(a, "RGBA")
+
+
+def _skin_of(key):
+    for i, sk in enumerate(SKINS):
+        if key.endswith(f"_{i}"):
+            return sk
+    return SKINS[0]
+
+
+def detail2x(key, img, s):
+    """Detalhes finos que só cabem na resolução dupla (rosto, cabelo, músculos)."""
+    d = ImageDraw.Draw(img)
+    hx, hy = s["head"]
+    X, Y = round(hx * 2), round(hy * 2)
+    if key.startswith("body_main_"):
+        sk = _skin_of(key)
+        # olho: branco, íris escura e brilho; sobrancelha grossa; cílio
+        d.rectangle([X + 3, Y - 3, X + 7, Y - 1], fill=(240, 236, 228))
+        d.rectangle([X + 5, Y - 3, X + 6, Y - 1], fill=(52, 34, 22))
+        d.point((X + 6, Y - 3), fill=(250, 250, 250))
+        d.line([(X + 2, Y - 4), (X + 7, Y - 4)], fill=darker(sk, 0.35))
+        d.line([(X + 2, Y - 6), (X + 8, Y - 6)], fill=darker(sk, 0.45))
+        d.line([(X + 3, Y - 7), (X + 7, Y - 7)], fill=darker(sk, 0.55))
+        # nariz com luz e sombra, boca com lábio, maçã do rosto
+        d.line([(X + 10, Y - 2), (X + 10, Y + 1)], fill=lighter(sk, 0.3))
+        d.point((X + 9, Y + 2), fill=darker(sk, 0.7))
+        d.line([(X + 6, Y + 6), (X + 9, Y + 6)], fill=darker(sk, 0.5))
+        d.line([(X + 6, Y + 7), (X + 8, Y + 7)], fill=mix(sk, (190, 90, 80), 0.35))
+        d.point((X + 2, Y + 2), fill=mix(sk, (210, 110, 100), 0.25))
+        d.point((X + 3, Y + 2), fill=mix(sk, (210, 110, 100), 0.18))
+        # orelha com dobra
+        d.line([(X - 2, Y - 1), (X - 2, Y + 2)], fill=darker(sk, 0.62))
+        d.point((X - 1, Y), fill=lighter(sk, 0.2))
+        # músculos do peito e abdômen com meio-tom
+        nx, ny = s["neck"]
+        hpx, hpy = s["hip"]
+        at = lambda t, ox: (round((nx + (hpx - nx) * t + ox) * 2), round((ny + (hpy - ny) * t) * 2))
+        for t in (0.3, 0.5, 0.66, 0.82):
+            for ox in (1.0, 3.0):
+                x, y = at(t, ox)
+                d.point((x, y), fill=darker(sk, 0.78))
+                d.point((x + 1, y - 1), fill=lighter(sk, 0.16))
+    elif key.startswith("hair_"):
+        # fios de cabelo: linhas finas de luz e sombra seguindo a cabeça
+        a = img.load()
+        for yy in range(Y - 16, Y + 18):
+            for xx in range(X - 16, X + 12):
+                if 0 <= xx < img.width and 0 <= yy < img.height and a[xx, yy][3] > 0:
+                    if (xx + yy * 2) % 7 == 0:
+                        r, g, b, al = a[xx, yy]
+                        a[xx, yy] = (min(255, r + 26), min(255, g + 26), min(255, b + 26), al)
+                    elif (xx * 3 + yy) % 11 == 0:
+                        r, g, b, al = a[xx, yy]
+                        a[xx, yy] = (int(r * 0.8), int(g * 0.8), int(b * 0.8), al)
+    elif key == "beard":
+        a = img.load()
+        for yy in range(Y, Y + 16):
+            for xx in range(X - 4, X + 12):
+                if 0 <= xx < img.width and 0 <= yy < img.height and a[xx, yy][3] > 0 and (xx + yy) % 3 == 0:
+                    r, g, b, al = a[xx, yy]
+                    a[xx, yy] = (int(r * 0.84), int(g * 0.84), int(b * 0.84), al)
+    return img
+
+
 def generate(outdir):
     import os, json
     os.makedirs(outdir, exist_ok=True)
@@ -744,25 +946,28 @@ def generate(outdir):
     for i, sk in enumerate(skels):
         sk["_idx"] = i
     for key, (layer, fn) in SHEETS.items():
-        sheet = new_img(FW * len(skels), FH)
+        sheet = new_img(FW * RES * len(skels), FH * RES)
         for i, s in enumerate(skels):
-            sheet.alpha_composite(fn(s), (i * FW, 0))
+            frame = detail2x(key, thin_outline(scale2x(fn(s))), s)
+            sheet.alpha_composite(frame, (i * FW * RES, 0))
         sheet.save(os.path.join(outdir, key + ".png"))
     for w in WEAPON_KINDS:
-        weapon_image(w).save(os.path.join(outdir, f"weapon_{w}.png"))
+        scale2x(weapon_image(w)).save(os.path.join(outdir, f"weapon_{w}.png"))
     anims, start = {}, 0
     for name, frames, fps, loop in ANIMS:
         anims[name] = {"start": start, "count": len(frames), "fps": fps, "loop": loop}
         start += len(frames)
     manifest = {
-        "frameWidth": FW, "frameHeight": FH, "originX": ORIGIN[0], "originY": ORIGIN[1],
+        "frameWidth": FW * RES, "frameHeight": FH * RES, "originX": ORIGIN[0] * RES, "originY": ORIGIN[1] * RES,
+        # resolução das folhas: o jogo desenha os personagens na escala 1/res
+        "res": RES,
         "frameCount": len(skels), "animations": anims, "layerOrder": LAYER_ORDER,
         "sheets": {k: {"file": f"sprites/gladiator/{k}.png", "layer": v[0]} for k, v in SHEETS.items()},
-        "weapons": {w: {"file": f"sprites/gladiator/weapon_{w}.png", "gripX": WEAPON_GRIP[0], "gripY": WEAPON_GRIP[1]}
+        "weapons": {w: {"file": f"sprites/gladiator/weapon_{w}.png", "gripX": WEAPON_GRIP[0] * RES, "gripY": WEAPON_GRIP[1] * RES}
                     for w in WEAPON_KINDS},
         # posição da mão (no quadro) e ângulo da arma em graus, para cada quadro
         "weaponTop": WEAPON_TOP,
-        "hands": [[round(s["bha"][0], 2), round(s["bha"][1], 2), s["wang"]] for s in skels],
+        "hands": [[round(s["bha"][0] * RES, 2), round(s["bha"][1] * RES, 2), s["wang"]] for s in skels],
     }
     with open(os.path.join(outdir, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=2)

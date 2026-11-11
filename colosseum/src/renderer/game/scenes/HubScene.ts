@@ -288,16 +288,16 @@ export class HubScene extends Phaser.Scene {
       this.npcs.push({ v, speed, min, max, pause: 0 });
     };
     const senator = () => ({
-      appearance: { skin: rnd(2), hairStyle: 1, hairColor: 5, beard: Math.random() < 0.5, clothColor: 0 },
+      appearance: { skin: rnd(3), hairStyle: [1, 6, 0][rnd(3)], hairColor: 5, beard: Math.random() < 0.5, clothColor: 0 },
       gear: {},
       extra: [{ sheet: 'robe', tint: 0xf4eee2 }],
     });
     const soldier = () => ({
-      appearance: { skin: rnd(3), hairStyle: 0, hairColor: rnd(4), beard: Math.random() < 0.3, clothColor: 2 },
+      appearance: { skin: rnd(5), hairStyle: 0, hairColor: rnd(4), beard: Math.random() < 0.3, clothColor: 2 },
       gear: { head: getItem('galea'), body: getItem('medium_armor'), mainHand: getItem('spear'), offHand: getItem('scutum') },
     });
     const kid = () => ({
-      appearance: { skin: rnd(3), hairStyle: rnd(3), hairColor: rnd(5), beard: false, clothColor: rnd(CLOTH_COLORS.length) },
+      appearance: { skin: rnd(5), hairStyle: [0, 3, 4, 6][rnd(4)], hairColor: rnd(5), beard: false, clothColor: rnd(CLOTH_COLORS.length) },
       gear: {},
       extra: [{ sheet: 'tunic', tint: [0x4a6aa8, 0xd8c890, 0x9a4a3a, 0x6a8a5a][rnd(4)] }],
     });
@@ -413,8 +413,8 @@ export class HubScene extends Phaser.Scene {
   private person(opts: { long?: boolean; gladiator?: boolean; old?: boolean; tint?: number } = {}) {
     const rnd = (n: number) => Math.floor(Math.random() * n);
     const appearance = {
-      skin: rnd(3),
-      hairStyle: opts.long ? 1 : rnd(3),
+      skin: rnd(5),
+      hairStyle: opts.long ? [1, 4, 6][rnd(3)] : [0, 2, 3, 5][rnd(4)],
       hairColor: opts.old ? 5 : rnd(HAIR_COLORS.length - 1),
       beard: opts.old || (!opts.long && Math.random() < 0.45),
       clothColor: rnd(CLOTH_COLORS.length),
@@ -693,7 +693,7 @@ export class HubScene extends Phaser.Scene {
   private spawnTownsfolk(): void {
     const rnd = (n: number) => Math.floor(Math.random() * n);
     const person = (long: boolean) => ({
-      appearance: { skin: rnd(3), hairStyle: long ? 1 : rnd(3), hairColor: rnd(HAIR_COLORS.length), beard: !long && Math.random() < 0.4, clothColor: rnd(CLOTH_COLORS.length) },
+      appearance: { skin: rnd(5), hairStyle: long ? [1, 4, 6][rnd(3)] : [0, 2, 3, 5][rnd(4)], hairColor: rnd(HAIR_COLORS.length), beard: !long && Math.random() < 0.4, clothColor: rnd(CLOTH_COLORS.length) },
       gear: {},
       extra: [{ sheet: long ? 'robe' : 'tunic', tint: [0x4a6aa8, 0xd8c890, 0x9a4a3a, 0x6a8a5a, 0xe8dcc0, 0x7a5a8a][rnd(6)] }],
     });
