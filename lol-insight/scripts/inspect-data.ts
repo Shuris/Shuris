@@ -7,7 +7,7 @@ import { rankLabel, rankToAbsolute } from '@/stats/rank';
 
 for (const b of mockBundles()) {
   const s = summarize(b.matches);
-  console.log(`\n== ${b.player.gameName}#${b.player.tagLine} ${rankLabel(b.player.rank)} ${b.player.rank.lp} LP`);
+  console.log(`\n== ${b.player.gameName}#${b.player.tagLine} ${rankLabel(b.player.rank!)} ${b.player.rank!.lp} LP`);
   console.log(`partidas ${s.games} V${s.wins} D${s.losses} WR ${(s.winRate * 100).toFixed(1)} KDA ${s.kda.toFixed(2)} cs ${s.csPerMin.toFixed(1)} gpm ${s.goldPerMin.toFixed(0)} dmg ${s.avgDamage.toFixed(0)} kp ${(s.killParticipation * 100).toFixed(0)}`);
   const ranked = b.matches.filter((m) => m.rankAfter);
   const abs = ranked.map((m) => rankToAbsolute(m.rankAfter!));
@@ -30,6 +30,6 @@ for (const b of mockBundles()) {
     if (m.kills + m.assists > m.teamKills) throw new Error(`KP > 100% ${m.id}`);
     if (new Set(m.participants.map((p) => p.championId)).size !== 10) throw new Error(`campeão repetido ${m.id}`);
   }
-  if (abs[abs.length - 1] !== rankToAbsolute(b.player.rank)) throw new Error('elo final incoerente');
+  if (abs[abs.length - 1] !== rankToAbsolute(b.player.rank!)) throw new Error('elo final incoerente');
   console.log('coerência OK');
 }

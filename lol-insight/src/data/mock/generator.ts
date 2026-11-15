@@ -277,7 +277,7 @@ export function generateBundle(profile: PlayerProfile): PlayerBundle {
       };
 
       // Itens
-      const build = buildFor(cls, pos);
+      const build = buildFor(cls);
       const nItems = durMin < 22 ? 2 : durMin < 28 ? 3 : durMin < 34 ? 4 : 5;
       const core = [...build.core];
       for (let i = core.length - 1; i > 2; i--) {
@@ -362,6 +362,8 @@ export function generateBundle(profile: PlayerProfile): PlayerBundle {
         participants,
         objectives,
         timeline,
+        detailsLoaded: true,
+        itemsInPurchaseOrder: true,
       });
 
       lossStreak = win ? 0 : lossStreak + 1;
@@ -373,12 +375,12 @@ export function generateBundle(profile: PlayerProfile): PlayerBundle {
 
   // Reconstrói o elo partida a partida, terminando exatamente no elo atual da conta.
   const totalDelta = played.reduce((s, m) => s + (m.lpDelta ?? 0), 0);
-  let abs = rankToAbsolute(profile.player.rank) - totalDelta;
+  let abs = rankToAbsolute(profile.player.rank!) - totalDelta;
   const matches: Match[] = played.map((m) => {
     if (m.lpDelta === undefined) return m;
     abs += m.lpDelta;
     return { ...m, rankAfter: absoluteToRank(abs) };
   });
 
-  return { player: profile.player, matches, asOf };
+  return { player: profile.player, matches, asOf, source: 'demo' };
 }

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { BarChart, Heatmap, Legend, LineChart, type Bar } from '@/components/charts';
+import { SourceBadge } from '@/components/SourceBadge';
 import { StreakStrip } from '@/components/StreakStrip';
 import { Card, EmptyState, FadeIn, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
 import { POSITION_LABEL } from '@/data/champions';
@@ -9,7 +10,7 @@ import { PERIOD_OPTIONS, type PeriodDays } from '@/hooks/usePeriod';
 import { usePlayer, type Derived } from '@/state/PlayerContext';
 import { byPosition, chronological, streaks, summarize, withinDays, type Summary } from '@/stats/aggregate';
 import { axisCompact, compact, dec, pct } from '@/stats/format';
-import { bucketize, comparePeriods, consistency, csSeries, heatmap, kdaSeries, rollingWinRate, type SeriesPoint } from '@/stats/timeseries';
+import { bucketize, bucketUnit, comparePeriods, consistency, csSeries, heatmap, kdaSeries, rollingWinRate, type SeriesPoint } from '@/stats/timeseries';
 import { colors, space, type } from '@/theme';
 import type { Match } from '@/types';
 
@@ -21,9 +22,20 @@ export function PerformanceScreen() {
     <Screen
       title="Desempenho"
       subtitle={data ? `${data.player.gameName}#${data.player.tagLine} · análise avançada` : 'Análise avançada'}
+      right={<SourceBadge />}
       sticky={<Segmented style={{ flex: 1 }} options={PERIOD_OPTIONS} value={days} onChange={setDays} />}>
-      {status === 'loading' || !data ? <ScreenSkeleton hero={false} cards={4} /> : <Content data={data} days={days} />}
+      {status === 'loading' ? <ScreenSkeleton hero={false} cards={4} /> : !data ? <NoAccount /> : <Content data={data} days={days} />}
     </Screen>
+  );
+}
+
+const periodText = (days: number) => (days === 365 ? 'no último ano' : `nos últimos ${days} dias`);
+
+function NoAccount() {
+  return (
+    <Card>
+      <EmptyState icon="search-outline" title="Nenhuma conta carregada" message="Pesquise um jogador na aba Início para ver a análise de desempenho." />
+    </Card>
   );
 }
 
@@ -33,7 +45,11 @@ function Content({ data, days }: { data: Derived; days: PeriodDays }) {
   if (!period.length) {
     return (
       <Card>
-        <EmptyState icon="calendar-outline" title="Sem partidas no período" message={`Nenhuma partida nos últimos ${days} dias. Selecione um período maior.`} />
+        <EmptyState
+          icon="calendar-outline"
+          title="Sem partidas no período"
+          message={data.matches.length ? `Nenhuma das ${data.matches.length} partidas carregadas foi disputada ${periodText(days)}. Selecione um período maior.` : 'Esta conta não tem partidas carregadas para analisar.'}
+        />
       </Card>
     );
   }
@@ -41,7 +57,8 @@ function Content({ data, days }: { data: Derived; days: PeriodDays }) {
   return (
     <FadeIn trigger={days} style={{ gap: space.lg }}>
       <Text style={type.bodySm}>
-        {period.length} partidas nos últimos {days} dias. O período acima se aplica a todos os gráficos.
+        {period.length} {period.length === 1 ? 'partida' : 'partidas'} {periodText(days)}. O período acima se aplica a todos os gráficos.
+        {period.length < 10 ? ' Amostra pequena: interprete as tendências com cautela.' : ''}
       </Text>
       <KdaCard data={data} days={days} period={period} />
       <WinRateCard data={data} days={days} period={period} />
@@ -65,7 +82,7 @@ function KdaCard({ data, days, period }: CardProps) {
   const s = useMemo(() => summarize(period), [period]);
   return (
     <Card>
-      <SectionHeader eyebrow="Gráfico 1" title="Evolução do KDA" subtitle={`KDA médio por ${days <= 15 ? 'dia' : days <= 30 ? 'intervalo de 3 dias' : 'semana'}`} />
+      <SectionHeader eyebrow="Gráfico 1" title="Evolução do KDA" subtitle={`KDA médio por ${bucketUnit(days)}`} />
       <LineChart points={points} yFormat={(v) => dec(v, 1)} label="KDA" reference={{ y: s.kda, label: `Média do período (${dec(s.kda, 2)})` }} />
     </Card>
   );
@@ -83,16 +100,16 @@ function WinRateCard({ data, days, period }: CardProps) {
       <SectionHeader eyebrow="Gráfico 2" title="Taxa de vitória" subtitle="Percentual de vitórias nas 10 partidas anteriores a cada ponto" />
       <LineChart points={points} yFormat={(v) => `${Math.round(v)}%`} label="Taxa de vitória (10 partidas)" reference={{ y: 50, label: '50%' }} yDomain={[20, 80]} />
       <View style={styles.compare}>
-        <StatTile style={{ flex: 1 }} label={`Últimos ${days} dias`} value={pct(cmp.current.winRate)} hint={`${cmp.current.wins}V ${cmp.current.losses}D`} />
+        <StatTile style={{ flex: 1 }} label={days === 365 ? 'Último ano' : `Últimos ${days} dias`} value={pct(cmp.current.winRate)} hint={`${cmp.current.wins}V ${cmp.current.losses}D`} />
         {cmp.comparable ? (
           <StatTile
             style={{ flex: 1 }}
-            label={`${days} dias anteriores`}
+            label={days === 365 ? 'Ano anterior' : `${days} dias anteriores`}
             value={pct(cmp.previous.winRate)}
             delta={{ text: `${diff >= 0 ? '+' : '−'}${Math.abs(Math.round(diff))} p.p. agora`, good: diff >= 0 }}
           />
         ) : (
-          <StatTile style={{ flex: 1 }} label={`${days} dias anteriores`} value="—" hint="sem dados para comparar" />
+          <StatTile style={{ flex: 1 }} label={days === 365 ? 'Ano anterior' : `${days} dias anteriores`} value="—" hint="amostra insuficiente" />
         )}
       </View>
       {period.length < 10 ? <Text style={[type.bodySm, { marginTop: space.sm }]}>Poucas partidas no período: a curva considera partidas anteriores para completar a janela.</Text> : null}

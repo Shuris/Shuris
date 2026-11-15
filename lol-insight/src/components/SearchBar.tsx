@@ -27,9 +27,10 @@ interface SearchBarProps {
   recent: AccountSuggestion[];
   suggestions: AccountSuggestion[];
   busy?: boolean;
+  placeholder?: string;
 }
 
-export function SearchBar({ region, onRegionChange, onSearch, recent, suggestions, busy }: SearchBarProps) {
+export function SearchBar({ region, onRegionChange, onSearch, recent, suggestions, busy, placeholder = 'Buscar invocador (Nome#TAG)' }: SearchBarProps) {
   const [text, setText] = useState('');
   const [focused, setFocused] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
@@ -47,7 +48,8 @@ export function SearchBar({ region, onRegionChange, onSearch, recent, suggestion
     onSearch(a);
   };
 
-  const shortcuts = [...recent, ...suggestions.filter((s) => !recent.some((r) => r.gameName === s.gameName && r.tagLine === s.tagLine))];
+  const same = (a: AccountSuggestion, b: AccountSuggestion) => a.gameName === b.gameName && a.tagLine === b.tagLine && a.region === b.region;
+  const shortcuts = [...recent, ...suggestions.filter((s) => !recent.some((r) => same(r, s)))];
 
   return (
     <View style={{ gap: space.sm }}>
@@ -66,7 +68,7 @@ export function SearchBar({ region, onRegionChange, onSearch, recent, suggestion
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onSubmitEditing={submit}
-          placeholder="Buscar invocador (Nome#TAG)"
+          placeholder={placeholder}
           placeholderTextColor={colors.textMuted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -93,7 +95,7 @@ export function SearchBar({ region, onRegionChange, onSearch, recent, suggestion
         <ChipRow>
           {shortcuts.map((a) => (
             <Chip
-              key={`${a.gameName}#${a.tagLine}`}
+              key={`${a.gameName}#${a.tagLine}@${a.region}`}
               icon={recent.includes(a) ? 'time-outline' : 'person-outline'}
               label={`${a.gameName}#${a.tagLine} · ${a.region}`}
               onPress={() => choose(a)}

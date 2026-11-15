@@ -1,5 +1,6 @@
-import type { ChampionClass, Position, RuneSetup } from '@/types';
+import type { ChampionClass, RuneSetup } from '@/types';
 
+/** Nomes dos itens. Começa com os usados na demonstração e recebe os do Data Dragon nos dados reais. */
 export const ITEM_NAMES: Record<number, string> = {
   3020: 'Sapatos do Feiticeiro',
   3158: 'Botas Ionianas da Lucidez',
@@ -45,23 +46,30 @@ export const ITEM_NAMES: Record<number, string> = {
   3364: 'Lente do Oráculo',
 };
 
+export function registerItemNames(names: Record<string, string> | undefined): void {
+  if (!names) return;
+  for (const [id, name] of Object.entries(names)) ITEM_NAMES[Number(id)] = name;
+}
+
+export const itemName = (id: number) => ITEM_NAMES[id] ?? `Item ${id}`;
+
+// ---- Builds e runas do gerador demonstrativo --------------------------------
+
 const BUILDS: Record<ChampionClass, { boots: number; core: number[]; trinket: number }> = {
-  EXPLOSAO: { boots: 3020, core: [6655, 4645, 3089, 3157, 3135, 3100, 4646], trinket: 3363 },
-  CONTROLE: { boots: 3020, core: [6655, 3089, 3157, 3135, 6653, 3165, 3116], trinket: 3363 },
-  ATIRADOR: { boots: 3006, core: [6672, 3031, 3094, 3036, 3072, 3046, 3153], trinket: 3363 },
-  LUTADOR: { boots: 3047, core: [3071, 6610, 3053, 6333, 6692, 3078, 3026], trinket: 3364 },
-  INICIACAO: { boots: 3111, core: [3190, 3109, 3050, 3107, 3075, 3065, 2065], trinket: 3364 },
+  ASSASSIN: { boots: 3020, core: [6655, 4645, 3089, 3157, 3135, 3100, 4646], trinket: 3363 },
+  MAGE: { boots: 3020, core: [6655, 3089, 3157, 3135, 6653, 3165, 3116], trinket: 3363 },
+  MARKSMAN: { boots: 3006, core: [6672, 3031, 3094, 3036, 3072, 3046, 3153], trinket: 3363 },
+  FIGHTER: { boots: 3047, core: [3071, 6610, 3053, 6333, 6692, 3078, 3026], trinket: 3364 },
+  TANK: { boots: 3111, core: [3190, 3109, 3050, 3107, 3075, 3065, 2065], trinket: 3364 },
+  SUPPORT: { boots: 3158, core: [6617, 3504, 3107, 2065, 3190, 3050], trinket: 3364 },
 };
 
-const SUPPORT_ENCHANTER = { boots: 3158, core: [6617, 3504, 3107, 2065, 3190, 3050], trinket: 3364 };
-
-export function buildFor(cls: ChampionClass, position: Position) {
-  if (position === 'SUPPORT' && cls === 'CONTROLE') return SUPPORT_ENCHANTER;
+export function buildFor(cls: ChampionClass) {
   return BUILDS[cls];
 }
 
-const RUNES: Record<ChampionClass, RuneSetup> = {
-  EXPLOSAO: {
+const RUNES: Partial<Record<ChampionClass, RuneSetup>> & { MAGE: RuneSetup } = {
+  ASSASSIN: {
     keystone: 'Eletrocutar',
     primaryTree: 'Dominação',
     primary: ['Gosto de Sangue', 'Coleção de Olhos', 'Caça Suprema'],
@@ -69,7 +77,7 @@ const RUNES: Record<ChampionClass, RuneSetup> = {
     secondary: ['Faixa de Fluxo de Mana', 'Transcendência'],
     shards: ['Força Adaptativa', 'Força Adaptativa', 'Vida Escalável'],
   },
-  CONTROLE: {
+  MAGE: {
     keystone: 'Invocar Aery',
     primaryTree: 'Feitiçaria',
     primary: ['Faixa de Fluxo de Mana', 'Transcendência', 'Chamuscar'],
@@ -77,7 +85,7 @@ const RUNES: Record<ChampionClass, RuneSetup> = {
     secondary: ['Entrega de Biscoitos', 'Perspicácia Cósmica'],
     shards: ['Aceleração de Habilidade', 'Força Adaptativa', 'Vida Escalável'],
   },
-  ATIRADOR: {
+  MARKSMAN: {
     keystone: 'Ritmo Fatal',
     primaryTree: 'Precisão',
     primary: ['Presença de Espírito', 'Lenda: Linhagem', 'Golpe de Misericórdia'],
@@ -85,7 +93,7 @@ const RUNES: Record<ChampionClass, RuneSetup> = {
     secondary: ['Calçados Mágicos', 'Entrega de Biscoitos'],
     shards: ['Velocidade de Ataque', 'Força Adaptativa', 'Vida Escalável'],
   },
-  LUTADOR: {
+  FIGHTER: {
     keystone: 'Conquistador',
     primaryTree: 'Precisão',
     primary: ['Triunfo', 'Lenda: Espontaneidade', 'Até a Morte'],
@@ -93,7 +101,7 @@ const RUNES: Record<ChampionClass, RuneSetup> = {
     secondary: ['Ventos Revigorantes', 'Crescimento Excessivo'],
     shards: ['Velocidade de Ataque', 'Força Adaptativa', 'Vida Escalável'],
   },
-  INICIACAO: {
+  TANK: {
     keystone: 'Pós-choque',
     primaryTree: 'Determinação',
     primary: ['Demolir', 'Osso Revestido', 'Crescimento Excessivo'],
@@ -104,5 +112,5 @@ const RUNES: Record<ChampionClass, RuneSetup> = {
 };
 
 export function runesFor(cls: ChampionClass): RuneSetup {
-  return RUNES[cls];
+  return RUNES[cls] ?? RUNES.MAGE;
 }

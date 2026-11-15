@@ -1,26 +1,120 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RadarChart } from '@/components/charts';
 import { REGIONS } from '@/components/SearchBar';
-import { Card, ChampionAvatar, EmptyState, Meter, ProfileAvatar, RankEmblem, Screen, ScreenSkeleton, SectionHeader, StatTile, TileGrid } from '@/components/ui';
+import { SourceBadge } from '@/components/SourceBadge';
+import { Card, ChampionAvatar, EmptyState, Meter, ProfileAvatar, RankEmblem, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
 import { champion, POSITION_LABEL, profileIconUrl } from '@/data/champions';
+import { describeError, RiotApiDataSource, ServiceError } from '@/services';
+import { defaultServerUrl } from '@/services/settings';
 import { usePlayer, type Derived } from '@/state/PlayerContext';
 import { bestChampions, byPosition, matchKda, wilsonLower } from '@/stats/aggregate';
-import { compact, dateShort, dec, int, pct } from '@/stats/format';
+import { compact, dateShort, dateTime, dec, int, pct } from '@/stats/format';
 import type { TraitKey } from '@/stats/identity';
-import { rankLabel, rankToAbsolute, TIER_COLOR } from '@/stats/rank';
+import { isApex, rankLabel, rankToAbsolute, TIER_COLOR } from '@/stats/rank';
 import { colors, fonts, radius, space, type } from '@/theme';
-import type { Rank } from '@/types';
+import type { DataSourceKind, Rank } from '@/types';
 
 export function ProfileScreen() {
   const { status, data } = usePlayer();
   return (
-    <Screen title="Perfil" subtitle="Identidade competitiva e carreira">
-      {status === 'loading' || !data ? <ScreenSkeleton cards={3} /> : <Content data={data} />}
+    <Screen title="Perfil" subtitle="Identidade competitiva e carreira" right={<SourceBadge />}>
+      <DataSourceCard />
+      {status === 'loading' ? (
+        <ScreenSkeleton cards={3} />
+      ) : !data ? (
+        <Card>
+          <EmptyState icon="search-outline" title="Nenhuma conta carregada" message="Pesquise um jogador na aba Início para ver o perfil competitivo." />
+        </Card>
+      ) : (
+        <Content data={data} />
+      )}
     </Screen>
+  );
+}
+
+type Check = { state: 'idle' } | { state: 'checking' } | { state: 'ok'; keyConfigured: boolean } | { state: 'fail'; error: ServiceError };
+
+/** Escolha entre demonstração e dados reais, e endereço do servidor que consulta a Riot. */
+function DataSourceCard() {
+  const { settings, serverUrl, setMode, setServerUrl } = usePlayer();
+  const [draft, setDraft] = useState(settings.serverUrl);
+  const [check, setCheck] = useState<Check>({ state: 'idle' });
+  const real = settings.mode === 'riot';
+
+  const test = async () => {
+    const url = draft.trim() || defaultServerUrl();
+    setServerUrl(draft);
+    setCheck({ state: 'checking' });
+    try {
+      const health = await new RiotApiDataSource(url).health();
+      setCheck({ state: 'ok', keyConfigured: health.riotApiKeyConfigured });
+    } catch (e) {
+      setCheck({ state: 'fail', error: e instanceof ServiceError ? e : new ServiceError('SERVER_UNREACHABLE', 'Sem resposta do servidor.') });
+    }
+  };
+
+  return (
+    <Card>
+      <SectionHeader title="Fonte de dados" subtitle={real ? 'Contas reais, via servidor do LOL Insight e Riot Games API' : 'Conta fictícia, gerada no próprio aparelho'} />
+      <Segmented<DataSourceKind>
+        options={[
+          { value: 'demo', label: 'Demonstração' },
+          { value: 'riot', label: 'Dados reais' },
+        ]}
+        value={settings.mode}
+        onChange={setMode}
+      />
+      {real ? (
+        <View style={{ marginTop: space.md, gap: space.sm }}>
+          <Text style={type.label}>Endereço do servidor</Text>
+          <View style={styles.urlRow}>
+            <TextInput
+              value={draft}
+              onChangeText={(t) => (setDraft(t), setCheck({ state: 'idle' }))}
+              onSubmitEditing={test}
+              placeholder={defaultServerUrl()}
+              placeholderTextColor={colors.textMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              returnKeyType="done"
+              accessibilityLabel="Endereço do servidor"
+              style={styles.urlInput}
+            />
+            <Pressable onPress={test} disabled={check.state === 'checking'} accessibilityRole="button" style={({ pressed }) => [styles.testBtn, pressed && { opacity: 0.7 }]}>
+              {check.state === 'checking' ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.testText}>Testar</Text>}
+            </Pressable>
+          </View>
+          <Text style={type.bodySm}>
+            Em uso: <Text style={{ color: colors.text }}>{serverUrl}</Text>
+            {settings.serverUrl ? '' : ' (detectado automaticamente)'}
+          </Text>
+          {check.state === 'ok' ? (
+            <View style={styles.checkRow}>
+              <Ionicons name={check.keyConfigured ? 'checkmark-circle' : 'warning'} size={15} color={check.keyConfigured ? colors.good : colors.warning} />
+              <Text style={[type.bodySm, { flex: 1 }]}>
+                {check.keyConfigured ? 'Servidor conectado e com chave da Riot configurada.' : 'Servidor conectado, mas sem chave da Riot. Defina RIOT_API_KEY em server/.env e reinicie o servidor.'}
+              </Text>
+            </View>
+          ) : null}
+          {check.state === 'fail' ? (
+            <View style={styles.checkRow}>
+              <Ionicons name="close-circle" size={15} color={colors.loss} />
+              <Text style={[type.bodySm, { flex: 1 }]}>
+                {check.error.message} {describeError(check.error.code).hint}
+              </Text>
+            </View>
+          ) : null}
+          <Text style={type.bodySm}>A chave da Riot fica somente no servidor; o aplicativo nunca a recebe.</Text>
+        </View>
+      ) : (
+        <Text style={[type.bodySm, { marginTop: space.md }]}>Os dados demonstrativos são fictícios e nunca se misturam com os de contas reais.</Text>
+      )}
+    </Card>
   );
 }
 
@@ -41,12 +135,16 @@ function Content({ data }: { data: Derived }) {
   const first = matches[matches.length - 1];
   const region = REGIONS.find((r) => r.value === player.region)?.label ?? player.region;
 
+  const rank = player.rank;
+  const real = data.source === 'riot';
   const seasons: Array<{ label: string; rank: Rank; current?: boolean }> = [
     ...player.seasonHistory.map((h) => ({ label: `Temporada ${h.season}`, rank: h.rank })),
-    { label: 'Temporada 2026 · atual', rank: player.rank, current: true },
+    ...(rank ? [{ label: 'Temporada 2026 · atual', rank, current: true }] : []),
   ];
-  const maxAbs = Math.max(...seasons.map((x) => rankToAbsolute(x.rank)), rankToAbsolute(data.peakRank));
-  const minAbs = Math.min(...seasons.map((x) => rankToAbsolute(x.rank))) - 300;
+  const absolutes = [...seasons.map((x) => rankToAbsolute(x.rank)), ...(data.peakRank ? [rankToAbsolute(data.peakRank)] : [])];
+  const maxAbs = Math.max(...absolutes, 1);
+  const minAbs = Math.min(...absolutes, maxAbs) - 300;
+  const soloSnapshots = data.rankHistory.filter((x) => x.queue === 'SOLO');
 
   return (
     <>
@@ -72,44 +170,82 @@ function Content({ data }: { data: Derived }) {
         <View style={styles.infoGrid}>
           <Info label="Riot ID" value={`${player.gameName}#${player.tagLine}`} />
           <Info label="Servidor" value={player.region} />
-          <Info label="Dados desde" value={first ? dateShort(first.timestamp) : '—'} />
+          <Info label={real ? 'Partida mais antiga' : 'Dados desde'} value={first ? dateShort(first.timestamp) : '—'} />
           <Info label="Atualizado em" value={dateShort(data.asOf)} />
         </View>
       </Card>
 
       <Card>
-        <SectionHeader title="Elo atual" />
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-          <RankEmblem rank={player.rank} size={58} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text style={[type.h1, { color: TIER_COLOR[player.rank.tier] }]}>{rankLabel(player.rank)}</Text>
-            <Meter value={player.rank.lp / 100} color={TIER_COLOR[player.rank.tier]} />
-            <Text style={type.bodySm}>
-              {player.rank.lp} LP · faltam {100 - player.rank.lp} LP para a próxima divisão
-            </Text>
+        <SectionHeader title="Elo atual" subtitle="Fila ranqueada Solo/Duo" />
+        {rank ? (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
+            <RankEmblem rank={rank} size={58} />
+            <View style={{ flex: 1, gap: 6 }}>
+              <Text style={[type.h1, { color: TIER_COLOR[rank.tier] }]}>{rankLabel(rank)}</Text>
+              {isApex(rank) ? null : <Meter value={rank.lp / 100} color={TIER_COLOR[rank.tier]} />}
+              <Text style={type.bodySm}>
+                {rank.lp} LP{isApex(rank) ? '' : ` · faltam ${100 - rank.lp} LP para a próxima divisão`}
+              </Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <EmptyState icon="shield-outline" title="Sem elo" message="Esta conta não está classificada na fila Solo/Duo nesta temporada." />
+        )}
+        {player.ranked?.solo || player.ranked?.flex ? (
+          <View style={{ marginTop: space.lg, gap: 2 }}>
+            {player.ranked.solo ? <QueueRow label="Solo/Duo" rank={player.ranked.solo.rank} wins={player.ranked.solo.wins} losses={player.ranked.solo.losses} /> : null}
+            {player.ranked.flex ? <QueueRow label="Flex" rank={player.ranked.flex.rank} wins={player.ranked.flex.wins} losses={player.ranked.flex.losses} /> : null}
+          </View>
+        ) : null}
 
         <Text style={[type.h3, { marginTop: space.xl, marginBottom: space.md }]}>Histórico de elos</Text>
-        <View style={{ gap: space.md }}>
-          {seasons.map((x) => (
-            <View key={x.label} style={{ gap: 5 }}>
-              <View style={styles.rowBetween}>
-                <Text style={[type.bodySm, x.current && { color: colors.text }]}>{x.label}</Text>
-                <Text style={[type.h3, { color: TIER_COLOR[x.rank.tier] }]}>
-                  {rankLabel(x.rank)} <Text style={styles.muted}>{x.rank.lp} LP</Text>
-                </Text>
+        {real ? (
+          <>
+            <Text style={[type.bodySm, { marginBottom: space.md }]}>
+              A Riot API não fornece o elo de temporadas anteriores nem o histórico de LP. O LOL Insight registra o elo a cada atualização da conta
+              {soloSnapshots.length ? ` — ${soloSnapshots.length} ${soloSnapshots.length === 1 ? 'registro' : 'registros'} desde ${dateShort(soloSnapshots[0].t)}.` : '.'}
+            </Text>
+            {soloSnapshots.length ? (
+              <View style={{ gap: 2 }}>
+                {[...soloSnapshots]
+                  .reverse()
+                  .slice(0, 6)
+                  .map((snap) => (
+                    <View key={snap.t} style={styles.snapRow}>
+                      <Text style={[type.bodySm, { flex: 1 }]}>{dateTime(snap.t)}</Text>
+                      <Text style={[type.h3, { color: TIER_COLOR[snap.rank.tier] }]}>
+                        {rankLabel(snap.rank)} <Text style={styles.muted}>{snap.rank.lp} LP</Text>
+                      </Text>
+                    </View>
+                  ))}
               </View>
-              <Meter value={(rankToAbsolute(x.rank) - minAbs) / (maxAbs - minAbs)} color={TIER_COLOR[x.rank.tier]} height={5} />
-            </View>
-          ))}
-        </View>
-        <View style={styles.peak}>
-          <Ionicons name="trophy" size={14} color={colors.gold} />
-          <Text style={type.bodySm}>
-            Melhor elo histórico: <Text style={{ color: colors.text }}>{rankLabel(data.peakRank)} · {data.peakRank.lp} LP</Text>
-          </Text>
-        </View>
+            ) : (
+              <Text style={type.bodySm}>Ainda não há registros: o histórico começa na primeira consulta de uma conta ranqueada.</Text>
+            )}
+          </>
+        ) : (
+          <View style={{ gap: space.md }}>
+            {seasons.map((x) => (
+              <View key={x.label} style={{ gap: 5 }}>
+                <View style={styles.rowBetween}>
+                  <Text style={[type.bodySm, x.current && { color: colors.text }]}>{x.label}</Text>
+                  <Text style={[type.h3, { color: TIER_COLOR[x.rank.tier] }]}>
+                    {rankLabel(x.rank)} <Text style={styles.muted}>{x.rank.lp} LP</Text>
+                  </Text>
+                </View>
+                <Meter value={(rankToAbsolute(x.rank) - minAbs) / (maxAbs - minAbs)} color={TIER_COLOR[x.rank.tier]} height={5} />
+              </View>
+            ))}
+          </View>
+        )}
+        {data.peakRank ? (
+          <View style={styles.peak}>
+            <Ionicons name="trophy" size={14} color={colors.gold} />
+            <Text style={type.bodySm}>
+              {real ? 'Melhor elo registrado pelo app' : 'Melhor elo histórico'}: <Text style={{ color: colors.text }}>{rankLabel(data.peakRank)} · {data.peakRank.lp} LP</Text>
+            </Text>
+          </View>
+        ) : null}
       </Card>
 
       <IdentityCard data={data} />
@@ -152,7 +288,7 @@ function Content({ data }: { data: Derived }) {
       </Card>
 
       <Card>
-        <SectionHeader title="Estatísticas gerais da carreira" subtitle="Somatório de todas as partidas registradas" />
+        <SectionHeader title={real ? 'Estatísticas das partidas analisadas' : 'Estatísticas gerais da carreira'} subtitle={real ? `Somatório das ${s.games} partidas carregadas` : 'Somatório de todas as partidas registradas'} />
         <TileGrid columns={3}>
           <StatTile label="Partidas" value={`${s.games}`} hint={`${s.wins}V ${s.losses}D`} />
           <StatTile label="Vitórias" value={pct(s.winRate)} hint="taxa geral" />
@@ -176,7 +312,7 @@ function Content({ data }: { data: Derived }) {
       </Pressable>
 
       <Text style={[type.bodySm, { textAlign: 'center' }]}>
-        Protótipo com dados demonstrativos. LOL Insight não é endossado pela Riot Games.
+        {real ? 'Dados obtidos da Riot Games API e do Data Dragon.' : 'Modo demonstração: dados fictícios.'} LOL Insight não é endossado pela Riot Games.
       </Text>
     </>
   );
@@ -232,6 +368,20 @@ function IdentityCard({ data }: { data: Derived }) {
   );
 }
 
+function QueueRow({ label, rank, wins, losses }: { label: string; rank: Rank; wins: number; losses: number }) {
+  return (
+    <View style={styles.snapRow}>
+      <Text style={[type.bodySm, { width: 64 }]}>{label}</Text>
+      <Text style={[type.h3, { flex: 1, color: TIER_COLOR[rank.tier] }]}>
+        {rankLabel(rank)} <Text style={styles.muted}>{rank.lp} LP</Text>
+      </Text>
+      <Text style={type.bodySm}>
+        {wins}V {losses}D · {pct(wins / Math.max(1, wins + losses))}
+      </Text>
+    </View>
+  );
+}
+
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.info}>
@@ -280,6 +430,12 @@ function Highlight({ left, icon, label, value, detail, onPress }: HighlightProps
 }
 
 const styles = StyleSheet.create({
+  urlRow: { flexDirection: 'row', gap: space.sm },
+  urlInput: { flex: 1, minWidth: 0, height: 42, paddingHorizontal: 12, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, fontFamily: fonts.body, fontSize: 13, color: colors.text },
+  testBtn: { height: 42, minWidth: 76, paddingHorizontal: 14, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accent },
+  testText: { fontFamily: fonts.bodyBold, fontSize: 13, color: '#fff' },
+  checkRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
+  snapRow: { flexDirection: 'row', alignItems: 'baseline', gap: space.sm, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
   identityTag: { flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start', marginTop: 4, paddingHorizontal: 9, height: 24, borderRadius: 12, backgroundColor: colors.goldDim },
   identityTagText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.gold },
   infoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: space.lg, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft, rowGap: space.md },

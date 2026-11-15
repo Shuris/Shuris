@@ -9,7 +9,7 @@ import { PERIOD_OPTIONS, type PeriodDays } from '@/hooks/usePeriod';
 import { usePlayer } from '@/state/PlayerContext';
 import { byPosition, matchups, streaks, summarize, withinDays } from '@/stats/aggregate';
 import { compact, dec, int, pct } from '@/stats/format';
-import { bucketize, cumulativeWinRate } from '@/stats/timeseries';
+import { bucketize, bucketUnit, cumulativeWinRate } from '@/stats/timeseries';
 import { colors, space, type } from '@/theme';
 
 const MATCHUP_MIN = 3;
@@ -52,7 +52,7 @@ export function ChampionDetailScreen() {
     return (
       <Screen title={c.name} back>
         <Card>
-          <EmptyState icon="shield-outline" title="Sem partidas com este campeão" message={`${data.player.gameName} ainda não jogou de ${c.name} no período analisado.`} actionLabel="Ver campeões" onAction={() => router.back()} />
+          <EmptyState icon="shield-outline" title="Sem partidas com este campeão" message={`${data.player.gameName} não jogou de ${c.name} nas ${data.matches.length} partidas analisadas.`} actionLabel="Ver campeões" onAction={() => router.back()} />
         </Card>
       </Screen>
     );
@@ -105,14 +105,14 @@ export function ChampionDetailScreen() {
       </Card>
 
       <Card>
-        <SectionHeader title="KDA por período" subtitle={`Agrupado por ${days <= 15 ? 'dia' : days <= 30 ? '3 dias' : 'semana'}`} />
+        <SectionHeader title="KDA por período" subtitle={`Agrupado por ${bucketUnit(days)}`} />
         <Segmented style={{ marginBottom: space.md }} options={PERIOD_OPTIONS} value={days} onChange={setDays} />
         {kdaBars.length ? (
           <FadeIn trigger={days}>
             <BarChart bars={kdaBars.slice(-8)} height={120} trigger={days} />
           </FadeIn>
         ) : (
-          <EmptyState icon="calendar-outline" title="Sem partidas no período" message={`Nenhuma partida com ${c.name} nos últimos ${days} dias.`} />
+          <EmptyState icon="calendar-outline" title="Sem partidas no período" message={`Nenhuma partida com ${c.name} neste período.`} />
         )}
       </Card>
 

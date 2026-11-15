@@ -1,8 +1,8 @@
-import type { Match } from '@/types';
+import type { Match, RankSnapshot } from '@/types';
 
 import { chronological, matchCsPerMin, matchKda, mean, stdDev, summarize, withinDays, type Summary } from './aggregate';
 import { dateShort, dateTime, WEEKDAYS } from './format';
-import { absoluteLabel, rankToAbsolute } from './rank';
+import { absoluteLabel, rankLabel, rankToAbsolute } from './rank';
 
 export interface SeriesPoint {
   /** Valor no eixo Y. */
@@ -31,6 +31,29 @@ export function lpSeries(matches: Match[]): SeriesPoint[] {
         detail: `${absoluteLabel(abs)} (${m.lpDelta! > 0 ? '+' : '−'}${Math.abs(m.lpDelta!)} LP)`,
         win: m.win,
         t: m.timestamp,
+      };
+    });
+}
+
+/**
+ * Evolução do elo a partir dos snapshots registrados pelo backend (dados reais).
+ * A Riot não fornece histórico de LP: a série começa quando a conta passa a ser acompanhada.
+ */
+export function snapshotSeries(history: RankSnapshot[], queue: 'SOLO' | 'FLEX' = 'SOLO'): SeriesPoint[] {
+  return history
+    .filter((s) => s.queue === queue)
+    .sort((a, b) => a.t - b.t)
+    .map((s, i, list) => {
+      const abs = rankToAbsolute(s.rank);
+      const prev = i > 0 ? rankToAbsolute(list[i - 1].rank) : null;
+      const delta = prev === null ? '' : ` (${abs - prev >= 0 ? '+' : '−'}${Math.abs(abs - prev)} LP)`;
+      return {
+        y: abs,
+        xLabel: dateShort(s.t),
+        title: dateTime(s.t),
+        detail: `${rankLabel(s.rank)} · ${s.rank.lp} LP${delta} · ${s.wins}V ${s.losses}D`,
+        win: prev === null ? undefined : abs >= prev,
+        t: s.t,
       };
     });
 }
@@ -80,7 +103,9 @@ export interface Bucket {
 }
 
 /** Tamanho do agrupamento (em dias) para cada período, mantendo o gráfico legível. */
-export const bucketDaysFor = (days: number) => (days <= 15 ? 1 : days <= 30 ? 3 : 7);
+export const bucketDaysFor = (days: number) => (days <= 15 ? 1 : days <= 30 ? 3 : days <= 90 ? 7 : 30);
+/** Nome do agrupamento usado em cada período (para legendas). */
+export const bucketUnit = (days: number) => (days <= 15 ? 'dia' : days <= 30 ? 'intervalo de 3 dias' : days <= 90 ? 'semana' : 'mês');
 
 /** Agrupa as partidas do período em intervalos de tempo; intervalos vazios são omitidos. */
 export function bucketize(matches: Match[], asOf: number, days: number): Bucket[] {

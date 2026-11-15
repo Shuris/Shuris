@@ -1,17 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card, ChampionAvatar, EmptyState, FadeIn, ItemIcon, Meter, ResultBadge, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
-import { champion, POSITION_LABEL } from '@/data/champions';
-import { ITEM_NAMES } from '@/data/items';
+import { Card, ChampionAvatar, EmptyState, FadeIn, ItemIcon, Meter, ResultBadge, Screen, ScreenSkeleton, SectionHeader, Segmented, Skeleton, StatTile, TileGrid } from '@/components/ui';
+import { champion, POSITION_LABEL, runeIconUrl, spellIconUrl } from '@/data/champions';
+import { itemName } from '@/data/items';
+import { describeError, ServiceError } from '@/services';
 import { usePlayer } from '@/state/PlayerContext';
 import { matchCsPerMin, matchKda, matchKp } from '@/stats/aggregate';
 import { compact, dateTime, dec, duration, int, pct, QUEUE_LABEL } from '@/stats/format';
 import { rankLabel } from '@/stats/rank';
 import { colors, fonts, radius, space, type } from '@/theme';
-import type { Match, Participant, TimelineKind } from '@/types';
+import type { DataSourceKind, Match, Participant, TimelineKind } from '@/types';
 
 type Tab = 'resumo' | 'equipes' | 'build' | 'timeline';
 
@@ -20,7 +21,8 @@ export function MatchDetailScreen() {
   const { status, data } = usePlayer();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('resumo');
-  const match = useMemo(() => data?.matches.find((m) => m.id === id), [data, id]);
+  const base = useMemo(() => data?.matches.find((m) => m.id === id), [data, id]);
+  const { match, details, completedItems } = useMatchDetails(base);
 
   if (status === 'loading' || !data) {
     return (
@@ -42,7 +44,7 @@ export function MatchDetailScreen() {
   const c = champion(match.championId);
   return (
     <Screen title={`${match.win ? 'Vitória' : 'Derrota'} · ${c.name}`} subtitle={`${QUEUE_LABEL[match.queue]} · ${dateTime(match.timestamp)}`} back>
-      <Header match={match} />
+      <Header match={match} source={data.source} />
       <Segmented
         options={[
           { value: 'resumo', label: 'Resumo' },
@@ -56,14 +58,69 @@ export function MatchDetailScreen() {
       <FadeIn trigger={tab} style={{ gap: space.lg }}>
         {tab === 'resumo' ? <Summary match={match} /> : null}
         {tab === 'equipes' ? <Teams match={match} /> : null}
-        {tab === 'build' ? <Build match={match} /> : null}
-        {tab === 'timeline' ? <Timeline match={match} /> : null}
+        {tab === 'build' ? <Build match={match} details={details} completedItems={completedItems} /> : null}
+        {tab === 'timeline' ? <Timeline match={match} details={details} /> : null}
       </FadeIn>
     </Screen>
   );
 }
 
-function Header({ match: m }: { match: Match }) {
+type DetailsState = { status: 'ready' } | { status: 'loading' } | { status: 'error'; error: ServiceError };
+
+/**
+ * Ordem de habilidades e linha do tempo. Na demonstração já vêm com a partida;
+ * nos dados reais são buscadas sob demanda (Match-V5 timeline) ao abrir a tela.
+ */
+function useMatchDetails(base: Match | undefined): { match: Match | undefined; details: DetailsState; completedItems: number[] } {
+  const { dataSource, data } = usePlayer();
+  const [loaded, setLoaded] = useState<{ id: string; patch: Partial<Match>; completedItems: number[] } | null>(null);
+  const [failure, setFailure] = useState<{ id: string; error: ServiceError } | null>(null);
+  const needs = !!base && base.detailsLoaded === false;
+  const player = data?.player;
+
+  useEffect(() => {
+    if (!base || !needs || !player) return;
+    let cancelled = false;
+    dataSource
+      .loadMatchDetails(base, player)
+      .then((d) => {
+        if (cancelled) return;
+        setLoaded({ id: base.id, patch: { skillOrder: d.skillOrder, timeline: d.timeline, detailsLoaded: true }, completedItems: d.itemOrder });
+      })
+      .catch((e) => {
+        if (!cancelled) setFailure({ id: base.id, error: e instanceof ServiceError ? e : new ServiceError('UNKNOWN', 'Não foi possível carregar os detalhes.') });
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [base?.id, needs, dataSource, player?.id]);
+
+  if (!base) return { match: undefined, details: { status: 'ready' }, completedItems: [] };
+  if (!needs) return { match: base, details: { status: 'ready' }, completedItems: [] };
+  if (loaded?.id === base.id) return { match: { ...base, ...loaded.patch }, details: { status: 'ready' }, completedItems: loaded.completedItems };
+  if (failure?.id === base.id) return { match: base, details: { status: 'error', error: failure.error }, completedItems: [] };
+  return { match: base, details: { status: 'loading' }, completedItems: [] };
+}
+
+function DetailsPending({ details, what }: { details: DetailsState; what: string }) {
+  if (details.status === 'loading') {
+    return (
+      <View style={{ gap: 8 }} accessibilityLabel={`Carregando ${what}`}>
+        <Skeleton height={18} />
+        <Skeleton height={18} />
+        <Skeleton height={18} width="70%" />
+      </View>
+    );
+  }
+  if (details.status === 'error') {
+    const p = describeError(details.error.code);
+    return <EmptyState icon={p.icon} title={`${what[0].toUpperCase()}${what.slice(1)} indisponível`} message={`${details.error.message} ${p.hint}`} />;
+  }
+  return null;
+}
+
+function Header({ match: m, source }: { match: Match; source: DataSourceKind }) {
   const c = champion(m.championId);
   const tone = m.win ? colors.win : colors.loss;
   return (
@@ -102,7 +159,9 @@ function Header({ match: m }: { match: Match }) {
       ) : (
         <View style={styles.elo}>
           <Ionicons name="information-circle-outline" size={13} color={colors.textMuted} />
-          <Text style={type.bodySm}>Elo não disponível: esta fila não altera o elo Solo/Duo.</Text>
+          <Text style={[type.bodySm, { flex: 1 }]}>
+            {source === 'riot' ? 'A Riot API não informa o elo no momento de cada partida.' : 'Elo não disponível: esta fila não altera o elo Solo/Duo.'}
+          </Text>
         </View>
       )}
     </Card>
@@ -127,6 +186,7 @@ function Summary({ match: m }: { match: Match }) {
   ];
   const o = m.objectives;
   const objTotal = o.dragons + o.barons + o.heralds;
+  const parts = o.playerParticipations;
   return (
     <>
       <Card>
@@ -168,8 +228,17 @@ function Summary({ match: m }: { match: Match }) {
       </Card>
 
       <Card>
-        <SectionHeader title="Participação em objetivos" subtitle={objTotal ? `Presente em ${o.playerParticipations} de ${objTotal} objetivos épicos da equipe` : 'Sua equipe não garantiu objetivos épicos'} />
-        {objTotal ? <Meter value={o.playerParticipations / objTotal} color={colors.gold} /> : null}
+        <SectionHeader
+          title="Participação em objetivos"
+          subtitle={
+            !objTotal
+              ? 'Sua equipe não garantiu objetivos épicos'
+              : parts === undefined
+                ? 'Objetivos épicos garantidos por cada equipe'
+                : `Presente em ${Math.min(parts, objTotal)} de ${objTotal} objetivos épicos da equipe`
+          }
+        />
+        {objTotal && parts !== undefined ? <Meter value={Math.min(1, parts / objTotal)} color={colors.gold} /> : null}
         <View style={styles.objGrid}>
           <ObjRow label="Dragões" ours={o.dragons} theirs={o.enemyDragons} />
           <ObjRow label="Barões" ours={o.barons} theirs={o.enemyBarons} />
@@ -250,47 +319,78 @@ function Teams({ match: m }: { match: Match }) {
 
 const SKILLS = ['Q', 'W', 'E', 'R'] as const;
 
-function Build({ match: m }: { match: Match }) {
+function Build({ match: m, details, completedItems }: { match: Match; details: DetailsState; completedItems: number[] }) {
   const [item, setItem] = useState<number | null>(null);
   const r = m.runes;
+  const order = m.itemsInPurchaseOrder ? m.items : completedItems;
+  const skillsReady = details.status === 'ready' && m.skillOrder.length > 0;
   return (
     <>
       <Card>
-        <SectionHeader title="Itens comprados" subtitle={item ? ITEM_NAMES[item] : 'Toque em um item para ver o nome'} />
+        <SectionHeader title="Itens" subtitle={item ? itemName(item) : 'Toque em um item para ver o nome'} />
         <View style={styles.items}>
           {Array.from({ length: 6 }, (_, i) => m.items[i]).map((id, i) => (
-            <Pressable key={i} disabled={!id} onPress={() => setItem(id)} accessibilityRole="button" accessibilityLabel={id ? ITEM_NAMES[id] : 'Espaço vazio'} style={item === id && id ? styles.itemOn : styles.itemOff}>
+            <Pressable key={i} disabled={!id} onPress={() => setItem(id)} accessibilityRole="button" accessibilityLabel={id ? itemName(id) : 'Espaço vazio'} style={item === id && id ? styles.itemOn : styles.itemOff}>
               <ItemIcon id={id} size={32} />
             </Pressable>
           ))}
           <View style={styles.itemDivider} />
-          <Pressable onPress={() => setItem(m.trinket)} accessibilityRole="button" accessibilityLabel={ITEM_NAMES[m.trinket]} style={item === m.trinket ? styles.itemOn : styles.itemOff}>
-            <ItemIcon id={m.trinket} size={32} />
-          </Pressable>
+          {m.trinket ? (
+            <Pressable onPress={() => setItem(m.trinket)} accessibilityRole="button" accessibilityLabel={itemName(m.trinket)} style={item === m.trinket ? styles.itemOn : styles.itemOff}>
+              <ItemIcon id={m.trinket} size={32} />
+            </Pressable>
+          ) : (
+            <ItemIcon size={32} />
+          )}
         </View>
-        <Text style={[type.bodySm, { marginTop: space.md }]}>Ordem de compra: {m.items.map((id) => ITEM_NAMES[id]).join(' → ')}</Text>
+        {order.length ? (
+          <Text style={[type.bodySm, { marginTop: space.md }]}>
+            {m.itemsInPurchaseOrder ? 'Ordem de compra' : 'Itens concluídos, em ordem'}: {order.map(itemName).join(' → ')}
+          </Text>
+        ) : details.status === 'loading' ? (
+          <Skeleton height={12} width="80%" style={{ marginTop: space.md }} />
+        ) : null}
+        {m.summonerSpells?.length ? (
+          <View style={styles.spells}>
+            <Text style={type.label}>Feitiços</Text>
+            {m.summonerSpells.map((sp) => (
+              <View key={sp.name} style={styles.spell}>
+                <RemoteIcon uri={spellIconUrl(sp.icon)} size={22} />
+                <Text style={styles.runeText}>{sp.name}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
       </Card>
 
       <Card>
-        <SectionHeader title="Ordem de habilidades" subtitle={`Nível ${m.skillOrder.length} ao fim da partida`} />
-        <View style={{ gap: 4 }}>
-          {SKILLS.map((s) => (
-            <View key={s} style={styles.skillRow}>
-              <Text style={[styles.skillKey, s === 'R' && { color: colors.gold }]}>{s}</Text>
-              {Array.from({ length: 18 }, (_, lvl) => {
-                const on = m.skillOrder[lvl] === s;
-                return (
-                  <View key={lvl} style={[styles.skillCell, on && { backgroundColor: s === 'R' ? colors.gold : colors.accent, borderColor: 'transparent' }, lvl >= m.skillOrder.length && { opacity: 0.35 }]}>
-                    {on ? <Text style={styles.skillLvl}>{lvl + 1}</Text> : null}
-                  </View>
-                );
-              })}
+        <SectionHeader title="Ordem de habilidades" subtitle={skillsReady ? `Nível ${m.skillOrder.length} ao fim da partida` : undefined} />
+        {skillsReady ? (
+          <>
+            <View style={{ gap: 4 }}>
+              {SKILLS.map((s) => (
+                <View key={s} style={styles.skillRow}>
+                  <Text style={[styles.skillKey, s === 'R' && { color: colors.gold }]}>{s}</Text>
+                  {Array.from({ length: 18 }, (_, lvl) => {
+                    const on = m.skillOrder[lvl] === s;
+                    return (
+                      <View key={lvl} style={[styles.skillCell, on && { backgroundColor: s === 'R' ? colors.gold : colors.accent, borderColor: 'transparent' }, lvl >= m.skillOrder.length && { opacity: 0.35 }]}>
+                        {on ? <Text style={styles.skillLvl}>{lvl + 1}</Text> : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
-        <Text style={[type.bodySm, { marginTop: space.md }]}>
-          Prioridade: {[...SKILLS].filter((s) => s !== 'R').sort((a, b) => countUntilMax(m, a) - countUntilMax(m, b)).join(' › ')}
-        </Text>
+            <Text style={[type.bodySm, { marginTop: space.md }]}>
+              Prioridade: {[...SKILLS].filter((s) => s !== 'R').sort((a, b) => countUntilMax(m, a) - countUntilMax(m, b)).join(' › ')}
+            </Text>
+          </>
+        ) : details.status === 'ready' ? (
+          <EmptyState icon="git-branch-outline" title="Ordem indisponível" message="A linha do tempo desta partida não trouxe a evolução de habilidades." />
+        ) : (
+          <DetailsPending details={details} what="ordem de habilidades" />
+        )}
       </Card>
 
       <Card>
@@ -298,18 +398,30 @@ function Build({ match: m }: { match: Match }) {
         <View style={styles.keystone}>
           <View style={styles.keystoneIcon}>
             <Ionicons name="flash" size={18} color={colors.gold} />
+            {r.icons?.[r.keystone] ? (
+              <View style={styles.keystoneImg}>
+                <RemoteIcon uri={runeIconUrl(r.icons[r.keystone])} size={40} />
+              </View>
+            ) : null}
           </View>
           <View style={{ flex: 1 }}>
             <Text style={type.label}>{r.primaryTree} · runa essencial</Text>
             <Text style={type.h2}>{r.keystone}</Text>
           </View>
         </View>
-        <RuneGroup title={r.primaryTree} runes={r.primary} />
-        <RuneGroup title={`${r.secondaryTree} (secundária)`} runes={r.secondary} />
-        <RuneGroup title="Fragmentos" runes={r.shards} />
+        <RuneGroup title={r.primaryTree} runes={r.primary} icons={r.icons} />
+        <RuneGroup title={`${r.secondaryTree} (secundária)`} runes={r.secondary} icons={r.icons} />
+        {r.shards.length ? <RuneGroup title="Fragmentos" runes={r.shards} /> : null}
       </Card>
     </>
   );
+}
+
+/** Ícone oficial (Data Dragon); se não carregar, simplesmente não aparece. */
+function RemoteIcon({ uri, size }: { uri: string; size: number }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return <Image source={{ uri }} onError={() => setFailed(true)} style={{ width: size, height: size, borderRadius: size / 2 }} />;
 }
 
 /** Nível em que a habilidade recebeu o 5º ponto (ou 99 se não chegou lá). */
@@ -319,13 +431,14 @@ function countUntilMax(m: Match, s: string): number {
   return 99 - n;
 }
 
-function RuneGroup({ title, runes }: { title: string; runes: string[] }) {
+function RuneGroup({ title, runes, icons }: { title: string; runes: string[]; icons?: Record<string, string> }) {
   return (
     <View style={{ marginTop: space.md }}>
       <Text style={type.label}>{title}</Text>
       <View style={styles.runes}>
         {runes.map((name, i) => (
           <View key={`${name}-${i}`} style={styles.rune}>
+            {icons?.[name] ? <RemoteIcon uri={runeIconUrl(icons[name])} size={18} /> : null}
             <Text style={styles.runeText}>{name}</Text>
           </View>
         ))}
@@ -348,7 +461,7 @@ const EVENT_ICON: Record<TimelineKind, keyof typeof Ionicons.glyphMap> = {
 
 type TimelineFilter = 'all' | 'combat' | 'objectives';
 
-function Timeline({ match: m }: { match: Match }) {
+function Timeline({ match: m, details }: { match: Match; details: DetailsState }) {
   const [filter, setFilter] = useState<TimelineFilter>('all');
   const events = m.timeline.filter((e) =>
     filter === 'all' ? true : filter === 'combat' ? e.kind === 'KILL' || e.kind === 'DEATH' : !['KILL', 'DEATH', 'ITEM'].includes(e.kind),
@@ -365,8 +478,10 @@ function Timeline({ match: m }: { match: Match }) {
         onChange={setFilter}
       />
       <Card>
-        <SectionHeader title="Linha do tempo" subtitle={`${events.length} acontecimentos em ${duration(m.durationSec)}`} />
-        {events.length ? (
+        <SectionHeader title="Linha do tempo" subtitle={details.status === 'ready' ? `${events.length} acontecimentos em ${duration(m.durationSec)}` : undefined} />
+        {details.status !== 'ready' ? (
+          <DetailsPending details={details} what="linha do tempo" />
+        ) : events.length ? (
           events.map((e, i) => {
             const color = e.kind === 'END' ? colors.gold : e.positive ? colors.win : colors.loss;
             return (
@@ -411,9 +526,12 @@ const styles = StyleSheet.create({
   skillCell: { flex: 1, height: 22, borderRadius: 4, borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   skillLvl: { fontFamily: fonts.bodyBold, fontSize: 9, color: '#fff' },
   keystone: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  keystoneIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.goldDim, borderWidth: 1, borderColor: colors.gold },
+  keystoneImg: { position: 'absolute', top: 1, left: 1 },
+  keystoneIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backgroundColor: colors.goldDim, borderWidth: 1, borderColor: colors.gold },
   runes: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
-  rune: { paddingHorizontal: 10, height: 30, borderRadius: 15, justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  spells: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
+  spell: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingRight: 10, paddingLeft: 4, height: 30, borderRadius: 15, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
+  rune: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, height: 30, borderRadius: 15, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
   runeText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.textSecondary },
   event: { flexDirection: 'row', gap: space.md, minHeight: 40 },
   minute: { width: 30, textAlign: 'right', fontFamily: fonts.display, fontSize: 12, color: colors.textMuted, paddingTop: 3 },

@@ -3,11 +3,12 @@ import { useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { SourceBadge } from '@/components/SourceBadge';
 import { Card, ChampionAvatar, Chip, ChipRow, EmptyState, FadeIn, Screen, ScreenSkeleton, SectionHeader, WinLossBar } from '@/components/ui';
 import { champion, POSITION_LABEL } from '@/data/champions';
 import { usePlayer } from '@/state/PlayerContext';
 import { bestChampions, sortChampions, type ChampionSort, type ChampionStats } from '@/stats/aggregate';
-import { dec, pct } from '@/stats/format';
+import { ago, dec, int, pct } from '@/stats/format';
 import { colors, fonts, radius, space, type } from '@/theme';
 
 const SORTS: Array<{ value: ChampionSort; label: string }> = [
@@ -26,15 +27,38 @@ export function ChampionsScreen() {
   const open = (id: string) => router.push({ pathname: '/campeao/[id]', params: { id } });
 
   return (
-    <Screen title="Campeões" subtitle={data ? `${data.champions.length} campeões jogados em ${data.summary.games} partidas` : undefined}>
-      {status === 'loading' || !data ? (
+    <Screen title="Campeões" subtitle={data ? `${data.champions.length} campeões jogados em ${data.summary.games} partidas` : undefined} right={<SourceBadge />}>
+      {status === 'loading' ? (
         <ScreenSkeleton hero={false} cards={3} />
-      ) : !sorted.length ? (
+      ) : !data ? (
         <Card>
-          <EmptyState icon="shield-outline" title="Nenhum campeão" message="Esta conta ainda não possui partidas registradas." />
+          <EmptyState icon="search-outline" title="Nenhuma conta carregada" message="Pesquise um jogador na aba Início para ver os campeões." />
+        </Card>
+      ) : !sorted.length && !data.mastery.length ? (
+        <Card>
+          <EmptyState icon="shield-outline" title="Nenhum campeão" message="Esta conta ainda não possui partidas carregadas." />
         </Card>
       ) : (
         <>
+          {data.mastery.length ? (
+            <View>
+              <SectionHeader title="Maestria" subtitle="Campeões com maior domínio, segundo a Riot (carreira inteira)" />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.md, paddingRight: space.lg }}>
+                {data.mastery.map((m) => (
+                  <Pressable key={m.championId} onPress={() => open(m.championId)} accessibilityRole="button" accessibilityLabel={`${champion(m.championId).name}: maestria ${m.level}`} style={({ pressed }) => [styles.mastery, pressed && { opacity: 0.8 }]}>
+                    <ChampionAvatar id={m.championId} size={48} />
+                    <Text style={[type.h3, { marginTop: 6 }]} numberOfLines={1}>
+                      {champion(m.championId).name}
+                    </Text>
+                    <Text style={styles.masteryLevel}>Nível {m.level}</Text>
+                    <Text style={type.bodySm}>{int(m.points)} pts</Text>
+                    <Text style={styles.meta}>{ago(m.lastPlayed)}</Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
           {best.length ? (
             <View>
               <SectionHeader title="Seus melhores campeões" subtitle="Taxa de vitória ponderada pela amostra (mín. 8 partidas)" />
@@ -46,8 +70,9 @@ export function ChampionsScreen() {
             </View>
           ) : null}
 
+          {sorted.length ? (
           <View>
-            <SectionHeader title="Biblioteca" />
+            <SectionHeader title="Biblioteca" subtitle={data.source === 'riot' ? `Desempenho nas ${data.summary.games} partidas analisadas` : undefined} />
             <ChipRow>
               {SORTS.map((s) => (
                 <Chip key={s.value} label={s.label} active={s.value === sort} onPress={() => setSort(s.value)} />
@@ -59,6 +84,7 @@ export function ChampionsScreen() {
               ))}
             </FadeIn>
           </View>
+          ) : null}
         </>
       )}
     </Screen>
@@ -152,6 +178,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  mastery: { width: 116, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 1 },
+  masteryLevel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.gold },
   rank: { width: 16, textAlign: 'center', fontFamily: fonts.display, fontSize: 12, color: colors.textMuted },
   meta: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted },
   statsRow: { flexDirection: 'row', gap: 6 },

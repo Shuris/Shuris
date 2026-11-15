@@ -3,6 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { SourceBadge } from '@/components/SourceBadge';
 import { Card, ChampionAvatar, Chip, ChipRow, CONTENT_MAX_WIDTH, EmptyState, MatchRow, Screen, ScreenSkeleton, Segmented, Sheet, SheetOption, WinLossBar } from '@/components/ui';
 import { champion, POSITION_LABEL, POSITIONS } from '@/data/champions';
 import { usePlayer } from '@/state/PlayerContext';
@@ -28,6 +29,7 @@ const PERIODS = [
   { value: 15, label: 'Últimos 15 dias' },
   { value: 30, label: 'Últimos 30 dias' },
   { value: 90, label: 'Últimos 90 dias' },
+  { value: 365, label: 'Último ano' },
 ];
 const QUEUES: QueueType[] = ['SOLO', 'FLEX', 'NORMAL'];
 
@@ -86,10 +88,21 @@ export function MatchesScreen() {
   );
 
   return (
-    <Screen title="Partidas" subtitle={data ? `Histórico completo · ${data.matches.length} partidas` : undefined} sticky={header} scroll={false}>
-      {status === 'loading' || !data ? (
+    <Screen
+      title="Partidas"
+      subtitle={data ? (data.source === 'riot' ? `${data.matches.length} partidas reais carregadas` : `Histórico completo · ${data.matches.length} partidas`) : undefined}
+      right={<SourceBadge />}
+      sticky={header}
+      scroll={false}>
+      {status === 'loading' ? (
         <View style={styles.pad}>
           <ScreenSkeleton hero={false} cards={3} />
+        </View>
+      ) : !data ? (
+        <View style={styles.pad}>
+          <Card>
+            <EmptyState icon="search-outline" title="Nenhuma conta carregada" message="Pesquise um jogador na aba Início para ver o histórico de partidas." />
+          </Card>
         </View>
       ) : (
         <FlatList
@@ -122,8 +135,8 @@ export function MatchesScreen() {
               <EmptyState
                 icon="funnel-outline"
                 title="Nenhuma partida encontrada"
-                message="Nenhuma partida corresponde à combinação de filtros selecionada."
-                actionLabel="Limpar filtros"
+                message={activeCount ? 'Nenhuma partida corresponde à combinação de filtros selecionada.' : 'Esta conta ainda não tem partidas carregadas.'}
+                actionLabel={activeCount ? 'Limpar filtros' : undefined}
                 onAction={() => setFilters(EMPTY)}
               />
             </Card>

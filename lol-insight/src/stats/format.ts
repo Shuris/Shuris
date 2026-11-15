@@ -45,3 +45,14 @@ export function relativeDay(ts: number, asOf: number): string {
 
 export const QUEUE_LABEL = { SOLO: 'Ranqueada Solo/Duo', FLEX: 'Ranqueada Flex', NORMAL: 'Normal' } as const;
 export const QUEUE_SHORT = { SOLO: 'Solo/Duo', FLEX: 'Flex', NORMAL: 'Normal' } as const;
+
+/** Tempo decorrido em linguagem natural: "agora", "há 5 min", "há 3 h", "há 2 dias". */
+export function ago(ts: number, now: number = Date.now()): string {
+  const min = Math.max(0, Math.round((now - ts) / 60_000));
+  if (min < 1) return 'agora';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.round(h / 24);
+  return `há ${d} ${d === 1 ? 'dia' : 'dias'}`;
+}

@@ -11,12 +11,17 @@ export type Tier =
   | 'PLATINA'
   | 'ESMERALDA'
   | 'DIAMANTE'
-  | 'MESTRE';
-export type ChampionClass = 'CONTROLE' | 'EXPLOSAO' | 'INICIACAO' | 'ATIRADOR' | 'LUTADOR';
+  | 'MESTRE'
+  | 'GRAO_MESTRE'
+  | 'DESAFIANTE';
+/** Classes de campeão, iguais às "tags" do Data Dragon. */
+export type ChampionClass = 'MAGE' | 'ASSASSIN' | 'MARKSMAN' | 'FIGHTER' | 'TANK' | 'SUPPORT';
+/** Origem dos dados: conta demonstrativa (fictícia) ou Riot Games API. */
+export type DataSourceKind = 'demo' | 'riot';
 
 export interface Rank {
   tier: Tier;
-  /** 1 (I) a 4 (IV). Mestre não possui divisão. */
+  /** 1 (I) a 4 (IV). Mestre, Grão-Mestre e Desafiante não possuem divisão. */
   division: 1 | 2 | 3 | 4;
   lp: number;
 }
@@ -27,7 +32,8 @@ export interface Champion {
   name: string;
   title: string;
   classes: ChampionClass[];
-  positions: Position[];
+  /** Posições típicas (usado apenas pelo gerador demonstrativo). */
+  positions?: Position[];
   /** Cor usada no avatar de fallback quando a imagem oficial não carrega. */
   color: string;
 }
@@ -44,9 +50,36 @@ export interface Player {
   region: Region;
   level: number;
   profileIconId: number;
-  rank: Rank;
-  /** Histórico de fim de temporada (anteriores à atual). */
+  /** Elo Solo/Duo atual; `null` quando a conta não está ranqueada. */
+  rank: Rank | null;
+  /** Histórico de fim de temporada. A Riot API não fornece: só existe no modo demonstração. */
   seasonHistory: SeasonRank[];
+  puuid?: string;
+  /** Totais da temporada informados pelo League-V4. */
+  ranked?: { solo?: RankedQueue; flex?: RankedQueue };
+}
+
+export interface RankedQueue {
+  rank: Rank;
+  wins: number;
+  losses: number;
+  hotStreak?: boolean;
+}
+
+/** Elo observado em um instante (a Riot não fornece histórico de LP; o backend registra a cada consulta). */
+export interface RankSnapshot {
+  t: number;
+  queue: 'SOLO' | 'FLEX';
+  rank: Rank;
+  wins: number;
+  losses: number;
+}
+
+export interface MasteryEntry {
+  championId: string;
+  level: number;
+  points: number;
+  lastPlayed: number;
 }
 
 export interface RuneSetup {
@@ -56,6 +89,8 @@ export interface RuneSetup {
   secondaryTree: string;
   secondary: string[];
   shards: string[];
+  /** Caminho do ícone no Data Dragon por nome de runa/árvore (dados reais). */
+  icons?: Record<string, string>;
 }
 
 export interface Participant {
@@ -70,6 +105,7 @@ export interface Participant {
   gold: number;
   damage: number;
   isPlayer: boolean;
+  tagLine?: string;
 }
 
 export type TimelineKind = 'KILL' | 'DEATH' | 'ASSIST' | 'DRAGON' | 'BARON' | 'HERALD' | 'TOWER' | 'ITEM' | 'END';
@@ -87,8 +123,8 @@ export interface Objectives {
   barons: number;
   heralds: number;
   towers: number;
-  /** Objetivos (dragões + barões + arautos) em que o jogador participou. */
-  playerParticipations: number;
+  /** Objetivos (dragões + barões + arautos) em que o jogador participou, quando informado. */
+  playerParticipations?: number;
   enemyDragons: number;
   enemyBarons: number;
   enemyTowers: number;
@@ -125,6 +161,34 @@ export interface Match {
   participants: Participant[];
   objectives: Objectives;
   timeline: TimelineEvent[];
+  /** Feitiços de invocador (dados reais). */
+  summonerSpells?: Array<{ name: string; icon: string }>;
+  /** false enquanto ordem de habilidades e linha do tempo ainda não foram carregadas (dados reais, sob demanda). */
+  detailsLoaded?: boolean;
+  /** true quando `items` está na ordem de compra (senão é a ordem dos espaços do inventário). */
+  itemsInPurchaseOrder?: boolean;
+}
+
+/** Detalhes carregados sob demanda ao abrir uma partida real. */
+export interface MatchDetails {
+  skillOrder: Array<'Q' | 'W' | 'E' | 'R'>;
+  timeline: TimelineEvent[];
+  /** Itens concluídos, em ordem de compra. */
+  itemOrder: number[];
+}
+
+export interface SyncStatus {
+  state: 'idle' | 'syncing' | 'waiting_rate_limit' | 'error';
+  /** Quantidade de partidas solicitada (10, 20, 50 ou 100). */
+  requested: number;
+  /** Partidas existentes no histórico recente (até `requested`). */
+  available: number;
+  /** Partidas já baixadas e armazenadas. */
+  loaded: number;
+  retryAfterSec?: number;
+  errorCode?: string;
+  message?: string;
+  lastSyncedAt?: number;
 }
 
 export interface PlayerBundle {
@@ -132,4 +196,15 @@ export interface PlayerBundle {
   matches: Match[];
   /** Instante de referência dos dados ("agora" para os filtros de período). */
   asOf: number;
+  source: DataSourceKind;
+  /** Snapshots de elo registrados pelo backend (dados reais). */
+  rankHistory?: RankSnapshot[];
+  mastery?: MasteryEntry[];
+  /** Catálogo de campeões do Data Dragon (dados reais). */
+  champions?: Champion[];
+  itemNames?: Record<string, string>;
+  ddragonVersion?: string;
+  sync?: SyncStatus;
+  /** Partidas recentes que não entram na análise. */
+  ignored?: { otherModes: number; remakes: number };
 }

@@ -1,6 +1,9 @@
 import type { Rank, Tier } from '@/types';
 
-const TIERS: Tier[] = ['FERRO', 'BRONZE', 'PRATA', 'OURO', 'PLATINA', 'ESMERALDA', 'DIAMANTE', 'MESTRE'];
+const TIERS: Tier[] = ['FERRO', 'BRONZE', 'PRATA', 'OURO', 'PLATINA', 'ESMERALDA', 'DIAMANTE', 'MESTRE', 'GRAO_MESTRE', 'DESAFIANTE'];
+/** Mestre, Grão-Mestre e Desafiante não têm divisões: compartilham uma escala contínua de LP. */
+const APEX: Tier[] = ['MESTRE', 'GRAO_MESTRE', 'DESAFIANTE'];
+export const isApex = (r: Rank) => APEX.includes(r.tier);
 const TIER_LABEL: Record<Tier, string> = {
   FERRO: 'Ferro',
   BRONZE: 'Bronze',
@@ -10,6 +13,8 @@ const TIER_LABEL: Record<Tier, string> = {
   ESMERALDA: 'Esmeralda',
   DIAMANTE: 'Diamante',
   MESTRE: 'Mestre',
+  GRAO_MESTRE: 'Grão-Mestre',
+  DESAFIANTE: 'Desafiante',
 };
 const ROMAN = ['', 'I', 'II', 'III', 'IV'];
 
@@ -22,12 +27,14 @@ export const TIER_COLOR: Record<Tier, string> = {
   ESMERALDA: '#2FB36B',
   DIAMANTE: '#6C8CFF',
   MESTRE: '#B565D9',
+  GRAO_MESTRE: '#E0565B',
+  DESAFIANTE: '#F2C94C',
 };
 
 /** Converte o elo em uma escala contínua de LP (Ferro IV 0 LP = 0). */
 export function rankToAbsolute(r: Rank): number {
+  if (isApex(r)) return TIERS.indexOf('MESTRE') * 400 + r.lp;
   const t = TIERS.indexOf(r.tier);
-  if (r.tier === 'MESTRE') return t * 400 + r.lp;
   return t * 400 + (4 - r.division) * 100 + r.lp;
 }
 
@@ -42,11 +49,11 @@ export function absoluteToRank(abs: number): Rank {
 }
 
 export function rankLabel(r: Rank): string {
-  return r.tier === 'MESTRE' ? TIER_LABEL[r.tier] : `${TIER_LABEL[r.tier]} ${ROMAN[r.division]}`;
+  return isApex(r) ? TIER_LABEL[r.tier] : `${TIER_LABEL[r.tier]} ${ROMAN[r.division]}`;
 }
 
 export function rankShort(r: Rank): string {
-  return r.tier === 'MESTRE' ? 'M' : `${TIER_LABEL[r.tier][0]}${r.division}`;
+  return isApex(r) ? (r.tier === 'MESTRE' ? 'M' : r.tier === 'GRAO_MESTRE' ? 'GM' : 'C') : `${TIER_LABEL[r.tier][0]}${r.division}`;
 }
 
 export function absoluteLabel(abs: number): string {

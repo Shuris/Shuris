@@ -1,8 +1,8 @@
-import type { PlayerBundle, Region } from '@/types';
+import type { DataSourceKind, Match, MatchDetails, Player, PlayerBundle, Region } from '@/types';
 
 export interface AccountQuery {
   gameName: string;
-  /** Opcional: quando omitida, a fonte de dados pode resolver pela região. */
+  /** Obrigatória para dados reais; opcional na demonstração. */
   tagLine?: string;
   region: Region;
 }
@@ -13,17 +13,28 @@ export interface AccountSuggestion {
   region: Region;
 }
 
+export interface LoadOptions {
+  /** Quantidade de partidas recentes a analisar (dados reais): 10, 20, 50 ou 100. */
+  count?: number;
+  /** Ignora os caches e consulta a Riot de novo. */
+  refresh?: boolean;
+}
+
+export const MATCH_COUNTS = [10, 20, 50, 100] as const;
+export type MatchCount = (typeof MATCH_COUNTS)[number];
+
 /**
- * Contrato único entre o app e a origem dos dados.
- *
- * As telas e a lógica estatística dependem apenas desta interface. Para usar
- * dados reais basta fornecer outra implementação (ver RiotApiDataSource) —
- * nenhuma tela precisa mudar.
+ * Contrato único entre o app e a origem dos dados. As telas e a lógica
+ * estatística dependem apenas desta interface; há duas implementações:
+ * MockDataSource (demonstração) e RiotApiDataSource (backend + Riot API).
+ * Falhas são sempre lançadas como ServiceError (ver errors.ts).
  */
 export interface PlayerDataSource {
-  /** Devolve a conta e seu histórico, ou `null` quando o invocador não existe na região. */
-  loadAccount(query: AccountQuery): Promise<PlayerBundle | null>;
-  /** Contas sugeridas para a busca (ex.: contas demonstrativas). */
+  readonly kind: DataSourceKind;
+  loadAccount(query: AccountQuery, options?: LoadOptions): Promise<PlayerBundle>;
+  /** Ordem de habilidades, itens e linha do tempo de uma partida (sob demanda nos dados reais). */
+  loadMatchDetails(match: Match, player: Player): Promise<MatchDetails>;
+  /** Contas sugeridas para a busca (contas demonstrativas). */
   suggestions(): Promise<AccountSuggestion[]>;
 }
 

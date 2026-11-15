@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { SourceBadge } from '@/components/SourceBadge';
 import { Card, Chip, ChipRow, EmptyState, FadeIn, InsightCard, Screen, ScreenSkeleton, SectionHeader } from '@/components/ui';
 import { usePlayer } from '@/state/PlayerContext';
 import type { InsightTone } from '@/stats/insights';
@@ -22,9 +23,13 @@ export function InsightsScreen() {
   const list = useMemo(() => (report ? report.insights.filter((i) => filter === 'all' || i.tone === filter) : []), [report, filter]);
 
   return (
-    <Screen title="Insights" subtitle={data ? `Calculados sobre ${data.summary.games} partidas de ${data.player.gameName}` : undefined} back>
-      {status === 'loading' || !data || !report ? (
+    <Screen title="Insights" subtitle={data ? `Calculados sobre ${data.summary.games} partidas de ${data.player.gameName}` : undefined} back right={<SourceBadge />}>
+      {status === 'loading' ? (
         <ScreenSkeleton hero={false} cards={3} />
+      ) : !data || !report ? (
+        <Card>
+          <EmptyState icon="search-outline" title="Nenhuma conta carregada" message="Pesquise um jogador na aba Início para gerar os insights." />
+        </Card>
       ) : (
         <>
           <ChipRow>

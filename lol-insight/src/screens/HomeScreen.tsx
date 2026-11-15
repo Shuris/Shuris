@@ -5,7 +5,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { LineChart } from '@/components/charts';
+import { DataStatusCard } from '@/components/DataStatusCard';
+import { ErrorCard } from '@/components/ErrorCard';
 import { SearchBar } from '@/components/SearchBar';
+import { SourceBadge } from '@/components/SourceBadge';
 import {
   Card,
   EmptyState,
@@ -26,16 +29,36 @@ import {
 import { profileIconUrl } from '@/data/champions';
 import { PERIOD_OPTIONS, type PeriodDays } from '@/hooks/usePeriod';
 import { usePlayer, type Derived } from '@/state/PlayerContext';
-import { compact, dec, duration, int, pct } from '@/stats/format';
-import { absoluteToRank, rankLabel, rankShort, TIER_COLOR } from '@/stats/rank';
-import { lpSeries, rollingWinRate } from '@/stats/timeseries';
+import { compact, dateShort, dec, duration, int, pct } from '@/stats/format';
+import { absoluteToRank, isApex, rankLabel, rankShort, TIER_COLOR } from '@/stats/rank';
+import { lpSeries, rollingWinRate, snapshotSeries } from '@/stats/timeseries';
 import { colors, fonts, space, type } from '@/theme';
 import type { Region } from '@/types';
 
 export function HomeScreen() {
-  const { status, data, notFound, error, recent, suggestions, search, dismissNotFound } = usePlayer();
+  const { status, data, error, failedQuery, recent, suggestions, settings, search, setMode, dismissError } = usePlayer();
   const [region, setRegion] = useState<Region>('BR');
   const router = useRouter();
+  const real = settings.mode === 'riot';
+
+  // Ações oferecidas conforme o tipo de erro da busca.
+  const errorActions = () => {
+    if (!error) return [];
+    const actions: Array<{ label: string; onPress: () => void; primary?: boolean }> = [];
+    if (error.code === 'WRONG_REGION' && error.suggestedRegion && failedQuery) {
+      const suggested = error.suggestedRegion;
+      actions.push({ label: `Buscar em ${suggested}`, primary: true, onPress: () => (setRegion(suggested), void search({ ...failedQuery, region: suggested })) });
+    }
+    if (['RATE_LIMITED', 'RIOT_UNAVAILABLE', 'SERVER_UNREACHABLE', 'UNKNOWN'].includes(error.code) && failedQuery) {
+      actions.push({ label: 'Tentar novamente', primary: true, onPress: () => void search(failedQuery) });
+    }
+    if (['SERVER_UNREACHABLE', 'MISSING_API_KEY', 'RIOT_AUTH'].includes(error.code)) {
+      actions.push({ label: 'Configurar servidor', onPress: () => router.navigate('/perfil') });
+      actions.push({ label: 'Usar demonstração', onPress: () => setMode('demo') });
+    }
+    if (data) actions.push({ label: `Voltar para ${data.player.gameName}`, onPress: dismissError });
+    return actions;
+  };
 
   return (
     <Screen>
@@ -43,50 +66,69 @@ export function HomeScreen() {
         <View style={styles.logo}>
           <Ionicons name="analytics" size={16} color={colors.accentSoft} />
         </View>
-        <Text style={styles.wordmark}>
+        <Text style={[styles.wordmark, { flex: 1 }]}>
           LOL <Text style={{ color: colors.gold }}>INSIGHT</Text>
         </Text>
+        <SourceBadge />
       </View>
 
-      <SearchBar region={region} onRegionChange={setRegion} onSearch={search} recent={recent} suggestions={suggestions} busy={status === 'loading'} />
+      <SearchBar
+        region={region}
+        onRegionChange={setRegion}
+        onSearch={search}
+        recent={recent}
+        suggestions={suggestions}
+        busy={status === 'loading'}
+        placeholder={real ? 'Riot ID (Nome#TAG)' : 'Buscar invocador (Nome#TAG)'}
+      />
 
       {status === 'loading' ? (
         <ScreenSkeleton cards={3} />
       ) : (
         <>
-          {notFound ? (
+          {error ? <ErrorCard error={error} actions={errorActions()} /> : null}
+          {!data && !error ? (
             <Card>
               <EmptyState
-                icon="person-remove-outline"
-                title="Invocador não encontrado"
-                message={`Não encontramos "${notFound.gameName}${notFound.tagLine ? `#${notFound.tagLine}` : ''}" na região ${notFound.region}. Confira o nome, a tag e a região, ou escolha uma das contas sugeridas acima.`}
-                actionLabel={data ? `Voltar para ${data.player.gameName}` : undefined}
-                onAction={dismissNotFound}
+                icon="search-outline"
+                title="Pesquise um jogador"
+                message="Digite o Riot ID completo (Nome#TAG), escolha a região e toque na lupa para carregar o elo e as partidas reais da conta."
+                actionLabel="Ver a demonstração"
+                onAction={() => setMode('demo')}
               />
             </Card>
           ) : null}
-          {error ? (
-            <Card>
-              <EmptyState icon="cloud-offline-outline" title="Não foi possível carregar" message={error} />
-            </Card>
-          ) : null}
-          {data && !notFound ? (
+          {data && !error ? (
             <FadeIn trigger={data.player.id} style={{ gap: space.lg }}>
               <PlayerHero data={data} />
-              <Indicators data={data} />
-              <EvolutionCard data={data} />
-              <InsightsPreview data={data} onOpen={() => router.push('/insights')} />
-              <View>
-                <SectionHeader
-                  title="Últimas partidas"
-                  right={<LinkButton label="Ver histórico" onPress={() => router.navigate('/partidas')} />}
-                />
-                <View style={{ gap: space.sm }}>
-                  {data.matches.slice(0, 5).map((m) => (
-                    <MatchRow key={m.id} match={m} asOf={data.asOf} onPress={() => router.push({ pathname: '/partida/[id]', params: { id: m.id } })} />
-                  ))}
-                </View>
-              </View>
+              <DataStatusCard data={data} />
+              {data.matches.length ? (
+                <>
+                  <Indicators data={data} />
+                  <EvolutionCard data={data} />
+                  <InsightsPreview data={data} onOpen={() => router.push('/insights')} />
+                  <View>
+                    <SectionHeader title="Últimas partidas" right={<LinkButton label="Ver histórico" onPress={() => router.navigate('/partidas')} />} />
+                    <View style={{ gap: space.sm }}>
+                      {data.matches.slice(0, 5).map((m) => (
+                        <MatchRow key={m.id} match={m} asOf={data.asOf} onPress={() => router.push({ pathname: '/partida/[id]', params: { id: m.id } })} />
+                      ))}
+                    </View>
+                  </View>
+                </>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon="game-controller-outline"
+                    title={data.sync?.state === 'syncing' || data.sync?.state === 'waiting_rate_limit' ? 'Carregando partidas…' : 'Sem partidas para analisar'}
+                    message={
+                      data.sync?.state === 'syncing' || data.sync?.state === 'waiting_rate_limit'
+                        ? 'As partidas aparecem aqui conforme são baixadas da Riot.'
+                        : "Não há partidas de Summoner's Rift entre as mais recentes desta conta. Aumente a quantidade de partidas analisadas."
+                    }
+                  />
+                </Card>
+              )}
             </FadeIn>
           ) : null}
         </>
@@ -97,7 +139,10 @@ export function HomeScreen() {
 
 function PlayerHero({ data }: { data: Derived }) {
   const { player, peakRank } = data;
-  const tier = TIER_COLOR[player.rank.tier];
+  const rank = player.rank;
+  const tier = rank ? TIER_COLOR[rank.tier] : colors.textMuted;
+  const season = player.ranked?.solo;
+  const flex = player.ranked?.flex;
   return (
     <Card>
       <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'center' }}>
@@ -114,22 +159,48 @@ function PlayerHero({ data }: { data: Derived }) {
       </View>
 
       <View style={styles.rankRow}>
-        <RankEmblem rank={player.rank} size={52} />
+        {rank ? (
+          <RankEmblem rank={rank} size={52} />
+        ) : (
+          <View style={styles.unranked}>
+            <Ionicons name="shield-outline" size={24} color={colors.textMuted} />
+          </View>
+        )}
         <View style={{ flex: 1, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Text style={[type.h2, { color: tier }]}>{rankLabel(player.rank)}</Text>
-            <Text style={type.number}>
-              {player.rank.lp}
-              <Text style={styles.unit}> LP</Text>
-            </Text>
+            <Text style={[type.h2, { color: tier }]}>{rank ? rankLabel(rank) : 'Sem elo'}</Text>
+            {rank ? (
+              <Text style={type.number}>
+                {rank.lp}
+                <Text style={styles.unit}> LP</Text>
+              </Text>
+            ) : null}
           </View>
-          <Meter value={player.rank.lp / 100} color={tier} />
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-            <Ionicons name="trophy-outline" size={12} color={colors.gold} />
+          {rank ? (
+            // Mestre+ não tem teto de 100 LP: a barra só faz sentido nas ligas com divisões.
+            isApex(rank) ? null : <Meter value={rank.lp / 100} color={tier} />
+          ) : (
+            <Text style={type.bodySm}>Conta sem classificação na fila Solo/Duo nesta temporada.</Text>
+          )}
+          {season ? (
             <Text style={type.bodySm}>
-              Melhor elo: <Text style={{ color: colors.text }}>{rankLabel(peakRank)}</Text> · {peakRank.lp} LP
+              Temporada Solo/Duo: <Text style={{ color: colors.text }}>{season.wins}V {season.losses}D</Text> · {pct(season.wins / Math.max(1, season.wins + season.losses))}
+              {season.hotStreak ? ' · em sequência' : ''}
             </Text>
-          </View>
+          ) : null}
+          {flex ? (
+            <Text style={type.bodySm}>
+              Flex: <Text style={{ color: colors.text }}>{rankLabel(flex.rank)}</Text> · {flex.rank.lp} LP · {flex.wins}V {flex.losses}D
+            </Text>
+          ) : null}
+          {peakRank ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+              <Ionicons name="trophy-outline" size={12} color={colors.gold} />
+              <Text style={type.bodySm}>
+                {data.source === 'riot' ? 'Melhor elo registrado' : 'Melhor elo'}: <Text style={{ color: colors.text }}>{rankLabel(peakRank)}</Text> · {peakRank.lp} LP
+              </Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </Card>
@@ -164,7 +235,10 @@ function Indicators({ data }: { data: Derived }) {
   const s = data.summary;
   return (
     <Card>
-      <SectionHeader title="Indicadores" subtitle={`Últimos 90 dias · todas as filas`} />
+      <SectionHeader
+        title="Indicadores"
+        subtitle={data.source === 'riot' ? `Calculados sobre ${s.games} ${s.games === 1 ? 'partida real' : 'partidas reais'}` : 'Últimos 90 dias · todas as filas'}
+      />
       <View style={styles.wrRow}>
         <WinRing value={s.winRate} />
         <View style={{ flex: 1, gap: 8 }}>
@@ -199,28 +273,35 @@ type EvolutionMode = 'lp' | 'wr';
 function EvolutionCard({ data }: { data: Derived }) {
   const [mode, setMode] = useState<EvolutionMode>('lp');
   const [days, setDays] = useState<PeriodDays>(30);
+  const real = data.source === 'riot';
 
   const points = useMemo(() => {
     const from = data.asOf - days * 86_400_000;
-    const all = mode === 'lp' ? lpSeries(data.matches) : rollingWinRate(data.matches, 10);
+    // Dados reais: a Riot não informa o LP por partida, então a série vem dos snapshots registrados pelo backend.
+    const all = mode === 'lp' ? (real ? snapshotSeries(data.rankHistory) : lpSeries(data.matches)) : rollingWinRate(data.matches, 10);
     return all.filter((p) => (p.t ?? 0) > from);
-  }, [data, mode, days]);
+  }, [data, mode, days, real]);
 
   const change = points.length > 1 ? points[points.length - 1].y - points[0].y : 0;
   const lpFormat = (v: number) => {
     const r = absoluteToRank(v);
     return `${rankShort(r)} ${r.lp}`;
   };
+  const firstSnapshot = data.rankHistory.find((x) => x.queue === 'SOLO');
+  const lpSubtitle = real ? 'Elo e LP registrados pelo LOL Insight a cada atualização da conta' : 'Elo e LP a cada partida ranqueada Solo/Duo';
+  const lpEmpty = real
+    ? !data.player.rank
+      ? 'Conta sem elo Solo/Duo: não há LP para acompanhar.'
+      : firstSnapshot
+        ? 'Nenhum registro de elo neste período. Escolha um período maior.'
+        : 'O histórico de LP ainda não está disponível.'
+    : 'Nenhuma partida ranqueada neste período. Escolha um período maior.';
 
   return (
     <Card>
-      <SectionHeader
-        title="Evolução"
-        subtitle={mode === 'lp' ? 'Elo e LP a cada partida ranqueada Solo/Duo' : 'Taxa de vitória nas 10 partidas anteriores a cada ponto'}
-      />
-      <View style={{ flexDirection: 'row', gap: space.sm, marginBottom: space.md }}>
+      <SectionHeader title="Evolução" subtitle={mode === 'lp' ? lpSubtitle : 'Taxa de vitória nas 10 partidas anteriores a cada ponto'} />
+      <View style={{ gap: space.sm, marginBottom: space.md }}>
         <Segmented
-          style={{ flex: 1 }}
           options={[
             { value: 'lp', label: 'LP' },
             { value: 'wr', label: 'Vitórias %' },
@@ -228,7 +309,7 @@ function EvolutionCard({ data }: { data: Derived }) {
           value={mode}
           onChange={setMode}
         />
-        <Segmented style={{ flex: 1.3 }} options={PERIOD_OPTIONS} value={days} onChange={setDays} />
+        <Segmented options={PERIOD_OPTIONS} value={days} onChange={setDays} />
       </View>
       <LineChart
         points={points}
@@ -236,7 +317,7 @@ function EvolutionCard({ data }: { data: Derived }) {
         label={mode === 'lp' ? 'LP' : 'taxa de vitória'}
         reference={mode === 'wr' ? { y: 50, label: '50%' } : undefined}
         resultDots={mode === 'lp'}
-        emptyMessage="Nenhuma partida ranqueada neste período. Escolha um período maior."
+        emptyMessage={mode === 'lp' ? lpEmpty : 'Partidas insuficientes neste período para calcular a taxa de vitória (mínimo de 5).'}
       />
       {points.length > 1 ? (
         <View style={styles.change}>
@@ -247,7 +328,19 @@ function EvolutionCard({ data }: { data: Derived }) {
               {Math.abs(Math.round(change))}
               {mode === 'lp' ? ' LP' : ' p.p.'}
             </Text>{' '}
-            nos últimos {days} dias · {points.length} partidas
+            {days === 365 ? 'no último ano' : `nos últimos ${days} dias`} · {points.length} {mode === 'lp' && real ? 'registros' : 'partidas'}
+          </Text>
+        </View>
+      ) : null}
+      {mode === 'lp' && real && data.player.rank ? (
+        <View style={styles.note}>
+          <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} style={{ marginTop: 1 }} />
+          <Text style={[type.bodySm, { flex: 1 }]}>
+            A Riot não fornece o histórico de LP.{' '}
+            {firstSnapshot
+              ? `O acompanhamento desta conta começou em ${dateShort(firstSnapshot.t)}; cada atualização adiciona um ponto quando o elo muda.`
+              : 'O acompanhamento começa na primeira consulta bem-sucedida.'}
+            {points.length === 1 ? ' Com um único registro ainda não há linha de evolução.' : ''}
           </Text>
         </View>
       ) : null}
@@ -296,4 +389,6 @@ const styles = StyleSheet.create({
   wrRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.lg },
   ringValue: { fontFamily: fonts.displayBold, fontSize: 19, color: colors.text, letterSpacing: -0.4 },
   change: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.md },
+  note: { flexDirection: 'row', gap: 8, marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
+  unranked: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
 });

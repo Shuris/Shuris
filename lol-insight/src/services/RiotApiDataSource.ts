@@ -1,31 +1,81 @@
-import type { PlayerBundle } from '@/types';
+import type { DataSourceKind, Match, MatchDetails, Player, PlayerBundle, Region } from '@/types';
 
-import type { AccountQuery, AccountSuggestion, PlayerDataSource } from './PlayerDataSource';
+import { ServiceError, type ServiceErrorCode } from './errors';
+import type { AccountQuery, AccountSuggestion, LoadOptions, PlayerDataSource } from './PlayerDataSource';
+
+const TIMEOUT_MS = 20_000;
+
+export interface ServerHealth {
+  ok: boolean;
+  riotApiKeyConfigured: boolean;
+}
 
 /**
- * Integração futura com dados reais da Riot Games.
- *
- * IMPORTANTE — a chave da Riot API nunca deve ser embutida no aplicativo.
- * Este cliente conversa com um backend próprio (proxy), que:
- *   1. guarda a API key em variável de ambiente do servidor;
- *   2. consulta Account-V1, League-V4 e Match-V5 respeitando os rate limits;
- *   3. normaliza a resposta para o formato `PlayerBundle` (src/types).
- *
- * Para ativar: defina EXPO_PUBLIC_API_BASE_URL (URL do proxy, não é segredo)
- * e EXPO_PUBLIC_DATA_SOURCE=riot. Ver src/services/index.ts.
+ * Modo real: conversa com o backend do LOL Insight (pasta server/), que é quem
+ * guarda a chave da Riot e consulta Account-V1, Summoner-V4, League-V4,
+ * Match-V5 e Champion-Mastery-V4. O app nunca fala com a Riot diretamente e
+ * nunca tem acesso à chave.
  */
 export class RiotApiDataSource implements PlayerDataSource {
-  constructor(private baseUrl: string) {}
+  readonly kind: DataSourceKind = 'riot';
+  private baseUrl: string;
 
-  async loadAccount(query: AccountQuery): Promise<PlayerBundle | null> {
-    const riotId = encodeURIComponent(`${query.gameName}#${query.tagLine ?? query.region}`);
-    const res = await fetch(`${this.baseUrl}/v1/accounts/${query.region}/${riotId}`);
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`Falha ao consultar a conta (HTTP ${res.status})`);
-    return (await res.json()) as PlayerBundle;
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, '');
+  }
+
+  async loadAccount(query: AccountQuery, options: LoadOptions = {}): Promise<PlayerBundle> {
+    const name = query.gameName.trim();
+    const tag = query.tagLine?.trim() ?? '';
+    // Validação local: evita uma ida ao servidor para erros óbvios de digitação.
+    if (!name) throw new ServiceError('INVALID_RIOT_ID', 'Digite o Riot ID do jogador.');
+    if (!tag) throw new ServiceError('INVALID_RIOT_ID', 'Falta a tag do Riot ID. Digite no formato Nome#TAG (ex.: Gregory#BR1).');
+    if (name.length < 3 || name.length > 16) throw new ServiceError('INVALID_RIOT_ID', 'O nome do Riot ID deve ter de 3 a 16 caracteres.');
+    if (!/^[\p{L}\p{N}]{3,5}$/u.test(tag)) throw new ServiceError('INVALID_RIOT_ID', 'A tag do Riot ID deve ter de 3 a 5 letras ou números.');
+
+    const params = `count=${options.count ?? 20}${options.refresh ? '&refresh=1' : ''}`;
+    return this.request<PlayerBundle>(`/v1/accounts/${query.region}/${encodeURIComponent(name)}/${encodeURIComponent(tag)}?${params}`);
+  }
+
+  async loadMatchDetails(match: Match, player: Player): Promise<MatchDetails> {
+    return this.request<MatchDetails>(`/v1/matches/${encodeURIComponent(match.id)}/details?puuid=${encodeURIComponent(player.puuid ?? player.id)}`);
   }
 
   async suggestions(): Promise<AccountSuggestion[]> {
     return [];
+  }
+
+  async health(): Promise<ServerHealth> {
+    return this.request<ServerHealth>('/health', 6000);
+  }
+
+  private async request<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<T> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(`${this.baseUrl}${path}`, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    } catch {
+      throw new ServiceError('SERVER_UNREACHABLE', `Não foi possível conectar ao servidor em ${this.baseUrl}.`);
+    } finally {
+      clearTimeout(timer);
+    }
+
+    let body: unknown = null;
+    try {
+      body = await res.json();
+    } catch {
+      // Resposta sem JSON: tratada abaixo pelo status.
+    }
+    if (res.ok && body) return body as T;
+
+    const err = (body as { error?: { code?: string; message?: string; retryAfterSec?: number; suggestedRegion?: Region } } | null)?.error;
+    if (err?.code) {
+      throw new ServiceError(err.code as ServiceErrorCode, err.message ?? 'Erro ao consultar o servidor.', {
+        retryAfterSec: err.retryAfterSec,
+        suggestedRegion: err.suggestedRegion,
+      });
+    }
+    throw new ServiceError('SERVER_UNREACHABLE', `O endereço ${this.baseUrl} respondeu, mas não parece ser o servidor do LOL Insight (HTTP ${res.status}).`);
   }
 }
