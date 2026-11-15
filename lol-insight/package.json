@@ -42,7 +42,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "test:all": "npm test && npm --prefix server test",
     "server": "npm --prefix server start",
-    "server:install": "npm --prefix server install"
+    "server:install": "npm --prefix server install",
+    "check:coach": "tsx scripts/inspect-coach.ts"
   },
   "private": true
 }
