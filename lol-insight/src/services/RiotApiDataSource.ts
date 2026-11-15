@@ -1,9 +1,8 @@
-import type { DataSourceKind, Match, MatchDetails, Player, PlayerBundle, Region } from '@/types';
+import type { DataSourceKind, Match, MatchDetails, Player, PlayerBundle } from '@/types';
 
-import { ServiceError, type ServiceErrorCode } from './errors';
+import { ServiceError } from './errors';
+import { requestJson } from './http';
 import type { AccountQuery, AccountSuggestion, LoadOptions, PlayerDataSource } from './PlayerDataSource';
-
-const TIMEOUT_MS = 20_000;
 
 export interface ServerHealth {
   ok: boolean;
@@ -49,33 +48,7 @@ export class RiotApiDataSource implements PlayerDataSource {
     return this.request<ServerHealth>('/health', 6000);
   }
 
-  private async request<T>(path: string, timeoutMs = TIMEOUT_MS): Promise<T> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    let res: Response;
-    try {
-      res = await fetch(`${this.baseUrl}${path}`, { signal: controller.signal, headers: { Accept: 'application/json' } });
-    } catch {
-      throw new ServiceError('SERVER_UNREACHABLE', `Não foi possível conectar ao servidor em ${this.baseUrl}.`);
-    } finally {
-      clearTimeout(timer);
-    }
-
-    let body: unknown = null;
-    try {
-      body = await res.json();
-    } catch {
-      // Resposta sem JSON: tratada abaixo pelo status.
-    }
-    if (res.ok && body) return body as T;
-
-    const err = (body as { error?: { code?: string; message?: string; retryAfterSec?: number; suggestedRegion?: Region } } | null)?.error;
-    if (err?.code) {
-      throw new ServiceError(err.code as ServiceErrorCode, err.message ?? 'Erro ao consultar o servidor.', {
-        retryAfterSec: err.retryAfterSec,
-        suggestedRegion: err.suggestedRegion,
-      });
-    }
-    throw new ServiceError('SERVER_UNREACHABLE', `O endereço ${this.baseUrl} respondeu, mas não parece ser o servidor do LOL Insight (HTTP ${res.status}).`);
+  private request<T>(path: string, timeoutMs?: number): Promise<T> {
+    return requestJson<T>(this.baseUrl, path, { timeoutMs });
   }
 }

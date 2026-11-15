@@ -8,6 +8,8 @@ import { consoleLogger, type Logger } from './logger.ts';
 import { RiotApi } from './riot/api.ts';
 import { RiotClient, type FetchLike } from './riot/client.ts';
 import { RateLimiter, systemClock, type Clock } from './riot/rateLimiter.ts';
+import { CoachRepository } from './coach/coachRepository.ts';
+import { AcademyService, LessonService, LPHistoryService, PlayerDiagnosisService, RankPredictionService, TrainingPlanService } from './coach/services.ts';
 import { AccountService } from './services/accountService.ts';
 import { SyncService } from './services/syncService.ts';
 
@@ -25,6 +27,13 @@ export interface App {
   client: RiotClient;
   sync: SyncService;
   accounts: AccountService;
+  coachStore: CoachRepository;
+  lessons: LessonService;
+  lpHistory: LPHistoryService;
+  diagnosis: PlayerDiagnosisService;
+  trainingPlans: TrainingPlanService;
+  rankPredictions: RankPredictionService;
+  academy: AcademyService;
   logger: Logger;
 }
 
@@ -41,5 +50,12 @@ export function createApp(config: Config, overrides: AppOverrides = {}): App {
   const ddragon = new DataDragon(repos, config.ddragonLocale, overrides.ddragonFetch, logger, now);
   const sync = new SyncService(api, repos, limiter, logger, now);
   const accounts = new AccountService(api, repos, sync, ddragon, logger, now, (ms) => clock.sleep(ms));
-  return { db, repos, limiter, client, sync, accounts, logger };
+  const coachStore = new CoachRepository(db);
+  const lessons = new LessonService();
+  const lpHistory = new LPHistoryService(repos);
+  const diagnosis = new PlayerDiagnosisService(coachStore);
+  const trainingPlans = new TrainingPlanService();
+  const rankPredictions = new RankPredictionService(coachStore, lpHistory);
+  const academy = new AcademyService(accounts, coachStore, lessons, trainingPlans, rankPredictions, lpHistory, now);
+  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, logger };
 }

@@ -33,7 +33,7 @@ export interface Identity {
   secondary?: Trait;
 }
 
-interface Bench {
+export interface Bench {
   kills30: number;
   deaths30: number;
   dpm: number;
@@ -44,7 +44,7 @@ interface Bench {
 }
 
 /** Referências aproximadas por posição para elos altos. */
-const BENCH: Record<Position, Bench> = {
+export const BENCH: Record<Position, Bench> = {
   MID: { kills30: 6.4, deaths30: 5.0, dpm: 700, cs: 7.2, vision: 0.7, kp: 0.56, dmgShare: 0.26 },
   JUNGLE: { kills30: 5.8, deaths30: 5.2, dpm: 520, cs: 5.7, vision: 1.1, kp: 0.6, dmgShare: 0.18 },
   ADC: { kills30: 6.8, deaths30: 5.2, dpm: 700, cs: 7.6, vision: 0.66, kp: 0.56, dmgShare: 0.27 },

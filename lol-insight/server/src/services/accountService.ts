@@ -235,6 +235,17 @@ export class AccountService {
     };
   }
 
+  /**
+   * Dados já armazenados de uma conta (perfil, partidas, snapshots), sem consultar a Riot.
+   * Usado pelo treinador, que roda sobre o que já foi coletado.
+   */
+  async getStoredBundle(puuid: string, count: number): Promise<PlayerBundle> {
+    const account = this.repos.getAccount(puuid);
+    if (!account) throw new AppError('PLAYER_NOT_FOUND', 'Conta ainda não acompanhada. Pesquise o jogador antes de abrir o treinador.');
+    const profile = this.repos.cacheGet<Profile>(`profile:${puuid}`, this.now(), true) ?? {};
+    return this.buildBundle(account, profile, count, null);
+  }
+
   private mastery(puuid: string, st: StaticData | null): MasteryEntry[] {
     if (!st) return [];
     return this.repos

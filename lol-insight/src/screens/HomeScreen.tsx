@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { LineChart } from '@/components/charts';
+import { CoachEntry } from '@/components/coach/CoachEntry';
 import { DataStatusCard } from '@/components/DataStatusCard';
 import { ErrorCard } from '@/components/ErrorCard';
 import { SearchBar } from '@/components/SearchBar';
@@ -102,6 +103,7 @@ export function HomeScreen() {
             <FadeIn trigger={data.player.id} style={{ gap: space.lg }}>
               <PlayerHero data={data} />
               <DataStatusCard data={data} />
+              <CoachEntry />
               {data.matches.length ? (
                 <>
                   <Indicators data={data} />

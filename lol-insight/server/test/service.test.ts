@@ -291,7 +291,7 @@ test('detalhes da partida: ordem de habilidades, itens concluídos e linha do te
 test('HTTP: códigos de status, validação de parâmetros e ausência da chave nas respostas', async () => {
   const ctx = setup();
   ctx.riot.matches = tenMatches();
-  const handler = createHttpHandler({ accounts: ctx.app.accounts, logger: silentLogger, hasApiKey: () => ctx.app.client.hasKey });
+  const handler = createHttpHandler({ accounts: ctx.app.accounts, academy: ctx.app.academy, lessons: ctx.app.lessons, logger: silentLogger, hasApiKey: () => ctx.app.client.hasKey });
   const call = async (url: string, method = 'GET') => {
     let status = 0;
     let body = '';

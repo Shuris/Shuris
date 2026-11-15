@@ -7,7 +7,7 @@ import { startHttpServer } from './http/server.ts';
 const config = loadConfig();
 const app = createApp(config);
 
-const server = await startHttpServer({ accounts: app.accounts, logger: app.logger, hasApiKey: () => app.client.hasKey }, config.port, config.host);
+const server = await startHttpServer({ accounts: app.accounts, academy: app.academy, lessons: app.lessons, logger: app.logger, hasApiKey: () => app.client.hasKey }, config.port, config.host);
 
 const lan = Object.values(networkInterfaces())
   .flat()

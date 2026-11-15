@@ -302,6 +302,24 @@ function Content({ data }: { data: Derived }) {
         </TileGrid>
       </Card>
 
+      <Pressable onPress={() => router.push('/academy')} accessibilityRole="button" style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }]}>
+        <Ionicons name="school" size={18} color={colors.gold} />
+        <View style={{ flex: 1 }}>
+          <Text style={type.h3}>LOI Academy</Text>
+          <Text style={type.bodySm}>Aulas e plano de treino a partir do seu diagnóstico</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      </Pressable>
+
+      <Pressable onPress={() => router.push('/previsao')} accessibilityRole="button" style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }]}>
+        <Ionicons name="trending-up" size={18} color={colors.accentSoft} />
+        <View style={{ flex: 1 }}>
+          <Text style={type.h3}>Previsão de elo</Text>
+          <Text style={type.bodySm}>Cenários para 7, 15 e 30 dias e metas de elo</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+      </Pressable>
+
       <Pressable onPress={() => router.push('/insights')} accessibilityRole="button" style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }]}>
         <Ionicons name="bulb" size={18} color={colors.gold} />
         <View style={{ flex: 1 }}>

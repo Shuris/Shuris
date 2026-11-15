@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { CoachProvider } from '@/state/CoachContext';
 import { PlayerProvider } from '@/state/PlayerContext';
 import { colors } from '@/theme';
 
@@ -26,6 +27,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PlayerProvider>
+        <CoachProvider>
         <StatusBar style="light" />
         <Stack
           screenOptions={{
@@ -37,7 +39,13 @@ export default function RootLayout() {
           <Stack.Screen name="campeao/[id]" />
           <Stack.Screen name="partida/[id]" />
           <Stack.Screen name="insights" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="academy/index" />
+          <Stack.Screen name="academy/aulas" />
+          <Stack.Screen name="academy/aula/[id]" />
+          <Stack.Screen name="academy/plano" />
+          <Stack.Screen name="previsao" />
         </Stack>
+        </CoachProvider>
       </PlayerProvider>
     </SafeAreaProvider>
   );

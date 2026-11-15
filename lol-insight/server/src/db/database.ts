@@ -93,6 +93,68 @@ CREATE TABLE IF NOT EXISTS sync_log (
   error        TEXT
 );
 
+-- ---- Treinador: Academy e Rank Predictor (chave = puuid da conta acompanhada) ----
+
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  puuid         TEXT NOT NULL,
+  lesson_id     TEXT NOT NULL,
+  completed_at  INTEGER,
+  best_score    REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (puuid, lesson_id)
+);
+
+-- Respostas dos testes: acertos, erros e tempo de cada tentativa.
+CREATE TABLE IF NOT EXISTS quiz_attempts (
+  puuid         TEXT NOT NULL,
+  lesson_id     TEXT NOT NULL,
+  at            INTEGER NOT NULL,
+  correct       INTEGER NOT NULL,
+  total         INTEGER NOT NULL,
+  duration_sec  INTEGER NOT NULL,
+  answers       TEXT NOT NULL,
+  PRIMARY KEY (puuid, lesson_id, at)
+);
+
+CREATE TABLE IF NOT EXISTS training_activity (
+  puuid  TEXT NOT NULL,
+  day    TEXT NOT NULL,
+  PRIMARY KEY (puuid, day)
+);
+
+CREATE TABLE IF NOT EXISTS diagnoses (
+  puuid   TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  sample  INTEGER NOT NULL,
+  data    TEXT NOT NULL,
+  PRIMARY KEY (puuid, at)
+);
+
+-- Plano ativo (active = 1, data = plano completo) e planos anteriores (active = 0, data = resumo).
+CREATE TABLE IF NOT EXISTS training_plans (
+  puuid       TEXT NOT NULL,
+  plan_id     TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  focus       TEXT NOT NULL,
+  active      INTEGER NOT NULL,
+  data        TEXT NOT NULL,
+  PRIMARY KEY (puuid, plan_id)
+);
+
+CREATE TABLE IF NOT EXISTS rank_predictions (
+  puuid  TEXT NOT NULL,
+  at     INTEGER NOT NULL,
+  data   TEXT NOT NULL,
+  PRIMARY KEY (puuid, at)
+);
+
+CREATE TABLE IF NOT EXISTS rank_goals (
+  puuid     TEXT PRIMARY KEY,
+  tier      TEXT NOT NULL,
+  division  INTEGER NOT NULL,
+  lp        INTEGER NOT NULL,
+  set_at    INTEGER NOT NULL
+);
+
 -- Cache genérico com validade (respostas de perfil, Data Dragon etc.).
 CREATE TABLE IF NOT EXISTS cache (
   key         TEXT PRIMARY KEY,
