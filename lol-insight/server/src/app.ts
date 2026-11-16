@@ -8,6 +8,13 @@ import { consoleLogger, type Logger } from './logger.ts';
 import { RiotApi } from './riot/api.ts';
 import { RiotClient, type FetchLike } from './riot/client.ts';
 import { RateLimiter, systemClock, type Clock } from './riot/rateLimiter.ts';
+import { AuthRepository } from './auth/authRepository.ts';
+import { AuthService } from './auth/authService.ts';
+import { TokenCipher } from './auth/crypto.ts';
+import { ConsoleMailer, type Mailer } from './auth/mailer.ts';
+import { RiotLinkService } from './auth/riotLinkService.ts';
+import { RsoService } from './auth/rso.ts';
+import { Throttle } from './auth/throttle.ts';
 import { CoachRepository } from './coach/coachRepository.ts';
 import { AcademyService, LessonService, LPHistoryService, PlayerDiagnosisService, RankPredictionService, TrainingPlanService } from './coach/services.ts';
 import { AccountService } from './services/accountService.ts';
@@ -18,6 +25,8 @@ export interface AppOverrides {
   ddragonFetch?: (url: string) => Promise<unknown>;
   clock?: Clock;
   logger?: Logger;
+  mailer?: Mailer;
+  rsoFetch?: ConstructorParameters<typeof RsoService>[3];
 }
 
 export interface App {
@@ -34,6 +43,11 @@ export interface App {
   trainingPlans: TrainingPlanService;
   rankPredictions: RankPredictionService;
   academy: AcademyService;
+  authRepo: AuthRepository;
+  auth: AuthService;
+  riotLinks: RiotLinkService;
+  rso: RsoService;
+  throttle: Throttle;
   logger: Logger;
 }
 
@@ -56,6 +70,12 @@ export function createApp(config: Config, overrides: AppOverrides = {}): App {
   const diagnosis = new PlayerDiagnosisService(coachStore);
   const trainingPlans = new TrainingPlanService();
   const rankPredictions = new RankPredictionService(coachStore, lpHistory);
-  const academy = new AcademyService(accounts, coachStore, lessons, trainingPlans, rankPredictions, lpHistory, now);
-  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, logger };
+  const authRepo = new AuthRepository(db);
+  const throttle = new Throttle(db, now);
+  const mailer = overrides.mailer ?? new ConsoleMailer(logger);
+  const auth = new AuthService(authRepo, throttle, mailer, config.authSecret, config.passwordParams, logger, now);
+  const riotLinks = new RiotLinkService(authRepo, accounts, now);
+  const rso = new RsoService(config.rso, authRepo, new TokenCipher(config.authSecret), overrides.rsoFetch, now);
+  const academy = new AcademyService(accounts, coachStore, authRepo, lessons, trainingPlans, rankPredictions, lpHistory, now);
+  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, authRepo, auth, riotLinks, rso, throttle, logger };
 }

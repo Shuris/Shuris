@@ -6,6 +6,7 @@ import { predict } from '@/coach/prediction';
 import type { CoachReport, CoachState, Diagnosis, DiagnosisRecord, Lesson, PredictionRecord } from '@/coach/types';
 import type { Match, PlayerBundle, Rank, RankSnapshot } from '@/types';
 
+import type { AuthRepository } from '../auth/authRepository.ts';
 import type { Repositories } from '../db/repositories.ts';
 import { AppError } from '../errors.ts';
 import type { AccountService } from '../services/accountService.ts';
@@ -60,8 +61,8 @@ export class PlayerDiagnosisService {
     return diagnose(matches, now, rank);
   }
 
-  history(puuid: string): DiagnosisRecord[] {
-    return this.store.loadState(puuid).diagnoses;
+  history(userId: string, puuid: string): DiagnosisRecord[] {
+    return this.store.loadState(userId, puuid).diagnoses;
   }
 }
 
@@ -90,8 +91,8 @@ export class RankPredictionService {
     return predict({ rank: bundle.player.rank, matches: bundle.matches, rankHistory: this.lp.history(puuid), asOf: bundle.asOf, goal });
   }
 
-  history(puuid: string): PredictionRecord[] {
-    return this.store.loadState(puuid).predictions;
+  history(userId: string, puuid: string): PredictionRecord[] {
+    return this.store.loadState(userId, puuid).predictions;
   }
 
   /** Valida a meta enviada pelo app: uma liga com divisão, ou `null` para remover. */
@@ -107,12 +108,14 @@ export class RankPredictionService {
 
 /**
  * Orquestra o ciclo: partidas armazenadas → diagnóstico → aulas recomendadas →
- * plano semanal → previsão. Cada chamada relê o estado, recalcula e grava.
+ * plano semanal → previsão. Opera sempre sobre o usuário autenticado e a conta
+ * Riot principal vinculada a ele; nunca recebe um ID de usuário vindo do cliente.
  */
 export class AcademyService {
   constructor(
     private accounts: AccountService,
     private store: CoachRepository,
+    private auth: AuthRepository,
     private lessons: LessonService,
     private plans: TrainingPlanService,
     private predictions: RankPredictionService,
@@ -120,30 +123,40 @@ export class AcademyService {
     private now: () => number = Date.now,
   ) {}
 
-  private async build(puuid: string, count: number, state: CoachState): Promise<CoachReport> {
+  private primaryPuuid(userId: string): string {
+    const account = this.auth.primaryRiotAccount(userId);
+    if (!account) throw new AppError('NO_RIOT_ACCOUNT', 'Vincule uma conta Riot ao seu perfil para usar a Academy e a previsão de elo.');
+    return account.puuid;
+  }
+
+  private async build(userId: string, puuid: string, count: number, state: CoachState): Promise<CoachReport> {
     const bundle = await this.accounts.getStoredBundle(puuid, count);
     const now = this.now();
     const result = buildCoachReport({ player: bundle.player, matches: bundle.matches, rankHistory: this.lp.history(puuid), source: 'riot', asOf: bundle.asOf, now }, state);
-    this.store.saveState(puuid, result.state);
+    this.store.saveState(userId, puuid, result.state);
     return result.report;
   }
 
-  report(puuid: string, count: number): Promise<CoachReport> {
-    return this.build(puuid, count, this.store.loadState(puuid));
+  async report(userId: string, count: number): Promise<CoachReport> {
+    const puuid = this.primaryPuuid(userId);
+    return this.build(userId, puuid, count, this.store.loadState(userId, puuid));
   }
 
-  async submitAttempt(puuid: string, count: number, lessonId: string, answers: unknown, durationSec: unknown): Promise<{ result: QuizResult; report: CoachReport }> {
+  async submitAttempt(userId: string, count: number, lessonId: string, answers: unknown, durationSec: unknown): Promise<{ result: QuizResult; report: CoachReport }> {
+    const puuid = this.primaryPuuid(userId);
     const checked = this.lessons.checkAnswers(lessonId, answers);
     const duration = typeof durationSec === 'number' && Number.isFinite(durationSec) ? Math.min(7200, Math.max(0, durationSec)) : 0;
-    const { state, result } = recordQuizAttempt(this.store.loadState(puuid), lessonId, checked, duration, this.now());
-    return { result, report: await this.build(puuid, count, state) };
+    const { state, result } = recordQuizAttempt(this.store.loadState(userId, puuid), lessonId, checked, duration, this.now());
+    return { result, report: await this.build(userId, puuid, count, state) };
   }
 
-  setGoal(puuid: string, count: number, goal: unknown): Promise<CoachReport> {
-    return this.build(puuid, count, setGoal(this.store.loadState(puuid), this.predictions.parseGoal(goal), this.now()));
+  async setGoal(userId: string, count: number, goal: unknown): Promise<CoachReport> {
+    const puuid = this.primaryPuuid(userId);
+    return this.build(userId, puuid, count, setGoal(this.store.loadState(userId, puuid), this.predictions.parseGoal(goal), this.now()));
   }
 
-  setPlanDay(puuid: string, count: number, day: unknown, done: unknown): Promise<CoachReport> {
-    return this.build(puuid, count, this.plans.setDay(this.store.loadState(puuid), day, done, this.now()));
+  async setPlanDay(userId: string, count: number, day: unknown, done: unknown): Promise<CoachReport> {
+    const puuid = this.primaryPuuid(userId);
+    return this.build(userId, puuid, count, this.plans.setDay(this.store.loadState(userId, puuid), day, done, this.now()));
   }
 }

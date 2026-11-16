@@ -1,4 +1,10 @@
+import { Readable } from 'node:stream';
+
+import type { Authenticated } from '../src/auth/authService.ts';
+import { MemoryMailer } from '../src/auth/mailer.ts';
+import { TEST_PARAMS } from '../src/auth/password.ts';
 import type { Config } from '../src/config.ts';
+import { createHttpHandler, httpDepsFrom } from '../src/http/server.ts';
 import { createApp, type App } from '../src/app.ts';
 import { silentLogger } from '../src/logger.ts';
 import type { Clock } from '../src/riot/rateLimiter.ts';
@@ -284,15 +290,67 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
       { max: 100, windowMs: 120_000 },
     ],
     ddragonLocale: 'pt_BR',
+    authSecret: Buffer.alloc(32, 7),
+    passwordParams: TEST_PARAMS,
+    mailTransport: 'console',
+    rso: null,
     ...overrides,
   };
 }
 
-export function setup(overrides: Partial<Config> = {}): { app: App; riot: FakeRiot; clock: FakeClock } {
+export function setup(overrides: Partial<Config> = {}): { app: App; riot: FakeRiot; clock: FakeClock; mailer: MemoryMailer } {
   const riot = new FakeRiot();
   const clock = new FakeClock();
-  const app = createApp(testConfig(overrides), { fetchImpl: riot.fetch, ddragonFetch: fakeDdragon, clock, logger: silentLogger });
-  return { app, riot, clock };
+  const mailer = new MemoryMailer();
+  const app = createApp(testConfig(overrides), { fetchImpl: riot.fetch, ddragonFetch: fakeDdragon, clock, logger: silentLogger, mailer });
+  return { app, riot, clock, mailer };
+}
+
+export const CTX = { ip: '10.0.0.1', client: 'Teste automatizado' };
+
+/** Cria um usuário, confirma o e-mail e devolve o contexto autenticado e os tokens. */
+export async function signUp(ctx: { app: App; mailer: MemoryMailer }, username: string, opts: { verify?: boolean; ip?: string } = {}) {
+  const email = `${username.toLowerCase()}@exemplo.com`;
+  const password = `senha-forte-de-${username}`;
+  const result = await ctx.app.auth.register({ username, email, password }, { ...CTX, ip: opts.ip ?? CTX.ip });
+  let auth: Authenticated = ctx.app.auth.authenticate(`Bearer ${result.session.accessToken}`);
+  if (opts.verify !== false) {
+    ctx.app.auth.verifyEmail(auth, ctx.mailer.last(email, 'verify-email')!.code);
+    auth = ctx.app.auth.authenticate(`Bearer ${result.session.accessToken}`);
+  }
+  return { auth, email, password, tokens: result.session, userId: result.user.id };
+}
+
+export interface HttpResult {
+  status: number;
+  json: any;
+  headers: Record<string, string>;
+  text: string;
+}
+
+/** Cliente HTTP em memória: chama o roteador real sem abrir porta. */
+export function httpClient(app: App, ip = '10.0.0.9') {
+  const handler = createHttpHandler({ ...httpDepsFrom(app), hasApiKey: () => app.client.hasKey });
+  return async (method: string, url: string, opts: { body?: unknown; token?: string } = {}): Promise<HttpResult> => {
+    let status = 0;
+    let text = '';
+    let headers: Record<string, string> = {};
+    const req = Object.assign(Readable.from(opts.body === undefined ? [] : [JSON.stringify(opts.body)]), {
+      url,
+      method,
+      headers: { ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}), 'x-client': 'Teste HTTP' },
+      socket: { remoteAddress: ip },
+    });
+    const res = { writeHead: (s: number, h: Record<string, string>) => ((status = s), (headers = h)), end: (b?: string) => (text = b ?? '') };
+    await handler(req as never, res as never);
+    let parsed: unknown = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      parsed = null;
+    }
+    return { status, json: parsed, headers, text };
+  };
 }
 
 /** Dez partidas com resultados conhecidos: 6 vitórias, 4 derrotas. */

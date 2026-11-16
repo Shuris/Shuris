@@ -1,5 +1,9 @@
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { randomBytes } from 'node:crypto';
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+
+import { STANDARD_PARAMS, type HashParams } from './auth/password.ts';
+import type { RsoConfig } from './auth/rso.ts';
 
 export interface RateLimitRule {
   max: number;
@@ -13,6 +17,45 @@ export interface Config {
   databaseFile: string;
   rateLimits: RateLimitRule[];
   ddragonLocale: string;
+  /** Segredo do servidor (HMAC dos códigos e chave dos tokens do RSO). Nunca vai para o app. */
+  authSecret: Buffer;
+  passwordParams: HashParams;
+  /** Transporte de e-mail. Só "console" (desenvolvimento) existe hoje; um provedor real é serviço externo. */
+  mailTransport: 'console';
+  rso: RsoConfig | null;
+}
+
+/**
+ * Segredo do servidor: AUTH_SECRET (≥ 32 caracteres) ou um arquivo gerado
+ * automaticamente ao lado do banco, com permissão só para o dono.
+ */
+export function loadAuthSecret(env: NodeJS.ProcessEnv, databaseFile: string): Buffer {
+  const fromEnv = (env.AUTH_SECRET ?? '').trim();
+  if (fromEnv) {
+    if (fromEnv.length < 32) throw new Error('AUTH_SECRET precisa ter pelo menos 32 caracteres.');
+    return Buffer.from(fromEnv, 'utf8');
+  }
+  if (databaseFile === ':memory:') return randomBytes(32);
+  const file = resolve(dirname(databaseFile), 'auth-secret');
+  if (!existsSync(file)) {
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, randomBytes(32).toString('base64url'), { mode: 0o600 });
+  }
+  try {
+    chmodSync(file, 0o600);
+  } catch {
+    // Em alguns sistemas (Windows) a permissão não se aplica; o arquivo continua fora do Git (pasta data/).
+  }
+  return Buffer.from(readFileSync(file, 'utf8').trim(), 'utf8');
+}
+
+function loadRso(env: NodeJS.ProcessEnv): RsoConfig | null {
+  const clientId = (env.RSO_CLIENT_ID ?? '').trim();
+  const clientSecret = (env.RSO_CLIENT_SECRET ?? '').trim();
+  const redirectUri = (env.RSO_REDIRECT_URI ?? '').trim();
+  const issuer = (env.RSO_ISSUER ?? '').trim();
+  const accountUrl = (env.RSO_ACCOUNT_URL ?? '').trim();
+  return clientId && clientSecret && redirectUri && issuer && accountUrl ? { clientId, clientSecret, redirectUri, issuer, accountUrl } : null;
 }
 
 /** "20:1,100:120" → [{max:20, windowMs:1000}, {max:100, windowMs:120000}] */
@@ -37,5 +80,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, cwd = process.c
     databaseFile: env.DATABASE_FILE || './data/lolinsight.db',
     rateLimits: limits.length ? limits : parseRateLimits('20:1,100:120'),
     ddragonLocale: env.DDRAGON_LOCALE || 'pt_BR',
+    authSecret: loadAuthSecret(env, env.DATABASE_FILE || './data/lolinsight.db'),
+    passwordParams: STANDARD_PARAMS,
+    mailTransport: 'console',
+    rso: loadRso(env),
   };
 }

@@ -163,10 +163,257 @@ CREATE TABLE IF NOT EXISTS cache (
 );
 `;
 
+/**
+ * Migração 2 — contas de usuário.
+ *
+ * Tudo o que é pessoal passa a pertencer a um usuário (`users.id`) e é apagado
+ * em cascata quando a conta é excluída. Dados públicos da Riot (partidas,
+ * contas pesquisadas, snapshots de elo) continuam compartilhados por PUUID e não
+ * são duplicados por usuário.
+ */
+const SCHEMA_V2 = `
+CREATE TABLE users (
+  id                   TEXT PRIMARY KEY,           -- "usr_" + 24 hex aleatórios; nunca muda
+  username             TEXT NOT NULL,
+  email                TEXT NOT NULL,              -- sempre em minúsculas
+  password_hash        TEXT NOT NULL,              -- scrypt, com parâmetros e sal no próprio valor
+  email_verified_at    INTEGER,
+  password_changed_at  INTEGER NOT NULL,
+  created_at           INTEGER NOT NULL,
+  updated_at           INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX users_username ON users (username COLLATE NOCASE);
+CREATE UNIQUE INDEX users_email ON users (email);
+
+-- Tokens guardados apenas como hash SHA-256: um vazamento do banco não entrega sessões.
+CREATE TABLE user_sessions (
+  id                     TEXT PRIMARY KEY,
+  user_id                TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  access_hash            TEXT NOT NULL UNIQUE,
+  access_expires_at      INTEGER NOT NULL,
+  refresh_hash           TEXT NOT NULL UNIQUE,
+  refresh_expires_at     INTEGER NOT NULL,
+  previous_refresh_hash  TEXT,                     -- detecta reuso de um token de renovação já trocado
+  client                 TEXT NOT NULL,
+  ip                     TEXT NOT NULL,
+  created_at             INTEGER NOT NULL,
+  last_used_at           INTEGER NOT NULL,
+  revoked_at             INTEGER,
+  revoked_reason         TEXT
+);
+CREATE INDEX user_sessions_user ON user_sessions (user_id);
+CREATE INDEX user_sessions_previous ON user_sessions (previous_refresh_hash);
+
+CREATE TABLE email_verification_tokens (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  code_hash   TEXT NOT NULL,                       -- HMAC do código com o segredo do servidor
+  expires_at  INTEGER NOT NULL,
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  used_at     INTEGER,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX email_verification_tokens_user ON email_verification_tokens (user_id);
+
+CREATE TABLE password_reset_tokens (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  code_hash   TEXT NOT NULL,
+  expires_at  INTEGER NOT NULL,
+  attempts    INTEGER NOT NULL DEFAULT 0,
+  used_at     INTEGER,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX password_reset_tokens_user ON password_reset_tokens (user_id);
+
+-- Conta Riot vinculada. "unverified": Riot ID informado pelo usuário, sem prova de posse.
+-- "rso_verified": reservado para o Riot Sign On, que depende de aprovação da Riot.
+CREATE TABLE riot_accounts (
+  id                     TEXT PRIMARY KEY,
+  user_id                TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  puuid                  TEXT NOT NULL,
+  game_name              TEXT NOT NULL,
+  tag_line               TEXT NOT NULL,
+  region                 TEXT NOT NULL,
+  verification_status    TEXT NOT NULL CHECK (verification_status IN ('unverified', 'rso_verified')),
+  is_primary             INTEGER NOT NULL DEFAULT 0 CHECK (is_primary IN (0, 1)),
+  linked_at              INTEGER NOT NULL,
+  verified_at            INTEGER,
+  rso_subject            TEXT,
+  rso_access_token_enc   TEXT,                     -- AES-256-GCM, chave derivada do segredo do servidor
+  rso_refresh_token_enc  TEXT,
+  rso_token_expires_at   INTEGER,
+  UNIQUE (user_id, puuid)
+);
+-- Uma conta Riot só pode ser comprovada (RSO) por um usuário; perfis não verificados podem se repetir.
+CREATE UNIQUE INDEX riot_accounts_verified_puuid ON riot_accounts (puuid) WHERE verification_status = 'rso_verified';
+CREATE UNIQUE INDEX riot_accounts_primary ON riot_accounts (user_id) WHERE is_primary = 1;
+
+-- Estado do fluxo OAuth2/OIDC do RSO (state, PKCE e nonce), de uso único.
+CREATE TABLE oauth_states (
+  state          TEXT PRIMARY KEY,
+  user_id        TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  code_verifier  TEXT NOT NULL,
+  nonce          TEXT NOT NULL,
+  created_at     INTEGER NOT NULL,
+  expires_at     INTEGER NOT NULL
+);
+
+CREATE TABLE user_settings (
+  user_id           TEXT PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+  match_count       INTEGER NOT NULL DEFAULT 20 CHECK (match_count IN (10, 20, 50, 100)),
+  preferred_region  TEXT,
+  updated_at        INTEGER NOT NULL
+);
+
+-- ---- Academy e Rank Predictor, por usuário ----
+CREATE TABLE academy_progress (
+  user_id       TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  lesson_id     TEXT NOT NULL,
+  completed_at  INTEGER,
+  best_score    REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, lesson_id)
+);
+
+CREATE TABLE academy_quiz_attempts (
+  user_id       TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  lesson_id     TEXT NOT NULL,
+  at            INTEGER NOT NULL,
+  correct       INTEGER NOT NULL,
+  total         INTEGER NOT NULL,
+  duration_sec  INTEGER NOT NULL,
+  answers       TEXT NOT NULL,
+  PRIMARY KEY (user_id, lesson_id, at)
+);
+
+CREATE TABLE academy_activity (
+  user_id  TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  day      TEXT NOT NULL,
+  PRIMARY KEY (user_id, day)
+);
+
+CREATE TABLE academy_plans (
+  user_id     TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  plan_id     TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  focus       TEXT NOT NULL,
+  active      INTEGER NOT NULL,
+  data        TEXT NOT NULL,
+  PRIMARY KEY (user_id, plan_id)
+);
+
+-- Diagnósticos, previsões e metas dependem da conta Riot analisada.
+CREATE TABLE academy_diagnoses (
+  user_id  TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  puuid    TEXT NOT NULL,
+  at       INTEGER NOT NULL,
+  sample   INTEGER NOT NULL,
+  data     TEXT NOT NULL,
+  PRIMARY KEY (user_id, puuid, at)
+);
+
+CREATE TABLE rank_predictions (
+  user_id  TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  puuid    TEXT NOT NULL,
+  at       INTEGER NOT NULL,
+  data     TEXT NOT NULL,
+  PRIMARY KEY (user_id, puuid, at)
+);
+
+CREATE TABLE rank_goals (
+  user_id   TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  puuid     TEXT NOT NULL,
+  tier      TEXT NOT NULL,
+  division  INTEGER NOT NULL,
+  lp        INTEGER NOT NULL,
+  set_at    INTEGER NOT NULL,
+  PRIMARY KEY (user_id, puuid)
+);
+
+-- Estrutura para funcionalidades ainda não implementadas (LOL Challenge e Replay Challenges).
+CREATE TABLE challenge_progress (
+  user_id       TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  challenge_id  TEXT NOT NULL,
+  status        TEXT NOT NULL CHECK (status IN ('active', 'completed', 'failed', 'abandoned')),
+  progress      TEXT NOT NULL DEFAULT '{}',
+  started_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  completed_at  INTEGER,
+  PRIMARY KEY (user_id, challenge_id)
+);
+
+CREATE TABLE replay_analyses (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+  match_id    TEXT NOT NULL,
+  puuid       TEXT NOT NULL,
+  data        TEXT NOT NULL DEFAULT '{}',
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  UNIQUE (user_id, match_id)
+);
+
+-- Contador de tentativas (login, códigos, cadastro) que sobrevive a reinícios do servidor.
+CREATE TABLE auth_throttle (
+  key  TEXT NOT NULL,
+  at   INTEGER NOT NULL
+);
+CREATE INDEX auth_throttle_key ON auth_throttle (key, at);
+`;
+
+/** Tabelas do treinador da versão 1, que eram indexadas por PUUID e não pertenciam a ninguém. */
+const V1_COACH_TABLES = ['lesson_progress', 'quiz_attempts', 'training_activity', 'diagnoses', 'training_plans', 'rank_predictions', 'rank_goals'];
+
+interface Migration {
+  version: number;
+  description: string;
+  up: (db: DatabaseSync) => void;
+}
+
+export const MIGRATIONS: Migration[] = [
+  { version: 1, description: 'Esquema inicial: contas Riot, partidas, snapshots, treinador por PUUID', up: (db) => db.exec(SCHEMA) },
+  {
+    version: 2,
+    description: 'Contas de usuário, sessões, vinculação Riot e dados pessoais por usuário',
+    up: (db) => {
+      // O progresso antigo do treinador era anônimo (chave = PUUID pesquisado). Ele não pode ser
+      // atribuído a nenhum usuário com segurança: tabelas com dados viram legacy_*, vazias são removidas.
+      for (const table of V1_COACH_TABLES) {
+        const exists = db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(table);
+        if (!exists) continue;
+        const rows = (db.prepare(`SELECT COUNT(*) AS n FROM ${table}`).get() as { n: number }).n;
+        if (rows > 0) db.exec(`ALTER TABLE ${table} RENAME TO legacy_${table}`);
+        else db.exec(`DROP TABLE ${table}`);
+      }
+      db.exec(SCHEMA_V2);
+    },
+  },
+];
+
+export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;
+
+/** Aplica, em ordem e dentro de transação, as migrações ainda não aplicadas (controle por PRAGMA user_version). */
+export function migrate(db: DatabaseSync): { from: number; to: number } {
+  const from = (db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version;
+  for (const m of MIGRATIONS) {
+    if (m.version <= from) continue;
+    db.exec('BEGIN');
+    try {
+      m.up(db);
+      db.exec(`PRAGMA user_version = ${m.version}`);
+      db.exec('COMMIT');
+    } catch (e) {
+      db.exec('ROLLBACK');
+      throw new Error(`Falha na migração ${m.version} (${m.description}): ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  return { from, to: Math.max(from, SCHEMA_VERSION) };
+}
+
 export function openDatabase(file: string): DatabaseSync {
   if (file !== ':memory:') mkdirSync(dirname(file), { recursive: true });
   const db = new DatabaseSync(file);
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
-  db.exec(SCHEMA);
+  migrate(db);
   return db;
 }

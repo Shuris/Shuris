@@ -2,11 +2,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { AppError } from '../src/errors.ts';
-import { createHttpHandler } from '../src/http/server.ts';
-import { silentLogger } from '../src/logger.ts';
 import { validateRiotId } from '../src/services/accountService.ts';
 import { classify, toStoredMatch } from '../src/services/normalize.ts';
-import { KEY, makeMatch, PUUID, setup, tenMatches } from './helpers.ts';
+import { httpClient, KEY, makeMatch, PUUID, setup, signUp, tenMatches } from './helpers.ts';
 
 async function loaded(count = 10, refresh = false) {
   const ctx = setup();
@@ -291,38 +289,37 @@ test('detalhes da partida: ordem de habilidades, itens concluídos e linha do te
 test('HTTP: códigos de status, validação de parâmetros e ausência da chave nas respostas', async () => {
   const ctx = setup();
   ctx.riot.matches = tenMatches();
-  const handler = createHttpHandler({ accounts: ctx.app.accounts, academy: ctx.app.academy, lessons: ctx.app.lessons, logger: silentLogger, hasApiKey: () => ctx.app.client.hasKey });
-  const call = async (url: string, method = 'GET') => {
-    let status = 0;
-    let body = '';
-    let headers: Record<string, string> = {};
-    const res = { writeHead: (s: number, h: Record<string, string>) => ((status = s), (headers = h)), end: (b?: string) => (body = b ?? '') };
-    await handler({ url, method, socket: { remoteAddress: '10.0.0.1' } } as never, res as never);
-    return { status, headers, text: body, json: body ? JSON.parse(body) : null };
-  };
+  const { tokens } = await signUp(ctx, 'Gregory');
+  const call = httpClient(ctx.app);
+  const get = (url: string) => call('GET', url, { token: tokens.accessToken });
 
-  const health = await call('/health');
+  const health = await call('GET', '/health');
   assert.equal(health.status, 200);
   assert.equal(health.json.riotApiKeyConfigured, true);
   assert.ok(!health.text.includes('RGAPI'));
 
-  const ok = await call('/v1/accounts/br/Gregory/BR1?count=10');
+  // Dados exigem login.
+  const anonymous = await call('GET', '/v1/accounts/br/Gregory/BR1?count=10');
+  assert.deepEqual([anonymous.status, anonymous.json.error.code], [401, 'AUTH_REQUIRED']);
+
+  const ok = await get('/v1/accounts/br/Gregory/BR1?count=10');
   assert.equal(ok.status, 200);
   assert.equal(ok.json.player.gameName, 'Gregory');
   assert.ok(!ok.text.includes(KEY));
   assert.equal(ok.headers['Access-Control-Allow-Origin'], '*');
+  assert.equal(ok.headers['X-Content-Type-Options'], 'nosniff');
 
-  assert.equal((await call('/v1/accounts/XX/Gregory/BR1')).json.error.code, 'INVALID_REGION');
-  assert.equal((await call('/v1/accounts/BR/Gregory/BR1?count=37')).json.error.code, 'INVALID_PARAMS');
-  assert.equal((await call('/v1/accounts/BR/ab/BR1')).status, 400);
-  const nf = await call('/v1/accounts/BR/Ninguem/BR1');
+  assert.equal((await get('/v1/accounts/XX/Gregory/BR1')).json.error.code, 'INVALID_REGION');
+  assert.equal((await get('/v1/accounts/BR/Gregory/BR1?count=37')).json.error.code, 'INVALID_PARAMS');
+  assert.equal((await get('/v1/accounts/BR/ab/BR1')).status, 400);
+  const nf = await get('/v1/accounts/BR/Ninguem/BR1');
   assert.deepEqual([nf.status, nf.json.error.code], [404, 'PLAYER_NOT_FOUND']);
-  assert.equal((await call('/v1/matches/BR1_3000000100/details?puuid=curto')).json.error.code, 'INVALID_PARAMS');
-  assert.equal((await call('/v1/accounts/BR/Gregory/BR1', 'POST')).status, 404);
-  assert.equal((await call('/qualquer')).status, 404);
+  assert.equal((await get('/v1/matches/BR1_3000000100/details?puuid=curto')).json.error.code, 'INVALID_PARAMS');
+  assert.equal((await call('POST', '/v1/accounts/BR/Gregory/BR1', { token: tokens.accessToken })).status, 404);
+  assert.equal((await get('/qualquer')).status, 404);
 
   ctx.riot.account = { puuid: 'p2-0000000000000000000000', gameName: 'Outro', tagLine: 'BR1' };
-  ctx.riot.intercept = () => ({ status: 429, headers: { 'retry-after': '30' } });
-  const rl = await call('/v1/accounts/BR/Outro/BR1');
+  ctx.riot.intercept = (u) => (u.pathname.includes('/riot/account/') ? { status: 429, headers: { 'retry-after': '30' } } : undefined);
+  const rl = await get('/v1/accounts/BR/Outro/BR1');
   assert.deepEqual([rl.status, rl.json.error.code, rl.json.error.retryAfterSec, rl.headers['Retry-After']], [429, 'RATE_LIMITED', 30, '30']);
 });

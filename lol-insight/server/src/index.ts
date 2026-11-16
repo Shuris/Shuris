@@ -2,12 +2,12 @@ import { networkInterfaces } from 'node:os';
 
 import { createApp } from './app.ts';
 import { loadConfig } from './config.ts';
-import { startHttpServer } from './http/server.ts';
+import { httpDepsFrom, startHttpServer } from './http/server.ts';
 
 const config = loadConfig();
 const app = createApp(config);
 
-const server = await startHttpServer({ accounts: app.accounts, academy: app.academy, lessons: app.lessons, logger: app.logger, hasApiKey: () => app.client.hasKey }, config.port, config.host);
+const server = await startHttpServer(httpDepsFrom(app), config.port, config.host);
 
 const lan = Object.values(networkInterfaces())
   .flat()
@@ -16,6 +16,9 @@ const lan = Object.values(networkInterfaces())
 
 app.logger.info(`LOL Insight server em http://localhost:${config.port}`);
 if (lan.length) app.logger.info(`Na rede local (use no celular): ${lan.join('  ')}`);
+app.logger.warn('E-mail em modo de desenvolvimento: nenhum e-mail é enviado; os códigos de verificação e de redefinição aparecem neste terminal.');
+if (!config.rso) app.logger.info('Riot Sign On não configurado: contas Riot vinculadas ficam como "não verificadas".');
+setInterval(() => app.throttle.prune(), 3_600_000).unref();
 if (!app.client.hasKey) {
   app.logger.warn('RIOT_API_KEY não definida: copie server/.env.example para server/.env e preencha a chave. As buscas reais vão falhar até lá.');
 }
