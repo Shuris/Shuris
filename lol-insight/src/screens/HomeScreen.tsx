@@ -168,7 +168,7 @@ function PlayerHero({ data }: { data: Derived }) {
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={type.h1} numberOfLines={1}>
             {player.gameName}
-            <Text style={{ color: colors.textMuted, fontSize: 16 }}> #{player.tagLine}</Text>
+            <Text style={[type.tag, { fontSize: 18 }]}> #{player.tagLine}</Text>
           </Text>
           <Text style={type.bodySm}>
             {player.region} · Nível {player.level}
@@ -393,7 +393,7 @@ function InsightsPreview({ data, onOpen }: { data: Derived; onOpen: () => void }
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   logo: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim, borderWidth: 1, borderColor: 'rgba(92,155,255,0.35)' },
-  wordmark: { fontFamily: fonts.displayBold, fontSize: 15, color: colors.text, letterSpacing: 2.2 },
+  wordmark: { fontFamily: fonts.title, fontSize: 16, color: colors.text, letterSpacing: 2 },
   rankRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
   },
   unit: { fontFamily: fonts.body, fontSize: 12, color: colors.textMuted },
   wrRow: { flexDirection: 'row', alignItems: 'center', gap: space.lg, marginBottom: space.lg },
-  ringValue: { fontFamily: fonts.displayBold, fontSize: 19, color: colors.text, letterSpacing: -0.4 },
+  ringValue: { fontFamily: fonts.displayBold, fontSize: 21.5, color: colors.text },
   change: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.md },
   note: { flexDirection: 'row', gap: 8, marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   unranked: { width: 52, height: 52, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },

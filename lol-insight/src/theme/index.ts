@@ -35,9 +35,16 @@ export const colors = {
   overlay: 'rgba(3,5,8,0.72)',
 } as const;
 
+/**
+ * Pacote "Piltover elegante":
+ * - title: Marcellus SC, para títulos, nomes de elo e a marca (versaletes clássicos).
+ * - display/displayBold: Rajdhani, para números e valores curtos.
+ * - body*: Manrope, para textos corridos e rótulos.
+ */
 export const fonts = {
-  display: 'Sora_600SemiBold',
-  displayBold: 'Sora_700Bold',
+  title: 'MarcellusSC_400Regular',
+  display: 'Rajdhani_600SemiBold',
+  displayBold: 'Rajdhani_700Bold',
   body: 'Manrope_500Medium',
   bodySemi: 'Manrope_600SemiBold',
   bodyBold: 'Manrope_700Bold',
@@ -47,9 +54,9 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 } as const;
 export const radius = { sm: 8, md: 12, lg: 16, xl: 22, pill: 999 } as const;
 
 export const type = {
-  h1: { fontFamily: fonts.displayBold, fontSize: 24, color: colors.text, letterSpacing: -0.4 },
-  h2: { fontFamily: fonts.display, fontSize: 17, color: colors.text, letterSpacing: -0.2 },
-  h3: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  h1: { fontFamily: fonts.title, fontSize: 25, color: colors.text, letterSpacing: 0.2 },
+  h2: { fontFamily: fonts.title, fontSize: 18, color: colors.text, letterSpacing: 0.2 },
+  h3: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text },
   body: { fontFamily: fonts.body, fontSize: 14, color: colors.text },
   bodySm: { fontFamily: fonts.body, fontSize: 12.5, color: colors.textSecondary },
   label: {
@@ -59,5 +66,7 @@ export const type = {
     letterSpacing: 0.9,
     textTransform: 'uppercase' as const,
   },
-  number: { fontFamily: fonts.display, fontSize: 20, color: colors.text, letterSpacing: -0.3 },
+  /** Tag do Riot ID (#BR1) ao lado de um título: em Marcellus o "1" se confunde com "I". */
+  tag: { fontFamily: fonts.display, color: colors.textMuted, letterSpacing: 0.3 },
+  number: { fontFamily: fonts.displayBold, fontSize: 23, color: colors.text, letterSpacing: 0 },
 } as const;

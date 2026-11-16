@@ -1,5 +1,6 @@
 import { Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold } from '@expo-google-fonts/manrope';
-import { Sora_600SemiBold, Sora_700Bold } from '@expo-google-fonts/sora';
+import { MarcellusSC_400Regular } from '@expo-google-fonts/marcellus-sc';
+import { Rajdhani_600SemiBold, Rajdhani_700Bold } from '@expo-google-fonts/rajdhani';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -16,7 +17,14 @@ import { colors } from '@/theme';
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Sora_600SemiBold, Sora_700Bold, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold });
+  const [loaded, error] = useFonts({
+    MarcellusSC_400Regular,
+    Rajdhani_600SemiBold,
+    Rajdhani_700Bold,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+  });
   const ready = loaded || !!error;
 
   useEffect(() => {

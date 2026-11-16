@@ -82,9 +82,9 @@ const styles = StyleSheet.create({
   },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   line: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  name: { fontFamily: fonts.display, fontSize: 14, color: colors.text, flexShrink: 1 },
+  name: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text, flexShrink: 1 },
   result: { fontFamily: fonts.bodyBold, fontSize: 11 },
   meta: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textMuted },
-  kda: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  kda: { fontFamily: fonts.display, fontSize: 15.5, color: colors.text },
   sep: { color: colors.textMuted },
 });

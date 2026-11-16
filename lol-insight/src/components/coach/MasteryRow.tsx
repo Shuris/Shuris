@@ -47,5 +47,5 @@ const styles = StyleSheet.create({
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
   bar: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   barLabel: { width: 48, fontFamily: fonts.body, fontSize: 11.5, color: colors.textMuted },
-  barValue: { width: 28, textAlign: 'right', fontFamily: fonts.display, fontSize: 12, color: colors.textSecondary },
+  barValue: { width: 28, textAlign: 'right', fontFamily: fonts.display, fontSize: 13.5, color: colors.textSecondary },
 });

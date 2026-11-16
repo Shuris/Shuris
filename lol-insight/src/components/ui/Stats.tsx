@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   selected: { borderColor: 'rgba(92,155,255,0.6)', backgroundColor: colors.accentDim },
-  value: { fontFamily: fonts.display, fontSize: 19, color: colors.text, letterSpacing: -0.3 },
+  value: { fontFamily: fonts.display, fontSize: 21.5, color: colors.text },
   hint: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted },
   delta: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   badge: { height: 22, paddingHorizontal: 8, borderRadius: 6, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' },

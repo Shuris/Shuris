@@ -82,7 +82,7 @@ export function AuthPrompt({ compact }: { compact?: boolean }) {
 const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(92,155,255,0.35)' },
   avatar: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim, borderWidth: 1, borderColor: 'rgba(92,155,255,0.45)' },
-  avatarText: { fontFamily: fonts.displayBold, fontSize: 19, color: colors.accentSoft },
+  avatarText: { fontFamily: fonts.displayBold, fontSize: 21.5, color: colors.accentSoft },
   promptHead: { flexDirection: 'row', gap: space.md, alignItems: 'flex-start' },
   promptIcon: { width: 40, height: 40, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim },
   promptActions: { flexDirection: 'row', gap: space.sm, marginTop: space.lg },

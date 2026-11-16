@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   },
   head: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   metricRow: { flexDirection: 'row', alignItems: 'center', gap: space.md },
-  metric: { fontFamily: fonts.displayBold, fontSize: 28, color: colors.text, letterSpacing: -0.6 },
+  metric: { fontFamily: fonts.displayBold, fontSize: 31.5, color: colors.text },
   text: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 20, color: colors.textSecondary },
   action: {
     flexDirection: 'row',

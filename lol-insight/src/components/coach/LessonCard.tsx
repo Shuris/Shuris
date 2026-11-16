@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   compact: { width: 264 },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },
   icon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: fonts.display, fontSize: 14.5, lineHeight: 19, color: colors.text },
+  title: { fontFamily: fonts.bodyBold, fontSize: 14.5, lineHeight: 19, color: colors.text },
   meta: { fontFamily: fonts.body, fontSize: 11.5, color: colors.textMuted },
   reason: { flexDirection: 'row', gap: 6, marginTop: 4 },
   reasonText: { flex: 1, fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16, color: colors.textSecondary },

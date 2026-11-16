@@ -80,7 +80,7 @@ export function AccountScreen() {
               <View style={{ flex: 1, gap: 3 }}>
                 <Text style={type.h2}>
                   {primary.gameName}
-                  <Text style={{ color: colors.textMuted }}> #{primary.tagLine}</Text>
+                  <Text style={type.tag}> #{primary.tagLine}</Text>
                 </Text>
                 <Text style={type.bodySm}>
                   {primary.region}
@@ -150,7 +150,7 @@ function Row({ icon, title, detail, onPress, last }: { icon: IconName; title: st
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: space.lg },
   avatar: { width: 64, height: 64, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim, borderWidth: 1.5, borderColor: colors.gold },
-  avatarText: { fontFamily: fonts.displayBold, fontSize: 26, color: colors.accentSoft },
+  avatarText: { fontFamily: fonts.displayBold, fontSize: 29, color: colors.accentSoft },
   meta: { flexDirection: 'row', gap: space.md, marginTop: space.lg, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   riot: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg },

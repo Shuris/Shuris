@@ -68,5 +68,5 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
 
 const styles = StyleSheet.create({
   label: { position: 'absolute', width: 88, textAlign: 'center', fontFamily: fonts.bodySemi, fontSize: 10.5, lineHeight: 14, color: colors.textMuted },
-  value: { fontFamily: fonts.display, fontSize: 12, color: colors.textSecondary },
+  value: { fontFamily: fonts.display, fontSize: 13.5, color: colors.textSecondary },
 });

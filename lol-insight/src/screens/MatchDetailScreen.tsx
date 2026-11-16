@@ -506,7 +506,7 @@ function Timeline({ match: m, details }: { match: Match; details: DetailsState }
 }
 
 const styles = StyleSheet.create({
-  kdaBig: { fontFamily: fonts.displayBold, fontSize: 22, color: colors.text, letterSpacing: -0.4 },
+  kdaBig: { fontFamily: fonts.displayBold, fontSize: 24.5, color: colors.text },
   muted: { color: colors.textMuted },
   elo: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   lp: { marginLeft: 'auto', fontFamily: fonts.bodyBold, fontSize: 12.5 },
@@ -516,13 +516,13 @@ const styles = StyleSheet.create({
   objRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: colors.borderSoft },
   player: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   playerMe: { backgroundColor: colors.goldDim, borderRadius: radius.md, padding: 8, margin: -8, marginVertical: -3 },
-  score: { fontFamily: fonts.display, fontSize: 13, color: colors.text },
+  score: { fontFamily: fonts.display, fontSize: 14.5, color: colors.text },
   items: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   itemOff: { borderRadius: 10, borderWidth: 2, borderColor: 'transparent' },
   itemOn: { borderRadius: 10, borderWidth: 2, borderColor: colors.gold },
   itemDivider: { width: 1, height: 28, backgroundColor: colors.border, marginHorizontal: 2 },
   skillRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  skillKey: { width: 16, fontFamily: fonts.displayBold, fontSize: 12, color: colors.textSecondary },
+  skillKey: { width: 16, fontFamily: fonts.displayBold, fontSize: 13.5, color: colors.textSecondary },
   skillCell: { flex: 1, height: 22, borderRadius: 4, borderWidth: 1, borderColor: colors.borderSoft, backgroundColor: colors.surfaceAlt, alignItems: 'center', justifyContent: 'center' },
   skillLvl: { fontFamily: fonts.bodyBold, fontSize: 9, color: '#fff' },
   keystone: { flexDirection: 'row', alignItems: 'center', gap: space.md },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
   rune: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, height: 30, borderRadius: 15, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
   runeText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.textSecondary },
   event: { flexDirection: 'row', gap: space.md, minHeight: 40 },
-  minute: { width: 30, textAlign: 'right', fontFamily: fonts.display, fontSize: 12, color: colors.textMuted, paddingTop: 3 },
+  minute: { width: 30, textAlign: 'right', fontFamily: fonts.display, fontSize: 13.5, color: colors.textMuted, paddingTop: 3 },
   rail: { alignItems: 'center', width: 22 },
   node: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
   railLine: { flex: 1, width: 2, backgroundColor: colors.border, marginVertical: 2 },

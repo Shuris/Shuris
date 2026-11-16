@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
   now: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   headline: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, color: colors.textSecondary, marginTop: space.lg, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   central: { alignItems: 'center', gap: 4, marginTop: space.lg },
-  centralRank: { fontFamily: fonts.displayBold, fontSize: 30, letterSpacing: -0.6 },
+  centralRank: { fontFamily: fonts.title, fontSize: 30, letterSpacing: 0.2 },
   range: { flexDirection: 'row', alignItems: 'center', gap: space.md, alignSelf: 'stretch', marginTop: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },
   scenario: { gap: 8, paddingVertical: space.md, paddingRight: space.lg, paddingLeft: space.lg + 3, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },

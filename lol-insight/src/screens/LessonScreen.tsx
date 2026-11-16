@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
   tagText: { fontFamily: fonts.bodySemi, fontSize: 11, color: colors.textSecondary },
   doneRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: space.md },
-  subheading: { fontFamily: fonts.display, fontSize: 14, color: colors.text },
+  subheading: { fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text },
   paragraph: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, color: colors.textSecondary },
   example: { padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, borderLeftWidth: 3, borderLeftColor: colors.accent },
   step: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },

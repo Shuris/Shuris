@@ -156,7 +156,7 @@ function Content({ data }: { data: Derived }) {
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={type.h1} numberOfLines={1}>
               {player.gameName}
-              <Text style={{ color: colors.textMuted, fontSize: 16 }}> #{player.tagLine}</Text>
+              <Text style={[type.tag, { fontSize: 18 }]}> #{player.tagLine}</Text>
             </Text>
             <Text style={type.bodySm}>
               {region} ({player.region}) · Nível {player.level}
@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   peak: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.lg, paddingTop: space.md, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   identity: { alignItems: 'center', gap: 4, marginBottom: space.sm },
   evidence: { gap: 4, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft },
-  score: { fontFamily: fonts.display, fontSize: 12.5, color: colors.textSecondary },
+  score: { fontFamily: fonts.display, fontSize: 14, color: colors.textSecondary },
   hl: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.md, borderRadius: radius.md, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.borderSoft },
   hlIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim },
   cta: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: 'rgba(201,164,92,0.4)' },

@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   bestGlow: { position: 'absolute', top: -50, right: -50, width: 130, height: 130, borderRadius: 65, opacity: 0.16 },
   place: { position: 'absolute', top: 12, right: 12, flexDirection: 'row', alignItems: 'center', gap: 3 },
   placeText: { fontFamily: fonts.bodyBold, fontSize: 11, color: colors.gold },
-  bestWr: { fontFamily: fonts.displayBold, fontSize: 24, color: colors.text, letterSpacing: -0.5 },
+  bestWr: { fontFamily: fonts.displayBold, fontSize: 27, color: colors.text },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -180,9 +180,9 @@ const styles = StyleSheet.create({
   },
   mastery: { width: 116, padding: space.md, borderRadius: radius.lg, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: 'center', gap: 1 },
   masteryLevel: { fontFamily: fonts.bodyBold, fontSize: 12, color: colors.gold },
-  rank: { width: 16, textAlign: 'center', fontFamily: fonts.display, fontSize: 12, color: colors.textMuted },
+  rank: { width: 16, textAlign: 'center', fontFamily: fonts.display, fontSize: 13.5, color: colors.textMuted },
   meta: { fontFamily: fonts.body, fontSize: 11, color: colors.textMuted },
   statsRow: { flexDirection: 'row', gap: 6 },
   statLabel: { fontFamily: fonts.body, fontSize: 10, color: colors.textMuted },
-  statValue: { fontFamily: fonts.display, fontSize: 13, color: colors.textSecondary },
+  statValue: { fontFamily: fonts.display, fontSize: 14.5, color: colors.textSecondary },
 });

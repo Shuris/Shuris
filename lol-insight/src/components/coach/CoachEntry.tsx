@@ -94,5 +94,5 @@ const styles = StyleSheet.create({
   predictor: { borderColor: 'rgba(92,155,255,0.4)' },
   head: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 },
   icon: { width: 34, height: 34, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  value: { fontFamily: fonts.display, fontSize: 15.5, lineHeight: 20, color: colors.text },
+  value: { fontFamily: fonts.bodyBold, fontSize: 15.5, lineHeight: 20, color: colors.text },
 });
