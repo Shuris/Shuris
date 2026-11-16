@@ -310,7 +310,7 @@ export class AuthRepository {
     const tables = [
       'user_sessions', 'email_verification_tokens', 'password_reset_tokens', 'riot_accounts', 'oauth_states', 'user_settings',
       'academy_progress', 'academy_quiz_attempts', 'academy_activity', 'academy_plans', 'academy_diagnoses', 'rank_predictions',
-      'rank_goals', 'challenge_progress', 'replay_analyses', 'matchup_notes',
+      'rank_goals', 'challenge_progress', 'replay_analyses', 'matchup_notes', 'challenge_profile',
     ];
     return tables.reduce((n, t) => n + (this.get(`SELECT COUNT(*) AS n FROM ${t} WHERE user_id = ?`, userId) as { n: number }).n, 0);
   }

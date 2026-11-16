@@ -1,1 +1,1 @@
-export { MatchesScreen as default } from '@/screens/MatchesScreen';
+export { default } from '@/routes/matches';

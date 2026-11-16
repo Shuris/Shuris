@@ -23,6 +23,10 @@ export interface Config {
   /** Transporte de e-mail. Só "console" (desenvolvimento) existe hoje; um provedor real é serviço externo. */
   mailTransport: 'console';
   rso: RsoConfig | null;
+  /** Origens da versão web autorizadas (CORS). Padrão: qualquer uma, para desenvolvimento. */
+  allowedOrigins: string[];
+  /** true quando o servidor fica atrás de um proxy HTTPS que preenche X-Forwarded-For. */
+  trustProxy: boolean;
 }
 
 /**
@@ -84,5 +88,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, cwd = process.c
     passwordParams: STANDARD_PARAMS,
     mailTransport: 'console',
     rso: loadRso(env),
+    allowedOrigins: (env.ALLOWED_ORIGINS ?? '*').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean),
+    trustProxy: env.TRUST_PROXY === '1' || env.TRUST_PROXY === 'true',
   };
 }

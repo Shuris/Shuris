@@ -12,6 +12,8 @@ import { isRegion, REGION_CODES } from '../regions.ts';
 import type { AccountService } from '../services/accountService.ts';
 import { ALLOWED_COUNTS } from '../services/syncService.ts';
 import type { MatchupNotesService } from '../notes/matchupNotes.ts';
+import type { ChallengeService } from '../challenges/challengeService.ts';
+import type { ReplayAnalysisService } from '../challenges/replayAnalyses.ts';
 
 export interface HttpDeps {
   accounts: AccountService;
@@ -22,18 +24,23 @@ export interface HttpDeps {
   riotLinks: RiotLinkService;
   rso: RsoService;
   matchups: MatchupNotesService;
+  challenge: ChallengeService;
+  replays: ReplayAnalysisService;
   logger: Logger;
   hasApiKey: () => boolean;
   /** "console" = modo de desenvolvimento: nenhum e-mail é enviado, os códigos aparecem no terminal. */
   emailDelivery?: string;
   /** Requisições por minuto aceitas de um mesmo cliente. */
   clientLimitPerMinute?: number;
+  /** Origens autorizadas a chamar a API pelo navegador (CORS). ["*"] = qualquer uma (desenvolvimento). */
+  allowedOrigins?: string[];
+  /** Atrás de um proxy HTTPS (Nginx, Render, Fly...): usa o primeiro IP de X-Forwarded-For. */
+  trustProxy?: boolean;
 }
 
 const BASE_HEADERS = {
   'Content-Type': 'application/json; charset=utf-8',
   'Cache-Control': 'no-store',
-  'Access-Control-Allow-Origin': '*',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'no-referrer',
 };
@@ -103,9 +110,21 @@ export function createHttpHandler(deps: HttpDeps) {
     return count;
   };
 
+  const allowed = deps.allowedOrigins?.length ? deps.allowedOrigins : ['*'];
+  /** Valor do cabeçalho CORS para a origem da requisição (nada = navegador bloqueia). */
+  const corsOrigin = (o: string | undefined): string | null => (allowed.includes('*') ? '*' : o && allowed.includes(o) ? o : null);
+  const clientIp = (req: IncomingMessage): string => {
+    if (deps.trustProxy) {
+      const fwd = req.headers['x-forwarded-for'];
+      const first = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim();
+      if (first) return first.slice(0, 64);
+    }
+    return req.socket.remoteAddress ?? 'desconhecido';
+  };
+
   const context = (req: IncomingMessage): RequestContext => {
     const header = req.headers['x-client'] ?? req.headers['user-agent'] ?? '';
-    return { ip: req.socket.remoteAddress ?? 'desconhecido', client: (Array.isArray(header) ? header[0] : header).slice(0, 200) };
+    return { ip: clientIp(req), client: (Array.isArray(header) ? header[0] : header).slice(0, 200) };
   };
 
   const meView = (auth: Authenticated) => {
@@ -190,6 +209,14 @@ export function createHttpHandler(deps: HttpDeps) {
       return { ok: true };
     }
 
+    if (m === 'GET' && at('challenge')) return deps.challenge.state(auth.user.id, url.searchParams.get('tz'));
+    if (m === 'POST' && at('challenge', 'attempts')) return deps.challenge.submit(auth.user.id, await readJson(req));
+    if (m === 'GET' && at('challenge', 'ranking')) return deps.challenge.ranking(auth.user.id);
+    if (m === 'POST' && at('challenge', 'ranking')) return deps.challenge.setOptIn(auth.user.id, (await readJson(req)).optIn);
+
+    if (m === 'GET' && at('replay-analyses')) return { analyses: deps.replays.list(auth.user.id) };
+    if (m === 'POST' && at('replay-analyses')) return { analysis: deps.replays.save(auth.user.id, await readJson(req)) };
+
     if (path[0] === 'coach') {
       const count = countParam(url);
       if (m === 'GET' && at('coach')) return deps.academy.report(auth.user.id, count);
@@ -214,7 +241,7 @@ export function createHttpHandler(deps: HttpDeps) {
     if (url.pathname === '/health' && req.method === 'GET') {
       return { ok: true, service: 'lol-insight-server', riotApiKeyConfigured: deps.hasApiKey(), emailDelivery: deps.emailDelivery ?? 'console', regions: REGION_CODES, time: Date.now() };
     }
-    throttle(req.socket.remoteAddress ?? 'unknown');
+    throttle(clientIp(req));
 
     if (url.pathname === '/v1/academy/lessons' && req.method === 'GET') return { lessons: deps.lessons.list() };
     if (parts[0] === 'v1' && parts[1] === 'auth') return authRoute(req, url, parts);
@@ -246,9 +273,13 @@ export function createHttpHandler(deps: HttpDeps) {
 
   return async (req: IncomingMessage, res: ServerResponse) => {
     const started = Date.now();
+    const origin = corsOrigin(req.headers.origin);
+    if (origin) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+      if (origin !== '*') res.setHeader('Vary', 'Origin');
+    }
     if (req.method === 'OPTIONS') {
-      res.writeHead(204, {
-        'Access-Control-Allow-Origin': '*',
+      res.writeHead(origin ? 204 : 403, {
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client',
         'Access-Control-Max-Age': '600',
@@ -293,6 +324,6 @@ export function startHttpServer(deps: HttpDeps, port: number, host: string): Pro
 }
 
 /** Monta as dependências HTTP a partir do App. */
-export function httpDepsFrom(app: { accounts: AccountService; academy: AcademyService; lessons: LessonService; auth: AuthService; authRepo: AuthRepository; riotLinks: RiotLinkService; rso: RsoService; matchups: MatchupNotesService; logger: Logger; client: { hasKey: boolean } }): HttpDeps {
-  return { accounts: app.accounts, academy: app.academy, lessons: app.lessons, auth: app.auth, authRepo: app.authRepo, riotLinks: app.riotLinks, rso: app.rso, matchups: app.matchups, logger: app.logger, hasApiKey: () => app.client.hasKey };
+export function httpDepsFrom(app: { accounts: AccountService; academy: AcademyService; lessons: LessonService; auth: AuthService; authRepo: AuthRepository; riotLinks: RiotLinkService; rso: RsoService; matchups: MatchupNotesService; challenge: ChallengeService; replays: ReplayAnalysisService; logger: Logger; client: { hasKey: boolean } }): HttpDeps {
+  return { accounts: app.accounts, academy: app.academy, lessons: app.lessons, auth: app.auth, authRepo: app.authRepo, riotLinks: app.riotLinks, rso: app.rso, matchups: app.matchups, challenge: app.challenge, replays: app.replays, logger: app.logger, hasApiKey: () => app.client.hasKey };
 }

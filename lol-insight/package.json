@@ -50,7 +50,10 @@
     "test:all": "npm test && npm --prefix server test",
     "server": "npm --prefix server start",
     "server:install": "npm --prefix server install",
-    "check:coach": "tsx scripts/inspect-coach.ts"
+    "check:coach": "tsx scripts/inspect-coach.ts",
+    "build:web": "expo export -p web --output-dir dist",
+    "serve:web": "node scripts/serve-web.mjs dist",
+    "build:web:mobile": "EXPO_PUBLIC_WEB_LAYOUT=mobile expo export -p web --output-dir dist-mobile"
   },
   "private": true
 }

@@ -88,6 +88,33 @@ let cache: PlayerBundle[] | null = null;
 
 /** Gera (uma única vez) e devolve as contas demonstrativas. */
 export function mockBundles(): PlayerBundle[] {
-  if (!cache) cache = PROFILES.map(generateBundle);
+  if (!cache) cache = PROFILES.map((p) => withDemoMastery(generateBundle(p)));
   return cache;
+}
+
+/** Pontos aproximados para cada nível de maestria (estimativa usada só na demonstração). */
+const MASTERY_STEPS = [0, 1800, 6000, 12600, 21600, 32400, 43200, 54000, 65000, 76000];
+
+/**
+ * Maestria fictícia da demonstração, coerente com as partidas: quem joga mais um
+ * campeão tem mais pontos. Calculada depois das partidas, sem alterar o gerador.
+ */
+function withDemoMastery(b: PlayerBundle): PlayerBundle {
+  const by = new Map<string, { games: number; last: number }>();
+  for (const m of b.matches) {
+    const e = by.get(m.championId) ?? { games: 0, last: 0 };
+    e.games++;
+    e.last = Math.max(e.last, m.timestamp);
+    by.set(m.championId, e);
+  }
+  const mastery = [...by.entries()]
+    .map(([championId, e]) => {
+      // Histórico anterior aos 90 dias: proporcional ao uso atual, determinístico pelo nome.
+      const seed = [...championId].reduce((a, c) => a + c.charCodeAt(0), 0) % 7;
+      const points = Math.round(e.games * 2600 + e.games * e.games * 90 + seed * 1500);
+      const level = MASTERY_STEPS.filter((t) => points >= t).length;
+      return { championId, level, points, lastPlayed: e.last };
+    })
+    .sort((x, y) => y.points - x.points);
+  return { ...b, mastery };
 }

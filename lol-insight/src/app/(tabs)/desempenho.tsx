@@ -1,1 +1,1 @@
-export { PerformanceScreen as default } from '@/screens/PerformanceScreen';
+export { default } from '@/routes/performance';

@@ -22,7 +22,13 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "name": "LOL Insight",
+      "shortName": "LOL Insight",
+      "description": "Análise competitiva e treinamento para League of Legends",
+      "themeColor": "#07090D",
+      "backgroundColor": "#07090D",
+      "lang": "pt-BR"
     },
     "scheme": "lolinsight",
     "backgroundColor": "#07090D",

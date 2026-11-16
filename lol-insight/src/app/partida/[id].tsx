@@ -1,1 +1,1 @@
-export { MatchDetailScreen as default } from '@/screens/MatchDetailScreen';
+export { default } from '@/routes/match';

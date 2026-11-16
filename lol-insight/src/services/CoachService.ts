@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { demoCoachState } from '@/coach/demoSeed';
 import { buildCoachReport, emptyCoachState, recordQuizAttempt, setGoal, setPlanDay, type CoachReport, type CoachState, type QuizResult } from '@/coach';
 import type { DataSourceKind, Match, Player, Rank, RankSnapshot } from '@/types';
 
@@ -29,13 +30,17 @@ export interface CoachService {
 }
 
 const key = (playerId: string) => `lolinsight:coach:${playerId}`;
+/** Conta demonstrativa que já vem com progresso de exemplo na Academy. */
+const DEMO_MAIN = 'gregory-br1';
 
 export class LocalCoachService implements CoachService {
   private async load(playerId: string): Promise<CoachState> {
     try {
       const raw = await AsyncStorage.getItem(key(playerId));
       const parsed = raw ? (JSON.parse(raw) as CoachState) : null;
-      return parsed?.version === 1 ? parsed : emptyCoachState();
+      if (parsed?.version === 1) return parsed;
+      // Primeira abertura da conta demonstrativa principal: progresso fictício de exemplo.
+      return playerId === DEMO_MAIN ? demoCoachState(Date.now()) : emptyCoachState();
     } catch {
       return emptyCoachState();
     }

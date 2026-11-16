@@ -403,6 +403,17 @@ CREATE TABLE IF NOT EXISTS matchup_notes (
   PRIMARY KEY (user_id, champion_id, opponent_id)
 );`),
   },
+  {
+    version: 4,
+    description: 'LOL Challenge: participação opcional no ranking',
+    up: (db) =>
+      db.exec(`
+CREATE TABLE IF NOT EXISTS challenge_profile (
+  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  ranking_opt_in INTEGER NOT NULL DEFAULT 0 CHECK (ranking_opt_in IN (0, 1)),
+  updated_at INTEGER NOT NULL
+);`),
+  },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

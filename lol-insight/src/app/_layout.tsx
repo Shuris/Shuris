@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { NotificationsBridge } from '@/components/NotificationsBridge';
+import AppFrame from '@/routes/frame';
 import { AuthProvider } from '@/state/AuthContext';
 import { CoachProvider } from '@/state/CoachContext';
 import { PlayerProvider } from '@/state/PlayerContext';
@@ -41,6 +42,7 @@ export default function RootLayout() {
         <CoachProvider>
         <StatusBar style="light" />
         <NotificationsBridge />
+        <AppFrame>
         <Stack
           screenOptions={{
             headerShown: false,
@@ -57,6 +59,8 @@ export default function RootLayout() {
           <Stack.Screen name="academy/plano" />
           <Stack.Screen name="previsao" />
           <Stack.Screen name="comparar" />
+          <Stack.Screen name="desafios" />
+          <Stack.Screen name="replay" />
           <Stack.Screen name="caderno" />
           <Stack.Screen name="compartilhar" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="notificacoes" />
@@ -69,6 +73,7 @@ export default function RootLayout() {
           <Stack.Screen name="conta/riot" />
           <Stack.Screen name="conta/sessoes" />
         </Stack>
+        </AppFrame>
         </CoachProvider>
       </PlayerProvider>
       </AuthProvider>

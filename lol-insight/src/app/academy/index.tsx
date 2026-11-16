@@ -1,1 +1,1 @@
-export { AcademyScreen as default } from '@/screens/AcademyScreen';
+export { default } from '@/routes/academy';

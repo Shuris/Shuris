@@ -17,6 +17,8 @@ import { RsoService } from './auth/rso.ts';
 import { Throttle } from './auth/throttle.ts';
 import { CoachRepository } from './coach/coachRepository.ts';
 import { MatchupNotesService } from './notes/matchupNotes.ts';
+import { ChallengeService } from './challenges/challengeService.ts';
+import { ReplayAnalysisService } from './challenges/replayAnalyses.ts';
 import { AcademyService, LessonService, LPHistoryService, PlayerDiagnosisService, RankPredictionService, TrainingPlanService } from './coach/services.ts';
 import { AccountService } from './services/accountService.ts';
 import { SyncService } from './services/syncService.ts';
@@ -49,6 +51,8 @@ export interface App {
   riotLinks: RiotLinkService;
   rso: RsoService;
   matchups: MatchupNotesService;
+  challenge: ChallengeService;
+  replays: ReplayAnalysisService;
   throttle: Throttle;
   logger: Logger;
 }
@@ -80,5 +84,7 @@ export function createApp(config: Config, overrides: AppOverrides = {}): App {
   const rso = new RsoService(config.rso, authRepo, new TokenCipher(config.authSecret), overrides.rsoFetch, now);
   const academy = new AcademyService(accounts, coachStore, authRepo, lessons, trainingPlans, rankPredictions, lpHistory, now);
   const matchups = new MatchupNotesService(db, now);
-  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, authRepo, auth, riotLinks, rso, matchups, throttle, logger };
+  const challenge = new ChallengeService(db, now);
+  const replays = new ReplayAnalysisService(db, now);
+  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, authRepo, auth, riotLinks, rso, matchups, challenge, replays, throttle, logger };
 }

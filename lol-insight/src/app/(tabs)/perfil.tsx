@@ -1,1 +1,1 @@
-export { ProfileScreen as default } from '@/screens/ProfileScreen';
+export { default } from '@/routes/profile';

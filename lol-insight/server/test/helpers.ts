@@ -303,6 +303,8 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     passwordParams: TEST_PARAMS,
     mailTransport: 'console',
     rso: null,
+    allowedOrigins: ['*'],
+    trustProxy: false,
     ...overrides,
   };
 }
@@ -350,7 +352,7 @@ export function httpClient(app: App, ip = '10.0.0.9') {
       headers: { ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}), 'x-client': 'Teste HTTP' },
       socket: { remoteAddress: ip },
     });
-    const res = { writeHead: (s: number, h: Record<string, string>) => ((status = s), (headers = h)), end: (b?: string) => (text = b ?? '') };
+    const res = { setHeader: (k: string, v: string) => (headers = { ...headers, [k]: v }), writeHead: (s: number, h: Record<string, string> = {}) => ((status = s), (headers = { ...headers, ...h })), end: (b?: string) => (text = b ?? '') };
     await handler(req as never, res as never);
     let parsed: unknown = null;
     try {

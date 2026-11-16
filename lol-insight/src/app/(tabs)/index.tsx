@@ -1,1 +1,1 @@
-export { HomeScreen as default } from '@/screens/HomeScreen';
+export { default } from '@/routes/overview';

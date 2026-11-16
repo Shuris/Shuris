@@ -1,8 +1,15 @@
 # LOL Insight
 
-App mobile de análise e desenvolvimento competitivo para League of Legends: busca de
-contas, elo, histórico de partidas, gráficos interativos, insights, uma escola integrada
-(**LOI Academy**) e previsão de evolução de elo (**Rank Predictor**).
+Plataforma de análise e desenvolvimento competitivo para League of Legends, com duas
+versões integradas sobre o mesmo código, o mesmo backend e as mesmas contas:
+
+- **Aplicativo Android** — experiência minimalista: abas inferiores, telas enxutas.
+- **Plataforma web** — experiência analítica: barra lateral, tabelas ordenáveis,
+  cruzamentos, comparações lado a lado, atalhos de teclado (ver "Versão web").
+
+Busca de contas, elo, histórico de partidas, gráficos interativos, insights, relatório
+pós-partida, uma escola integrada (**LOI Academy**), previsão de elo (**Rank Predictor**),
+desafios diários (**LOL Challenge**) e análise de decisões (**Replay Challenge**).
 
 - **App:** Expo (SDK 58) + React Native + TypeScript + Expo Router.
 - **Backend (`server/`):** Node.js + SQLite. É o único que fala com a Riot Games API e
@@ -221,6 +228,86 @@ Limites declarados no próprio app:
 - O progresso da Academy é gravado por conta pesquisada (PUUID). Não há login: para
   vários usuários acompanhando a mesma conta, será preciso adicionar autenticação.
 
+## Versão web
+
+A versão web é o mesmo projeto Expo, publicado para o navegador. As rotas principais
+apontam para módulos com versão `.web.tsx` (pasta `src/routes/`): o Metro escolhe a
+página web só no build do navegador, então **o pacote Android não recebe nenhum código
+das páginas web** (verificado no bundle). Lógica, dados, contas e regras são os mesmos.
+
+| Seção | Rota | O que tem na web |
+| --- | --- | --- |
+| Visão geral | `/` | Identidade da conta, 8 indicadores com comparação ao período anterior, visão resumida/detalhada, evolução, campeões, partidas, insights |
+| Desempenho | `/desempenho` | Filtros combinados (período, últimos N jogos, fila, posição, campeão), evolução de 7 métricas, cruzamentos campeão × posição, horário × dia, KDA × duração, farm × resultado, objetivos, consistência, últimos 10/20/50/100, comparação entre períodos |
+| Campeões | `/campeoes`, `/campeao/{id}` | Biblioteca ordenável com maestria, comparação de até 4 campeões, página do campeão com melhores e piores matchups e caderno |
+| Partidas | `/partidas`, `/partida/{id}` | Histórico pesquisável com 7 filtros; partida em uma página: relatório, estatísticas, equipes, build e linha do tempo |
+| LOI Academy | `/academy` | Recomendações, pontos a corrigir, teoria × prática por habilidade, aulas por categoria, histórico de testes |
+| LOL Challenge | `/desafios` | Desafio diário, desafios extras por categoria/dificuldade, XP, níveis, sequência, calendário, conquistas, estatísticas, ranking opcional, histórico |
+| Replay Challenge | `/replay` | Leitura real dos metadados de `.rofl` no navegador; desafios de decisão a partir de eventos reais da partida; histórico |
+| Perfil | `/perfil` | Identidade competitiva, elo, carreira, campeões, evolução, progresso na Academy e no Challenge |
+
+Telas secundárias (aula, previsão de elo, caderno, comparar jogadores, conta, login)
+reaproveitam as do aplicativo dentro da casca web, com mais largura.
+
+**Responsivo:** barra lateral completa (≥ 1100 px), trilho de ícones (760–1100 px) e
+menu em gaveta no celular. **Atalhos:** `/` busca, `1`–`8` seções, `[` recolhe a barra,
+`?` mostra a ajuda.
+
+### LOL Challenge
+
+30 desafios em 6 categorias (Lane Management, Map Awareness, Macro Game, Team Fight,
+Matchups, Mechanics) e 3 dificuldades, em `src/challenge/` (o mesmo código roda no app e
+no servidor). Só a primeira resposta a cada desafio vale XP; o diário vale uma vez por dia
+e dá bônus. Nas contas reais o **servidor corrige** a resposta e grava (`challenge_progress`);
+o ranking mostra apenas o nome de usuário de quem aceitou participar (`challenge_profile`,
+migração 4). Na demonstração, o histórico anterior a hoje e o ranking são fictícios e
+identificados como DEMO. No Android há uma tela enxuta (desafio do dia e próximos).
+
+### Replay Challenge: o que é real e o que não é
+
+- **Real:** o arquivo `.rofl` começa com a assinatura `RIOT` e traz um bloco de
+  metadados em JSON (duração, versão e estatísticas finais dos 10 jogadores). Ele é lido
+  no navegador (`src/replay/rofl.ts`), sem enviar o arquivo a lugar nenhum. Se a partida
+  estiver no histórico carregado, o app oferece abrir a análise dela.
+- **Não implementado:** posições, momentos e pausas dentro do replay. Esse conteúdo é um
+  fluxo de pacotes criptografado, que muda a cada patch e não tem documentação oficial.
+  A interface mostra isso claramente e não simula a leitura.
+- **Enquanto isso:** os desafios de decisão usam eventos reais da linha do tempo da
+  Match-V5 (mortes antes de objetivos, mortes no rio/selva inimiga, desvantagem numérica,
+  vantagem de ouro), com "o que aconteceu na partida" ao lado da resposta. Sem linha do
+  tempo, aparecem cenários didáticos identificados como tal.
+
+### Executar a versão web
+
+```bash
+npm install
+npx expo start --web            # desenvolvimento (abre no navegador)
+npm run build:web               # build de produção em dist/
+npm run serve:web               # serve dist/ em http://localhost:8080 (com fallback de rotas)
+npm run build:web:mobile        # build web com as telas do celular (testes de compatibilidade)
+```
+
+### Publicação
+
+Nada é publicado automaticamente. Para hospedar:
+
+1. **Backend** (Render, Fly.io, Railway ou VPS) com HTTPS e disco persistente para o
+   SQLite (`DATABASE_FILE`). Variáveis: `RIOT_API_KEY` (chave de produção da Riot),
+   `AUTH_SECRET` (32+ caracteres), `ALLOWED_ORIGINS=https://seu-dominio` (CORS restrito)
+   e `TRUST_PROXY=1` quando houver proxy na frente (para o limite de tentativas usar o IP
+   real do cliente).
+2. **Web** (Vercel, Netlify, Cloudflare Pages): build com
+   `EXPO_PUBLIC_API_BASE_URL=https://api.seu-dominio npm run build:web` e publique `dist/`.
+   O arquivo `public/_redirects` já faz o fallback de rotas (Netlify/Cloudflare); na Vercel,
+   configure a reescrita de `/(.*)` para `/index.html`.
+3. **Domínio:** por exemplo `app.seu-dominio` para a web e `api.seu-dominio` para o backend,
+   ambos com HTTPS (o navegador bloqueia chamadas HTTP a partir de uma página HTTPS).
+4. **E-mail:** sem provedor configurado, os códigos de confirmação só aparecem no terminal
+   do servidor. Para contas públicas é preciso um provedor (SES, Resend, SMTP).
+
+Nenhuma chave vai para o navegador: tudo que começa com `EXPO_PUBLIC_` é público e só
+contém endereços e opções (ver `.env.example`).
+
 ## Relatório, comparação, caderno, cartão e notificações
 
 - **Relatório pós-partida** (aba padrão de cada partida e cartão "Relatório da última
@@ -316,6 +403,9 @@ lol-insight/
 | `GET /v1/me/coach?count=...` | Relatório do treinador da conta Riot principal |
 | `POST /v1/me/coach/attempts` · `goal` · `plan-day` | Teste de aula, meta de elo, dia do plano |
 | `GET` / `POST /v1/me/matchups` · `DELETE /v1/me/matchups/{campeão}/{adversário}` | Caderno de matchups do usuário |
+| `GET /v1/me/challenge?tz=` · `POST /v1/me/challenge/attempts` | LOL Challenge: estado e resposta (corrigida no servidor) |
+| `GET` / `POST /v1/me/challenge/ranking` | Ranking (só quem aceitou) e participação |
+| `GET` / `POST /v1/me/replay-analyses` | Histórico do Replay Challenge |
 
 Exceto `/health`, o catálogo de aulas e as rotas `/v1/auth/*` de entrada, todas exigem
 `Authorization: Bearer <token de acesso>`.
@@ -348,8 +438,8 @@ múltiplos servidores, troque essa camada por PostgreSQL.
 
 ```bash
 npm run typecheck              # app
-npm test                       # motor estatístico, treinador, relatório, comparação e notificações (51 testes)
-npm --prefix server test       # backend: Riot simulada, contas, isolamento, RSO, migrações e caderno (67 testes)
+npm test                       # estatísticas, treinador, relatório, comparação, notificações, cruzamentos, challenge, .rofl e decisões (57 testes)
+npm --prefix server test       # backend: Riot simulada, contas, isolamento, RSO, migrações, caderno, challenge, replay e CORS (72 testes)
 npm run check:coach            # imprime diagnóstico e previsão das contas demonstrativas
 npm --prefix server run smoke -- "Nome#TAG" BR    # ao vivo, com a sua chave
 ```

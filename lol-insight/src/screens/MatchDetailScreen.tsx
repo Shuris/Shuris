@@ -50,7 +50,7 @@ export function MatchDetailScreen() {
   const c = champion(match.championId);
   return (
     <Screen title={`${match.win ? 'Vitória' : 'Derrota'} · ${c.name}`} subtitle={`${QUEUE_LABEL[match.queue]} · ${dateTime(match.timestamp)}`} back>
-      <Header match={match} source={data.source} />
+      <MatchHeader match={match} source={data.source} />
       <Segmented
         options={[
           { value: 'relatorio', label: 'Relatório' },
@@ -64,10 +64,10 @@ export function MatchDetailScreen() {
       />
       <FadeIn trigger={tab} style={{ gap: space.lg }}>
         {tab === 'relatorio' ? <MatchReportView match={match} tier={data.player.rank?.tier} /> : null}
-        {tab === 'resumo' ? <Summary match={match} /> : null}
-        {tab === 'equipes' ? <Teams match={match} /> : null}
-        {tab === 'build' ? <Build match={match} details={details} completedItems={completedItems} /> : null}
-        {tab === 'timeline' ? <Timeline match={match} details={details} /> : null}
+        {tab === 'resumo' ? <MatchSummary match={match} /> : null}
+        {tab === 'equipes' ? <MatchTeams match={match} /> : null}
+        {tab === 'build' ? <MatchBuild match={match} details={details} completedItems={completedItems} /> : null}
+        {tab === 'timeline' ? <MatchTimeline match={match} details={details} /> : null}
       </FadeIn>
     </Screen>
   );
@@ -79,7 +79,7 @@ type DetailsState = { status: 'ready' } | { status: 'loading' } | { status: 'err
  * Ordem de habilidades e linha do tempo. Na demonstração já vêm com a partida;
  * nos dados reais são buscadas sob demanda (Match-V5 timeline) ao abrir a tela.
  */
-function useMatchDetails(base: Match | undefined): { match: Match | undefined; details: DetailsState; completedItems: number[] } {
+export function useMatchDetails(base: Match | undefined): { match: Match | undefined; details: DetailsState; completedItems: number[] } {
   const { dataSource, data } = usePlayer();
   const [loaded, setLoaded] = useState<{ id: string; patch: Partial<Match>; completedItems: number[] } | null>(null);
   const [failure, setFailure] = useState<{ id: string; error: ServiceError } | null>(null);
@@ -128,7 +128,7 @@ function DetailsPending({ details, what }: { details: DetailsState; what: string
   return null;
 }
 
-function Header({ match: m, source }: { match: Match; source: DataSourceKind }) {
+export function MatchHeader({ match: m, source }: { match: Match; source: DataSourceKind }) {
   const c = champion(m.championId);
   const tone = m.win ? colors.win : colors.loss;
   return (
@@ -185,7 +185,7 @@ function rankOf(m: Match, get: (p: Participant) => number): number {
   return m.participants.filter((p) => get(p) > get(me)).length + 1;
 }
 
-function Summary({ match: m }: { match: Match }) {
+export function MatchSummary({ match: m }: { match: Match }) {
   const me = m.participants.find((p) => p.isPlayer)!;
   const team = m.participants.filter((p) => p.team === me.team);
   const share = (get: (p: Participant) => number) => get(me) / Math.max(1, team.reduce((s, p) => s + get(p), 0));
@@ -273,7 +273,7 @@ function ObjRow({ label, ours, theirs }: { label: string; ours: number; theirs: 
 
 type TeamMetric = 'damage' | 'gold' | 'cs';
 
-function Teams({ match: m }: { match: Match }) {
+export function MatchTeams({ match: m }: { match: Match }) {
   const [metric, setMetric] = useState<TeamMetric>('damage');
   const me = m.participants.find((p) => p.isPlayer)!;
   const get = (p: Participant) => p[metric];
@@ -330,7 +330,7 @@ function Teams({ match: m }: { match: Match }) {
 
 const SKILLS = ['Q', 'W', 'E', 'R'] as const;
 
-function Build({ match: m, details, completedItems }: { match: Match; details: DetailsState; completedItems: number[] }) {
+export function MatchBuild({ match: m, details, completedItems }: { match: Match; details: DetailsState; completedItems: number[] }) {
   const [item, setItem] = useState<number | null>(null);
   const r = m.runes;
   const order = m.itemsInPurchaseOrder ? m.items : completedItems;
@@ -472,7 +472,7 @@ const EVENT_ICON: Record<TimelineKind, keyof typeof Ionicons.glyphMap> = {
 
 type TimelineFilter = 'all' | 'combat' | 'objectives';
 
-function Timeline({ match: m, details }: { match: Match; details: DetailsState }) {
+export function MatchTimeline({ match: m, details }: { match: Match; details: DetailsState }) {
   const [filter, setFilter] = useState<TimelineFilter>('all');
   const events = m.timeline.filter((e) =>
     filter === 'all' ? true : filter === 'combat' ? e.kind === 'KILL' || e.kind === 'DEATH' : !['KILL', 'DEATH', 'ITEM'].includes(e.kind),

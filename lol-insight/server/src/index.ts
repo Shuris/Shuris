@@ -7,7 +7,8 @@ import { httpDepsFrom, startHttpServer } from './http/server.ts';
 const config = loadConfig();
 const app = createApp(config);
 
-const server = await startHttpServer(httpDepsFrom(app), config.port, config.host);
+const server = await startHttpServer({ ...httpDepsFrom(app), allowedOrigins: config.allowedOrigins, trustProxy: config.trustProxy }, config.port, config.host);
+if (config.allowedOrigins.includes('*')) app.logger.warn('CORS aberto para qualquer origem (ALLOWED_ORIGINS=*). Em produção, defina o endereço da versão web.');
 
 const lan = Object.values(networkInterfaces())
   .flat()

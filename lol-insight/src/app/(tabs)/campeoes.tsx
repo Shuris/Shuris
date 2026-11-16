@@ -1,1 +1,1 @@
-export { ChampionsScreen as default } from '@/screens/ChampionsScreen';
+export { default } from '@/routes/champions';

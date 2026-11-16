@@ -1,9 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MOBILE_WEB } from '@/routes/flags';
 import { colors, space, type } from '@/theme';
 
 import { FadeIn } from './Feedback';
@@ -24,7 +25,8 @@ interface ScreenProps {
   bottomInset?: number;
 }
 
-export const CONTENT_MAX_WIDTH = 560;
+/** Largura do conteúdo: 560 no celular; telas reaproveitadas na plataforma web ganham mais espaço. */
+export const CONTENT_MAX_WIDTH = Platform.OS === 'web' && !MOBILE_WEB ? 880 : 560;
 
 export function Screen({ title, subtitle, back, right, sticky, children, scroll = true, onRefresh, refreshing, bottomInset = 0 }: ScreenProps) {
   const insets = useSafeAreaInsets();
