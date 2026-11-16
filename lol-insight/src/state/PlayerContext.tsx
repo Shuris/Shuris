@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { registerChampions, setDataDragonVersion } from '@/data/champions';
 import { registerItemNames } from '@/data/items';
 import { createDataSource, ServiceError, type AccountQuery, type AccountSuggestion, type MatchCount, type PlayerDataSource } from '@/services';
+import { api } from '@/services/apiClient';
 import { resolveDataDragonVersion } from '@/services/dataDragon';
 import { defaultSettings, effectiveServerUrl, loadSettings, saveSettings, type Settings } from '@/services/settings';
 import { loadCachedBundle, loadLastAccount, loadRecentSearches, saveCachedBundle, saveLastAccount, saveRecentSearches } from '@/services/storage';
@@ -10,6 +11,8 @@ import { byChampion, newestFirst, streaks, summarize, type ChampionStats, type S
 import { computeIdentity, type Identity } from '@/stats/identity';
 import { computeInsights, type InsightReport } from '@/stats/insights';
 import { absoluteToRank, rankToAbsolute } from '@/stats/rank';
+
+import { useAuth } from './AuthContext';
 import type { DataSourceKind, MasteryEntry, Match, Player, PlayerBundle, Rank, RankSnapshot, SyncStatus } from '@/types';
 
 export type LoadStatus = 'loading' | 'ready';
@@ -116,7 +119,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   settingsRef.current = settings;
   const current = useRef<AccountQuery | null>(null);
 
+  const auth = useAuth();
   const serverUrl = effectiveServerUrl(settings);
+  useEffect(() => api.setBaseUrl(serverUrl), [serverUrl]);
   const dataSource = useMemo(() => createDataSource(settings.mode, serverUrl), [settings.mode, serverUrl]);
   const dsRef = useRef(dataSource);
   dsRef.current = dataSource;
@@ -184,6 +189,9 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   /** Prepara o modo ativo: buscas recentes, sugestões e a última conta vista. */
+  const authRef = useRef(auth);
+  authRef.current = auth;
+
   const bootstrap = useCallback(
     async (mode: DataSourceKind) => {
       const [last, recents, sugg] = await Promise.all([loadLastAccount(mode), loadRecentSearches(mode), dsRef.current.suggestions()]);
@@ -192,10 +200,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
       if (mode === 'demo') {
         const ok = await load(last ?? DEMO_ACCOUNT);
         if (!ok && last) await load(DEMO_ACCOUNT);
-      } else if (last) {
-        await load(last);
+      } else if (authRef.current.status !== 'signedIn') {
+        // Modo real exige login: nada é carregado até o usuário entrar.
+        requestId.current++;
+        current.current = null;
+        setBundle(null);
+        setError(null);
+        setStatus(authRef.current.status === 'loading' ? 'loading' : 'ready');
       } else {
-        setStatus('ready'); // modo real sem conta ainda: a tela inicial convida a pesquisar
+        // Ao entrar, abre a conta Riot principal do usuário; sem ela, a última consultada neste aparelho.
+        const primary = authRef.current.primary;
+        const target = primary ? { gameName: primary.gameName, tagLine: primary.tagLine, region: primary.region } : last;
+        if (target) await load(target);
+        else {
+          setBundle(null);
+          setStatus('ready');
+        }
       }
     },
     [load],
@@ -214,9 +234,22 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Inicializa o modo ativo na abertura do app e a cada troca de modo.
+  // O modo real recarrega quando o usuário entra, sai ou troca a conta Riot principal.
+  const authKey = settings.mode === 'riot' ? `${auth.status}|${auth.user?.id ?? ''}|${auth.primary?.id ?? ''}` : '';
   useEffect(() => {
     if (prefsReady) void bootstrap(settings.mode);
-  }, [prefsReady, settings.mode, bootstrap]);
+  }, [prefsReady, settings.mode, authKey, bootstrap]);
+
+  // Quantidade de partidas é uma configuração pessoal: ao entrar, adota a salva na conta.
+  const serverCount = auth.settings?.matchCount;
+  useEffect(() => {
+    if (serverCount && serverCount !== settingsRef.current.matchCount) {
+      const next = { ...settingsRef.current, matchCount: serverCount };
+      settingsRef.current = next;
+      setSettings(next);
+      void saveSettings(next);
+    }
+  }, [serverCount, auth.user?.id]);
 
   // Carregamento progressivo: enquanto o servidor baixa partidas, consulta de novo.
   const syncState = bundle?.source === 'riot' ? bundle.sync?.state : undefined;
@@ -257,6 +290,7 @@ export function PlayerProvider({ children }: { children: React.ReactNode }) {
   const setMatchCount = useCallback(
     (matchCount: MatchCount) => {
       update({ matchCount });
+      if (authRef.current.status === 'signedIn') void authRef.current.saveSettings({ matchCount }).catch(() => undefined);
       polls.current = 0;
       if (dsRef.current.kind === 'riot' && current.current) void load(current.current, { silent: true });
     },

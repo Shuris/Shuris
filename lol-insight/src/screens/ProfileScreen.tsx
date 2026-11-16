@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { RadarChart } from '@/components/charts';
+import { AccountCard } from '@/components/auth/AccountCard';
 import { REGIONS } from '@/components/SearchBar';
 import { SourceBadge } from '@/components/SourceBadge';
 import { Card, ChampionAvatar, EmptyState, Meter, ProfileAvatar, RankEmblem, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
@@ -19,9 +20,10 @@ import { colors, fonts, radius, space, type } from '@/theme';
 import type { DataSourceKind, Rank } from '@/types';
 
 export function ProfileScreen() {
-  const { status, data } = usePlayer();
+  const { status, data, settings } = usePlayer();
   return (
     <Screen title="Perfil" subtitle="Identidade competitiva e carreira" right={<SourceBadge />}>
+      {settings.mode === 'riot' ? <AccountCard /> : null}
       <DataSourceCard />
       {status === 'loading' ? (
         <ScreenSkeleton cards={3} />

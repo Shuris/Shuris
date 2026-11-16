@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 import { LineChart } from '@/components/charts';
+import { AuthPrompt } from '@/components/auth/AccountCard';
 import { CoachEntry } from '@/components/coach/CoachEntry';
 import { DataStatusCard } from '@/components/DataStatusCard';
 import { ErrorCard } from '@/components/ErrorCard';
@@ -29,6 +30,7 @@ import {
 } from '@/components/ui';
 import { profileIconUrl } from '@/data/champions';
 import { PERIOD_OPTIONS, type PeriodDays } from '@/hooks/usePeriod';
+import { useAuth } from '@/state/AuthContext';
 import { usePlayer, type Derived } from '@/state/PlayerContext';
 import { compact, dateShort, dec, duration, int, pct } from '@/stats/format';
 import { absoluteToRank, isApex, rankLabel, rankShort, TIER_COLOR } from '@/stats/rank';
@@ -41,6 +43,8 @@ export function HomeScreen() {
   const [region, setRegion] = useState<Region>('BR');
   const router = useRouter();
   const real = settings.mode === 'riot';
+  const auth = useAuth();
+  const needsLogin = real && auth.status === 'signedOut';
 
   // Ações oferecidas conforme o tipo de erro da busca.
   const errorActions = () => {
@@ -88,7 +92,19 @@ export function HomeScreen() {
       ) : (
         <>
           {error ? <ErrorCard error={error} actions={errorActions()} /> : null}
-          {!data && !error ? (
+          {needsLogin ? <AuthPrompt /> : null}
+          {!data && !error && !needsLogin && real && auth.status === 'signedIn' && !auth.primary ? (
+            <Card>
+              <EmptyState
+                icon="link-outline"
+                title="Vincule sua conta Riot"
+                message="Vincule seu Riot ID para que suas estatísticas, aulas e previsões fiquem no seu perfil. Você também pode pesquisar qualquer jogador acima."
+                actionLabel="Vincular conta Riot"
+                onAction={() => router.push('/conta/riot')}
+              />
+            </Card>
+          ) : null}
+          {!data && !error && !needsLogin && !(real && auth.status === 'signedIn' && !auth.primary) ? (
             <Card>
               <EmptyState
                 icon="search-outline"

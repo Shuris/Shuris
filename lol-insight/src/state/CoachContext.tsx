@@ -5,6 +5,7 @@ import { ServiceError } from '@/services';
 import { createCoachService, type CoachContextData } from '@/services/CoachService';
 import type { Rank } from '@/types';
 
+import { useAuth } from './AuthContext';
 import { usePlayer } from './PlayerContext';
 
 interface CoachContextValue {
@@ -28,6 +29,7 @@ const toError = (e: unknown) => (e instanceof ServiceError ? e : new ServiceErro
  */
 export function CoachProvider({ children }: { children: React.ReactNode }) {
   const { data, settings, serverUrl } = usePlayer();
+  const auth = useAuth();
   const [report, setReport] = useState<CoachReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ServiceError | null>(null);
@@ -40,7 +42,9 @@ export function CoachProvider({ children }: { children: React.ReactNode }) {
   const service = useMemo(() => createCoachService(data?.source ?? 'demo', serverUrl, settings.matchCount), [data?.source, serverUrl, settings.matchCount]);
 
   // Recalcula quando muda a conta, a quantidade de partidas ou o elo.
-  const signature = data ? `${data.source}|${data.player.id}|${data.matches.length}|${data.matches[0]?.id ?? ''}|${data.player.rank?.lp ?? 'x'}|${data.rankHistory.length}` : '';
+  // No modo real o treinador é do usuário (conta Riot principal), não da conta exibida na tela.
+  const owner = data?.source === 'riot' ? `${auth.user?.id ?? 'anon'}|${auth.primary?.id ?? 'sem-conta'}` : '';
+  const signature = data ? `${data.source}|${owner}|${data.player.id}|${data.matches.length}|${data.matches[0]?.id ?? ''}|${data.player.rank?.lp ?? 'x'}|${data.rankHistory.length}` : '';
   const dataRef = useRef(ctxData);
   dataRef.current = ctxData;
 

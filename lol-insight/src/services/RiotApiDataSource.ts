@@ -1,7 +1,7 @@
 import type { DataSourceKind, Match, MatchDetails, Player, PlayerBundle } from '@/types';
 
 import { ServiceError } from './errors';
-import { requestJson } from './http';
+import { api } from './apiClient';
 import type { AccountQuery, AccountSuggestion, LoadOptions, PlayerDataSource } from './PlayerDataSource';
 
 export interface ServerHealth {
@@ -13,7 +13,7 @@ export interface ServerHealth {
  * Modo real: conversa com o backend do LOL Insight (pasta server/), que é quem
  * guarda a chave da Riot e consulta Account-V1, Summoner-V4, League-V4,
  * Match-V5 e Champion-Mastery-V4. O app nunca fala com a Riot diretamente e
- * nunca tem acesso à chave.
+ * nunca tem acesso à chave. Todas as rotas de dados exigem login (token de sessão).
  */
 export class RiotApiDataSource implements PlayerDataSource {
   readonly kind: DataSourceKind = 'riot';
@@ -44,11 +44,14 @@ export class RiotApiDataSource implements PlayerDataSource {
     return [];
   }
 
-  async health(): Promise<ServerHealth> {
-    return this.request<ServerHealth>('/health', 6000);
+  private request<T>(path: string, timeoutMs?: number): Promise<T> {
+    api.setBaseUrl(this.baseUrl);
+    return api.request<T>(path, { timeoutMs });
   }
 
-  private request<T>(path: string, timeoutMs?: number): Promise<T> {
-    return requestJson<T>(this.baseUrl, path, { timeoutMs });
+  /** /health é público: usado pelo botão "Testar" antes do login. */
+  async health(): Promise<ServerHealth> {
+    api.setBaseUrl(this.baseUrl);
+    return api.request<ServerHealth>('/health', { auth: false, timeoutMs: 6000 });
   }
 }

@@ -4,6 +4,8 @@ import React from 'react';
 import type { CoachReport } from '@/coach';
 import { ErrorCard } from '@/components/ErrorCard';
 import { Card, EmptyState, ScreenSkeleton } from '@/components/ui';
+import { AuthPrompt } from '@/components/auth/AccountCard';
+import { useAuth } from '@/state/AuthContext';
 import { useCoach } from '@/state/CoachContext';
 import { usePlayer } from '@/state/PlayerContext';
 
@@ -12,11 +14,20 @@ import { usePlayer } from '@/state/PlayerContext';
  * servidor. Quando há relatório, entrega-o ao conteúdo.
  */
 export function CoachGate({ children }: { children: (report: CoachReport) => React.ReactNode }) {
-  const { status, data } = usePlayer();
+  const { status, data, settings } = usePlayer();
   const { report, loading, error, reload } = useCoach();
+  const auth = useAuth();
   const router = useRouter();
 
+  if (settings.mode === 'riot' && auth.status === 'signedOut') return <AuthPrompt />;
   if (status === 'loading' || (!report && loading)) return <ScreenSkeleton hero={false} cards={3} />;
+  if (!report && error?.code === 'NO_RIOT_ACCOUNT') {
+    return (
+      <Card>
+        <EmptyState icon="link-outline" title="Vincule sua conta Riot" message="Com dados reais, a Academy e a previsão de elo usam a conta Riot principal do seu perfil." actionLabel="Vincular conta Riot" onAction={() => router.push('/conta/riot')} />
+      </Card>
+    );
+  }
   if (!data) {
     return (
       <Card>

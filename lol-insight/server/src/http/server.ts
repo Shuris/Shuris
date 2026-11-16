@@ -22,6 +22,8 @@ export interface HttpDeps {
   rso: RsoService;
   logger: Logger;
   hasApiKey: () => boolean;
+  /** "console" = modo de desenvolvimento: nenhum e-mail é enviado, os códigos aparecem no terminal. */
+  emailDelivery?: string;
   /** Requisições por minuto aceitas de um mesmo cliente. */
   clientLimitPerMinute?: number;
 }
@@ -201,7 +203,7 @@ export function createHttpHandler(deps: HttpDeps) {
     const parts = url.pathname.split('/').filter(Boolean);
 
     if (url.pathname === '/health' && req.method === 'GET') {
-      return { ok: true, service: 'lol-insight-server', riotApiKeyConfigured: deps.hasApiKey(), regions: REGION_CODES, time: Date.now() };
+      return { ok: true, service: 'lol-insight-server', riotApiKeyConfigured: deps.hasApiKey(), emailDelivery: deps.emailDelivery ?? 'console', regions: REGION_CODES, time: Date.now() };
     }
     throttle(req.socket.remoteAddress ?? 'unknown');
 

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { buildCoachReport, emptyCoachState, recordQuizAttempt, setGoal, setPlanDay, type CoachReport, type CoachState, type QuizResult } from '@/coach';
 import type { DataSourceKind, Match, Player, Rank, RankSnapshot } from '@/types';
 
-import { requestJson } from './http';
+import { api } from './apiClient';
 
 /** O que o treinador precisa saber sobre a conta carregada. */
 export interface CoachContextData {
@@ -73,6 +73,10 @@ export class LocalCoachService implements CoachService {
   }
 }
 
+/**
+ * Dados reais: o servidor usa o usuário autenticado e a conta Riot principal
+ * vinculada a ele. Nenhum identificador de usuário ou de conta é enviado pelo app.
+ */
 export class RemoteCoachService implements CoachService {
   private baseUrl: string;
 
@@ -83,24 +87,25 @@ export class RemoteCoachService implements CoachService {
     this.baseUrl = baseUrl.replace(/\/+$/, '');
   }
 
-  private path(ctx: CoachContextData, suffix = '') {
-    return `/v1/coach/${encodeURIComponent(ctx.player.puuid ?? ctx.player.id)}${suffix}?count=${this.count}`;
+  private call<T>(suffix: string, body?: unknown): Promise<T> {
+    api.setBaseUrl(this.baseUrl);
+    return api.request<T>(`/v1/me/coach${suffix}?count=${this.count}`, body === undefined ? {} : { method: 'POST', body });
   }
 
-  getReport(ctx: CoachContextData) {
-    return requestJson<CoachReport>(this.baseUrl, this.path(ctx));
+  getReport() {
+    return this.call<CoachReport>('');
   }
 
-  submitAttempt(ctx: CoachContextData, lessonId: string, answers: number[], durationSec: number) {
-    return requestJson<{ result: QuizResult; report: CoachReport }>(this.baseUrl, this.path(ctx, '/attempts'), { method: 'POST', body: { lessonId, answers, durationSec } });
+  submitAttempt(_ctx: CoachContextData, lessonId: string, answers: number[], durationSec: number) {
+    return this.call<{ result: QuizResult; report: CoachReport }>('/attempts', { lessonId, answers, durationSec });
   }
 
-  setGoal(ctx: CoachContextData, rank: Rank | null) {
-    return requestJson<CoachReport>(this.baseUrl, this.path(ctx, '/goal'), { method: 'POST', body: { rank } });
+  setGoal(_ctx: CoachContextData, rank: Rank | null) {
+    return this.call<CoachReport>('/goal', { rank });
   }
 
-  setPlanDay(ctx: CoachContextData, day: number, done: boolean) {
-    return requestJson<CoachReport>(this.baseUrl, this.path(ctx, '/plan-day'), { method: 'POST', body: { day, done } });
+  setPlanDay(_ctx: CoachContextData, day: number, done: boolean) {
+    return this.call<CoachReport>('/plan-day', { day, done });
   }
 }
 

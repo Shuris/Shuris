@@ -8,6 +8,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider } from '@/state/AuthContext';
 import { CoachProvider } from '@/state/CoachContext';
 import { PlayerProvider } from '@/state/PlayerContext';
 import { colors } from '@/theme';
@@ -26,6 +27,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <AuthProvider>
       <PlayerProvider>
         <CoachProvider>
         <StatusBar style="light" />
@@ -44,9 +46,18 @@ export default function RootLayout() {
           <Stack.Screen name="academy/aula/[id]" />
           <Stack.Screen name="academy/plano" />
           <Stack.Screen name="previsao" />
+          <Stack.Screen name="entrar" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="cadastro" />
+          <Stack.Screen name="recuperar-senha" />
+          <Stack.Screen name="verificar-email" />
+          <Stack.Screen name="conta/index" />
+          <Stack.Screen name="conta/configuracoes" />
+          <Stack.Screen name="conta/riot" />
+          <Stack.Screen name="conta/sessoes" />
         </Stack>
         </CoachProvider>
       </PlayerProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

@@ -59,3 +59,17 @@ export async function saveCachedBundle(bundle: PlayerBundle): Promise<void> {
   }
   await write(INDEX, index.slice(0, MAX_CACHED_BUNDLES));
 }
+
+/**
+ * Apaga o que o modo real guardou no aparelho (última conta, buscas recentes e cache
+ * de contas). Usado ao sair da conta ou ao entrar com outro usuário, para que uma
+ * pessoa não veja o histórico de navegação de outra no mesmo aparelho.
+ */
+export async function clearRealModeData(): Promise<void> {
+  try {
+    const index = (await read<string[]>(INDEX)) ?? [];
+    await AsyncStorage.multiRemove([key('lastAccount', 'riot'), key('recent', 'riot'), INDEX, ...index.map(bundleKey)]);
+  } catch {
+    // ignora
+  }
+}
