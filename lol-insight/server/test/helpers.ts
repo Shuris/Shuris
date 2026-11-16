@@ -121,6 +121,11 @@ export function makeMatch(n: number, line: PlayerLine, opts: { queueId?: number;
 export function makeTimeline(match: MatchDto, puuid = PUUID): TimelineDto {
   const me = match.info.participants.find((p) => p.puuid === puuid)!;
   const foe = match.info.participants.find((p) => p.teamId !== me.teamId)!;
+  const laneFoe = match.info.participants.find((p) => p.teamId !== me.teamId && p.teamPosition === me.teamPosition) ?? foe;
+  const frame = (myGold: number, foeGold: number, myCs: number, foeCs: number) => ({
+    [String(me.participantId)]: { totalGold: myGold, xp: myGold, minionsKilled: myCs, jungleMinionsKilled: 0 },
+    [String(laneFoe.participantId)]: { totalGold: foeGold, xp: foeGold - 100, minionsKilled: foeCs, jungleMinionsKilled: 0 },
+  });
   return {
     metadata: match.metadata,
     info: {
@@ -128,6 +133,7 @@ export function makeTimeline(match: MatchDto, puuid = PUUID): TimelineDto {
       frames: [
         {
           timestamp: 0,
+          participantFrames: frame(500, 500, 0, 0),
           events: [
             { type: 'SKILL_LEVEL_UP', timestamp: 5000, participantId: me.participantId, skillSlot: 1, levelUpType: 'NORMAL' },
             { type: 'SKILL_LEVEL_UP', timestamp: 90_000, participantId: me.participantId, skillSlot: 3, levelUpType: 'NORMAL' },
@@ -136,11 +142,14 @@ export function makeTimeline(match: MatchDto, puuid = PUUID): TimelineDto {
         },
         {
           timestamp: 180_000,
+          participantFrames: frame(1700, 1400, 24, 18),
           events: [
-            { type: 'CHAMPION_KILL', timestamp: 185_000, killerId: me.participantId, victimId: foe.participantId },
+            { type: 'WARD_PLACED', timestamp: 150_000, creatorId: me.participantId, wardType: 'YELLOW_TRINKET' },
+            { type: 'WARD_KILL', timestamp: 420_000, killerId: me.participantId, wardType: 'SIGHT_WARD' },
+            { type: 'CHAMPION_KILL', timestamp: 185_000, killerId: me.participantId, victimId: foe.participantId, position: { x: 7500, y: 7500 } },
             { type: 'SKILL_LEVEL_UP', timestamp: 190_000, participantId: me.participantId, skillSlot: 2, levelUpType: 'NORMAL' },
             { type: 'ELITE_MONSTER_KILL', timestamp: 400_000, monsterType: 'DRAGON', monsterSubType: 'FIRE_DRAGON', killerTeamId: me.teamId },
-            { type: 'CHAMPION_KILL', timestamp: 500_000, killerId: foe.participantId, victimId: me.participantId },
+            { type: 'CHAMPION_KILL', timestamp: 500_000, killerId: foe.participantId, victimId: me.participantId, assistingParticipantIds: [laneFoe.participantId === foe.participantId ? foe.participantId + 1 : laneFoe.participantId], position: { x: 4500, y: 10500 } },
             { type: 'ITEM_PURCHASED', timestamp: 720_000, participantId: me.participantId, itemId: 1001 },
             { type: 'ITEM_PURCHASED', timestamp: 780_000, participantId: me.participantId, itemId: 6655 },
             { type: 'BUILDING_KILL', timestamp: 800_000, buildingType: 'TOWER_BUILDING', teamId: me.teamId === 100 ? 200 : 100 },

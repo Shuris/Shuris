@@ -1,10 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BarChart, LineChart, type Bar } from '@/components/charts';
-import { Card, ChampionAvatar, EmptyState, FadeIn, LinkButton, MatchRow, Meter, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
-import { champion, championSplashUrl, POSITION_LABEL } from '@/data/champions';
+import { Card, ChampionAvatar, ChampionBackdrop, CountUp, EmptyState, FadeIn, LinkButton, MatchRow, Meter, Screen, ScreenSkeleton, SectionHeader, Segmented, StatTile, TileGrid } from '@/components/ui';
+import { DIFFICULTY_COLOR, MatchupEditor } from '@/components/matchups/MatchupEditor';
+import { champion, POSITION_LABEL } from '@/data/champions';
+import { useMatchups } from '@/hooks/useMatchups';
+import { recordText } from '@/screens/MatchupNotebookScreen';
 import { PERIOD_OPTIONS, type PeriodDays } from '@/hooks/usePeriod';
 import { usePlayer } from '@/state/PlayerContext';
 import { byPosition, matchups, streaks, summarize, withinDays } from '@/stats/aggregate';
@@ -20,8 +24,9 @@ export function ChampionDetailScreen() {
   const router = useRouter();
   const [days, setDays] = useState<PeriodDays>(90);
   const [showAll, setShowAll] = useState(false);
-  const [splashOk, setSplashOk] = useState(true);
   const c = champion(id);
+  const mu = useMatchups();
+  const [editing, setEditing] = useState<string | null>(null);
 
   const list = useMemo(() => (data ? data.matches.filter((m) => m.championId === id) : []), [data, id]);
   const s = useMemo(() => summarize(list), [list]);
@@ -64,9 +69,7 @@ export function ChampionDetailScreen() {
   return (
     <Screen title={c.name} subtitle={c.title} back>
       <Card padded={false}>
-        <View style={[styles.splash, { backgroundColor: c.color }]}>
-          {splashOk ? <Image source={{ uri: championSplashUrl(c.id) }} onError={() => setSplashOk(false)} style={StyleSheet.absoluteFill} resizeMode="cover" /> : null}
-          <View style={styles.splashShade} />
+        <ChampionBackdrop id={c.id} height={190}>
           <View style={styles.splashContent}>
             <ChampionAvatar id={c.id} size={60} ring={colors.gold} />
             <View style={{ flex: 1 }}>
@@ -76,11 +79,11 @@ export function ChampionDetailScreen() {
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[type.h1, { fontSize: 28 }]}>{pct(s.winRate)}</Text>
+              <CountUp text={pct(s.winRate)} style={[type.number, { fontSize: 30 }]} />
               <Text style={type.label}>vitórias</Text>
             </View>
           </View>
-        </View>
+        </ChampionBackdrop>
         <View style={{ padding: space.lg }}>
           <TileGrid columns={3}>
             <StatTile label="KDA médio" value={dec(s.kda, 2)} hint={`${dec(s.avgKills)} / ${dec(s.avgDeaths)} / ${dec(s.avgAssists)}`} />
@@ -117,13 +120,20 @@ export function ChampionDetailScreen() {
       </Card>
 
       <Card>
-        <SectionHeader title="Desempenho por matchup" subtitle="Contra o oponente direto da mesma rota" />
+        <SectionHeader title="Desempenho por matchup" subtitle={mu.available ? 'Toque em um confronto para anotar no seu caderno' : 'Contra o oponente direto da mesma rota'} />
         <View style={{ gap: space.md }}>
           {mus.map((m) => {
             const foe = champion(m.opponentId);
             const small = m.games < MATCHUP_MIN;
+            const note = mu.find(c.id, foe.id);
             return (
-              <View key={m.opponentId} style={[styles.matchup, small && { opacity: 0.55 }]}>
+              <Pressable
+                key={m.opponentId}
+                disabled={!mu.available}
+                onPress={() => setEditing(foe.id)}
+                accessibilityRole="button"
+                accessibilityLabel={`Matchup contra ${foe.name}`}
+                style={[styles.matchup, small && !note && { opacity: 0.55 }]}>
                 <ChampionAvatar id={foe.id} size={34} />
                 <View style={{ flex: 1, gap: 5 }}>
                   <View style={styles.matchupHead}>
@@ -133,12 +143,26 @@ export function ChampionDetailScreen() {
                     </Text>
                   </View>
                   <Meter value={m.winRate} color={m.winRate >= 0.5 ? colors.win : colors.loss} height={5} />
+                  {note?.note ? (
+                    <Text style={[type.bodySm, { color: colors.textSecondary }]} numberOfLines={2}>
+                      <Text style={{ color: DIFFICULTY_COLOR[note.difficulty] }}>● </Text>
+                      {note.note}
+                    </Text>
+                  ) : null}
                 </View>
-              </View>
+                {mu.available ? <Ionicons name={note ? 'book' : 'create-outline'} size={16} color={note ? colors.gold : colors.textMuted} /> : null}
+              </Pressable>
             );
           })}
         </View>
         <Text style={[type.bodySm, { marginTop: space.md }]}>Matchups com menos de {MATCHUP_MIN} partidas aparecem esmaecidos e sem percentual.</Text>
+        <MatchupEditor
+          matchups={mu}
+          championId={c.id}
+          opponentId={editing}
+          record={editing ? recordText(mus.find((x) => x.opponentId === editing)) : undefined}
+          onClose={() => setEditing(null)}
+        />
       </Card>
 
       <Card>
@@ -174,8 +198,6 @@ export function ChampionDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  splash: { height: 150, justifyContent: 'flex-end' },
-  splashShade: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(7,9,13,0.62)' },
   splashContent: { flexDirection: 'row', alignItems: 'center', gap: space.md, padding: space.lg },
   matchup: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   matchupHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 },

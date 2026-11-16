@@ -7,6 +7,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { LineChart } from '@/components/charts';
 import { AuthPrompt } from '@/components/auth/AccountCard';
 import { CoachEntry } from '@/components/coach/CoachEntry';
+import { LatestReportCard } from '@/components/report/LatestReportCard';
 import { DataStatusCard } from '@/components/DataStatusCard';
 import { ErrorCard } from '@/components/ErrorCard';
 import { SearchBar } from '@/components/SearchBar';
@@ -20,7 +21,10 @@ import {
   MatchRow,
   Meter,
   ProfileAvatar,
+  AppMark,
+  CountUp,
   RankEmblem,
+  useProgress,
   Screen,
   ScreenSkeleton,
   SectionHeader,
@@ -68,9 +72,7 @@ export function HomeScreen() {
   return (
     <Screen>
       <View style={styles.brand}>
-        <View style={styles.logo}>
-          <Ionicons name="analytics" size={16} color={colors.accentSoft} />
-        </View>
+        <AppMark size={32} />
         <Text style={[styles.wordmark, { flex: 1 }]}>
           LOL <Text style={{ color: colors.gold }}>INSIGHT</Text>
         </Text>
@@ -119,6 +121,9 @@ export function HomeScreen() {
             <FadeIn trigger={data.player.id} style={{ gap: space.lg }}>
               <PlayerHero data={data} />
               <DataStatusCard data={data} />
+              {data.matches.length ? (
+                <LatestReportCard match={data.matches[0]} asOf={data.asOf} source={data.source} playerId={data.player.id} tier={data.player.rank?.tier} />
+              ) : null}
               <CoachEntry />
               {data.matches.length ? (
                 <>
@@ -188,10 +193,10 @@ function PlayerHero({ data }: { data: Derived }) {
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Text style={[type.h2, { color: tier }]}>{rank ? rankLabel(rank) : 'Sem elo'}</Text>
             {rank ? (
-              <Text style={type.number}>
-                {rank.lp}
+              <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                <CountUp text={String(rank.lp)} style={type.number} />
                 <Text style={styles.unit}> LP</Text>
-              </Text>
+              </View>
             ) : null}
           </View>
           {rank ? (
@@ -229,6 +234,7 @@ function WinRing({ value, size = 84 }: { value: number; size?: number }) {
   const stroke = 8;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
+  const progress = useProgress(value);
   return (
     <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={{ position: 'absolute', transform: [{ rotate: '-90deg' }] }}>
@@ -241,10 +247,10 @@ function WinRing({ value, size = 84 }: { value: number; size?: number }) {
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"
-          strokeDasharray={`${c * value} ${c}`}
+          strokeDasharray={`${c * value * progress} ${c}`}
         />
       </Svg>
-      <Text style={styles.ringValue}>{pct(value)}</Text>
+      <CountUp text={pct(value)} style={styles.ringValue} />
     </View>
   );
 }
@@ -261,9 +267,10 @@ function Indicators({ data }: { data: Derived }) {
         <WinRing value={s.winRate} />
         <View style={{ flex: 1, gap: 8 }}>
           <Text style={type.label}>Taxa de vitória geral</Text>
-          <Text style={type.number}>
-            {s.games} <Text style={styles.unit}>partidas</Text>
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+            <CountUp text={String(s.games)} style={type.number} />
+            <Text style={styles.unit}> partidas</Text>
+          </View>
           <View style={{ flexDirection: 'row', gap: 2, height: 6 }}>
             <View style={{ flex: s.wins, backgroundColor: colors.win, borderRadius: 3 }} />
             <View style={{ flex: s.losses, backgroundColor: colors.loss, borderRadius: 3 }} />
@@ -392,7 +399,6 @@ function InsightsPreview({ data, onOpen }: { data: Derived; onOpen: () => void }
 
 const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logo: { width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.accentDim, borderWidth: 1, borderColor: 'rgba(92,155,255,0.35)' },
   wordmark: { fontFamily: fonts.title, fontSize: 16, color: colors.text, letterSpacing: 2 },
   rankRow: {
     flexDirection: 'row',

@@ -221,6 +221,31 @@ Limites declarados no próprio app:
 - O progresso da Academy é gravado por conta pesquisada (PUUID). Não há login: para
   vários usuários acompanhando a mesma conta, será preciso adicionar autenticação.
 
+## Relatório, comparação, caderno, cartão e notificações
+
+- **Relatório pós-partida** (aba padrão de cada partida e cartão "Relatório da última
+  partida" na Início): até três pontos principais com a aula da Academy relacionada,
+  diferença de ouro e CS para o oponente de rota aos 10 e 15 minutos, gráfico da
+  diferença de ouro e mapa das mortes (onde, quando e com quantos inimigos). Nos dados
+  reais vem da linha do tempo da Match-V5 (`participantFrames` e posições dos eventos);
+  na demonstração é gerada de forma determinística a partir da partida. O mapa é um
+  desenho próprio, sem a arte oficial do Summoner's Rift.
+- **Comparar com um amigo** (`/comparar`): oito métricas lado a lado, as três maiores
+  diferenças em frases e o radar de identidade dos dois, ambos na referência do elo de
+  quem compara.
+- **Caderno de matchups** (`/caderno`, tela do campeão e relatório da partida):
+  dificuldade e anotação por confronto. Na demonstração fica só no aparelho; nos dados
+  reais fica na conta (tabela `matchup_notes`, migração 3, apagada junto com a conta).
+- **Cartão para compartilhar** (`/compartilhar`): imagem 1080 × 1350 com elo, números
+  e campeões da semana, do mês ou de todas as partidas. É um SVG sem imagens remotas:
+  no Android vira PNG e abre a folha de compartilhamento; no navegador é baixado (ou
+  compartilhado, se o navegador permitir). No modo demonstração leva a marca "dados
+  demonstrativos".
+- **Notificações** (`/notificacoes`, só no Android): relatório de partida nova, resumo
+  semanal (segunda, 10h), lembrete do plano de treino e meta de elo próxima. Tudo
+  começa desligado. São notificações locais: o app confere partidas novas quando é
+  aberto ou atualizado. Avisos com o app fechado exigiriam um servidor de push.
+
 ## Arquitetura
 
 ```
@@ -290,6 +315,7 @@ lol-insight/
 | `GET` / `POST /v1/me/riot-accounts` · `POST …/{id}/primary` · `DELETE …/{id}` | Contas Riot vinculadas |
 | `GET /v1/me/coach?count=...` | Relatório do treinador da conta Riot principal |
 | `POST /v1/me/coach/attempts` · `goal` · `plan-day` | Teste de aula, meta de elo, dia do plano |
+| `GET` / `POST /v1/me/matchups` · `DELETE /v1/me/matchups/{campeão}/{adversário}` | Caderno de matchups do usuário |
 
 Exceto `/health`, o catálogo de aulas e as rotas `/v1/auth/*` de entrada, todas exigem
 `Authorization: Bearer <token de acesso>`.
@@ -322,8 +348,8 @@ múltiplos servidores, troque essa camada por PostgreSQL.
 
 ```bash
 npm run typecheck              # app
-npm test                       # motor estatístico e treinador (44 testes)
-npm --prefix server test       # backend: Riot simulada, contas, isolamento, RSO e migrações (64 testes)
+npm test                       # motor estatístico, treinador, relatório, comparação e notificações (51 testes)
+npm --prefix server test       # backend: Riot simulada, contas, isolamento, RSO, migrações e caderno (67 testes)
 npm run check:coach            # imprime diagnóstico e previsão das contas demonstrativas
 npm --prefix server run smoke -- "Nome#TAG" BR    # ao vivo, com a sua chave
 ```

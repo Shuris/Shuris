@@ -167,6 +167,34 @@ export interface Match {
   detailsLoaded?: boolean;
   /** true quando `items` está na ordem de compra (senão é a ordem dos espaços do inventário). */
   itemsInPurchaseOrder?: boolean;
+  /** Dados da linha do tempo para o relatório pós-partida (carregados com os detalhes). */
+  analysis?: MatchAnalysis;
+}
+
+/** Ponto no mapa, normalizado de 0 a 1. Origem no canto inferior esquerdo (base da equipe azul). */
+export interface MapPoint {
+  x: number;
+  y: number;
+}
+
+export interface AnalysisDeath extends MapPoint {
+  /** Minuto (com fração) da morte. */
+  minute: number;
+  killerChampionId?: string;
+  /** Inimigos que participaram do abate (abatedor + assistências). */
+  enemiesInvolved: number;
+}
+
+/** Dados minuto a minuto usados pelo relatório pós-partida (Match-V5 timeline). */
+export interface MatchAnalysis {
+  /** Diferenças para o oponente direto de rota (índice = minuto). */
+  frames: Array<{ minute: number; goldDiff: number; csDiff: number; xpDiff: number; cs: number }>;
+  deaths: AnalysisDeath[];
+  kills: Array<MapPoint & { minute: number }>;
+  /** Minuto de cada sentinela colocada / destruída pelo jogador. */
+  wardsPlaced: number[];
+  wardsKilled: number[];
+  playerTeam: 'BLUE' | 'RED';
 }
 
 /** Detalhes carregados sob demanda ao abrir uma partida real. */
@@ -175,6 +203,8 @@ export interface MatchDetails {
   timeline: TimelineEvent[];
   /** Itens concluídos, em ordem de compra. */
   itemOrder: number[];
+  /** Ausente em detalhes antigos em cache (antes do relatório pós-partida). */
+  analysis?: MatchAnalysis;
 }
 
 export interface SyncStatus {

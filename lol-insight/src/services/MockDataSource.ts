@@ -1,3 +1,4 @@
+import { demoAnalysis } from '@/data/mock/analysis';
 import { mockBundles } from '@/data/mock/players';
 import type { DataSourceKind, Match, MatchDetails, PlayerBundle } from '@/types';
 
@@ -31,7 +32,7 @@ export class MockDataSource implements PlayerDataSource {
   }
 
   async loadMatchDetails(match: Match): Promise<MatchDetails> {
-    return { skillOrder: match.skillOrder, timeline: match.timeline, itemOrder: match.items };
+    return { skillOrder: match.skillOrder, timeline: match.timeline, itemOrder: match.items, analysis: demoAnalysis(match) };
   }
 
   async suggestions(): Promise<AccountSuggestion[]> {

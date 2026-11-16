@@ -17,6 +17,8 @@ const TIER_LABEL: Record<Tier, string> = {
   DESAFIANTE: 'Desafiante',
 };
 const ROMAN = ['', 'I', 'II', 'III', 'IV'];
+export const TIER_ORDER = TIERS;
+export const tierLabel = (t: Tier) => TIER_LABEL[t];
 
 export const TIER_COLOR: Record<Tier, string> = {
   FERRO: '#7A7470',

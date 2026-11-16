@@ -280,6 +280,14 @@ test('detalhes da partida: ordem de habilidades, itens concluídos e linha do te
     [[3, 'KILL', true], [6, 'DRAGON', true], [8, 'DEATH', false], [13, 'ITEM', true], [13, 'TOWER', true], [30, 'END', true]],
   );
   assert.match(d.timeline[0].text, /^Primeiro abate: eliminou /);
+  // Dados do relatório pós-partida
+  const a = d.analysis!;
+  assert.deepEqual(a.frames.map((f) => [f.minute, f.goldDiff, f.csDiff, f.xpDiff]), [[0, 0, 0, 100], [1, 300, 6, 400]]);
+  assert.deepEqual(a.deaths, [{ x: 0.3, y: 0.7, minute: 8.3, killerChampionId: a.deaths[0].killerChampionId, enemiesInvolved: 2 }]);
+  assert.ok(a.deaths[0].killerChampionId);
+  assert.deepEqual(a.kills, [{ x: 0.5, y: 0.5, minute: 3.1 }]);
+  assert.deepEqual(a.wardsPlaced, [2.5]);
+  assert.deepEqual(a.wardsKilled, [7]);
   await app.accounts.getMatchDetails('BR1_3000000100', PUUID);
   assert.equal(riot.count('/timeline'), 1);
   await assert.rejects(app.accounts.getMatchDetails('BR1_9999999999', PUUID), (e: AppError) => e.code === 'MATCH_NOT_FOUND');

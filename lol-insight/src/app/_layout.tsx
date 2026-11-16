@@ -9,6 +9,7 @@ import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { NotificationsBridge } from '@/components/NotificationsBridge';
 import { AuthProvider } from '@/state/AuthContext';
 import { CoachProvider } from '@/state/CoachContext';
 import { PlayerProvider } from '@/state/PlayerContext';
@@ -39,6 +40,7 @@ export default function RootLayout() {
       <PlayerProvider>
         <CoachProvider>
         <StatusBar style="light" />
+        <NotificationsBridge />
         <Stack
           screenOptions={{
             headerShown: false,
@@ -54,6 +56,10 @@ export default function RootLayout() {
           <Stack.Screen name="academy/aula/[id]" />
           <Stack.Screen name="academy/plano" />
           <Stack.Screen name="previsao" />
+          <Stack.Screen name="comparar" />
+          <Stack.Screen name="caderno" />
+          <Stack.Screen name="compartilhar" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="notificacoes" />
           <Stack.Screen name="entrar" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="cadastro" />
           <Stack.Screen name="recuperar-senha" />

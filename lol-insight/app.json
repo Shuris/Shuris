@@ -28,13 +28,26 @@
     "backgroundColor": "#07090D",
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "backgroundColor": "#07090D"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#2F7DFF"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
-    "splash": {
-      "backgroundColor": "#07090D"
-    }
+    "primaryColor": "#2F7DFF"
   }
 }

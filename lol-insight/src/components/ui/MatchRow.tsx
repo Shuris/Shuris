@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { champion, POSITION_LABEL } from '@/data/champions';
 import { matchCsPerMin, matchKda } from '@/stats/aggregate';
@@ -10,6 +10,7 @@ import { colors, fonts, radius, space } from '@/theme';
 import type { Match } from '@/types';
 
 import { ChampionAvatar } from './Avatars';
+import { PressableScale } from './Motion';
 
 interface MatchRowProps {
   match: Match;
@@ -23,11 +24,11 @@ export const MatchRow = React.memo(function MatchRow({ match: m, asOf, onPress, 
   const c = champion(m.championId);
   const tone = m.win ? colors.win : colors.loss;
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${m.win ? 'Vitória' : 'Derrota'} com ${c.name}, ${m.kills}/${m.deaths}/${m.assists}`}
-      style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceHigh }]}>
+      style={styles.row}>
       <View style={[styles.stripe, { backgroundColor: tone }]} />
       <ChampionAvatar id={m.championId} size={44} />
       <View style={{ flex: 1, gap: 3 }}>
@@ -62,7 +63,7 @@ export const MatchRow = React.memo(function MatchRow({ match: m, asOf, onPress, 
         {detailed ? <Text style={styles.meta}>{dec(matchCsPerMin(m), 1)} CS/min</Text> : null}
       </View>
       <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
-    </Pressable>
+    </PressableScale>
   );
 });
 
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.hairline,
     overflow: 'hidden',
   },
   stripe: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3 },

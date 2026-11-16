@@ -11,6 +11,7 @@ import type { Logger } from '../logger.ts';
 import { isRegion, REGION_CODES } from '../regions.ts';
 import type { AccountService } from '../services/accountService.ts';
 import { ALLOWED_COUNTS } from '../services/syncService.ts';
+import type { MatchupNotesService } from '../notes/matchupNotes.ts';
 
 export interface HttpDeps {
   accounts: AccountService;
@@ -20,6 +21,7 @@ export interface HttpDeps {
   authRepo: AuthRepository;
   riotLinks: RiotLinkService;
   rso: RsoService;
+  matchups: MatchupNotesService;
   logger: Logger;
   hasApiKey: () => boolean;
   /** "console" = modo de desenvolvimento: nenhum e-mail é enviado, os códigos aparecem no terminal. */
@@ -181,6 +183,13 @@ export function createHttpHandler(deps: HttpDeps) {
     if (m === 'POST' && at('riot-accounts', '*', 'primary')) return { riotAccounts: deps.riotLinks.setPrimary(auth, decode(path[1])) };
     if (m === 'DELETE' && at('riot-accounts', '*')) return { riotAccounts: deps.riotLinks.unlink(auth, decode(path[1])) };
 
+    if (m === 'GET' && at('matchups')) return { notes: deps.matchups.list(auth.user.id) };
+    if (m === 'POST' && at('matchups')) return { note: deps.matchups.save(auth.user.id, await readJson(req)) };
+    if (m === 'DELETE' && at('matchups', '*', '*')) {
+      deps.matchups.remove(auth.user.id, decode(path[1]), decode(path[2]));
+      return { ok: true };
+    }
+
     if (path[0] === 'coach') {
       const count = countParam(url);
       if (m === 'GET' && at('coach')) return deps.academy.report(auth.user.id, count);
@@ -284,6 +293,6 @@ export function startHttpServer(deps: HttpDeps, port: number, host: string): Pro
 }
 
 /** Monta as dependências HTTP a partir do App. */
-export function httpDepsFrom(app: { accounts: AccountService; academy: AcademyService; lessons: LessonService; auth: AuthService; authRepo: AuthRepository; riotLinks: RiotLinkService; rso: RsoService; logger: Logger; client: { hasKey: boolean } }): HttpDeps {
-  return { accounts: app.accounts, academy: app.academy, lessons: app.lessons, auth: app.auth, authRepo: app.authRepo, riotLinks: app.riotLinks, rso: app.rso, logger: app.logger, hasApiKey: () => app.client.hasKey };
+export function httpDepsFrom(app: { accounts: AccountService; academy: AcademyService; lessons: LessonService; auth: AuthService; authRepo: AuthRepository; riotLinks: RiotLinkService; rso: RsoService; matchups: MatchupNotesService; logger: Logger; client: { hasKey: boolean } }): HttpDeps {
+  return { accounts: app.accounts, academy: app.academy, lessons: app.lessons, auth: app.auth, authRepo: app.authRepo, riotLinks: app.riotLinks, rso: app.rso, matchups: app.matchups, logger: app.logger, hasApiKey: () => app.client.hasKey };
 }

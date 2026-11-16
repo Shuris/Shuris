@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Line, Polygon } from 'react-native-svg';
 
+import { useProgress } from '@/components/ui/Motion';
 import { colors, fonts } from '@/theme';
 
 interface RadarProps {
@@ -9,10 +10,12 @@ interface RadarProps {
   selected?: string;
   onSelect?: (key: string) => void;
   size?: number;
+  /** Segundo jogador sobreposto (mesma ordem dos eixos). */
+  compare?: { values: number[]; color: string };
 }
 
 /** Radar de 0–100 com rótulos tocáveis. */
-export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps) {
+export function RadarChart({ axes, selected, onSelect, size = 250, compare }: RadarProps) {
   const [w, setW] = useState(0);
   const s = Math.min(size, w || size);
   const cx = s / 2;
@@ -21,7 +24,8 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
   const angle = (i: number) => (Math.PI * 2 * i) / axes.length - Math.PI / 2;
   const pt = (i: number, v: number) => ({ x: cx + Math.cos(angle(i)) * r * v, y: cy + Math.sin(angle(i)) * r * v });
   // Piso visual: notas muito baixas ainda formam um polígono legível em vez de colapsar no centro.
-  const shown = (value: number) => Math.max(8, value) / 100;
+  const progress = useProgress(axes.map((a) => a.value).join(','));
+  const shown = (value: number) => (Math.max(8, value) / 100) * (0.15 + 0.85 * progress);
   const poly = (v: (i: number) => number) => axes.map((_, i) => pt(i, v(i))).map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
   return (
@@ -35,6 +39,9 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
             const p = pt(i, 1);
             return <Line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={colors.grid} strokeWidth={1} />;
           })}
+          {compare ? (
+            <Polygon points={poly((i) => shown(compare.values[i] ?? 0))} fill={compare.color} fillOpacity={0.16} stroke={compare.color} strokeWidth={2} strokeLinejoin="round" />
+          ) : null}
           <Polygon points={poly((i) => shown(axes[i].value))} fill="rgba(47,125,255,0.22)" stroke={colors.accentSoft} strokeWidth={2} strokeLinejoin="round" />
           {axes.map((a, i) => {
             const p = pt(i, shown(a.value));
@@ -57,7 +64,8 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
               style={[styles.label, { left: lx - 44, top: ly - 15 }, on && { color: colors.text }]}>
               {a.label}
               {'\n'}
-              <Text style={[styles.value, on && { color: colors.gold }]}>{a.value}</Text>
+              <Text style={[styles.value, on && { color: colors.gold }, compare && { color: colors.accentSoft }]}>{a.value}</Text>
+              {compare ? <Text style={[styles.value, { color: compare.color }]}> · {compare.values[i]}</Text> : null}
             </Text>
           );
         })}

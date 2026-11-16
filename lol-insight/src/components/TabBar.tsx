@@ -4,6 +4,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { haptic } from '@/components/ui/Motion';
 import { colors, fonts } from '@/theme';
 
 type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tabBar']>>[0];
@@ -29,7 +30,10 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: TabBarPro
           const [off, on] = ICONS[route.name] ?? ['ellipse-outline', 'ellipse'];
           const onPress = () => {
             const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-            if (!focused && !event.defaultPrevented) navigateToTab(route.key);
+            if (!focused && !event.defaultPrevented) {
+              haptic.select();
+              navigateToTab(route.key);
+            }
           };
           return (
             <Pressable
@@ -53,7 +57,7 @@ export function TabBar({ state, descriptors, emitter, navigateToTab }: TabBarPro
 }
 
 const styles = StyleSheet.create({
-  bar: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  bar: { backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.hairline },
   inner: { flexDirection: 'row', width: '100%', maxWidth: 560, alignSelf: 'center' },
   item: { flex: 1, alignItems: 'center', gap: 3, paddingBottom: 4, minHeight: 54 },
   indicator: { width: 26, height: 3, borderBottomLeftRadius: 3, borderBottomRightRadius: 3, marginBottom: 6, backgroundColor: 'transparent' },

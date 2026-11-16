@@ -388,6 +388,21 @@ export const MIGRATIONS: Migration[] = [
       db.exec(SCHEMA_V2);
     },
   },
+  {
+    version: 3,
+    description: 'Caderno de matchups (anotações por usuário)',
+    up: (db) =>
+      db.exec(`
+CREATE TABLE IF NOT EXISTS matchup_notes (
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  champion_id TEXT NOT NULL,
+  opponent_id TEXT NOT NULL,
+  difficulty TEXT NOT NULL CHECK (difficulty IN ('facil', 'equilibrado', 'dificil')),
+  note TEXT NOT NULL CHECK (length(note) <= 1000),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, champion_id, opponent_id)
+);`),
+  },
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS[MIGRATIONS.length - 1].version;

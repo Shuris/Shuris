@@ -1,4 +1,4 @@
-import type { Match, MatchDetails, Participant, Position, QueueType, RuneSetup, TimelineEvent } from '../../../src/types/index.ts';
+import type { AnalysisDeath, Match, MatchAnalysis, MatchDetails, Participant, Position, QueueType, RuneSetup, TimelineEvent } from '../../../src/types/index.ts';
 import type { StaticData } from '../ddragon.ts';
 import type { MatchDto, ParticipantDto, TimelineDto } from '../riot/types.ts';
 
@@ -326,5 +326,60 @@ export function toMatchDetails(timeline: TimelineDto, m: StoredMatch, puuid: str
   if (!events.some((e) => e.kind === 'END') && me) {
     events.push({ minute: Math.floor(m.durationSec / 60), kind: 'END', text: me.win ? 'Nexus inimigo destruído' : 'Nexus aliado destruído', positive: me.win });
   }
-  return { skillOrder, timeline: events, itemOrder };
+  return { skillOrder, timeline: events, itemOrder, analysis: toAnalysis(timeline, m, myId, st) };
+}
+
+/** Tamanho aproximado do Summoner's Rift nas coordenadas da Riot. */
+const MAP_SIZE = 15000;
+const norm = (v: number) => Math.min(1, Math.max(0, v / MAP_SIZE));
+
+/**
+ * Dados para o relatório pós-partida: diferença de ouro/CS/XP para o oponente
+ * de rota a cada minuto (participantFrames), onde e como o jogador morreu,
+ * onde abateu e quando colocou ou destruiu sentinelas.
+ */
+export function toAnalysis(timeline: TimelineDto, m: StoredMatch, myId: number, st: StaticData | null): MatchAnalysis {
+  const me = m.participants.find((p) => p.participantId === myId);
+  const opp = me ? m.participants.find((p) => p.teamId !== me.teamId && p.position && p.position === me.position) : undefined;
+  const champId = (pid?: number) => {
+    const p = pid ? m.participants.find((x) => x.participantId === pid) : undefined;
+    return p ? (st?.champions[p.championId]?.id ?? p.championName) : undefined;
+  };
+  const frames: MatchAnalysis['frames'] = [];
+  const deaths: AnalysisDeath[] = [];
+  const kills: MatchAnalysis['kills'] = [];
+  const wardsPlaced: number[] = [];
+  const wardsKilled: number[] = [];
+  const minuteOf = (ts: number) => Math.round((ts / 60_000) * 10) / 10;
+
+  timeline.info.frames.forEach((frame, i) => {
+    const pf = frame.participantFrames;
+    const a = pf?.[String(myId)];
+    const b = opp ? pf?.[String(opp.participantId)] : undefined;
+    if (a) {
+      const cs = a.minionsKilled + a.jungleMinionsKilled;
+      frames.push({
+        minute: i,
+        goldDiff: b ? a.totalGold - b.totalGold : 0,
+        csDiff: b ? cs - (b.minionsKilled + b.jungleMinionsKilled) : 0,
+        xpDiff: b ? a.xp - b.xp : 0,
+        cs,
+      });
+    }
+    for (const e of frame.events) {
+      if (e.type === 'CHAMPION_KILL' && e.position) {
+        const p = { x: norm(e.position.x), y: norm(e.position.y) };
+        if (e.victimId === myId) {
+          deaths.push({ ...p, minute: minuteOf(e.timestamp), killerChampionId: champId(e.killerId), enemiesInvolved: (e.killerId ? 1 : 0) + (e.assistingParticipantIds?.length ?? 0) });
+        } else if (e.killerId === myId) {
+          kills.push({ ...p, minute: minuteOf(e.timestamp) });
+        }
+      } else if (e.type === 'WARD_PLACED' && e.creatorId === myId && e.wardType !== 'UNDEFINED') {
+        wardsPlaced.push(minuteOf(e.timestamp));
+      } else if (e.type === 'WARD_KILL' && e.killerId === myId) {
+        wardsKilled.push(minuteOf(e.timestamp));
+      }
+    }
+  });
+  return { frames, deaths, kills, wardsPlaced, wardsKilled, playerTeam: me?.teamId === 200 ? 'RED' : 'BLUE' };
 }

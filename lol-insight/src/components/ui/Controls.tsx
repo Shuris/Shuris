@@ -4,6 +4,8 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View, type StyleProp
 
 import { colors, fonts, radius, space } from '@/theme';
 
+import { haptic } from './Motion';
+
 export interface Option<T extends string | number> {
   value: T;
   label: string;
@@ -45,7 +47,10 @@ export function Segmented<T extends string | number>({ options, value, onChange,
         return (
           <Pressable
             key={String(o.value)}
-            onPress={() => onChange(o.value)}
+            onPress={() => {
+              if (o.value !== value) haptic.select();
+              onChange(o.value);
+            }}
             style={[styles.segment, compact && { flex: 0, minWidth: 46, paddingHorizontal: 12 }]}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
@@ -73,7 +78,10 @@ interface ChipProps {
 export function Chip({ label, active, onPress, icon, dropdown }: ChipProps) {
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => {
+        haptic.select();
+        onPress?.();
+      }}
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
       style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && { opacity: 0.7 }]}>
@@ -111,7 +119,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: 3,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: 'transparent',
   },
   thumb: {
     position: 'absolute',
@@ -134,7 +142,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'transparent',
   },
   chipActive: { backgroundColor: colors.accentDim, borderColor: 'rgba(92,155,255,0.5)' },
   chipText: { fontFamily: fonts.bodySemi, fontSize: 12.5, color: colors.textSecondary, maxWidth: 150 },

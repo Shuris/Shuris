@@ -5,6 +5,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { Insight } from '@/stats/insights';
 import { colors, fonts, radius, space, type } from '@/theme';
 
+import { CountUp } from './Motion';
+
 const TONE = {
   positive: { color: colors.good, icon: 'arrow-up-circle' as const, label: 'Ponto forte' },
   negative: { color: colors.loss, icon: 'alert-circle' as const, label: 'Atenção' },
@@ -22,7 +24,7 @@ export function InsightCard({ insight, compact }: { insight: Insight; compact?: 
         </Text>
       </View>
       <View style={styles.metricRow}>
-        <Text style={styles.metric}>{insight.metric}</Text>
+        <CountUp text={insight.metric} style={styles.metric} />
         <Text style={[type.bodySm, { flex: 1 }]} numberOfLines={2}>
           {insight.metricLabel}
         </Text>
@@ -48,7 +50,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.hairline,
     padding: space.lg,
     gap: space.sm,
   },

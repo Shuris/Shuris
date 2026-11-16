@@ -135,12 +135,24 @@ export interface TimelineEventDto {
   teamId?: number;
   itemId?: number;
   winningTeam?: number;
+  creatorId?: number;
+  wardType?: string;
+  position?: { x: number; y: number };
+}
+
+export interface ParticipantFrameDto {
+  participantId?: number;
+  totalGold: number;
+  xp: number;
+  minionsKilled: number;
+  jungleMinionsKilled: number;
+  position?: { x: number; y: number };
 }
 
 export interface TimelineDto {
   metadata: { matchId: string; participants: string[] };
   info: {
     participants?: Array<{ participantId: number; puuid: string }>;
-    frames: Array<{ timestamp: number; events: TimelineEventDto[] }>;
+    frames: Array<{ timestamp: number; events: TimelineEventDto[]; participantFrames?: Record<string, ParticipantFrameDto> }>;
   };
 }

@@ -8,6 +8,8 @@ export const colors = {
   surfaceAlt: '#141922',
   surfaceHigh: '#1B222D',
   border: '#1F2733',
+  /** Contorno quase invisível: os cartões se separam pelo tom do fundo, não por linhas. */
+  hairline: 'rgba(255,255,255,0.045)',
   borderSoft: '#171D27',
 
   text: '#F1F3F6',

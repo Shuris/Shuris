@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { champion, championIconUrl, itemIconUrl, ITEM_FALLBACK } from '@/data/champions';
 import { ITEM_NAMES } from '@/data/items';
-import { TIER_COLOR } from '@/stats/rank';
 import { colors, fonts } from '@/theme';
-import type { Rank } from '@/types';
 
 /**
  * Imagem remota sobre um fallback desenhado localmente. Enquanto a imagem
@@ -78,25 +75,6 @@ export function ProfileAvatar({ name, uri, size = 64, level }: { name: string; u
         </View>
       ) : null}
     </View>
-  );
-}
-
-/** Emblema de elo desenhado em vetor, colorido pela liga. */
-export function RankEmblem({ rank, size = 44 }: { rank: Rank; size?: number }) {
-  const color = TIER_COLOR[rank.tier];
-  const id = `rank-${rank.tier}`;
-  return (
-    <Svg width={size} height={size} viewBox="0 0 48 48" accessibilityLabel={`Emblema ${rank.tier}`}>
-      <Defs>
-        <LinearGradient id={id} x1="0" y1="0" x2="1" y2="1">
-          <Stop offset="0" stopColor={color} stopOpacity={1} />
-          <Stop offset="1" stopColor={color} stopOpacity={0.35} />
-        </LinearGradient>
-      </Defs>
-      <Path d="M24 3 L41 12 V28 C41 36 33.5 42 24 45 C14.5 42 7 36 7 28 V12 Z" fill="rgba(255,255,255,0.03)" stroke={`url(#${id})`} strokeWidth={2} strokeLinejoin="round" />
-      <Path d="M24 12 L33 24 L24 36 L15 24 Z" fill={`url(#${id})`} />
-      <Path d="M24 12 L28 24 L24 36 L20 24 Z" fill="rgba(255,255,255,0.28)" />
-    </Svg>
   );
 }
 

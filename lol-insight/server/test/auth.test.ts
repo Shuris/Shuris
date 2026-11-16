@@ -299,7 +299,7 @@ test('rotas privadas: todas exigem token válido', async () => {
     ['GET', '/v1/me'], ['GET', '/v1/me/sessions'], ['POST', '/v1/me/sessions/revoke-others'], ['DELETE', '/v1/me/sessions/ses_x'],
     ['GET', '/v1/me/riot-accounts'], ['POST', '/v1/me/riot-accounts'], ['DELETE', '/v1/me/riot-accounts/ria_x'], ['POST', '/v1/me/password'],
     ['POST', '/v1/me/delete'], ['POST', '/v1/me/settings'], ['POST', '/v1/me/email/verify'], ['GET', '/v1/me/coach?count=20'],
-    ['POST', '/v1/me/coach/attempts?count=20'], ['POST', '/v1/auth/logout'], ['GET', '/v1/accounts/BR/Gregory/BR1'], ['GET', '/v1/matches/BR1_123456/details?puuid=x'],
+    ['POST', '/v1/me/coach/attempts?count=20'], ['GET', '/v1/me/matchups'], ['POST', '/v1/me/matchups'], ['DELETE', '/v1/me/matchups/Zoe/Ahri'], ['POST', '/v1/auth/logout'], ['GET', '/v1/accounts/BR/Gregory/BR1'], ['GET', '/v1/matches/BR1_123456/details?puuid=x'],
   ];
   for (const [method, url] of routes) {
     const res = await call(method, url, { body: {} });

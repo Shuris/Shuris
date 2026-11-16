@@ -16,6 +16,7 @@ import { RiotLinkService } from './auth/riotLinkService.ts';
 import { RsoService } from './auth/rso.ts';
 import { Throttle } from './auth/throttle.ts';
 import { CoachRepository } from './coach/coachRepository.ts';
+import { MatchupNotesService } from './notes/matchupNotes.ts';
 import { AcademyService, LessonService, LPHistoryService, PlayerDiagnosisService, RankPredictionService, TrainingPlanService } from './coach/services.ts';
 import { AccountService } from './services/accountService.ts';
 import { SyncService } from './services/syncService.ts';
@@ -47,6 +48,7 @@ export interface App {
   auth: AuthService;
   riotLinks: RiotLinkService;
   rso: RsoService;
+  matchups: MatchupNotesService;
   throttle: Throttle;
   logger: Logger;
 }
@@ -77,5 +79,6 @@ export function createApp(config: Config, overrides: AppOverrides = {}): App {
   const riotLinks = new RiotLinkService(authRepo, accounts, now);
   const rso = new RsoService(config.rso, authRepo, new TokenCipher(config.authSecret), overrides.rsoFetch, now);
   const academy = new AcademyService(accounts, coachStore, authRepo, lessons, trainingPlans, rankPredictions, lpHistory, now);
-  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, authRepo, auth, riotLinks, rso, throttle, logger };
+  const matchups = new MatchupNotesService(db, now);
+  return { db, repos, limiter, client, sync, accounts, coachStore, lessons, lpHistory, diagnosis, trainingPlans, rankPredictions, academy, authRepo, auth, riotLinks, rso, matchups, throttle, logger };
 }

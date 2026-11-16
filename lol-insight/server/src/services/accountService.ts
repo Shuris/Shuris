@@ -263,7 +263,8 @@ export class AccountService {
     }
     const key = `${matchId}:${puuid}`;
     const cached = this.repos.getTimeline<MatchDetails>(key);
-    if (cached) return cached;
+    // Detalhes guardados antes do relatório pós-partida não têm `analysis`: busca de novo.
+    if (cached?.analysis) return cached;
     try {
       const st = await this.ddragon.get();
       const details = toMatchDetails(await this.api.timeline(region, matchId), match, puuid, st);

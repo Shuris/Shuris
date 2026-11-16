@@ -322,6 +322,22 @@ function Content({ data }: { data: Derived }) {
         <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
       </Pressable>
 
+      {[
+        { href: '/comparar', icon: 'people', color: colors.accentSoft, title: 'Comparar com um amigo', detail: 'Métricas e radar de identidade lado a lado' },
+        { href: '/caderno', icon: 'book', color: colors.gold, title: 'Caderno de matchups', detail: 'Suas anotações contra cada campeão' },
+        { href: '/compartilhar', icon: 'share-social', color: colors.accentSoft, title: 'Cartão para compartilhar', detail: 'Imagem com o resumo da temporada ou da semana' },
+        { href: '/notificacoes', icon: 'notifications', color: colors.gold, title: 'Notificações', detail: 'Relatório de partida, resumo semanal e lembretes' },
+      ].map((x) => (
+        <Pressable key={x.href} onPress={() => router.push(x.href as never)} accessibilityRole="button" style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }]}>
+          <Ionicons name={x.icon as keyof typeof Ionicons.glyphMap} size={18} color={x.color} />
+          <View style={{ flex: 1 }}>
+            <Text style={type.h3}>{x.title}</Text>
+            <Text style={type.bodySm}>{x.detail}</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+      ))}
+
       <Pressable onPress={() => router.push('/insights')} accessibilityRole="button" style={({ pressed }) => [styles.cta, pressed && { opacity: 0.8 }]}>
         <Ionicons name="bulb" size={18} color={colors.gold} />
         <View style={{ flex: 1 }}>

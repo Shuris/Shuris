@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, space, type } from '@/theme';
 
+import { FadeIn } from './Feedback';
+
 interface ScreenProps {
   title?: string;
   subtitle?: string;
@@ -68,7 +70,9 @@ export function Screen({ title, subtitle, back, right, sticky, children, scroll 
               <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.accentSoft} colors={[colors.accent]} progressBackgroundColor={colors.surface} />
             ) : undefined
           }>
-          {children}
+          {React.Children.map(children, (child, i) =>
+            React.isValidElement(child) ? <FadeIn delay={Math.min(i, 6) * 55}>{child}</FadeIn> : child,
+          )}
         </ScrollView>
       ) : (
         children
@@ -84,7 +88,7 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     paddingBottom: space.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
+    borderBottomColor: colors.hairline,
     backgroundColor: colors.bg,
   },
   headerInner: { flexDirection: 'row', alignItems: 'center', gap: space.md, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
@@ -95,8 +99,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surfaceAlt,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
-  content: { padding: space.lg, gap: space.lg, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
+  content: { padding: space.lg, gap: space.xl, width: '100%', maxWidth: CONTENT_MAX_WIDTH, alignSelf: 'center' },
 });

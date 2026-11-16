@@ -3,10 +3,12 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Card, ChampionAvatar, EmptyState, FadeIn, ItemIcon, Meter, ResultBadge, Screen, ScreenSkeleton, SectionHeader, Segmented, Skeleton, StatTile, TileGrid } from '@/components/ui';
+import { MatchReportView } from '@/components/report/MatchReportView';
+import { Card, ChampionAvatar, ChampionBackdrop, EmptyState, FadeIn, ItemIcon, Meter, ResultBadge, Screen, ScreenSkeleton, SectionHeader, Segmented, Skeleton, StatTile, TileGrid } from '@/components/ui';
 import { champion, POSITION_LABEL, runeIconUrl, spellIconUrl } from '@/data/champions';
 import { itemName } from '@/data/items';
 import { describeError, ServiceError } from '@/services';
+import { markReportSeen } from '@/services/reportSeen';
 import { usePlayer } from '@/state/PlayerContext';
 import { matchCsPerMin, matchKda, matchKp } from '@/stats/aggregate';
 import { compact, dateTime, dec, duration, int, pct, QUEUE_LABEL } from '@/stats/format';
@@ -14,15 +16,19 @@ import { rankLabel } from '@/stats/rank';
 import { colors, fonts, radius, space, type } from '@/theme';
 import type { DataSourceKind, Match, Participant, TimelineKind } from '@/types';
 
-type Tab = 'resumo' | 'equipes' | 'build' | 'timeline';
+type Tab = 'relatorio' | 'resumo' | 'equipes' | 'build' | 'timeline';
 
 export function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { status, data } = usePlayer();
   const router = useRouter();
-  const [tab, setTab] = useState<Tab>('resumo');
+  const [tab, setTab] = useState<Tab>('relatorio');
   const base = useMemo(() => data?.matches.find((m) => m.id === id), [data, id]);
   const { match, details, completedItems } = useMatchDetails(base);
+  useEffect(() => {
+    // Só a partida mais recente tem o destaque "NOVO" na Início.
+    if (data && base && tab === 'relatorio' && data.matches[0]?.id === base.id) void markReportSeen(data.source, data.player.id, base.id);
+  }, [data, base, tab]);
 
   if (status === 'loading' || !data) {
     return (
@@ -47,6 +53,7 @@ export function MatchDetailScreen() {
       <Header match={match} source={data.source} />
       <Segmented
         options={[
+          { value: 'relatorio', label: 'Relatório' },
           { value: 'resumo', label: 'Resumo' },
           { value: 'equipes', label: 'Equipes' },
           { value: 'build', label: 'Build' },
@@ -56,6 +63,7 @@ export function MatchDetailScreen() {
         onChange={setTab}
       />
       <FadeIn trigger={tab} style={{ gap: space.lg }}>
+        {tab === 'relatorio' ? <MatchReportView match={match} tier={data.player.rank?.tier} /> : null}
         {tab === 'resumo' ? <Summary match={match} /> : null}
         {tab === 'equipes' ? <Teams match={match} /> : null}
         {tab === 'build' ? <Build match={match} details={details} completedItems={completedItems} /> : null}
@@ -124,7 +132,9 @@ function Header({ match: m, source }: { match: Match; source: DataSourceKind }) 
   const c = champion(m.championId);
   const tone = m.win ? colors.win : colors.loss;
   return (
-    <Card style={{ borderColor: m.win ? 'rgba(61,139,255,0.4)' : 'rgba(229,96,106,0.4)' }}>
+    <Card padded={false} style={{ borderColor: m.win ? 'rgba(61,139,255,0.4)' : 'rgba(229,96,106,0.4)' }}>
+      <ChampionBackdrop id={c.id} height={96} tint={tone} />
+      <View style={{ padding: space.lg, paddingTop: 0, marginTop: -40 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
         <ChampionAvatar id={c.id} size={62} ring={tone} />
         <View style={{ flex: 1, gap: 5 }}>
@@ -164,6 +174,7 @@ function Header({ match: m, source }: { match: Match; source: DataSourceKind }) 
           </Text>
         </View>
       )}
+      </View>
     </Card>
   );
 }

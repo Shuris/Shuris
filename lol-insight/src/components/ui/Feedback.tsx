@@ -4,6 +4,7 @@ import { Animated, Easing, Pressable, StyleSheet, Text, View, type DimensionValu
 
 import { colors, fonts, radius, space, type } from '@/theme';
 
+import { HexBadge } from './AppMark';
 import { Card } from './Card';
 
 /** Bloco pulsante exibido enquanto os dados carregam. */
@@ -61,7 +62,10 @@ export function EmptyState({ icon = 'search-outline', title, message, actionLabe
   return (
     <View style={styles.empty}>
       <View style={styles.emptyIcon}>
-        <Ionicons name={icon} size={22} color={colors.accentSoft} />
+        <HexBadge size={72} />
+        <View style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }]}>
+          <Ionicons name={icon} size={24} color={colors.accentSoft} />
+        </View>
       </View>
       <Text style={[type.h3, { textAlign: 'center' }]}>{title}</Text>
       <Text style={[type.bodySm, { textAlign: 'center', maxWidth: 280 }]}>{message}</Text>
@@ -94,15 +98,7 @@ export function FadeIn({ children, trigger, delay = 0, style }: { children: Reac
 
 const styles = StyleSheet.create({
   empty: { alignItems: 'center', gap: space.sm, paddingVertical: space.xxl, paddingHorizontal: space.lg },
-  emptyIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accentDim,
-    marginBottom: space.xs,
-  },
+  emptyIcon: { width: 72, height: 72, alignItems: 'center', justifyContent: 'center', marginBottom: space.xs },
   emptyBtn: {
     marginTop: space.sm,
     paddingHorizontal: 18,

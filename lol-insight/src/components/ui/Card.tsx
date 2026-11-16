@@ -33,9 +33,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.hairline,
     overflow: 'hidden',
   },
   padded: { padding: space.lg },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, marginBottom: space.md },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md, marginBottom: space.lg },
 });

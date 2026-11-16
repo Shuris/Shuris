@@ -1,8 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { colors, fonts, radius, space, type } from '@/theme';
+
+import { CountUp } from './Motion';
 
 interface StatTileProps {
   label: string;
@@ -21,9 +23,13 @@ export function StatTile({ label, value, hint, delta, selected, onPress, style }
       <Text style={type.label} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
-        {value}
-      </Text>
+      {typeof value === 'string' ? (
+        <CountUp text={value} style={styles.value} numberOfLines={1} />
+      ) : (
+        <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
+      )}
       {delta ? (
         <View style={styles.delta}>
           <Ionicons name={delta.good ? 'trending-up' : 'trending-down'} size={12} color={delta.good ? colors.good : colors.loss} />
@@ -87,9 +93,21 @@ export function WinLossBar({ wins, losses, height = 6 }: { wins: number; losses:
 
 /** Barra horizontal de proporção (0–1). */
 export function Meter({ value, color = colors.accent, height = 6 }: { value: number; color?: string; height?: number }) {
+  const target = Math.max(0, Math.min(1, value));
+  const grow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.timing(grow, { toValue: target, duration: 750, easing: Easing.out(Easing.cubic), useNativeDriver: false }).start();
+  }, [grow, target]);
   return (
     <View style={{ height, borderRadius: height / 2, backgroundColor: colors.surfaceHigh, overflow: 'hidden' }}>
-      <View style={{ width: `${Math.max(0, Math.min(1, value)) * 100}%`, height, borderRadius: height / 2, backgroundColor: color }} />
+      <Animated.View
+        style={{
+          width: grow.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+          height,
+          borderRadius: height / 2,
+          backgroundColor: color,
+        }}
+      />
     </View>
   );
 }
@@ -109,7 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: 'transparent',
     paddingVertical: 11,
     paddingHorizontal: 12,
     minHeight: 74,
