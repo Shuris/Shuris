@@ -81,7 +81,7 @@ function derive(bundle: PlayerBundle): Derived {
     champions: byChampion(matches),
     streaks: streaks(matches),
     insights: computeInsights(matches),
-    identity: computeIdentity(matches),
+    identity: computeIdentity(matches, bundle.player.rank),
     peakRank: peakAbs === null ? null : current && rankToAbsolute(current) === peakAbs ? current : absoluteToRank(peakAbs),
     rankHistory,
     mastery: bundle.mastery ?? [],

@@ -56,8 +56,8 @@ export class LPHistoryService {
 export class PlayerDiagnosisService {
   constructor(private store: CoachRepository) {}
 
-  diagnose(matches: Match[], now: number): Diagnosis {
-    return diagnose(matches, now);
+  diagnose(matches: Match[], now: number, rank: Rank | null = null): Diagnosis {
+    return diagnose(matches, now, rank);
   }
 
   history(puuid: string): DiagnosisRecord[] {

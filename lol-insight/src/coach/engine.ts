@@ -29,7 +29,7 @@ const ATTEMPT_LIMIT = 10;
  */
 export function buildCoachReport(input: CoachInput, previous: CoachState): { report: CoachReport; state: CoachState } {
   let state = previous;
-  const diagnosis = diagnose(input.matches, input.asOf);
+  const diagnosis = diagnose(input.matches, input.asOf, input.player.rank);
 
   // Registra o diagnóstico quando algo mudou (novas partidas ou outra lista de pontos fracos).
   const lastD = state.diagnoses[state.diagnoses.length - 1];

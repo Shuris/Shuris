@@ -20,6 +20,8 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
   const r = s / 2 - 46;
   const angle = (i: number) => (Math.PI * 2 * i) / axes.length - Math.PI / 2;
   const pt = (i: number, v: number) => ({ x: cx + Math.cos(angle(i)) * r * v, y: cy + Math.sin(angle(i)) * r * v });
+  // Piso visual: notas muito baixas ainda formam um polígono legível em vez de colapsar no centro.
+  const shown = (value: number) => Math.max(8, value) / 100;
   const poly = (v: (i: number) => number) => axes.map((_, i) => pt(i, v(i))).map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
 
   return (
@@ -33,9 +35,9 @@ export function RadarChart({ axes, selected, onSelect, size = 250 }: RadarProps)
             const p = pt(i, 1);
             return <Line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke={colors.grid} strokeWidth={1} />;
           })}
-          <Polygon points={poly((i) => axes[i].value / 100)} fill="rgba(47,125,255,0.22)" stroke={colors.accentSoft} strokeWidth={2} strokeLinejoin="round" />
+          <Polygon points={poly((i) => shown(axes[i].value))} fill="rgba(47,125,255,0.22)" stroke={colors.accentSoft} strokeWidth={2} strokeLinejoin="round" />
           {axes.map((a, i) => {
-            const p = pt(i, a.value / 100);
+            const p = pt(i, shown(a.value));
             const on = a.key === selected;
             return <Circle key={a.key} cx={p.x} cy={p.y} r={on ? 5.5 : 3.5} fill={on ? colors.gold : colors.accentSoft} stroke={colors.surface} strokeWidth={2} />;
           })}

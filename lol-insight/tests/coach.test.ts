@@ -22,6 +22,7 @@ import {
   trainingStreak,
   type CoachState,
 } from '@/coach';
+import { computeIdentity, softScore } from '@/stats/identity';
 import { rankToAbsolute } from '@/stats/rank';
 import type { Match, Player, Position, Rank, RankSnapshot } from '@/types';
 
@@ -80,7 +81,7 @@ function history(p: Profile): Match[] {
       damageDealt: 22_000,
       damageTaken: 16_000,
       visionScore: Math.round((p.vision ?? 0.75) * 30),
-      teamKills: Math.max(k + a, 26),
+      teamKills: Math.round((k + a) / 0.56),
       firstBlood: false,
       items: [],
       trinket: 0,
@@ -321,13 +322,34 @@ test('farm baixo: diagnóstico aponta farm, recomenda aulas de farm e monta o pl
   assert.equal(r.plan!.targetDisplay, '5,4 CS/min');
 });
 
-test('referência por posição: o mesmo CS é fraco no meio e não é cobrado do suporte', () => {
-  const mid = diagnose(history({ games: 30, winRate: flat(0.5), csPerMin: 5.6 }), NOW).skills.find((s) => s.skill === 'FARM')!;
-  const jungle = diagnose(history({ games: 30, winRate: flat(0.5), csPerMin: 5.6, position: 'JUNGLE' }), NOW).skills.find((s) => s.skill === 'FARM')!;
-  const support = diagnose(history({ games: 30, winRate: flat(0.5), csPerMin: 1.1, position: 'SUPPORT' }), NOW).skills.find((s) => s.skill === 'FARM')!;
-  assert.equal(mid.status, 'weakness');
-  assert.notEqual(jungle.status, 'weakness');
-  assert.equal(support.status, 'insufficient');
+test('referência por posição e por elo: o mesmo CS pode ser fraco no Diamante e adequado na Prata', () => {
+  const farm = (m: Match[], rank: Rank) => diagnose(m, NOW, rank).skills.find((s) => s.skill === 'FARM')!;
+  const diamond: Rank = { tier: 'DIAMANTE', division: 4, lp: 0 };
+  const mid = history({ games: 30, winRate: flat(0.5), csPerMin: 5.6 });
+  assert.equal(farm(mid, diamond).status, 'weakness');
+  assert.notEqual(farm(mid, SILVER_2).status, 'weakness');
+  assert.match(farm(mid, SILVER_2).evidence, /referência para o seu elo/);
+  // Na selva a referência é menor: o mesmo número não é ponto fraco nem no Diamante.
+  assert.notEqual(farm(history({ games: 30, winRate: flat(0.5), csPerMin: 5.6, position: 'JUNGLE' }), diamond).status, 'weakness');
+  // Suporte não é avaliado por farm.
+  assert.equal(farm(history({ games: 30, winRate: flat(0.5), csPerMin: 1.1, position: 'SUPPORT' }), diamond).status, 'insufficient');
+});
+
+test('escala das notas: diferenças moderadas não zeram nem estouram a nota', () => {
+  // Jogador mediano de Prata: farm 15% abaixo da referência do elo, mais mortes e menos participação.
+  const average = history({ games: 30, winRate: flat(0.48), csPerMin: 4.9, deaths: 7, kills: 4, assists: 5 }).map((m) => ({ ...m, teamKills: 20 }));
+  const d = diagnose(average, NOW, SILVER_2);
+  const practice = (skill: string) => d.skills.find((s) => s.skill === skill)!.practice!;
+  for (const skill of ['FARM', 'LANE', 'TEAMFIGHT', 'VISION']) {
+    assert.ok(practice(skill) >= 10 && practice(skill) <= 90, `${skill}: ${practice(skill)}`);
+  }
+  assert.ok(practice('FARM') > 25 && practice('FARM') < 45, `farm 15% abaixo fica em ${practice('FARM')}`);
+  const id = computeIdentity(average, SILVER_2);
+  // (Consistência e Impacto ficam de fora: o histórico sintético tem KDA idêntico e só dois participantes.)
+  const checked = id.traits.filter((t) => ['aggression', 'farm', 'teamfight', 'vision', 'survival'].includes(t.key));
+  assert.ok(checked.every((t) => t.score >= 10 && t.score <= 90), checked.map((t) => `${t.axis} ${t.score}`).join(', '));
+  // Só um desempenho realmente extremo chega perto dos limites.
+  assert.ok(softScore(0.2) <= 8 && softScore(1) === 50 && softScore(0.9) === 40 && softScore(1.3) === 77);
 });
 
 test('mortes em excesso, pouca visão e pool disperso geram as recomendações correspondentes', () => {

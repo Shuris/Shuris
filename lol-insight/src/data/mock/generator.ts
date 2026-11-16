@@ -63,7 +63,7 @@ const KDA_BASE: Record<Position, [number, number, number]> = {
 const CS_BASE: Record<Position, number> = { MID: 7.6, TOP: 7.2, ADC: 8.0, JUNGLE: 6.0, SUPPORT: 1.2 };
 const DPM_BASE: Record<Position, number> = { MID: 760, ADC: 740, TOP: 620, JUNGLE: 540, SUPPORT: 270 };
 const DTPM_BASE: Record<Position, number> = { MID: 520, ADC: 470, TOP: 900, JUNGLE: 840, SUPPORT: 560 };
-const VISION_BASE: Record<Position, number> = { MID: 0.72, ADC: 0.68, TOP: 0.66, JUNGLE: 1.15, SUPPORT: 2.45 };
+const VISION_BASE: Record<Position, number> = { MID: 0.86, ADC: 0.84, TOP: 0.8, JUNGLE: 1.2, SUPPORT: 2.6 };
 const KILL_SHARE: Record<Position, number> = { MID: 1.2, ADC: 1.3, TOP: 1.0, JUNGLE: 1.0, SUPPORT: 0.3 };
 
 const SKILL_PRIORITY: Record<string, Array<'Q' | 'W' | 'E'>> = {

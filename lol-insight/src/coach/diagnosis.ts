@@ -1,7 +1,7 @@
 import { champion } from '@/data/champions';
 import { chronological, groupBy, matchCsPerMin, matchKp, mean } from '@/stats/aggregate';
-import { BENCH } from '@/stats/identity';
-import type { Match, Position } from '@/types';
+import { benchFor, softScore } from '@/stats/identity';
+import type { Match, Position, Rank, Tier } from '@/types';
 
 import type { Diagnosis, SkillDiagnosis, SkillId, SkillStatus } from './types';
 
@@ -11,6 +11,8 @@ import type { Diagnosis, SkillDiagnosis, SkillId, SkillStatus } from './types';
  * Para cada habilidade calcula uma métrica nas partidas e a compara com:
  *  1. uma referência da POSIÇÃO jogada em cada partida (não há limite único para todos);
  *  2. o próprio jogador — partidas recentes contra as anteriores.
+ * As referências de farm e visão acompanham a liga do jogador; as notas usam uma
+ * escala suave (10% abaixo da referência ≈ 40, 30% abaixo ≈ 23), sem estourar em 0.
  * Sem amostra mínima a habilidade fica como "insuficiente" e não gera recomendação.
  * As referências são heurísticas internas do LOL Insight, não dados oficiais da Riot.
  */
@@ -89,23 +91,24 @@ export function afterLossStreak(all: Match[]): { after: Match[]; others: Match[]
 }
 
 /** Mede uma habilidade em um conjunto de partidas (sem exigir amostra mínima). */
-export function measureSkill(skill: SkillId, matches: Match[]): Measure | null {
+export function measureSkill(skill: SkillId, matches: Match[], tier?: Tier | null): Measure | null {
+  const BENCH = (p: Position) => benchFor(p, tier);
   switch (skill) {
     case 'FARM': {
       const list = matches.filter((m) => m.position !== 'SUPPORT');
       if (!list.length) return null;
-      return { value: mean(list.map(matchCsPerMin)), ratio: mean(list.map((m) => matchCsPerMin(m) / BENCH[m.position].cs)), sample: list.length };
+      return { value: mean(list.map(matchCsPerMin)), ratio: mean(list.map((m) => matchCsPerMin(m) / BENCH(m.position).cs)), sample: list.length };
     }
     case 'LANE': {
       if (!matches.length) return null;
-      const deathRatio = mean(matches.map((m) => m.deaths / (m.durationSec / 1800) / BENCH[m.position].deaths30));
+      const deathRatio = mean(matches.map((m) => m.deaths / (m.durationSec / 1800) / BENCH(m.position).deaths30));
       return { value: mean(matches.map((m) => m.deaths)), ratio: 2 - deathRatio, sample: matches.length };
     }
     case 'VISION': {
       if (!matches.length) return null;
       return {
         value: mean(matches.map((m) => m.visionScore / minutes(m))),
-        ratio: mean(matches.map((m) => m.visionScore / minutes(m) / BENCH[m.position].vision)),
+        ratio: mean(matches.map((m) => m.visionScore / minutes(m) / BENCH(m.position).vision)),
         sample: matches.length,
       };
     }
@@ -128,7 +131,7 @@ export function measureSkill(skill: SkillId, matches: Match[]): Measure | null {
     }
     case 'TEAMFIGHT': {
       if (!matches.length) return null;
-      return { value: mean(matches.map(matchKp)), ratio: mean(matches.map((m) => matchKp(m) / BENCH[m.position].kp)), sample: matches.length };
+      return { value: mean(matches.map(matchKp)), ratio: mean(matches.map((m) => matchKp(m) / BENCH(m.position).kp)), sample: matches.length };
     }
     case 'MENTAL': {
       const { after, others } = afterLossStreak(matches);
@@ -146,8 +149,6 @@ export function measureSkill(skill: SkillId, matches: Match[]): Measure | null {
 }
 
 const MIN_SAMPLE: Record<SkillId, number> = { FARM: 10, LANE: 10, VISION: 10, OBJECTIVES: 10, CLOSING: 8, TEAMFIGHT: 10, MENTAL: 6, POOL: 20 };
-/** Sensibilidade: quanto um desvio de 10% da referência move a nota prática. */
-const SENSITIVITY: Record<SkillId, number> = { FARM: 320, LANE: 160, VISION: 180, OBJECTIVES: 150, CLOSING: 150, TEAMFIGHT: 260, MENTAL: 130, POOL: 120 };
 const HIGHER_IS_BETTER: Record<SkillId, boolean> = { FARM: true, LANE: false, VISION: true, OBJECTIVES: true, CLOSING: true, TEAMFIGHT: true, MENTAL: true, POOL: true };
 const LABEL: Record<SkillId, string> = {
   FARM: 'CS por minuto',
@@ -160,21 +161,23 @@ const LABEL: Record<SkillId, string> = {
   POOL: 'Concentração nos 3 principais campeões',
 };
 
-function reference(skill: SkillId, matches: Match[]): string {
+function reference(skill: SkillId, matches: Match[], tier?: Tier | null): string {
+  const BENCH = (p: Position) => benchFor(p, tier);
+  const elo = tier ? 'para o seu elo' : 'média';
   const avg = (get: (p: Position) => number) => mean(matches.map((m) => get(m.position)));
   switch (skill) {
     case 'FARM':
-      return `referência para as posições jogadas: ${f1(mean(matches.filter((m) => m.position !== 'SUPPORT').map((m) => BENCH[m.position].cs)))} CS/min`;
+      return `referência ${elo} nas posições jogadas: ${f1(mean(matches.filter((m) => m.position !== 'SUPPORT').map((m) => BENCH(m.position).cs)))} CS/min`;
     case 'LANE':
-      return `referência: ${f1(avg((p) => BENCH[p].deaths30))} mortes a cada 30 min`;
+      return `referência: ${f1(avg((p) => BENCH(p).deaths30))} mortes a cada 30 min`;
     case 'VISION':
-      return `referência: ${f2(avg((p) => BENCH[p].vision))} por minuto`;
+      return `referência ${elo}: ${f2(avg((p) => BENCH(p).vision))} por minuto`;
     case 'OBJECTIVES':
       return `esperado para as posições jogadas: ${pc(avg((p) => OBJECTIVE_SHARE[p]))}`;
     case 'CLOSING':
       return `referência: ${pc(CLOSING_REFERENCE)}`;
     case 'TEAMFIGHT':
-      return `referência: ${pc(avg((p) => BENCH[p].kp))}`;
+      return `referência: ${pc(avg((p) => BENCH(p).kp))}`;
     case 'MENTAL':
       return 'referência: a sua própria taxa nas demais partidas';
     case 'POOL':
@@ -189,7 +192,8 @@ function earlyDeaths(matches: Match[]): { avg: number; sample: number } | null {
   return { avg: mean(list.map((m) => m.timeline.filter((e) => e.kind === 'DEATH' && e.minute < 15).length)), sample: list.length };
 }
 
-export function diagnose(all: Match[], now: number): Diagnosis {
+export function diagnose(all: Match[], now: number, rank?: Rank | null): Diagnosis {
+  const tier = rank?.tier;
   const matches = chronological(all);
   const enough = matches.length >= MIN_MATCHES;
   const recent = matches.slice(-RECENT);
@@ -197,7 +201,7 @@ export function diagnose(all: Match[], now: number): Diagnosis {
   const overallWr = wr(matches);
 
   const skills: SkillDiagnosis[] = (Object.keys(LABEL) as SkillId[]).map((skill) => {
-    const m = enough ? measureSkill(skill, matches) : null;
+    const m = enough ? measureSkill(skill, matches, tier) : null;
     const base = { skill, metricLabel: LABEL[skill], minSample: MIN_SAMPLE[skill], higherIsBetter: HIGHER_IS_BETTER[skill] };
     if (!m || m.sample < MIN_SAMPLE[skill]) {
       const have = m?.sample ?? 0;
@@ -215,22 +219,22 @@ export function diagnose(all: Match[], now: number): Diagnosis {
       };
     }
 
-    let practice = clamp(Math.round(50 + (m.ratio - 1) * SENSITIVITY[skill]));
+    let practice = softScore(m.ratio);
     // Comparação do jogador consigo mesmo.
-    const now10 = previous.length >= 8 ? measureSkill(skill, recent) : null;
-    const before = previous.length >= 8 ? measureSkill(skill, previous) : null;
+    const now10 = previous.length >= 8 ? measureSkill(skill, recent, tier) : null;
+    const before = previous.length >= 8 ? measureSkill(skill, previous, tier) : null;
     let trend: SkillDiagnosis['trend'] = null;
     if (now10 && before && skill !== 'POOL' && skill !== 'MENTAL' && skill !== 'CLOSING') {
       const change = now10.ratio / Math.max(0.05, before.ratio) - 1;
       trend = change >= 0.07 ? 'up' : change <= -0.07 ? 'down' : 'flat';
     }
 
-    const parts: string[] = [`${formatSkillValue(skill, m.value)} em ${m.sample} partidas (${reference(skill, matches)}).`];
+    const parts: string[] = [`${formatSkillValue(skill, m.value)} em ${m.sample} partidas (${reference(skill, matches, tier)}).`];
 
     if (skill === 'FARM') {
       const worst = [...groupBy(matches.filter((x) => x.position !== 'SUPPORT'), (x) => x.championId)]
         .filter(([, l]) => l.length >= 5)
-        .map(([id, l]) => ({ id, ratio: mean(l.map((x) => matchCsPerMin(x) / BENCH[x.position].cs)), cs: mean(l.map(matchCsPerMin)), n: l.length }))
+        .map(([id, l]) => ({ id, ratio: mean(l.map((x) => matchCsPerMin(x) / benchFor(x.position, tier).cs)), cs: mean(l.map(matchCsPerMin)), n: l.length }))
         .sort((a, b) => a.ratio - b.ratio)[0];
       if (worst && worst.ratio < m.ratio - 0.06) parts.push(`O farm é mais baixo com ${champion(worst.id).name}: ${f1(worst.cs)} CS/min em ${worst.n} partidas.`);
     }
@@ -238,7 +242,7 @@ export function diagnose(all: Match[], now: number): Diagnosis {
       const early = earlyDeaths(matches);
       if (early) {
         parts.push(`${f1(early.avg)} mortes antes dos 15 minutos por partida (${early.sample} partidas com linha do tempo).`);
-        if (early.avg >= 2) practice = Math.min(practice, 38);
+        if (early.avg >= 2.5) practice = Math.min(practice, 38);
       }
     }
     if (skill === 'MENTAL') {
@@ -261,7 +265,8 @@ export function diagnose(all: Match[], now: number): Diagnosis {
     if (trend === 'up') parts.push('Melhorou nas últimas 10 partidas em relação às anteriores.');
 
     const declining = trend === 'down' && practice < 55;
-    const status: SkillStatus = practice <= 42 || declining ? 'weakness' : practice >= 62 ? 'strength' : 'ok';
+    // 40 ≈ 10% abaixo da referência; 60 ≈ 10% acima.
+    const status: SkillStatus = practice <= 40 || declining ? 'weakness' : practice >= 60 ? 'strength' : 'ok';
     const severity = status === 'weakness' ? clamp(Math.round((55 - practice) * 2.2 + (trend === 'down' ? 12 : 0)), 5, 100) : 0;
 
     return {
@@ -272,7 +277,7 @@ export function diagnose(all: Match[], now: number): Diagnosis {
       sample: m.sample,
       value: m.value,
       display: formatSkillValue(skill, m.value),
-      reference: reference(skill, matches),
+      reference: reference(skill, matches, tier),
       trend,
       evidence: parts.join(' '),
     };

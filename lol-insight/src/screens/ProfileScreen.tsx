@@ -380,7 +380,7 @@ function IdentityCard({ data }: { data: Derived }) {
         ))}
       </View>
       <Text style={[type.bodySm, { marginTop: space.lg }]}>
-        Como calculamos: cada partida é comparada a uma referência da posição jogada. 50 equivale à referência; a linha dourada do radar marca esse nível.
+        Como calculamos: cada partida é comparada a uma referência da posição jogada, ajustada ao seu elo no farm e na visão. 50 equivale à referência (linha dourada); 10% abaixo dela dá cerca de 40 e 10% acima, cerca de 60. As referências são estimativas do LOL Insight.
       </Text>
     </Card>
   );

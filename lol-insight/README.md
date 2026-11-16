@@ -136,7 +136,9 @@ Limites declarados no próprio app:
 
 - O **MMR não é divulgado pela Riot** e o modelo não o conhece.
 - Com menos de 10 ranqueadas, sem elo ou sem partidas nos últimos 28 dias, **não há previsão**.
-- As referências do diagnóstico são heurísticas do LOL Insight, não dados oficiais.
+- As referências do diagnóstico e da identidade competitiva são estimativas do LOL Insight, não
+  dados oficiais. Farm e visão são ajustados à liga do jogador; a nota usa uma escala suave
+  (10% abaixo da referência ≈ 40, 30% abaixo ≈ 23) para não zerar com diferenças moderadas.
 - "Mortes antes dos 15 minutos" só entra no diagnóstico quando a linha do tempo das
   partidas está disponível (sempre na demonstração; nos dados reais, apenas nas partidas já abertas).
 - Na demonstração as partidas são fixas, então a avaliação prática do plano não avança.
@@ -236,7 +238,7 @@ múltiplos servidores, troque essa camada por PostgreSQL.
 
 ```bash
 npm run typecheck              # app
-npm test                       # motor estatístico e treinador (43 testes)
+npm test                       # motor estatístico e treinador (44 testes)
 npm --prefix server test       # backend, contra uma Riot simulada (39 testes)
 npm run check:coach            # imprime diagnóstico e previsão das contas demonstrativas
 npm --prefix server run smoke -- "Nome#TAG" BR    # ao vivo, com a sua chave
