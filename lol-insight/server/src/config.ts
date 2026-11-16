@@ -27,6 +27,8 @@ export interface Config {
   allowedOrigins: string[];
   /** true quando o servidor fica atrás de um proxy HTTPS que preenche X-Forwarded-For. */
   trustProxy: boolean;
+  /** Uso pessoal sem conta: requisições locais sem token usam um usuário único. Desligado por padrão. */
+  personalMode: boolean;
 }
 
 /**
@@ -90,5 +92,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env, cwd = process.c
     rso: loadRso(env),
     allowedOrigins: (env.ALLOWED_ORIGINS ?? '*').split(',').map((o) => o.trim().replace(/\/+$/, '')).filter(Boolean),
     trustProxy: env.TRUST_PROXY === '1' || env.TRUST_PROXY === 'true',
+    personalMode: env.PERSONAL_MODE === '1' || env.PERSONAL_MODE === 'true',
   };
 }

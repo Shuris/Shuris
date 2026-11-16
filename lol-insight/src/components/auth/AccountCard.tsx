@@ -38,14 +38,14 @@ export function AccountCard() {
         <Text style={styles.avatarText}>{auth.user.username[0].toUpperCase()}</Text>
       </View>
       <View style={{ flex: 1, gap: 3 }}>
-        <Text style={type.label}>Minha conta</Text>
+        <Text style={type.label}>{auth.personal ? 'Uso pessoal (sem conta)' : 'Minha conta'}</Text>
         <Text style={type.h3} numberOfLines={1}>
           {auth.user.username}
         </Text>
         <Text style={type.bodySm} numberOfLines={1}>
           {p ? `${p.gameName}#${p.tagLine} · ${p.region}` : 'Nenhuma conta Riot vinculada'}
         </Text>
-        {!auth.user.emailVerified ? <StatusBadge label="E-MAIL NÃO CONFIRMADO" tone="warning" /> : null}
+        {!auth.user.emailVerified && !auth.personal ? <StatusBadge label="E-MAIL NÃO CONFIRMADO" tone="warning" /> : null}
       </View>
       <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
     </Pressable>

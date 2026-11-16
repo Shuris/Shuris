@@ -16,6 +16,8 @@ interface AuthValue {
   primary: RiotAccount | null;
   settings: UserSettings | null;
   rso: RsoStatus | null;
+  /** true quando o servidor está em modo pessoal e o app usa o usuário local, sem conta. */
+  personal: boolean;
   register: (input: { username: string; email: string; password: string }) => Promise<void>;
   login: (input: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,6 +44,7 @@ const LAST_USER_KEY = 'lolinsight:lastUserId';
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [me, setMe] = useState<MeResponse | null>(null);
+  const [personal, setPersonal] = useState(false);
   const loadingRef = useRef(false);
 
   const fetchMe = useCallback(async () => {
@@ -50,11 +53,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const session = await api.restore();
       if (!session) {
+        // Sem conta: se o servidor estiver em modo pessoal, usa o usuário local.
+        const health = await api.request<{ personalMode?: boolean }>('/health', { auth: false, timeoutMs: 6000 }).catch(() => null);
+        if (health?.personalMode) {
+          setMe(await authApi.me());
+          setPersonal(true);
+          setStatus('signedIn');
+          return;
+        }
+        setPersonal(false);
         setMe(null);
         setStatus('signedOut');
         return;
       }
       const data = await authApi.me();
+      setPersonal(false);
       setMe(data);
       setStatus('signedIn');
     } catch (e) {
@@ -78,6 +91,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!api.hasSession()) {
         setMe(null);
         setStatus('signedOut');
+        // Saiu da conta: no modo pessoal, volta para o usuário local.
+        void fetchMe();
       }
     });
   }, [fetchMe]);
@@ -103,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       primary: riotAccounts.find((a) => a.isPrimary) ?? null,
       settings: me?.settings ?? null,
       rso: me?.rso ?? null,
+      personal,
       register: async (input) => startSession(await authApi.register(input)),
       login: async (input) => startSession(await authApi.login(input)),
       logout: async () => {
@@ -132,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setPrimaryRiot: async (id) => patch({ riotAccounts: (await authApi.setPrimaryRiot(id)).riotAccounts }),
       unlinkRiot: async (id) => patch({ riotAccounts: (await authApi.unlinkRiot(id)).riotAccounts }),
     };
-  }, [status, me, fetchMe, startSession]);
+  }, [status, me, fetchMe, startSession, personal]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

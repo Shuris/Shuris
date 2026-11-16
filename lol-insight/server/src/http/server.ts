@@ -36,6 +36,8 @@ export interface HttpDeps {
   allowedOrigins?: string[];
   /** Atrás de um proxy HTTPS (Nginx, Render, Fly...): usa o primeiro IP de X-Forwarded-For. */
   trustProxy?: boolean;
+  /** Modo pessoal: requisições sem token da própria máquina ou da rede local usam o usuário local. */
+  personalMode?: boolean;
 }
 
 const BASE_HEADERS = {
@@ -120,6 +122,20 @@ export function createHttpHandler(deps: HttpDeps) {
       if (first) return first.slice(0, 64);
     }
     return req.socket.remoteAddress ?? 'desconhecido';
+  };
+
+  /** Endereços que nunca vêm da internet: a própria máquina e redes locais (IPv4/IPv6). */
+  const isLocal = (ip: string) => {
+    const v = ip.replace(/^::ffff:/, '');
+    return v === '::1' || /^127\./.test(v) || /^10\./.test(v) || /^192\.168\./.test(v) || /^172\.(1[6-9]|2\d|3[01])\./.test(v) || /^f[cd][0-9a-f]{2}:/i.test(v) || /^fe80:/i.test(v);
+  };
+  /**
+   * Com token, valida a sessão normalmente. Sem token, no modo pessoal e vindo
+   * da rede local, usa o usuário local; vindo da internet, continua exigindo login.
+   */
+  const resolveAuth = (req: IncomingMessage) => {
+    if (!req.headers.authorization && deps.personalMode && isLocal(clientIp(req))) return deps.auth.personalAuth();
+    return deps.auth.authenticate(req.headers.authorization);
   };
 
   const context = (req: IncomingMessage): RequestContext => {
@@ -239,7 +255,7 @@ export function createHttpHandler(deps: HttpDeps) {
     const parts = url.pathname.split('/').filter(Boolean);
 
     if (url.pathname === '/health' && req.method === 'GET') {
-      return { ok: true, service: 'lol-insight-server', riotApiKeyConfigured: deps.hasApiKey(), emailDelivery: deps.emailDelivery ?? 'console', regions: REGION_CODES, time: Date.now() };
+      return { ok: true, service: 'lol-insight-server', personalMode: !!deps.personalMode, riotApiKeyConfigured: deps.hasApiKey(), emailDelivery: deps.emailDelivery ?? 'console', regions: REGION_CODES, time: Date.now() };
     }
     throttle(clientIp(req));
 
@@ -247,7 +263,7 @@ export function createHttpHandler(deps: HttpDeps) {
     if (parts[0] === 'v1' && parts[1] === 'auth') return authRoute(req, url, parts);
 
     // Daqui em diante, tudo exige sessão válida.
-    const auth = deps.auth.authenticate(req.headers.authorization);
+    const auth = resolveAuth(req);
     if (parts[0] === 'v1' && parts[1] === 'me') return meRoute(req, url, parts, auth);
     if (req.method !== 'GET') throw new AppError('NOT_FOUND', 'Rota não encontrada.');
 

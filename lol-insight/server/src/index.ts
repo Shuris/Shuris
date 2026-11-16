@@ -7,7 +7,8 @@ import { httpDepsFrom, startHttpServer } from './http/server.ts';
 const config = loadConfig();
 const app = createApp(config);
 
-const server = await startHttpServer({ ...httpDepsFrom(app), allowedOrigins: config.allowedOrigins, trustProxy: config.trustProxy }, config.port, config.host);
+const server = await startHttpServer({ ...httpDepsFrom(app), allowedOrigins: config.allowedOrigins, trustProxy: config.trustProxy, personalMode: config.personalMode }, config.port, config.host);
+if (config.personalMode) app.logger.warn('MODO PESSOAL ligado: quem estiver nesta máquina ou na mesma rede local usa os dados reais sem conta (um único usuário "local"). Pedidos vindos da internet continuam exigindo login.');
 if (config.allowedOrigins.includes('*')) app.logger.warn('CORS aberto para qualquer origem (ALLOWED_ORIGINS=*). Em produção, defina o endereço da versão web.');
 
 const lan = Object.values(networkInterfaces())

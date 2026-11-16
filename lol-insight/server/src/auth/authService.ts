@@ -54,6 +54,10 @@ export interface Authenticated {
   sessionId: string;
 }
 
+/** E-mail reservado do usuário do modo pessoal (domínio .invalid nunca recebe e-mail). */
+export const PERSONAL_EMAIL = 'local@lolinsight.invalid';
+export const PERSONAL_SESSION = 'modo-pessoal';
+
 export const toPublicUser = (u: UserRow): PublicUser => ({ id: u.id, username: u.username, email: u.email, emailVerified: u.emailVerifiedAt !== null, createdAt: u.createdAt });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -173,6 +177,25 @@ export class AuthService {
   }
 
   /** Valida o token de acesso enviado em `Authorization: Bearer`. */
+  /**
+   * Modo pessoal (PERSONAL_MODE=1): um único usuário local, criado uma vez, sem
+   * senha utilizável (o hash é inválido de propósito: ninguém entra por login).
+   * Só é usado para requisições sem token vindas da própria máquina ou da rede local.
+   */
+  personalAuth(): Authenticated {
+    let user = this.repo.userByEmail(PERSONAL_EMAIL);
+    if (!user) {
+      const now = this.now();
+      // "local" pode já existir como nome escolhido por alguém: nesse caso, um sufixo.
+      const username = this.repo.usernameTaken('local') ? `local_${newCode().slice(0, 4)}` : 'local';
+      this.repo.createUser({ id: newId('usr'), username, email: PERSONAL_EMAIL, passwordHash: 'modo-pessoal:sem-senha', now });
+      user = this.repo.userByEmail(PERSONAL_EMAIL)!;
+      this.repo.markEmailVerified(user.id, now);
+      user = this.repo.userById(user.id)!;
+    }
+    return { user, sessionId: PERSONAL_SESSION };
+  }
+
   authenticate(header: string | undefined): Authenticated {
     const token = header?.startsWith('Bearer ') ? header.slice(7).trim() : '';
     if (!token) throw new AppError('AUTH_REQUIRED', 'Entre na sua conta para continuar.');

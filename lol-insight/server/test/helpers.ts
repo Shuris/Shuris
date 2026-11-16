@@ -305,6 +305,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
     rso: null,
     allowedOrigins: ['*'],
     trustProxy: false,
+    personalMode: false,
     ...overrides,
   };
 }

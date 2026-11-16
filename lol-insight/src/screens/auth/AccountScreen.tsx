@@ -113,12 +113,21 @@ export function AccountScreen() {
 
       <Card padded={false}>
         <Row icon="school-outline" title="Academy e previsão" detail="Progresso, plano semanal e metas" onPress={() => router.push('/academy')} />
-        <Row icon="settings-outline" title="Configurações da conta" detail="Preferências, senha e exclusão da conta" onPress={() => router.push('/conta/configuracoes')} />
-        <Row icon="phone-portrait-outline" title="Sessões e dispositivos" detail="Veja onde sua conta está conectada" onPress={() => router.push('/conta/sessoes')} last />
+        {!auth.personal ? (
+          <>
+            <Row icon="settings-outline" title="Configurações da conta" detail="Preferências, senha e exclusão da conta" onPress={() => router.push('/conta/configuracoes')} />
+            <Row icon="phone-portrait-outline" title="Sessões e dispositivos" detail="Veja onde sua conta está conectada" onPress={() => router.push('/conta/sessoes')} last />
+          </>
+        ) : null}
       </Card>
 
       <FormNotice icon="flask-outline">Os dados demonstrativos continuam disponíveis em Perfil → Fonte de dados e nunca são associados à sua conta.</FormNotice>
-      <Button label="Sair da conta" variant="secondary" icon="log-out-outline" onPress={logout} loading={leaving} />
+      {auth.personal ? (
+        <FormNotice icon="home-outline">Modo pessoal: o servidor está com PERSONAL_MODE ligado, então você usa os dados reais sem conta, como o usuário "local". Para usar contas, desligue a opção no arquivo .env do servidor ou entre com uma conta.</FormNotice>
+      ) : (
+        <Button label="Sair da conta" variant="secondary" icon="log-out-outline" onPress={logout} loading={leaving} />
+      )}
+      {auth.personal ? <Button label="Entrar com uma conta" variant="secondary" icon="log-in-outline" onPress={() => router.push('/entrar')} /> : null}
     </Screen>
   );
 }

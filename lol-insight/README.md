@@ -54,6 +54,14 @@ npx expo start
 
 Abra o Expo Go no Android (mesma rede Wi-Fi do computador) e escaneie o QR code.
 
+### Uso pessoal, sem conta (opcional)
+
+Se só você usa o servidor, coloque `PERSONAL_MODE=1` no `server/.env`. Assim o app e a
+versão web usam os dados reais sem cadastro, como um único usuário "local": basta
+vincular o seu Riot ID em *Minha conta → Vincular conta Riot*. Por segurança, isso vale
+só para pedidos vindos do próprio computador ou da mesma rede Wi-Fi; da internet, o login
+continua obrigatório. Contas existentes continuam funcionando normalmente.
+
 ### 3. Ativar os dados reais
 
 No app: **Perfil → Fonte de dados → Dados reais → Testar**.
