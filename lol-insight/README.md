@@ -8,8 +8,8 @@ contas, elo, histórico de partidas, gráficos interativos, insights, uma escola
 - **Backend (`server/`):** Node.js + SQLite. É o único que fala com a Riot Games API e
   o único lugar onde a chave existe.
 - **Dois modos**, alternáveis no app em *Perfil → Fonte de dados*:
-  - **Demonstração** — conta fictícia `Gregory#BR1`, gerada no aparelho. Não precisa de servidor.
-  - **Dados reais** — contas reais, via backend + Riot API.
+  - **Demonstração** — conta fictícia `Gregory#BR1`, gerada no aparelho. Não precisa de servidor nem de conta.
+  - **Dados reais** — exige uma conta do LOL Insight; dados obtidos via backend + Riot API.
 
 > LOL Insight não é endossado pela Riot Games.
 
@@ -53,7 +53,17 @@ No app: **Perfil → Fonte de dados → Dados reais → Testar**.
 
 Em desenvolvimento o app descobre o servidor sozinho (usa o IP do computador que
 serve o Expo, porta 3333). Se o teste falhar, digite o endereço mostrado pelo
-servidor. Depois, na aba **Início**, pesquise um Riot ID completo (`Nome#TAG`) e a região.
+servidor.
+
+Depois:
+
+1. Toque em **Criar conta** (ou **Entrar**) no cartão que aparece no Perfil e no Início.
+2. Confirme o e-mail com o código de 6 dígitos. **Em desenvolvimento nenhum e-mail é enviado:
+   o código aparece no terminal onde o servidor está rodando**, numa linha
+   `[E-MAIL DE DESENVOLVIMENTO — não enviado]`.
+3. Em **Minha conta → Vincular conta Riot**, informe seu Riot ID e a região.
+4. O app abre suas estatísticas automaticamente. Você também pode pesquisar qualquer
+   jogador na aba **Início**.
 
 Observações:
 
@@ -91,6 +101,72 @@ o mesmo código nos dois modos.
 - **Limite de requisições.** Uma chave de desenvolvimento permite 20 req/s e 100 a cada
   2 min. Carregar 100 partidas pela primeira vez leva alguns minutos: o app mostra o
   progresso e as estatísticas vão se completando. Partidas já baixadas nunca são pedidas de novo.
+
+## Contas de usuário
+
+No modo real, cada pessoa tem uma conta do LOL Insight (nome de usuário, e-mail e senha)
+com um ID permanente (`usr_...`). Tudo o que é pessoal pertence a esse ID: contas Riot
+vinculadas, progresso e testes da Academy, plano semanal, metas, previsões, configurações
+e sessões. Um usuário nunca vê nem altera os dados de outro — o servidor ignora qualquer
+identificador enviado pelo app e usa sempre o dono do token.
+
+### Fluxo
+
+1. **Cadastro** → o servidor cria o usuário, abre uma sessão e gera um código de confirmação de e-mail.
+2. **Confirmação de e-mail** com o código de 6 dígitos (24 h, no máximo 5 tentativas).
+   Obrigatória para vincular uma conta Riot.
+3. **Login** → token de acesso (15 min) + token de renovação (30 dias). O app renova sozinho
+   quando o acesso expira; cada renovação troca os dois tokens.
+4. **Vinculação Riot** pelo Riot ID + região. Fica como **não verificada**: o Riot ID existe,
+   mas a posse da conta não é comprovada. A primeira conta vinculada vira a principal e é a
+   usada pela Academy e pela previsão.
+5. **Recuperação de senha**: código de 6 dígitos (15 min). Redefinir encerra todas as sessões.
+6. **Sair**, **encerrar sessões** em outros aparelhos e **excluir a conta** (pede a senha e
+   apaga todos os dados pessoais em cascata).
+
+### Segurança
+
+- Senhas com **scrypt** (N = 2^15, r = 8, p = 3, sal aleatório) — configuração recomendada
+  pela OWASP. Escolhido no lugar de Argon2id/bcrypt por ser nativo do Node (sem dependência
+  que precise compilar no Windows). Os parâmetros ficam no próprio hash; se aumentarem, a
+  senha é re-hasheada no próximo login.
+- Política de senha: 8 a 128 caracteres, bloqueio de senhas comuns e de senha igual ao e-mail/usuário.
+- Tokens de sessão e códigos guardados **só como hash** (SHA-256 e HMAC com o segredo do servidor).
+- **Reuso de um token de renovação já trocado encerra a sessão** (sinal de token copiado).
+- **Limite de tentativas** persistido no banco: 5 erros de login por conta em 15 min,
+  30 por IP, além de limites para cadastro, códigos e pedidos de redefinição.
+- Mensagens genéricas onde a resposta poderia revelar se um e-mail está cadastrado
+  (login e recuperação de senha), com tempo de resposta equalizado.
+- No app, a sessão fica no **armazenamento seguro do aparelho** (Keystore do Android via
+  `expo-secure-store`). Na versão web não há equivalente: fica no armazenamento local do navegador.
+- Nenhum segredo no app: a chave da Riot e o segredo de autenticação ficam só no servidor.
+- Ao sair ou entrar com outro usuário, o app apaga o histórico local do modo real (buscas e cache).
+
+### Banco de dados (migração 2)
+
+`users`, `user_sessions`, `email_verification_tokens`, `password_reset_tokens`,
+`riot_accounts`, `oauth_states`, `user_settings`, `academy_progress`,
+`academy_quiz_attempts`, `academy_activity`, `academy_plans`, `academy_diagnoses`,
+`rank_predictions`, `rank_goals`, `challenge_progress`, `replay_analyses` e `auth_throttle`.
+Todas as tabelas pessoais têm chave estrangeira para `users` com exclusão em cascata.
+As migrações são versionadas (`PRAGMA user_version`) e aplicadas em transação ao iniciar o servidor.
+
+O progresso do treinador gravado antes das contas era anônimo (indexado pelo PUUID
+pesquisado). Ele **não é atribuído a nenhum usuário**: tabelas com dados viram `legacy_*`
+e ficam guardadas à parte; tabelas vazias são removidas. Dados públicos da Riot (partidas,
+contas pesquisadas, snapshots de elo) continuam compartilhados e não são duplicados.
+
+### O que depende de serviços externos
+
+- **Envio de e-mail**: não há provedor configurado. Em desenvolvimento, os códigos aparecem
+  no terminal do servidor (e o app avisa). Para produção, implemente a interface `Mailer`
+  em `server/src/auth/mailer.ts` com um provedor real.
+- **Riot Sign On (RSO)**: exige aprovação da aplicação pela Riot. A estrutura está pronta
+  (`server/src/auth/rso.ts`: Authorization Code + PKCE, state de uso único, tokens
+  criptografados com AES-256-GCM) e desligada. Ela só foi testada contra um provedor
+  simulado. Até a aprovação, nenhuma conta aparece como verificada.
+- **LOL Challenge e Replay Challenges** ainda não existem no app; as tabelas
+  `challenge_progress` e `replay_analyses` estão prontas e protegidas por usuário.
 
 ## LOI Academy e Rank Predictor
 
@@ -204,11 +280,19 @@ lol-insight/
 | `GET /health` | Situação do servidor e se há chave configurada (nunca a chave) |
 | `GET /v1/accounts/{região}/{nome}/{tag}?count=10\|20\|50\|100&refresh=1` | Conta, elo, partidas, snapshots, maestria e estado da coleta |
 | `GET /v1/matches/{matchId}/details?puuid=...` | Ordem de habilidades, itens concluídos e linha do tempo |
-| `GET /v1/academy/lessons` | Catálogo de aulas |
-| `GET /v1/coach/{puuid}?count=...` | Relatório do treinador: diagnóstico, recomendações, plano, domínio, previsão e meta |
-| `POST /v1/coach/{puuid}/attempts` | Envia as respostas de um teste (corrigido no servidor) |
-| `POST /v1/coach/{puuid}/goal` | Define ou remove a meta de elo |
-| `POST /v1/coach/{puuid}/plan-day` | Marca um dia do plano semanal |
+| `GET /v1/academy/lessons` | Catálogo de aulas (público) |
+| `POST /v1/auth/register` · `login` · `refresh` · `logout` | Cadastro, login, renovação e saída |
+| `POST /v1/auth/password/forgot` · `password/reset` | Recuperação de senha |
+| `GET /v1/me` | Perfil, contas Riot vinculadas, configurações e situação do RSO |
+| `POST /v1/me/email/verify` · `email/resend` | Confirmação de e-mail |
+| `POST /v1/me/password` · `settings` · `delete` | Trocar senha, salvar preferências, excluir a conta |
+| `GET /v1/me/sessions` · `DELETE /v1/me/sessions/{id}` · `POST /v1/me/sessions/revoke-others` | Sessões |
+| `GET` / `POST /v1/me/riot-accounts` · `POST …/{id}/primary` · `DELETE …/{id}` | Contas Riot vinculadas |
+| `GET /v1/me/coach?count=...` | Relatório do treinador da conta Riot principal |
+| `POST /v1/me/coach/attempts` · `goal` · `plan-day` | Teste de aula, meta de elo, dia do plano |
+
+Exceto `/health`, o catálogo de aulas e as rotas `/v1/auth/*` de entrada, todas exigem
+`Authorization: Bearer <token de acesso>`.
 
 Erros voltam como `{ "error": { "code", "message" } }`. Códigos: `INVALID_RIOT_ID`,
 `INVALID_REGION`, `PLAYER_NOT_FOUND`, `WRONG_REGION`, `RATE_LIMITED`, `RIOT_AUTH`,
@@ -239,7 +323,7 @@ múltiplos servidores, troque essa camada por PostgreSQL.
 ```bash
 npm run typecheck              # app
 npm test                       # motor estatístico e treinador (44 testes)
-npm --prefix server test       # backend, contra uma Riot simulada (39 testes)
+npm --prefix server test       # backend: Riot simulada, contas, isolamento, RSO e migrações (64 testes)
 npm run check:coach            # imprime diagnóstico e previsão das contas demonstrativas
 npm --prefix server run smoke -- "Nome#TAG" BR    # ao vivo, com a sua chave
 ```

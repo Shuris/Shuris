@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 
@@ -16,7 +15,6 @@ const asError = (e: unknown) => (e instanceof ServiceError ? e : new ServiceErro
 export function AccountSettingsScreen() {
   const auth = useRequireAuth();
   const { setMatchCount } = usePlayer();
-  const router = useRouter();
 
   const [prefError, setPrefError] = useState<ServiceError | null>(null);
   const [current, setCurrent] = useState('');
@@ -67,9 +65,10 @@ export function AccountSettingsScreen() {
     setDeleteBusy(true);
     setDeleteError(null);
     try {
+      auth.leave('/perfil');
       await auth.deleteAccount(deletePassword);
-      router.replace('/perfil');
     } catch (e) {
+      auth.leave(null);
       setDeleteError(asError(e));
       setDeleteBusy(false);
     }

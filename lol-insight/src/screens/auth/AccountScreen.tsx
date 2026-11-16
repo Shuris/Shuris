@@ -34,8 +34,8 @@ export function AccountScreen() {
 
   const logout = async () => {
     setLeaving(true);
+    auth.leave('/perfil');
     await auth.logout();
-    router.replace('/perfil');
   };
 
   return (
