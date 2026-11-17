@@ -28,6 +28,13 @@ static func validate_name(raw: String) -> Variant:
 	return null
 
 
+## Gladiador novo com a edição de estreia do jornal (createPlayer da versão TS).
+static func new_player(name: String, origin_id: String, appearance: Dictionary, now_ms: int) -> Dictionary:
+	var p := create(name, origin_id, appearance, now_ms)
+	News.debut_edition(p, Rng.new(now_ms))
+	return p
+
+
 ## Estado de um gladiador recém-chegado (mesmos campos e valores iniciais do jogo atual).
 static func create(name: String, origin_id: String, appearance: Dictionary, now_ms: int) -> Dictionary:
 	var origin := Data.origin(origin_id)

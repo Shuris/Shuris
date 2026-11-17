@@ -125,7 +125,7 @@ func _show_create(slot: int) -> void:
 	var c := CreateScreen.new()
 	c.preview_changed.connect(func(a): lv.hero.set_visual(a, {"mainHand": Data.item("rudis")}))
 	c.finished.connect(func(name, origin, a):
-		var p := PlayerFactory.create(name, origin, a, int(Time.get_unix_time_from_system() * 1000.0))
+		var p := PlayerFactory.new_player(name, origin, a, int(Time.get_unix_time_from_system() * 1000.0))
 		Game.start(slot, p)
 		enter_location(true))
 	c.back.connect(show_title)

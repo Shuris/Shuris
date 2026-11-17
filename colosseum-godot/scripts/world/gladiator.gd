@@ -5,6 +5,7 @@ extends Node2D
 ## Desenhado em 1x: cada pixel da arte é um pixel da grade do jogo.
 
 const BASE := "res://assets/"
+const BEAST_SCALE := {"wolf": 0.66, "boar": 0.66, "bear": 0.95, "lion": 0.74, "dog": 0.9, "cat": 0.8}
 static var manifest: Dictionary = {}
 static var _tex_cache := {}
 
@@ -52,6 +53,19 @@ func set_visual(appearance: Dictionary, gear: Dictionary) -> void:
 		weapon.queue_free()
 		weapon = null
 	var m := manifest
+	var beast = appearance.get("_beast") if appearance.has("_beast") else gear.get("_beast")
+	if beast != null:
+		# fera: uma folha só com os mesmos quadros do gladiador, reduzida para a proporção de um homem
+		var s := Sprite2D.new()
+		s.texture = tex("sprites/beasts/beast_%s.png" % beast)
+		s.hframes = int(m.frameCount)
+		s.centered = false
+		s.offset = Vector2(-float(m.originX), -float(m.originY))
+		s.scale = Vector2.ONE * BEAST_SCALE.get(beast, 0.7)
+		add_child(s)
+		layers.append(s)
+		_apply_frame()
+		return
 	var entries: Array = []
 	var push := func(sheet: String, tint: Color):
 		if m.sheets.has(sheet):
@@ -104,7 +118,9 @@ func set_visual(appearance: Dictionary, gear: Dictionary) -> void:
 
 func play(name: String, opts: Dictionary = {}) -> void:
 	var def: Dictionary = manifest.animations.get(name, manifest.animations.idle)
-	if name == anim and not opts.get("restart", false):
+	var had_seq := not seq.is_empty()
+	seq = []
+	if name == anim and not opts.get("restart", false) and not had_seq:
 		fps = float(opts.get("fps", def.fps))
 		return
 	anim = name
@@ -115,12 +131,49 @@ func play(name: String, opts: Dictionary = {}) -> void:
 	_apply_frame()
 
 
+## Sequência de quadros: [[anim, índice, duração]...] (a última fica parada).
+var seq: Array = []
+var seq_idx := 0
+var seq_t := 0.0
+
+
+func sequence(steps: Array) -> void:
+	seq = steps
+	seq_idx = 0
+	seq_t = 0.0
+	_apply_frame()
+
+
+func hold(name: String, idx: int) -> void:
+	sequence([[name, idx, 999.0]])
+
+
+func flash() -> void:
+	modulate = Color(3, 3, 3)
+	var tw := create_tween()
+	tw.tween_property(self, "modulate", Color.WHITE, 0.09)
+
+
 func set_facing(dir: int) -> void:
 	facing = dir
 	scale.x = absf(scale.x) * dir
 
 
+var speed_mul := 1.0
+
+
 func _process(delta: float) -> void:
+	tick(delta * speed_mul)
+
+
+func tick(delta: float) -> void:
+	if not seq.is_empty():
+		seq_t += delta
+		while seq_idx < seq.size() - 1 and seq_t >= float(seq[seq_idx][2]):
+			seq_t -= float(seq[seq_idx][2])
+			seq_idx += 1
+			_apply_frame()
+		return
 	frame_time += delta
 	var def: Dictionary = manifest.animations[anim]
 	var step := 1.0 / maxf(0.1, fps)
@@ -134,6 +187,9 @@ func _process(delta: float) -> void:
 
 
 func current_frame() -> int:
+	if not seq.is_empty():
+		var st: Array = seq[mini(seq_idx, seq.size() - 1)]
+		return int(manifest.animations[st[0]].start) + int(st[1])
 	return int(manifest.animations[anim].start) + frame_idx
 
 

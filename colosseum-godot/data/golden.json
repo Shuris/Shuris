@@ -1,0 +1,1263 @@
+{
+ "rngSeq": [
+  0.9797282677609473,
+  0.3067522644996643,
+  0.484205421525985,
+  0.817934412509203,
+  0.5094283693470061,
+  0.34747186047025025,
+  0.07375754183158278,
+  0.7663964673411101,
+  0.9968264393974096,
+  0.8250224851071835,
+  0.4599348735064268,
+  0.9458441860042512,
+  0.8906230411957949,
+  0.9693436855450273,
+  0.6276605280581862,
+  0.24882567464374006,
+  0.47334283916279674,
+  0.30504514812491834,
+  0.772419034736231,
+  0.8651748767588288
+ ],
+ "opps": [
+  {
+   "id": "marcus",
+   "stats": {
+    "maxHp": 182,
+    "maxStamina": 160,
+    "baseDamage": 20.8,
+    "defense": 9,
+    "damageReduction": 0.08256880733944955,
+    "precision": 5,
+    "agility": 6,
+    "technique": 5,
+    "dodgeChance": 0.08,
+    "attackInterval": 1.808,
+    "reach": 22,
+    "blockPower": 0.21000000000000002,
+    "hasShield": false,
+    "critChance": 0.08,
+    "armorPierce": 5,
+    "moveSpeed": 37,
+    "staminaRegen": 3.6,
+    "fatigueMul": 0.9174311926605504,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0,
+    "secondWind": false
+   },
+   "skills": [],
+   "perks": [
+    "m1",
+    "d1"
+   ]
+  },
+  {
+   "id": "cassius",
+   "stats": {
+    "maxHp": 195,
+    "maxStamina": 160,
+    "baseDamage": 24.6,
+    "defense": 14,
+    "damageReduction": 0.12280701754385964,
+    "precision": 7,
+    "agility": 9,
+    "technique": 6,
+    "dodgeChance": 0.135,
+    "attackInterval": 1.562,
+    "reach": 20,
+    "blockPower": 0.41200000000000003,
+    "hasShield": true,
+    "critChance": 0.094,
+    "armorPierce": 7,
+    "moveSpeed": 38.5,
+    "staminaRegen": 3.6,
+    "fatigueMul": 0.9174311926605504,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0,
+    "secondWind": false
+   },
+   "skills": [
+    "quick_strike"
+   ],
+   "perks": [
+    "v1",
+    "m1",
+    "d1",
+    "v2"
+   ]
+  },
+  {
+   "id": "rufus",
+   "stats": {
+    "maxHp": 220,
+    "maxStamina": 170,
+    "baseDamage": 31.4,
+    "defense": 18.5,
+    "damageReduction": 0.15611814345991562,
+    "precision": 8,
+    "agility": 9,
+    "technique": 9,
+    "dodgeChance": 0.135,
+    "attackInterval": 1.8619999999999999,
+    "reach": 40,
+    "blockPower": 0.21800000000000003,
+    "hasShield": false,
+    "critChance": 0.10600000000000001,
+    "armorPierce": 8,
+    "moveSpeed": 38.5,
+    "staminaRegen": 3.7,
+    "fatigueMul": 0.9049773755656109,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0,
+    "secondWind": false
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "v1",
+    "d1",
+    "m1",
+    "v2",
+    "d2",
+    "m2"
+   ]
+  },
+  {
+   "id": "brutus",
+   "stats": {
+    "maxHp": 246,
+    "maxStamina": 210,
+    "baseDamage": 35.6,
+    "defense": 32.5,
+    "damageReduction": 0.24528301886792453,
+    "precision": 9,
+    "agility": 5,
+    "technique": 8,
+    "dodgeChance": 0.11500000000000002,
+    "attackInterval": 1.9200000000000002,
+    "reach": 24,
+    "blockPower": 0.616,
+    "hasShield": true,
+    "critChance": 0.11,
+    "armorPierce": 9,
+    "moveSpeed": 36.5,
+    "staminaRegen": 5.125,
+    "fatigueMul": 0.8583690987124464,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0,
+    "secondWind": false
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "d1",
+    "m1",
+    "v1",
+    "d2",
+    "m2",
+    "v2",
+    "d3a"
+   ]
+  },
+  {
+   "id": "spiculus",
+   "stats": {
+    "maxHp": 259,
+    "maxStamina": 210,
+    "baseDamage": 36.6,
+    "defense": 36.5,
+    "damageReduction": 0.2673992673992674,
+    "precision": 13,
+    "agility": 11,
+    "technique": 10,
+    "dodgeChance": 0.14500000000000002,
+    "attackInterval": 1.6265600000000002,
+    "reach": 42,
+    "blockPower": 0.42000000000000004,
+    "hasShield": true,
+    "critChance": 0.17800000000000002,
+    "armorPierce": 13,
+    "moveSpeed": 39.5,
+    "staminaRegen": 5.125,
+    "fatigueMul": 0.8583690987124464,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0,
+    "secondWind": false
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "v1",
+    "m1",
+    "d1",
+    "v2",
+    "m2",
+    "d2",
+    "v3a",
+    "m3a",
+    "d3a"
+   ]
+  },
+  {
+   "id": "crixus",
+   "stats": {
+    "maxHp": 310,
+    "maxStamina": 230,
+    "baseDamage": 49.4,
+    "defense": 41.5,
+    "damageReduction": 0.29328621908127206,
+    "precision": 14,
+    "agility": 7,
+    "technique": 10,
+    "dodgeChance": 0.125,
+    "attackInterval": 1.7075200000000001,
+    "reach": 24,
+    "blockPower": 0.62,
+    "hasShield": true,
+    "critChance": 0.18400000000000002,
+    "armorPierce": 14,
+    "moveSpeed": 37.5,
+    "staminaRegen": 5.375,
+    "fatigueMul": 0.8368200836820083,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0.25,
+    "secondWind": false
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "m1",
+    "d1",
+    "v1",
+    "m2",
+    "d2",
+    "v2",
+    "m3a",
+    "d3a",
+    "v3a",
+    "m3b"
+   ]
+  },
+  {
+   "id": "verus",
+   "stats": {
+    "maxHp": 310,
+    "maxStamina": 230,
+    "baseDamage": 46.8,
+    "defense": 42.5,
+    "damageReduction": 0.2982456140350877,
+    "precision": 14,
+    "agility": 21,
+    "technique": 17,
+    "dodgeChance": 0.195,
+    "attackInterval": 1.03776,
+    "reach": 21,
+    "blockPower": 0.5940000000000001,
+    "hasShield": true,
+    "critChance": 0.19800000000000004,
+    "armorPierce": 14,
+    "moveSpeed": 44.5,
+    "staminaRegen": 5.375,
+    "fatigueMul": 0.8368200836820083,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0.06,
+    "blockPierce": 0,
+    "powerStrikeBonus": 0.25,
+    "secondWind": false
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "v1",
+    "m1",
+    "d1",
+    "v2",
+    "m2",
+    "d2",
+    "v3a",
+    "m3a",
+    "d3a",
+    "v3b",
+    "m3b",
+    "d3b"
+   ]
+  },
+  {
+   "id": "priscus",
+   "stats": {
+    "maxHp": 360,
+    "maxStamina": 350,
+    "baseDamage": 57.800000000000004,
+    "defense": 75.5,
+    "damageReduction": 0.4301994301994302,
+    "precision": 16,
+    "agility": 9,
+    "technique": 17,
+    "dodgeChance": 0.135,
+    "attackInterval": 1.64864,
+    "reach": 25,
+    "blockPower": 0.744,
+    "hasShield": true,
+    "critChance": 0.21000000000000002,
+    "armorPierce": 16,
+    "moveSpeed": 38.5,
+    "staminaRegen": 6.875,
+    "fatigueMul": 0.7272727272727273,
+    "damageMul": 1.05,
+    "damageTakenMul": 1,
+    "hitBonus": 0.06,
+    "blockPierce": 0.12,
+    "powerStrikeBonus": 0.25,
+    "secondWind": true
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike"
+   ],
+   "perks": [
+    "d1",
+    "m1",
+    "v1",
+    "d2",
+    "m2",
+    "v2",
+    "d3a",
+    "m3a",
+    "v3a",
+    "d3b",
+    "m3b",
+    "v3b",
+    "d4",
+    "m4"
+   ]
+  },
+  {
+   "id": "flamma",
+   "stats": {
+    "maxHp": 424,
+    "maxStamina": 300,
+    "baseDamage": 70.80000000000001,
+    "defense": 78,
+    "damageReduction": 0.43820224719101125,
+    "precision": 23,
+    "agility": 19,
+    "technique": 23,
+    "dodgeChance": 0.18500000000000003,
+    "attackInterval": 1.32664,
+    "reach": 25,
+    "blockPower": 0.8260000000000001,
+    "hasShield": true,
+    "critChance": 0.304,
+    "armorPierce": 23,
+    "moveSpeed": 43.5,
+    "staminaRegen": 6.25,
+    "fatigueMul": 0.7692307692307692,
+    "damageMul": 1.13,
+    "damageTakenMul": 1,
+    "hitBonus": 0.06,
+    "blockPierce": 0.12,
+    "powerStrikeBonus": 0.25,
+    "secondWind": true
+   },
+   "skills": [
+    "power_strike",
+    "iron_guard",
+    "quick_strike",
+    "counter"
+   ],
+   "perks": [
+    "m1",
+    "d1",
+    "v1",
+    "m2",
+    "d2",
+    "v2",
+    "m3a",
+    "d3a",
+    "v3a",
+    "m3b",
+    "d3b",
+    "v3b",
+    "m4",
+    "d4",
+    "v4",
+    "m5"
+   ]
+  }
+ ],
+ "player": {
+  "stats": {
+   "maxHp": 233,
+   "maxStamina": 150,
+   "baseDamage": 39.400000000000006,
+   "defense": 10.5,
+   "damageReduction": 0.09502262443438914,
+   "precision": 6,
+   "agility": 10,
+   "technique": 5,
+   "dodgeChance": 0.14,
+   "attackInterval": 1.68,
+   "reach": 24,
+   "blockPower": 0.41000000000000003,
+   "hasShield": true,
+   "critChance": 0.08600000000000001,
+   "armorPierce": 6,
+   "moveSpeed": 39,
+   "staminaRegen": 3.5,
+   "fatigueMul": 0.9302325581395349,
+   "damageMul": 1.05,
+   "damageTakenMul": 1,
+   "hitBonus": 0,
+   "blockPierce": 0,
+   "powerStrikeBonus": 0,
+   "secondWind": false
+  },
+  "skills": [
+   "power_strike"
+  ],
+  "perks": [
+   "m1",
+   "m2",
+   "d1",
+   "v1"
+  ]
+ },
+ "playerSave": {
+  "version": 5,
+  "name": "Teste",
+  "origin": "gaul",
+  "appearance": {
+   "skin": 0,
+   "hairStyle": 0,
+   "hairColor": 0,
+   "beard": false,
+   "clothColor": 0
+  },
+  "level": 8,
+  "xp": 0,
+  "coins": 150,
+  "reputation": 0,
+  "baseAttributes": {
+   "str": 13,
+   "vit": 10,
+   "res": 5,
+   "agi": 10,
+   "prec": 5,
+   "tech": 5
+  },
+  "trainedBonus": {
+   "str": 0,
+   "vit": 0,
+   "res": 0,
+   "agi": 0,
+   "prec": 0,
+   "tech": 0
+  },
+  "unspentPoints": 0,
+  "training": {
+   "str": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "res": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "agi": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "tech": {
+    "progress": 0,
+    "sessions": 0
+   }
+  },
+  "equipment": {
+   "mainHand": "i3",
+   "offHand": "i2",
+   "head": null,
+   "body": null,
+   "legs": null
+  },
+  "inventory": [
+   {
+    "uid": "i1",
+    "itemId": "rudis"
+   },
+   {
+    "uid": "i2",
+    "itemId": "parmula"
+   },
+   {
+    "uid": "i3",
+    "itemId": "gladius",
+    "plus": 2
+   }
+  ],
+  "history": [],
+  "stats": {
+   "wins": 0,
+   "losses": 0,
+   "battles": 0
+  },
+  "strategy": "balanced",
+  "defeatedOpponents": [],
+  "selectedOpponent": "marcus",
+  "settings": {
+   "battleSpeed": 1,
+   "autoContinue": false,
+   "tipsSeen": [],
+   "volume": 0.7,
+   "muted": false,
+   "language": "pt"
+  },
+  "nextUid": 2,
+  "day": 1,
+  "minutes": 480,
+  "energy": 100,
+  "location": "home",
+  "skillPoints": 2,
+  "perks": [
+   "m1",
+   "m2",
+   "d1",
+   "v1"
+  ],
+  "respecs": 0,
+  "streak": 0,
+  "news": {
+   "editions": [
+    {
+     "day": 1,
+     "items": [
+      {
+       "id": "n1-0-2735",
+       "kind": "debut",
+       "tpl": "debut.1",
+       "v": {
+        "name": "Teste",
+        "origin": "gaul",
+        "rival": "marcus",
+        "arena": "capua"
+       },
+       "headline": "Teste, o novato do ludus",
+       "body": "O lanista apostou algumas moedas em Teste, um gaulês desconhecido. Os veteranos já riem do recém-chegado.",
+       "img": "newcomer"
+      },
+      {
+       "id": "n1-1-281103",
+       "kind": "city",
+       "tpl": "city.29",
+       "v": {
+        "name": "Teste",
+        "origin": "gaul",
+        "rival": "marcus",
+        "arena": "capua"
+       },
+       "headline": "Sacerdotes leem bons presságios",
+       "body": "As aves voaram para a direita. Ano de sorte, dizem."
+      }
+     ],
+     "read": false
+    }
+   ],
+   "pending": [],
+   "milestones": []
+  },
+  "upgrades": [],
+  "tavern": {
+   "rumorDay": 0,
+   "heard": []
+  },
+  "rivals": {},
+  "rematch": null,
+  "lastRematchDay": 0,
+  "injury": null,
+  "tournament": {
+   "registered": 0,
+   "run": null,
+   "titles": 0,
+   "best": -1
+  },
+  "events": {
+   "armDay": 0,
+   "armWins": 0,
+   "merchantDay": 0,
+   "merchantBought": [],
+   "freeDay": 0,
+   "freeCount": 0
+  },
+  "career": {
+   "invites": [],
+   "respect": {},
+   "partner": null,
+   "quest": null,
+   "questsDone": 0,
+   "questDay": 0,
+   "rank": [],
+   "rankDay": 0,
+   "rankPts": 0,
+   "rankPrev": 0,
+   "talkDay": 0,
+   "chatDays": {},
+   "beastDay": 0,
+   "beastWins": 0,
+   "duoWins": 0,
+   "duoDay": 0,
+   "thumbsUp": 0
+  },
+  "createdAt": 1,
+  "updatedAt": 1
+ },
+ "fights": [
+  {
+   "opp": "marcus",
+   "seed": 7,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 37.6999999999998,
+   "hp": [
+    130,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 19,
+     "hits": 12,
+     "misses": 3,
+     "dodged": 2,
+     "blocked": 2,
+     "crits": 1,
+     "damageDealt": 202,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 19,
+     "hits": 12,
+     "misses": 5,
+     "dodged": 0,
+     "blocked": 2,
+     "crits": 1,
+     "damageDealt": 103,
+     "skillsUsed": 0
+    }
+   ],
+   "events": 337
+  },
+  {
+   "opp": "marcus",
+   "seed": 99,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 25.950000000000284,
+   "hp": [
+    152,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 14,
+     "hits": 10,
+     "misses": 3,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 2,
+     "damageDealt": 188,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 13,
+     "hits": 10,
+     "misses": 1,
+     "dodged": 1,
+     "blocked": 1,
+     "crits": 0,
+     "damageDealt": 81,
+     "skillsUsed": 0
+    }
+   ],
+   "events": 252
+  },
+  {
+   "opp": "marcus",
+   "seed": 2024,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 32.00000000000012,
+   "hp": [
+    120,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 17,
+     "hits": 13,
+     "misses": 3,
+     "dodged": 1,
+     "blocked": 0,
+     "crits": 0,
+     "damageDealt": 188,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 16,
+     "hits": 13,
+     "misses": 2,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 3,
+     "damageDealt": 113,
+     "skillsUsed": 0
+    }
+   ],
+   "events": 307
+  },
+  {
+   "opp": "cassius",
+   "seed": 8,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 43.04999999999949,
+   "hp": [
+    72,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 21,
+     "hits": 15,
+     "misses": 6,
+     "dodged": 0,
+     "blocked": 0,
+     "crits": 1,
+     "damageDealt": 201,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 27,
+     "hits": 16,
+     "misses": 8,
+     "dodged": 1,
+     "blocked": 2,
+     "crits": 2,
+     "damageDealt": 161,
+     "skillsUsed": 3
+    }
+   ],
+   "events": 386
+  },
+  {
+   "opp": "cassius",
+   "seed": 100,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 43.99999999999944,
+   "hp": [
+    47,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 21,
+     "hits": 14,
+     "misses": 6,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 1,
+     "damageDealt": 205,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 27,
+     "hits": 19,
+     "misses": 6,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 1,
+     "damageDealt": 186,
+     "skillsUsed": 2
+    }
+   ],
+   "events": 402
+  },
+  {
+   "opp": "cassius",
+   "seed": 2025,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 38.19999999999977,
+   "hp": [
+    41,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 19,
+     "hits": 13,
+     "misses": 1,
+     "dodged": 2,
+     "blocked": 2,
+     "crits": 1,
+     "damageDealt": 205,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 23,
+     "hits": 17,
+     "misses": 1,
+     "dodged": 0,
+     "blocked": 4,
+     "crits": 4,
+     "damageDealt": 192,
+     "skillsUsed": 4
+    }
+   ],
+   "events": 374
+  },
+  {
+   "opp": "rufus",
+   "seed": 9,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 50.949999999999044,
+   "hp": [
+    51,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 26,
+     "hits": 20,
+     "misses": 4,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 0,
+     "damageDealt": 230,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 25,
+     "hits": 16,
+     "misses": 6,
+     "dodged": 1,
+     "blocked": 1,
+     "crits": 0,
+     "damageDealt": 182,
+     "skillsUsed": 8
+    }
+   ],
+   "events": 431
+  },
+  {
+   "opp": "rufus",
+   "seed": 101,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 61.949999999998425,
+   "hp": [
+    0,
+    9
+   ],
+   "counters": [
+    {
+     "attacks": 28,
+     "hits": 16,
+     "misses": 8,
+     "dodged": 1,
+     "blocked": 3,
+     "crits": 0,
+     "damageDealt": 211,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 30,
+     "hits": 15,
+     "misses": 6,
+     "dodged": 1,
+     "blocked": 8,
+     "crits": 3,
+     "damageDealt": 239,
+     "skillsUsed": 8
+    }
+   ],
+   "events": 533
+  },
+  {
+   "opp": "rufus",
+   "seed": 2026,
+   "winner": 0,
+   "reason": "ko",
+   "duration": 68.89999999999803,
+   "hp": [
+    16,
+    0
+   ],
+   "counters": [
+    {
+     "attacks": 32,
+     "hits": 18,
+     "misses": 10,
+     "dodged": 1,
+     "blocked": 2,
+     "crits": 2,
+     "damageDealt": 228,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 33,
+     "hits": 19,
+     "misses": 7,
+     "dodged": 4,
+     "blocked": 1,
+     "crits": 2,
+     "damageDealt": 217,
+     "skillsUsed": 12
+    }
+   ],
+   "events": 575
+  },
+  {
+   "opp": "brutus",
+   "seed": 10,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 36.849999999999845,
+   "hp": [
+    0,
+    145
+   ],
+   "counters": [
+    {
+     "attacks": 18,
+     "hits": 7,
+     "misses": 7,
+     "dodged": 1,
+     "blocked": 3,
+     "crits": 1,
+     "damageDealt": 101,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 19,
+     "hits": 14,
+     "misses": 1,
+     "dodged": 1,
+     "blocked": 3,
+     "crits": 1,
+     "damageDealt": 243,
+     "skillsUsed": 7
+    }
+   ],
+   "events": 319
+  },
+  {
+   "opp": "brutus",
+   "seed": 102,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 46.549999999999294,
+   "hp": [
+    0,
+    81
+   ],
+   "counters": [
+    {
+     "attacks": 22,
+     "hits": 14,
+     "misses": 5,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 2,
+     "damageDealt": 165,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 23,
+     "hits": 14,
+     "misses": 4,
+     "dodged": 2,
+     "blocked": 3,
+     "crits": 2,
+     "damageDealt": 242,
+     "skillsUsed": 8
+    }
+   ],
+   "events": 407
+  },
+  {
+   "opp": "brutus",
+   "seed": 2027,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 40.44999999999964,
+   "hp": [
+    0,
+    150
+   ],
+   "counters": [
+    {
+     "attacks": 18,
+     "hits": 7,
+     "misses": 8,
+     "dodged": 0,
+     "blocked": 3,
+     "crits": 0,
+     "damageDealt": 96,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 20,
+     "hits": 12,
+     "misses": 2,
+     "dodged": 0,
+     "blocked": 6,
+     "crits": 2,
+     "damageDealt": 236,
+     "skillsUsed": 6
+    }
+   ],
+   "events": 336
+  },
+  {
+   "opp": "spiculus",
+   "seed": 11,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 29.500000000000263,
+   "hp": [
+    0,
+    175
+   ],
+   "counters": [
+    {
+     "attacks": 13,
+     "hits": 7,
+     "misses": 4,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 1,
+     "damageDealt": 84,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 18,
+     "hits": 13,
+     "misses": 2,
+     "dodged": 0,
+     "blocked": 3,
+     "crits": 4,
+     "damageDealt": 235,
+     "skillsUsed": 6
+    }
+   ],
+   "events": 308
+  },
+  {
+   "opp": "spiculus",
+   "seed": 103,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 37.79999999999979,
+   "hp": [
+    0,
+    130
+   ],
+   "counters": [
+    {
+     "attacks": 17,
+     "hits": 11,
+     "misses": 4,
+     "dodged": 0,
+     "blocked": 0,
+     "crits": 1,
+     "damageDealt": 129,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 22,
+     "hits": 14,
+     "misses": 3,
+     "dodged": 1,
+     "blocked": 3,
+     "crits": 1,
+     "damageDealt": 250,
+     "skillsUsed": 8
+    }
+   ],
+   "events": 361
+  },
+  {
+   "opp": "spiculus",
+   "seed": 2028,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 27.550000000000306,
+   "hp": [
+    0,
+    188
+   ],
+   "counters": [
+    {
+     "attacks": 12,
+     "hits": 5,
+     "misses": 3,
+     "dodged": 1,
+     "blocked": 1,
+     "crits": 0,
+     "damageDealt": 71,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 16,
+     "hits": 13,
+     "misses": 2,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 3,
+     "damageDealt": 237,
+     "skillsUsed": 7
+    }
+   ],
+   "events": 287
+  },
+  {
+   "opp": "crixus",
+   "seed": 12,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 14.000000000000114,
+   "hp": [
+    0,
+    248
+   ],
+   "counters": [
+    {
+     "attacks": 7,
+     "hits": 5,
+     "misses": 0,
+     "dodged": 0,
+     "blocked": 0,
+     "crits": 0,
+     "damageDealt": 62,
+     "skillsUsed": 2
+    },
+    {
+     "attacks": 9,
+     "hits": 5,
+     "misses": 1,
+     "dodged": 0,
+     "blocked": 3,
+     "crits": 4,
+     "damageDealt": 242,
+     "skillsUsed": 2
+    }
+   ],
+   "events": 135
+  },
+  {
+   "opp": "crixus",
+   "seed": 104,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 23.900000000000254,
+   "hp": [
+    0,
+    181
+   ],
+   "counters": [
+    {
+     "attacks": 12,
+     "hits": 11,
+     "misses": 1,
+     "dodged": 0,
+     "blocked": 0,
+     "crits": 1,
+     "damageDealt": 129,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 16,
+     "hits": 6,
+     "misses": 4,
+     "dodged": 1,
+     "blocked": 4,
+     "crits": 3,
+     "damageDealt": 250,
+     "skillsUsed": 5
+    }
+   ],
+   "events": 231
+  },
+  {
+   "opp": "crixus",
+   "seed": 2029,
+   "winner": 1,
+   "reason": "ko",
+   "duration": 14.800000000000125,
+   "hp": [
+    0,
+    264
+   ],
+   "counters": [
+    {
+     "attacks": 7,
+     "hits": 4,
+     "misses": 2,
+     "dodged": 0,
+     "blocked": 0,
+     "crits": 0,
+     "damageDealt": 46,
+     "skillsUsed": 1
+    },
+    {
+     "attacks": 10,
+     "hits": 9,
+     "misses": 0,
+     "dodged": 0,
+     "blocked": 1,
+     "crits": 1,
+     "damageDealt": 251,
+     "skillsUsed": 2
+    }
+   ],
+   "events": 147
+  }
+ ]
+}

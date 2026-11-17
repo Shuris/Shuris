@@ -2521,6 +2521,40 @@
    }
   }
  ],
+ "trainings": [
+  {
+   "id": "str",
+   "name": "Treinamento de força",
+   "description": "Golpes repetidos no palus com pesos de pedra (halteres)."
+  },
+  {
+   "id": "res",
+   "name": "Treinamento de resistência",
+   "description": "Corridas na areia carregando o scutum sob o sol."
+  },
+  {
+   "id": "agi",
+   "name": "Treinamento de agilidade",
+   "description": "Esquivas e saltos sobre estacas e cordas."
+  },
+  {
+   "id": "tech",
+   "name": "Treinamento de técnica",
+   "description": "Exercícios de esgrima com o doctor (instrutor) do ludus."
+  }
+ ],
+ "rarityLabel": {
+  "common": "Comum",
+  "uncommon": "Incomum",
+  "rare": "Raro",
+  "epic": "Épico"
+ },
+ "rarityColor": {
+  "common": "#cfc6b4",
+  "uncommon": "#7cc25a",
+  "rare": "#5aa0f0",
+  "epic": "#c27ae8"
+ },
  "skinNames": [
   "Clara",
   "Morena",

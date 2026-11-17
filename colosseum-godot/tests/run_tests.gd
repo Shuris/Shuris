@@ -19,12 +19,32 @@ func _ready() -> void:
 	OS.set_environment("COLOSSEUM_ELECTRON_SAVES", "user://__sem_saves_electron__")
 	for s in SaveSystem.SLOTS:
 		Saves.remove(s)
+	test_compile()
 	test_save_compat()
 	test_factory()
 	test_calendar()
+	load("res://tests/test_combat.gd").run(self)
+	load("res://tests/test_systems.gd").run(self)
 	await test_flow()
 	print("Testes: %d ok, %d falharam" % [passed, failed])
 	get_tree().quit(1 if failed else 0)
+
+
+func test_compile() -> void:
+	print("todos os scripts compilam")
+	var bad := []
+	var stack := ["res://scripts"]
+	while stack.size() > 0:
+		var dir: String = stack.pop_back()
+		var da := DirAccess.open(dir)
+		for sub in da.get_directories():
+			stack.append(dir.path_join(sub))
+		for f in da.get_files():
+			if f.ends_with(".gd"):
+				var sc = load(dir.path_join(f))
+				if sc == null or not sc.can_instantiate():
+					bad.append(f)
+	ok(bad.is_empty(), "scripts sem erro " + str(bad))
 
 
 func test_save_compat() -> void:

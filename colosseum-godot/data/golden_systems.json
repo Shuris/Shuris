@@ -1,0 +1,1110 @@
+{
+ "seed": 1700000000123,
+ "weather": [
+  "sun",
+  "rain",
+  "cloudy",
+  "sun",
+  "cloudy",
+  "cloudy",
+  "cloudy",
+  "sun",
+  "cloudy",
+  "sun",
+  "cloudy",
+  "rain",
+  "sun",
+  "cloudy",
+  "rain",
+  "rain",
+  "rain",
+  "rain",
+  "rain",
+  "cloudy",
+  "rain",
+  "sun",
+  "cloudy",
+  "rain",
+  "rain",
+  "sun",
+  "sun",
+  "sun",
+  "cloudy",
+  "sun",
+  "cloudy",
+  "sun",
+  "cloudy",
+  "cloudy",
+  "sun",
+  "sun",
+  "sun",
+  "sun",
+  "rain",
+  "sun"
+ ],
+ "merchant": [
+  6,
+  13,
+  19,
+  29,
+  36,
+  43,
+  50,
+  57
+ ],
+ "venatio": [
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  true,
+  false,
+  true,
+  true,
+  true,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  false,
+  true,
+  false,
+  false
+ ],
+ "stock": [
+  [
+   "twin_gladius",
+   286,
+   true
+  ],
+  [
+   "galea",
+   220,
+   true
+  ],
+  [
+   "sica",
+   360,
+   false
+  ]
+ ],
+ "rankSeed": [
+  {
+   "id": "marcus",
+   "level": 1,
+   "pts": 11,
+   "w": 4,
+   "l": 1,
+   "prev": 0
+  },
+  {
+   "id": "cassius",
+   "level": 3,
+   "pts": 34,
+   "w": 12,
+   "l": 2,
+   "prev": 0
+  },
+  {
+   "id": "rufus",
+   "level": 5,
+   "pts": 52,
+   "w": 19,
+   "l": 5,
+   "prev": 0
+  },
+  {
+   "id": "brutus",
+   "level": 8,
+   "pts": 87,
+   "w": 31,
+   "l": 6,
+   "prev": 0
+  },
+  {
+   "id": "spiculus",
+   "level": 11,
+   "pts": 118,
+   "w": 43,
+   "l": 11,
+   "prev": 0
+  },
+  {
+   "id": "crixus",
+   "level": 14,
+   "pts": 126,
+   "w": 46,
+   "l": 12,
+   "prev": 0
+  },
+  {
+   "id": "verus",
+   "level": 18,
+   "pts": 198,
+   "w": 70,
+   "l": 12,
+   "prev": 0
+  },
+  {
+   "id": "priscus",
+   "level": 22,
+   "pts": 230,
+   "w": 82,
+   "l": 16,
+   "prev": 0
+  },
+  {
+   "id": "flamma",
+   "level": 27,
+   "pts": 631,
+   "w": 214,
+   "l": 11,
+   "prev": 0
+  },
+  {
+   "id": "pool_nubia",
+   "level": 8,
+   "pts": 93,
+   "w": 33,
+   "l": 6,
+   "prev": 0
+  },
+  {
+   "id": "pool_brennus",
+   "level": 11,
+   "pts": 117,
+   "w": 42,
+   "l": 9,
+   "prev": 0
+  },
+  {
+   "id": "pool_celadus",
+   "level": 2,
+   "pts": 22,
+   "w": 8,
+   "l": 2,
+   "prev": 0
+  },
+  {
+   "id": "pool_felix",
+   "level": 12,
+   "pts": 126,
+   "w": 46,
+   "l": 12,
+   "prev": 0
+  },
+  {
+   "id": "pool_hermes",
+   "level": 8,
+   "pts": 97,
+   "w": 34,
+   "l": 5,
+   "prev": 0
+  },
+  {
+   "id": "pool_varro",
+   "level": 6,
+   "pts": 70,
+   "w": 25,
+   "l": 5,
+   "prev": 0
+  },
+  {
+   "id": "pool_decimus",
+   "level": 12,
+   "pts": 135,
+   "w": 49,
+   "l": 12,
+   "prev": 0
+  }
+ ],
+ "rankAfter": [
+  [
+   "flamma",
+   27,
+   218,
+   11,
+   1,
+   1
+  ],
+  [
+   "priscus",
+   23,
+   85,
+   16,
+   2,
+   2
+  ],
+  [
+   "verus",
+   18,
+   70,
+   13,
+   3,
+   3
+  ],
+  [
+   "pool_decimus",
+   12,
+   52,
+   13,
+   4,
+   4
+  ],
+  [
+   "crixus",
+   14,
+   48,
+   13,
+   5,
+   5
+  ],
+  [
+   "pool_felix",
+   12,
+   47,
+   12,
+   6,
+   6
+  ],
+  [
+   "spiculus",
+   13,
+   45,
+   12,
+   7,
+   7
+  ],
+  [
+   "pool_brennus",
+   11,
+   43,
+   11,
+   8,
+   8
+  ],
+  [
+   "pool_nubia",
+   10,
+   35,
+   7,
+   9,
+   10
+  ],
+  [
+   "pool_hermes",
+   8,
+   34,
+   6,
+   10,
+   9
+  ],
+  [
+   "brutus",
+   8,
+   31,
+   9,
+   11,
+   11
+  ],
+  [
+   "pool_varro",
+   6,
+   26,
+   7,
+   12,
+   12
+  ],
+  [
+   "rufus",
+   5,
+   20,
+   7,
+   13,
+   13
+  ],
+  [
+   "cassius",
+   3,
+   12,
+   6,
+   14,
+   14
+  ],
+  [
+   "pool_celadus",
+   2,
+   8,
+   2,
+   15,
+   15
+  ],
+  [
+   "marcus",
+   1,
+   4,
+   2,
+   16,
+   16
+  ],
+  [
+   "player",
+   7,
+   0,
+   0,
+   17,
+   17
+  ]
+ ],
+ "rewards": [
+  [
+   "marcus",
+   "ladder",
+   true,
+   {
+    "xp": 8,
+    "coins": 41,
+    "reputation": 6,
+    "itemId": "medium_armor",
+    "firstVictory": true
+   }
+  ],
+  [
+   "marcus",
+   "ladder",
+   false,
+   {
+    "xp": 5,
+    "coins": 6,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "free",
+   true,
+   {
+    "xp": 8,
+    "coins": 5,
+    "reputation": 1,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "free",
+   false,
+   {
+    "xp": 5,
+    "coins": 6,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "rematch",
+   true,
+   {
+    "xp": 13,
+    "coins": 8,
+    "reputation": 5,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "rematch",
+   false,
+   {
+    "xp": 5,
+    "coins": 6,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "beast",
+   true,
+   {
+    "xp": 10,
+    "coins": 7,
+    "reputation": 8,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "beast",
+   false,
+   {
+    "xp": 5,
+    "coins": 6,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "tournament",
+   true,
+   {
+    "xp": 8,
+    "coins": 6,
+    "reputation": 1,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "marcus",
+   "tournament",
+   false,
+   {
+    "xp": 5,
+    "coins": 6,
+    "reputation": 0,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "ladder",
+   true,
+   {
+    "xp": 26,
+    "coins": 73,
+    "reputation": 7,
+    "itemId": "scutum",
+    "firstVictory": true
+   }
+  ],
+  [
+   "cassius",
+   "ladder",
+   false,
+   {
+    "xp": 5,
+    "coins": 8,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "free",
+   true,
+   {
+    "xp": 24,
+    "coins": 16,
+    "reputation": 2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "free",
+   false,
+   {
+    "xp": 5,
+    "coins": 8,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "rematch",
+   true,
+   {
+    "xp": 40,
+    "coins": 26,
+    "reputation": 6,
+    "itemId": "scutum",
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "rematch",
+   false,
+   {
+    "xp": 5,
+    "coins": 8,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "beast",
+   true,
+   {
+    "xp": 32,
+    "coins": 21,
+    "reputation": 10,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "beast",
+   false,
+   {
+    "xp": 5,
+    "coins": 8,
+    "reputation": -2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "tournament",
+   true,
+   {
+    "xp": 26,
+    "coins": 18,
+    "reputation": 2,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "cassius",
+   "tournament",
+   false,
+   {
+    "xp": 5,
+    "coins": 8,
+    "reputation": 0,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "ladder",
+   true,
+   {
+    "xp": 63,
+    "coins": 117,
+    "reputation": 10,
+    "itemId": "provocator_helm",
+    "firstVictory": true
+   }
+  ],
+  [
+   "rufus",
+   "ladder",
+   false,
+   {
+    "xp": 13,
+    "coins": 10,
+    "reputation": -3,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "free",
+   true,
+   {
+    "xp": 57,
+    "coins": 38,
+    "reputation": 5,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "free",
+   false,
+   {
+    "xp": 13,
+    "coins": 10,
+    "reputation": -3,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "rematch",
+   true,
+   {
+    "xp": 94,
+    "coins": 63,
+    "reputation": 9,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "rematch",
+   false,
+   {
+    "xp": 13,
+    "coins": 10,
+    "reputation": -3,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "beast",
+   true,
+   {
+    "xp": 76,
+    "coins": 50,
+    "reputation": 18,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "beast",
+   false,
+   {
+    "xp": 13,
+    "coins": 10,
+    "reputation": -3,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "tournament",
+   true,
+   {
+    "xp": 63,
+    "coins": 42,
+    "reputation": 5,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "rufus",
+   "tournament",
+   false,
+   {
+    "xp": 13,
+    "coins": 10,
+    "reputation": 0,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "ladder",
+   true,
+   {
+    "xp": 136,
+    "coins": 196,
+    "reputation": 15,
+    "itemId": "sica",
+    "firstVictory": true
+   }
+  ],
+  [
+   "brutus",
+   "ladder",
+   false,
+   {
+    "xp": 27,
+    "coins": 13,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "free",
+   true,
+   {
+    "xp": 122,
+    "coins": 82,
+    "reputation": 10,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "free",
+   false,
+   {
+    "xp": 27,
+    "coins": 13,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "rematch",
+   true,
+   {
+    "xp": 204,
+    "coins": 136,
+    "reputation": 14,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "rematch",
+   false,
+   {
+    "xp": 27,
+    "coins": 13,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "beast",
+   true,
+   {
+    "xp": 163,
+    "coins": 109,
+    "reputation": 30,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "beast",
+   false,
+   {
+    "xp": 27,
+    "coins": 13,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "tournament",
+   true,
+   {
+    "xp": 136,
+    "coins": 91,
+    "reputation": 10,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "brutus",
+   "tournament",
+   false,
+   {
+    "xp": 27,
+    "coins": 13,
+    "reputation": 0,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "ladder",
+   true,
+   {
+    "xp": 214,
+    "coins": 278,
+    "reputation": 18,
+    "itemId": "medium_armor",
+    "firstVictory": true
+   }
+  ],
+  [
+   "spiculus",
+   "ladder",
+   false,
+   {
+    "xp": 43,
+    "coins": 16,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "free",
+   true,
+   {
+    "xp": 192,
+    "coins": 128,
+    "reputation": 13,
+    "itemId": "medium_armor",
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "free",
+   false,
+   {
+    "xp": 43,
+    "coins": 16,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "rematch",
+   true,
+   {
+    "xp": 321,
+    "coins": 214,
+    "reputation": 17,
+    "itemId": "medium_armor",
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "rematch",
+   false,
+   {
+    "xp": 43,
+    "coins": 16,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "beast",
+   true,
+   {
+    "xp": 257,
+    "coins": 171,
+    "reputation": 38,
+    "itemId": "medium_armor",
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "beast",
+   false,
+   {
+    "xp": 43,
+    "coins": 16,
+    "reputation": -4,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "tournament",
+   true,
+   {
+    "xp": 214,
+    "coins": 143,
+    "reputation": 13,
+    "itemId": "medium_armor",
+    "firstVictory": false
+   }
+  ],
+  [
+   "spiculus",
+   "tournament",
+   false,
+   {
+    "xp": 43,
+    "coins": 16,
+    "reputation": 0,
+    "itemId": null,
+    "firstVictory": false
+   }
+  ]
+ ],
+ "bracket": {
+  "day": 13,
+  "bracket": [
+   "pool_brennus",
+   "pool_sextus",
+   "pool_titus",
+   "player",
+   "pool_atticus",
+   "pool_varro",
+   "pool_draco",
+   "pool_felix"
+  ],
+  "levels": [
+   8,
+   8,
+   11,
+   9,
+   9,
+   7,
+   9,
+   10
+  ],
+  "winners": [],
+  "done": false
+ },
+ "challengers": [
+  [
+   "pool_decimus",
+   9
+  ],
+  [
+   "pool_felix",
+   8
+  ],
+  [
+   "pool_ursus",
+   8
+  ],
+  [
+   "pool_columbus",
+   8
+  ]
+ ],
+ "invites": [
+  {
+   "id": "villa",
+   "status": "open",
+   "day": 13,
+   "won": false,
+   "round": 0,
+   "foes": [
+    {
+     "id": "pool_draco",
+     "level": 11
+    }
+   ]
+  },
+  {
+   "id": "senator",
+   "status": "open",
+   "day": 13,
+   "won": false,
+   "round": 0,
+   "foes": [
+    {
+     "id": "pool_sextus",
+     "level": 12
+    }
+   ]
+  },
+  {
+   "id": "baiae",
+   "status": "open",
+   "day": 13,
+   "won": false,
+   "round": 0,
+   "foes": [
+    {
+     "id": "pool_atticus",
+     "level": 10
+    },
+    {
+     "id": "pool_sextus",
+     "level": 11
+    },
+    {
+     "id": "pool_draco",
+     "level": 12
+    }
+   ]
+  }
+ ],
+ "duoFoes": [
+  [
+   "pool_aulus",
+   9
+  ],
+  [
+   "pool_celadus",
+   9
+  ]
+ ],
+ "beast": [
+  "beast_boar",
+  10
+ ]
+}
