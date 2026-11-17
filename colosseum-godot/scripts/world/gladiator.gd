@@ -43,7 +43,7 @@ func _init() -> void:
 
 
 ## Aparência + equipamento: {appearance: {...}, gear: {slot: itemDef}}
-func set_visual(appearance: Dictionary, gear: Dictionary) -> void:
+func set_visual(appearance: Dictionary, gear: Dictionary, extra: Array = []) -> void:
 	for l in layers:
 		remove_child(l)
 		l.queue_free()
@@ -84,6 +84,8 @@ func set_visual(appearance: Dictionary, gear: Dictionary) -> void:
 		push.call("hair_%d" % int(appearance.get("hairStyle", 0)), hair_col)
 	if appearance.get("beard", false):
 		push.call("beard", hair_col)
+	for ex in extra:
+		push.call(str(ex.sheet), Data.hex_color(int(ex.tint)) if ex.has("tint") else Color.WHITE)
 	for slot in gear:
 		var it: Dictionary = gear[slot]
 		var v: Dictionary = it.get("visual", {})

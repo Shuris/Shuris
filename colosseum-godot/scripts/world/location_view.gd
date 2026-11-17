@@ -25,6 +25,9 @@ var cam: Camera2D
 var target_x := -1.0
 var _sky_f := -1.0
 var panel_right := 210.0
+var life: TownLife = null
+var busy := false
+var app: Node = null
 
 
 func setup(loc_id: String, appearance: Dictionary, gear: Dictionary) -> void:
@@ -68,8 +71,12 @@ func setup(loc_id: String, appearance: Dictionary, gear: Dictionary) -> void:
 	hero.position = Vector2(HERO_X.get(loc.id, 300), GROUND)
 	hero.set_visual(appearance, gear)
 	hero.play("idle")
-	hero.z_index = 10
+	hero.z_index = 73
 	add_child(hero)
+	if Game.has_player():
+		life = TownLife.new()
+		add_child(life)
+		life.setup(self)
 	modulate_node = CanvasModulate.new()
 	add_child(modulate_node)
 	cam = Camera2D.new()
@@ -105,6 +112,11 @@ func refresh_time() -> void:
 		sky_sprite.texture = null
 		# dentro de casa a noite pesa menos (há sempre alguma luz)
 		modulate_node.color = (c[2] as Color).lerp(Color.WHITE, 0.45)
+	# dia de chuva: tudo mais acinzentado e escuro
+	var w := Weather.now(int(Game.p.get("createdAt", 0)), int(Game.p.get("day", 1))) if Game.has_player() else {"rain": 0.0, "cloud": 0.0}
+	var gloom := float(w.rain) * 0.22 + float(w.cloud) * 0.08
+	if gloom > 0:
+		modulate_node.color = (modulate_node.color as Color).lerp(Color(0.55, 0.6, 0.7), gloom * (1.0 if loc.outdoor else 0.4))
 	var dark := 1.0 - (modulate_node.color as Color).v
 	for pl in lights:
 		# dentro de casa as lamparinas pesam mais à noite
@@ -115,6 +127,9 @@ func refresh_time() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var wp := get_global_mouse_position()
+		if life and life.click(wp):
+			get_viewport().set_input_as_handled()
+			return
 		target_x = clampf(wp.x, 40, 600)
 
 
@@ -167,8 +182,18 @@ static func _light_texture() -> Texture2D:
 
 
 ## Balão de fala de um morador presente na cena. Devolve false se ele não está aqui.
-func say(_who: String, _text: String) -> bool:
-	return false
+func say(who: String, text: String) -> bool:
+	return life != null and life.say(who, text)
+
+
+## Fala do próprio gladiador.
+func hero_say(text: String) -> void:
+	Balloon.speak(self, hero, text, 50, 4.2)
+
+
+## Conversa com um rival pela cidade (a regra fica na App).
+func app_rival_talk(id: String) -> String:
+	return app.rival_talk(id) if app else ""
 
 
 ## Texto que sobe da cabeça do gladiador (ganho do treino).
@@ -193,13 +218,22 @@ func show_gain(text: String) -> void:
 ## (agilidade) por um instante; depois `done` aplica o resultado.
 func play_training(id: String, done: Callable) -> void:
 	target_x = -1
+	busy = true
 	var anim: String = {"str": "attack", "tech": "attack", "prec": "attack", "res": "block", "vit": "block", "agi": "dodge"}.get(id, "attack")
 	hero.play(anim, {"fps": 7, "restart": true})
-	await get_tree().create_timer(1.4).timeout
+	for i in 3:
+		Sfx.play("train" if anim == "attack" else ("block" if anim == "block" else "dodge"), 0.6)
+		await get_tree().create_timer(0.47).timeout
 	hero.play("idle")
+	busy = false
 	done.call()
 
 
 ## Melhorias compradas mudam a mobília (camas, pesos...). Redesenhadas na etapa 4.
 func refresh_props() -> void:
-	pass
+	if life:
+		var old := life
+		life = TownLife.new()
+		add_child(life)
+		life.setup(self)
+		old.queue_free()

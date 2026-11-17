@@ -7,9 +7,9 @@ cada etapa gera um executável para testar.
 | Etapa | Conteúdo | Situação |
 |---|---|---|
 | 1 | Base, save compatível, menu, criação do gladiador, cidade (locais), mapa e viagem, painel de status, pausa e opções | **pronta** |
-| 2 | Arena e combate completos | a fazer |
-| 3 | Sistemas: treino, mercado, torneio, feras, duplas, rivais, jornal, ranking, taverna, templo | a fazer |
-| 4 | Detalhes visuais (clima, plateia, balões, figurantes) e melhorias do Godot | a fazer |
+| 2 | Arena e combate completos (motor portado com teste de paridade com o TypeScript), HUD, resultado, duplas simultâneas | **pronta** |
+| 3 | Sistemas: treino, mercado (melhorias, ferreiro, mercador), torneio, feras, convites, duplas, rivais, jornal, ranking, taverna (queda de braço), templo, alojamento, termas | **pronta** |
+| 4 | Clima (chuva, neblina, folhas, guirlandas), moradores com falas e nome ao passar o mouse, rivais pela cidade, plateia, sons e músicas | **pronta** |
 
 ## Visual em pixel art
 - O jogo inteiro é desenhado numa grade de **640x360** pixels e ampliado em **escala
@@ -24,6 +24,12 @@ cada etapa gera um executável para testar.
 - Céu pixelado com sol, lua, estrelas e nuvens conforme a hora.
 - Fontes em pixel VT323 e Pixelify Sans (licença OFL, em `assets/fonts`).
 
+## Som
+Efeitos e músicas são sintetizados com as mesmas receitas do Web Audio da versão
+Electron (osciladores, ruído filtrado, sequenciadores de lira, flauta, metais e
+tambores) e gravados em WAV por `python3 tools/gen_audio.py` (numpy e scipy). Volume
+e mudo dos efeitos ficam no save; música ligada/desligada e volume ficam no computador.
+
 ## Saves
 Mesmo formato da versão Electron (`{format: "colosseum-save", version: 5, player}`),
 com os mesmos campos: os saves atuais abrem aqui e vice-versa. Os saves ficam em
@@ -35,10 +41,13 @@ vez, se o espaço estiver vazio, o jogo lê o save da versão Electron
 - `data/` — dados e textos exportados da versão TypeScript (mesmos números):
   `npx vite-node tools/export-godot.ts` (na pasta `colosseum`).
 - `assets/` — arte (gerada por `python3 tools/build_assets.py`).
-- `scripts/autoload` — `Data`, `I18n`, `Saves`, `Game`.
-- `scripts/core` — regras sem interface (criação, save, calendário).
-- `scripts/world` — gladiador em camadas, local da cidade, mapa, céu.
-- `scripts/ui` — menu, criação, painéis, pausa, opções e tema.
+- `scripts/autoload` — `Data`, `I18n`, `Saves`, `Game`, `Sfx`, `Music`.
+- `scripts/core` — regras sem interface (criação, save, calendário, falas, RNG).
+- `scripts/combat` — atributos, perícias e o motor de combate.
+- `scripts/systems` — torneio, ranking, jornal, duplas, convites, feras, rivais etc.
+- `scripts/game/act.gd` — preparar e encerrar cada tipo de luta, dormir.
+- `scripts/world` — gladiador em camadas, locais e vida da cidade, arena, mapa, céu, balões, chuva.
+- `scripts/ui` — menu, criação, painéis de cada local, HUD da luta, resultado, jornal, chave do torneio, queda de braço, pausa, opções e tema.
 
 ## Rodar, testar e exportar
 ```bash

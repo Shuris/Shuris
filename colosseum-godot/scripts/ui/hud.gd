@@ -18,6 +18,7 @@ var st := {}           # estado da interface (abas internas, seleção)
 var body: VBoxContainer
 var scroll: ScrollContainer
 var _toasts: VBoxContainer
+static var status_rect := Rect2()   # área do painel de status na tela (os balões desviam dela)
 
 
 func _ready() -> void:
@@ -131,6 +132,10 @@ func refresh() -> void:
 			_location_tab()
 	await get_tree().process_frame
 	scroll.scroll_vertical = keep
+
+
+func _process(_d: float) -> void:
+	status_rect = status_box.get_global_rect() if visible else Rect2()
 
 
 func _status() -> void:

@@ -70,6 +70,37 @@ func _ready() -> void:
 		main.enter_location()
 		await _wait(0.5)
 		await shot("10-painel-%s" % loc[0])
+	# moradores falando e um dia de chuva
+	p.location = "tavern"
+	p.minutes = 20 * 60
+	main.enter_location()
+	await _wait(0.5)
+	var lv: LocationView = main.view
+	if lv.life.talkers.size() > 1:
+		lv.life.talk(lv.life.talkers[1])
+	await _wait(0.6)
+	await shot("15-taverna-fala")
+	p.location = "ludus"
+	p.minutes = 10 * 60
+	p.upgrades = ["stone_weights", "sand_track", "agility_stakes", "doctore"]
+	main.enter_location()
+	await _wait(1.0)
+	await shot("16-ludus-gente")
+	var keep_day := int(p.day)
+	for d in range(1, 120):
+		if float(Weather.now(int(p.createdAt), d).rain) > 0.5:
+			p.day = d
+			break
+	p.location = "forum"
+	p.minutes = 11 * 60
+	main.enter_location()
+	await _wait(1.2)
+	await shot("17-forum-chuva")
+	p.day = keep_day
+	p.location = "market"
+	main.enter_location()
+	await _wait(0.8)
+	await shot("18-mercado-gente")
 	main.hud.st.marketTab = "upgrades"
 	p.location = "market"
 	main.enter_location()

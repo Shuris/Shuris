@@ -15,6 +15,7 @@ func start(slot_n: int, player: Dictionary) -> void:
 	slot = slot_n
 	p = player
 	I18n.set_lang(str(p.settings.get("language", I18n.lang)))
+	Sfx.set_volume(float(p.settings.get("volume", 0.7)), bool(p.settings.get("muted", false)))
 	save()
 	changed.emit()
 

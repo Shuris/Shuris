@@ -651,6 +651,8 @@ static func forum(h: Hud) -> void:
 		var b := Ui.button("", func(): h.app.read_edition(day), false, "" if e.read else "gold")
 		b.text = "%s · %s%s" % [I18n.t("common.dayN", {"n": day}), head, "" if e.read else "  (" + I18n.t("forum.new") + ")"]
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.clip_text = true
+		b.custom_minimum_size.x = 40
 		b.add_theme_font_size_override("font_size", 14)
 		h.body.add_child(b)
 

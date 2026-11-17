@@ -104,6 +104,7 @@ func show_title() -> void:
 		hud.queue_free()
 		hud = null
 	palette_rect.visible = false  # a arte do menu já vem pintada na paleta
+	Music.play("menu")
 	var t := TitleScreen.new()
 	t.play.connect(_play_slot)
 	t.options.connect(_open_options)
@@ -145,6 +146,7 @@ func enter_location(with_fade := false) -> void:
 	_clear_world()
 	palette_rect.visible = true
 	var lv := LocationView.new()
+	lv.app = self
 	world.add_child(lv)
 	lv.setup(p.location, p.appearance, Data.gear_of(p))
 	view = lv
@@ -155,6 +157,7 @@ func enter_location(with_fade := false) -> void:
 		hud.go_map.connect(show_map)
 		hud.go_location.connect(func(): enter_location())
 		ui.add_child(_themed(hud))
+	update_music()
 	hud.visible = true
 	if hud.tab == "gladiator":
 		hud.refresh()
@@ -179,6 +182,7 @@ func _travel(to: String) -> void:
 		if hud:
 			hud.toast(str(err))
 		return
+	Sfx.play("step")
 	(view as MapView).travel_to(to, func():
 		Game.update(func(p): return Calendar.travel(p, to))
 		enter_location(true))
@@ -196,11 +200,29 @@ func _fade_in_out(title: String, sub: String) -> void:
 	tw2.tween_property(fade, "modulate:a", 0.0, 0.45)
 
 
+## Trilha conforme o lugar e a hora (taverna, noite ou cidade); chuva conforme o clima.
+func update_music() -> void:
+	if battle != null or not Game.has_player():
+		return
+	var p := Game.p
+	var m := int(p.minutes)
+	if p.location == "tavern":
+		Music.play("tavern")
+	elif m >= 20 * 60 or m < 6 * 60:
+		Music.play("night")
+	else:
+		Music.play("city")
+	var w := Weather.now(int(p.createdAt), int(p.day))
+	var outdoor: bool = Data.location(p.location).get("outdoor", true)
+	Sfx.set_rain(float(w.rain) * (1.0 if outdoor else 0.35))
+
+
 func _on_game_changed() -> void:
 	if Game.has_player():
 		Names.champion_beaten = Game.p.defeatedOpponents.has("flamma")
 	if hud and battle == null:
 		hud.refresh()
+		update_music()
 	if view is LocationView:
 		(view as LocationView).refresh_time()
 
@@ -636,6 +658,9 @@ func start_battle(opts: Dictionary = {}) -> void:
 		battle.duo = {"run": Duo.new_run(), "partner": fight.back[0], "foes": [fight.def, fight.back[1]]}
 	hud.visible = false
 	Music.play("arena")
+	Sfx.set_rain(0)
+	Sfx.start_crowd()
+	Sfx.play("horn")
 	_launch_bout(me, int(p.level), str(p.name), fight, [null, null])
 
 
@@ -809,7 +834,7 @@ func exit_battle() -> void:
 	battle = null
 	arena = null
 	_close_battle_hud()
-	Music.play("town")
+	Sfx.stop_crowd()
 	if Game.has_player():
 		enter_location()
 

@@ -51,6 +51,10 @@ var modulate_node: CanvasModulate
 var dir_to := [1, -1]
 var finale_done := false
 var setup_data: Dictionary
+var talk_queue: Array = []
+var talking := false
+var hurt_said := [false, false]
+var last_quip := -99.0
 
 
 func setup(s: Dictionary) -> void:
@@ -121,6 +125,11 @@ func setup(s: Dictionary) -> void:
 			add_child(g)
 			back_views.append(g)
 		back_prev = [back_engine.fighters[0].x, back_engine.fighters[1].x]
+	if Game.has_player() and arena_id != "senator" and float(Weather.now(int(Game.p.createdAt), int(Game.p.day)).rain) > 0.3:
+		var rain := RainFx.new()
+		add_child(rain)
+		rain.setup(160, GROUND_Y + 10)
+		Sfx.set_rain(0.8)
 	crowd_front = _sprite("res://assets/sprites/fx/crowd_front.png")
 	crowd_front.hframes = 2
 	crowd_front.centered = false
@@ -148,6 +157,9 @@ func setup(s: Dictionary) -> void:
 	add_child(cam)
 	cam.make_current()
 	cam.position = Vector2(320, 252)
+	get_tree().create_timer(1.6 if s.get("cards") != null else 0.9).timeout.connect(func():
+		say(1, s.get("talk", {}).get("intro", "intro"))
+		say(0, "reply"))
 	if s.get("cards") != null:
 		_name_cards(s.cards)
 	else:
@@ -204,6 +216,39 @@ func _name_cards(cards: Array) -> void:
 	tw2.tween_interval(2.3)
 	tw2.tween_property(title, "modulate:a", 0.0, 0.4)
 	tw2.tween_callback(layer.queue_free)
+
+
+## Fala de um lutador num balão; uma de cada vez (o outro responde depois).
+func say(side: int, moment: String) -> void:
+	if not is_inside_tree():
+		return
+	var info: Dictionary = setup_data.get("talk", {})
+	var casual := moment == "crit" or moment == "hurt"
+	if talking:
+		if casual and talk_queue.size():
+			return
+		if moment == "win" or moment == "lose":
+			talk_queue = talk_queue.filter(func(q): return q[1] == "win" or q[1] == "lose")
+		talk_queue.append([side, moment])
+		return
+	var who: String = "player" if side == 0 else str(info.get("opponentId", "pool"))
+	var other: String = str(engine.fighters[1].spec.name) if side == 0 else str(info.get("playerName", ""))
+	var line := Dialogue.talk(who, moment, randi() % 1000, {"name": other.split(",")[0]})
+	if line == "":
+		_next_talk()
+		return
+	talking = true
+	var b := Balloon.speak(self, views[side], line, 52, -1.0, func():
+		talking = false
+		if is_inside_tree():
+			get_tree().create_timer(0.25).timeout.connect(_next_talk))
+	b.max_w = 160
+
+
+func _next_talk() -> void:
+	if talk_queue.size():
+		var n: Array = talk_queue.pop_front()
+		say(n[0], n[1])
 
 
 func _sprite(path: String) -> Sprite2D:
@@ -390,6 +435,7 @@ func _handle(e: Dictionary) -> void:
 		"start":
 			_big_text(I18n.t("battle.fightBig"), Color8(255, 211, 106), Vector2(cam_x, head_y - 24))
 			excite = 2
+			Sfx.cheer(0.8)
 		"action":
 			var side: int = e.side
 			_anim(engine.fighters[side], e.action, e.duration, views[side])
@@ -406,6 +452,7 @@ func _handle(e: Dictionary) -> void:
 		"impact":
 			_impact(e, head_y)
 		"skill":
+			Sfx.play("skill")
 			if e.skill != "counter":
 				_float(Names.move_name(e.skill, beasts[e.side]), views[e.side].position + Vector2(0, -60), Color8(255, 211, 106))
 			if e.skill == "iron_guard":
@@ -415,14 +462,18 @@ func _handle(e: Dictionary) -> void:
 		"secondWind":
 			_float(I18n.t("fx.secondWind", {"n": e.heal}), views[e.side].position + Vector2(0, -62), Color8(138, 216, 102))
 		"exhausted":
+			Sfx.play("exhausted")
 			_float(I18n.t("fx.tired"), views[e.side].position + Vector2(0, -58), Color8(200, 192, 176))
 		"end":
+			Sfx.cheer(1.4)
 			for v in views:
 				v.modulate = Color.WHITE
 			if back_engine:
 				_duel_ended()
 				return
 			_crowd_end(int(e.winner) == 0, views[int(e.winner)].position.x)
+			say(int(e.winner), "win")
+			say(1 - int(e.winner), "lose")
 			_big_text(I18n.t("result.victory") if int(e.winner) == 0 else I18n.t("result.defeat"), Color8(255, 211, 106) if int(e.winner) == 0 else Color8(224, 106, 90), Vector2(cam_x, head_y - 24))
 
 
@@ -438,15 +489,21 @@ func _impact(e: Dictionary, head_y: float) -> void:
 	var at := tv.position + Vector2(0, -44)
 	match e.outcome:
 		"miss":
+			Sfx.play("whoosh")
 			_float(I18n.t("fx.miss"), at, Color8(232, 224, 208))
 		"dodge":
+			Sfx.play("dodge")
 			_float(I18n.t("fx.dodge"), at, Color8(159, 216, 255))
 			_move(target, "push", 18, 140, 380, 80)
 		"block":
+			Sfx.play("block", 1.3 if power else 1.0)
 			_float(I18n.t("fx.blocked", {"n": e.damage}), at, Color8(216, 216, 232))
 			_sparks(tv.position + Vector2(dir_to[target] * 9, -34), Color8(255, 240, 160), 10 if power else 6)
 			_move(target, "push", 12.0 if power else 6.0, 90, 300, 60)
 		"hit":
+			Sfx.play("crit" if e.crit else "hit", 1.3 if power else 1.0)
+			if e.crit:
+				Sfx.cheer(1.0)
 			tv.flash()
 			_blood(target, 10 if e.crit else (6 if e.stagger else 4), e.crit)
 			_sparks(tv.position + Vector2(dir_to[target] * 5, -34), Color.WHITE, 8 if e.crit else 4)
@@ -463,6 +520,13 @@ func _impact(e: Dictionary, head_y: float) -> void:
 				excite = maxf(excite, 1.2)
 			if engine.fighters[target].hp <= 0:
 				_final_blow(target)
+			var tf: Dictionary = engine.fighters[target]
+			if not hurt_said[target] and float(tf.hp) > 0 and float(tf.hp) < float(tf.spec.stats.maxHp) * 0.3:
+				hurt_said[target] = true
+				get_tree().create_timer(0.35).timeout.connect(say.bind(target, "hurt"))
+			elif e.crit and engine.time - last_quip > 9 and randf() < 0.45:
+				last_quip = engine.time
+				get_tree().create_timer(0.3).timeout.connect(say.bind(side, "crit"))
 	if e.kind == "counter":
 		_float(I18n.t("fx.counter"), views[side].position + Vector2(0, -74), Color8(255, 176, 58))
 
@@ -559,6 +623,7 @@ func _back_handle(e: Dictionary) -> void:
 		"impact":
 			var tv: Gladiator = back_views[e.target]
 			if e.outcome == "hit":
+				Sfx.play("hit", 0.5)
 				tv.flash()
 				_float(str(e.damage), tv.position + Vector2(0, -40), Color8(255, 138, 122) if int(e.target) == 0 else Color8(240, 216, 144))
 				_sparks(tv.position + Vector2(0, -30), Color8(200, 58, 42), 3)

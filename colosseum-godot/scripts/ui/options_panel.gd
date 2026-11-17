@@ -1,6 +1,6 @@
 class_name OptionsPanel
 extends Control
-## Opções: idioma, tela cheia, volume e o filtro de paleta.
+## Opções: idioma, tela cheia, som (efeitos), música e volume de cada um.
 
 signal fullscreen_toggled
 
@@ -9,40 +9,59 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var dim := ColorRect.new()
 	dim.color = Color(0, 0, 0, 0.5)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(dim)
+	var cc := CenterContainer.new()
+	cc.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(cc)
 	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(240, 0)
-	panel.position = Vector2(-120, -80)
-	add_child(panel)
-	var v := VBoxContainer.new()
-	v.add_theme_constant_override("separation", 5)
+	panel.custom_minimum_size = Vector2(250, 0)
+	cc.add_child(panel)
+	var v := Ui.vbox(5)
 	panel.add_child(v)
+	_build(v)
+
+
+func _build(v: VBoxContainer) -> void:
+	for c in v.get_children():
+		c.queue_free()
 	v.add_child(UiTheme.title_label(I18n.t("app.options"), 16, UiTheme.GOLD))
-	var lang := Button.new()
-	lang.text = "%s: %s" % [I18n.t("opt.language"), "Português" if I18n.lang == "pt" else "English"]
-	lang.pressed.connect(func():
+	v.add_child(Ui.button("%s: %s" % [I18n.t("opt.language"), "Português" if I18n.lang == "pt" else "English"], func():
 		I18n.set_lang("en" if I18n.lang == "pt" else "pt")
 		if Game.has_player():
 			Game.update(func(p): p.settings.language = I18n.lang)
-		queue_free())
-	v.add_child(lang)
-	var fs := Button.new()
-	fs.text = I18n.t("godot.fullscreen")
-	fs.pressed.connect(func(): fullscreen_toggled.emit())
-	v.add_child(fs)
-	var vl := Label.new()
-	vl.text = I18n.t("opt.volume")
-	v.add_child(vl)
+		_build(v)))
+	v.add_child(Ui.button(I18n.t("opt.fullscreenF11"), func(): fullscreen_toggled.emit()))
+	# efeitos sonoros (guardado no save, como na versão anterior)
+	v.add_child(Ui.button("%s: %s" % [I18n.t("opt.sound"), I18n.t("opt.off") if Sfx.muted else I18n.t("opt.on")], func():
+		_set_sfx(Sfx.volume, not Sfx.muted)
+		_build(v)))
+	v.add_child(Ui.small(I18n.t("opt.volume"), UiTheme.CREAM))
+	v.add_child(_slider(Sfx.volume, func(x):
+		_set_sfx(x, Sfx.muted)
+		Sfx.play("coin")))
+	v.add_child(Ui.button("%s: %s" % [I18n.t("opt.music"), I18n.t("opt.on") if Music.enabled else I18n.t("opt.off")], func():
+		Music.set_enabled(not Music.enabled)
+		_build(v)))
+	v.add_child(Ui.small(I18n.t("opt.musicVolume"), UiTheme.CREAM))
+	v.add_child(_slider(Music.volume, func(x): Music.set_volume(x)))
+	v.add_child(Ui.button(I18n.t("godot.close"), queue_free))
+
+
+func _slider(value: float, cb: Callable) -> HSlider:
 	var sl := HSlider.new()
 	sl.min_value = 0
 	sl.max_value = 1
 	sl.step = 0.05
-	sl.value = db_to_linear(AudioServer.get_bus_volume_db(0))
-	sl.value_changed.connect(func(x): AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, x))))
-	v.add_child(sl)
-	var close := Button.new()
-	close.text = I18n.t("godot.close")
-	close.pressed.connect(queue_free)
-	v.add_child(close)
+	sl.value = value
+	sl.custom_minimum_size.x = 200
+	sl.value_changed.connect(cb)
+	return sl
+
+
+func _set_sfx(vol: float, muted: bool) -> void:
+	Sfx.set_volume(vol, muted)
+	if Game.has_player():
+		Game.update(func(p):
+			p.settings.volume = vol
+			p.settings.muted = muted)
