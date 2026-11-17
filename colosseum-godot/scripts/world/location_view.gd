@@ -164,3 +164,42 @@ static func _light_texture() -> Texture2D:
 			img.set_pixel(x, y, Color(1, 1, 1, v))
 	_lt = ImageTexture.create_from_image(img)
 	return _lt
+
+
+## Balão de fala de um morador presente na cena. Devolve false se ele não está aqui.
+func say(_who: String, _text: String) -> bool:
+	return false
+
+
+## Texto que sobe da cabeça do gladiador (ganho do treino).
+func show_gain(text: String) -> void:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_override("font", UiTheme.title_font)
+	l.add_theme_font_size_override("font_size", 8)
+	l.add_theme_color_override("font_color", UiTheme.GOLD)
+	l.add_theme_color_override("font_outline_color", Color8(30, 14, 6))
+	l.add_theme_constant_override("outline_size", 2)
+	l.position = hero.position + Vector2(-24, -60)
+	l.z_index = 50
+	add_child(l)
+	var tw := create_tween()
+	tw.tween_property(l, "position:y", l.position.y - 14, 1.2)
+	tw.parallel().tween_property(l, "modulate:a", 0.0, 1.2).set_delay(0.5)
+	tw.tween_callback(l.queue_free)
+
+
+## Treino: o gladiador golpeia (força/técnica), defende (resistência) ou se esquiva
+## (agilidade) por um instante; depois `done` aplica o resultado.
+func play_training(id: String, done: Callable) -> void:
+	target_x = -1
+	var anim: String = {"str": "attack", "tech": "attack", "prec": "attack", "res": "block", "vit": "block", "agi": "dodge"}.get(id, "attack")
+	hero.play(anim, {"fps": 7, "restart": true})
+	await get_tree().create_timer(1.4).timeout
+	hero.play("idle")
+	done.call()
+
+
+## Melhorias compradas mudam a mobília (camas, pesos...). Redesenhadas na etapa 4.
+func refresh_props() -> void:
+	pass

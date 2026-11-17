@@ -141,7 +141,65 @@ func test_flow() -> void:
 	ok(main.screen.find_child("btn_continue", true, false) != null, "menu mostra Continuar com save")
 	var back := Saves.read(1)
 	ok(back.player != null and back.player.location == "forum", "save reabre no fórum")
+	await test_actions(main)
 	main.queue_free()
+
+
+## Ações dos locais e o fluxo completo de uma luta (arena → resultado → cidade).
+func test_actions(main: Node) -> void:
+	print("ações dos locais e luta")
+	main._play_slot(1, Saves.read(1))
+	await _wait(1.2)
+	var p := Game.p
+	p.location = "ludus"
+	p.minutes = 10 * 60
+	p.energy = 100
+	main.enter_location()
+	await _frames(2)
+	var prog := int(p.training.str.progress) + int(p.trainedBonus.str)
+	main.train("str")
+	await _wait(2.0)
+	ok(int(Game.p.energy) < 100 and int(Game.p.training.str.progress) + int(Game.p.trainedBonus.str) >= prog, "treino gasta energia e avança")
+	p.location = "market"
+	p.coins = 500
+	main.enter_location()
+	await _frames(2)
+	var n_inv: int = p.inventory.size()
+	main.market_buy("helmet_cap" if not Data.item("helmet_cap").is_empty() else Data.d.items.filter(func(i): return i.get("shop", false))[0].id)
+	ok(Game.p.inventory.size() == n_inv + 1, "compra no mercado")
+	p.location = "arena"
+	p.minutes = 14 * 60
+	p.energy = 100
+	p.injury = null
+	main.enter_location()
+	await _frames(2)
+	var battles := int(p.stats.battles)
+	main.start_battle({"mode": "free"})
+	await _frames(3)
+	ok(main.arena != null and main.bhud != null, "luta começa na arena com a HUD")
+	main.arena.forfeit()
+	await _wait(5.0)
+	var modal = null
+	for c in main.ui.get_children():
+		if c is Modal:
+			modal = c
+	ok(modal != null, "resultado aparece no fim da luta")
+	ok(int(Game.p.stats.battles) == battles + 1 and Game.p.history.size() > 0, "luta registrada no histórico")
+	if modal:
+		modal.close()
+	await _wait(0.5)
+	ok(main.battle == null and main.view is LocationView and main.hud.visible, "volta para a cidade")
+	p = Game.p
+	p.location = "home"
+	main.enter_location()
+	await _frames(2)
+	var day := int(p.day)
+	main.sleep()
+	await _wait(2.5)
+	ok(int(Game.p.day) == day + 1 and int(Game.p.energy) == 100, "dormir passa o dia")
+	for c in main.ui.get_children():
+		if c is Modal:
+			c.close()
 
 
 func _wait(sec: float) -> void:

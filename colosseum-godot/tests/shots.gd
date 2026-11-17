@@ -48,6 +48,105 @@ func _ready() -> void:
 	main.hud.refresh()
 	await _wait(0.4)
 	await shot("07-gladiador")
+	if OS.get_environment("SHOTS_PART") == "1":
+		get_tree().quit()
+		return
+	# etapa 2/3: painéis, luta, resultado, jornal, chave
+	var p := Game.p
+	p.level = 6
+	p.coins = 900
+	p.unspentPoints = 3
+	p.skillPoints = 2
+	p.day = 9
+	p.reputation = 160
+	p.defeatedOpponents = ["marcus", "cassius"]
+	p.rivals = {"marcus": {"wins": 1, "losses": 0}, "cassius": {"wins": 1, "losses": 1}}
+	p.selectedOpponent = "rufus"
+	main.hud.tab = "location"
+	main.hud.st.charTab = "attrs"
+	for loc in [["arena", 14 * 60], ["ludus", 10 * 60], ["market", 11 * 60], ["temple", 12 * 60], ["tavern", 20 * 60], ["forum", 13 * 60], ["home", 21 * 60], ["baths", 15 * 60]]:
+		p.location = loc[0]
+		p.minutes = loc[1]
+		main.enter_location()
+		await _wait(0.5)
+		await shot("10-painel-%s" % loc[0])
+	main.hud.st.marketTab = "upgrades"
+	p.location = "market"
+	main.enter_location()
+	await _wait(0.4)
+	await shot("11-mercado-melhorias")
+	main.hud.st.arenaTab = "events"
+	p.location = "arena"
+	main.enter_location()
+	await _wait(0.4)
+	await shot("12-arena-eventos")
+	main.hud.st.arenaTab = "fights"
+	main.hud.tab = "gladiator"
+	main.hud.refresh()
+	await _wait(0.3)
+	await shot("13-gladiador-atributos")
+	main.hud.st.charTab = "gear"
+	main.hud.refresh()
+	await _wait(0.3)
+	await shot("14-gladiador-equipamento")
+	main.hud.tab = "location"
+	# luta
+	p.minutes = 14 * 60
+	p.energy = 100
+	main.start_battle({"mode": "ladder", "opponentId": "rufus"})
+	await _wait(0.9)
+	await shot("20-luta-intro")
+	main.arena.set_speed(2)
+	await _wait(3.5)
+	await shot("21-luta-meio")
+	await _wait(2.0)
+	await shot("22-luta-meio2")
+	var t := 0.0
+	while main.battle != null and main.bhud != null and t < 60:
+		main.arena.set_speed(3)
+		await _wait(0.5)
+		t += 0.5
+		if main.arena and main.arena.engine.finished:
+			break
+	await _wait(1.2)
+	await shot("23-luta-fim")
+	await _wait(4.0)
+	await shot("24-resultado")
+	for m in main.ui.get_children():
+		if m is Modal:
+			m.close()
+	await _wait(1.0)
+	# jornal
+	var rng := Rng.new(42)
+	News.publish(p, rng)
+	if p.news.editions.size():
+		main.read_edition(int(p.news.editions[0].day))
+		await _wait(0.4)
+		await shot("25-jornal")
+		for m in main.ui.get_children():
+			if m is Modal:
+				m.close()
+	# chave do torneio
+	p.day = 13
+	p.tournament.registered = 13
+	p.minutes = Tournament.START
+	Tournament.start(p)
+	main.show_bracket()
+	await _wait(0.4)
+	await shot("26-torneio")
+	for m in main.ui.get_children():
+		if m is Modal:
+			m.close()
+	# dupla (duelos simultâneos)
+	p.day = 9
+	p.tournament.run = null
+	p.minutes = 10 * 60
+	p.energy = 100
+	p.career.respect["marcus"] = 100
+	p.career.partner = "marcus"
+	main.start_battle({"mode": "duo", "injuredOk": true})
+	await _wait(3.0)
+	await shot("27-dupla")
 	get_tree().quit()
 
 

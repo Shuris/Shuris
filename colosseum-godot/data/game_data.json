@@ -2571,6 +2571,17 @@
   "Crista",
   "Coque"
  ],
+ "personality": {
+  "marcus": "nervous",
+  "cassius": "reckless",
+  "rufus": "joker",
+  "brutus": "brute",
+  "spiculus": "disciplined",
+  "crixus": "proud",
+  "verus": "cold",
+  "priscus": "weary",
+  "flamma": "showman"
+ },
  "en": {
   "EN_ITEMS": {
    "rudis": {

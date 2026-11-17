@@ -137,7 +137,7 @@ def fonts():
 if __name__ == "__main__":
     os.makedirs(OUT, exist_ok=True)
     characters()
-    for rel in ("backgrounds", "sprites/fx", "sprites/beasts", "portraits", "ui", "ui/items", "news"):
+    for rel in ("backgrounds", "sprites/fx", "sprites/beasts", "portraits", "ui", "ui/items", "ui/icons", "news"):
         copy_tree(rel)
     title_art()
     fonts()

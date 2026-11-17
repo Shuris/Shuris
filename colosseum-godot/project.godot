@@ -18,6 +18,8 @@ Data="*res://scripts/autoload/data.gd"
 I18n="*res://scripts/autoload/i18n.gd"
 Saves="*res://scripts/autoload/saves.gd"
 Game="*res://scripts/autoload/game.gd"
+Sfx="*res://scripts/autoload/sfx.gd"
+Music="*res://scripts/autoload/music.gd"
 
 [display]
 

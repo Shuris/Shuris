@@ -148,7 +148,62 @@ func setup(s: Dictionary) -> void:
 	add_child(cam)
 	cam.make_current()
 	cam.position = Vector2(320, 252)
-	_big_text(Names.arena_name(arena_id), Color8(244, 220, 138), Vector2(320, 230))
+	if s.get("cards") != null:
+		_name_cards(s.cards)
+	else:
+		_big_text(Names.arena_name(arena_id), Color8(244, 220, 138), Vector2(320, 230))
+
+
+## Apresentação: nome e epíteto de cada lutador entram pelos lados, sem zoom.
+func _name_cards(cards: Array) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 3
+	add_child(layer)
+	var title := Label.new()
+	title.text = Names.arena_name(arena_id)
+	title.add_theme_font_override("font", UiTheme.title_font)
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color8(244, 220, 138))
+	title.add_theme_color_override("font_outline_color", Color8(30, 14, 6))
+	title.add_theme_constant_override("outline_size", 4)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.size = Vector2(640, 24)
+	title.position = Vector2(0, 64)
+	layer.add_child(title)
+	for i in 2:
+		var box := VBoxContainer.new()
+		box.add_theme_constant_override("separation", 0)
+		var n := Label.new()
+		n.text = str(cards[i].name)
+		n.add_theme_font_override("font", UiTheme.title_font)
+		n.add_theme_font_size_override("font_size", 16)
+		n.add_theme_color_override("font_color", Color8(255, 226, 150) if i == 0 else Color8(255, 170, 150))
+		n.add_theme_color_override("font_outline_color", Color8(30, 14, 6))
+		n.add_theme_constant_override("outline_size", 4)
+		var sub := Label.new()
+		sub.text = str(cards[i].sub)
+		sub.add_theme_font_override("font", UiTheme.font)
+		sub.add_theme_font_size_override("font_size", 16)
+		sub.add_theme_color_override("font_color", Color8(240, 228, 200))
+		sub.add_theme_color_override("font_outline_color", Color8(30, 14, 6))
+		sub.add_theme_constant_override("outline_size", 3)
+		box.add_child(n)
+		box.add_child(sub)
+		for l in [n, sub]:
+			l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT if i == 0 else HORIZONTAL_ALIGNMENT_RIGHT
+			l.custom_minimum_size.x = 260
+		layer.add_child(box)
+		var y := 104.0
+		var x_to := 24.0 if i == 0 else 640.0 - 24 - 260
+		box.position = Vector2(-280.0 if i == 0 else 660.0, y)
+		var tw := create_tween()
+		tw.tween_property(box, "position:x", x_to, 0.35).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT).set_delay(0.15 + i * 0.12)
+		tw.tween_interval(1.6)
+		tw.tween_property(box, "modulate:a", 0.0, 0.4)
+	var tw2 := create_tween()
+	tw2.tween_interval(2.3)
+	tw2.tween_property(title, "modulate:a", 0.0, 0.4)
+	tw2.tween_callback(layer.queue_free)
 
 
 func _sprite(path: String) -> Sprite2D:
@@ -516,12 +571,14 @@ func _float(text: String, at: Vector2, color: Color, scale_k := 1.0) -> void:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", UiTheme.title_font)
-	l.add_theme_font_size_override("font_size", 8)
+	l.add_theme_font_size_override("font_size", roundi(16 * scale_k))
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_color_override("font_outline_color", Color8(20, 10, 6))
-	l.add_theme_constant_override("outline_size", 2)
-	l.scale = Vector2.ONE * scale_k * 0.5
-	l.position = at + Vector2(-20, -6)
+	l.add_theme_constant_override("outline_size", 4)
+	l.scale = Vector2(0.5, 0.5)
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.size = Vector2(160, 20)
+	l.position = at + Vector2(-40, -10)
 	l.z_index = 50
 	add_child(l)
 	var tw := create_tween()
@@ -534,14 +591,14 @@ func _big_text(text: String, color: Color, at: Vector2) -> void:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_override("font", UiTheme.title_font)
-	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_font_size_override("font_size", 32)
 	l.add_theme_color_override("font_color", color)
 	l.add_theme_color_override("font_outline_color", Color8(30, 14, 6))
-	l.add_theme_constant_override("outline_size", 3)
+	l.add_theme_constant_override("outline_size", 6)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.size = Vector2(240, 20)
+	l.size = Vector2(480, 40)
 	l.scale = Vector2(0.5, 0.5)
-	l.position = at - Vector2(60, 10)
+	l.position = at - Vector2(120, 10)
 	l.z_index = 60
 	add_child(l)
 	var tw := create_tween()

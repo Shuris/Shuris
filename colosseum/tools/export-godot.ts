@@ -21,6 +21,7 @@ import { serialize } from '../src/renderer/core/systems/SaveSystem';
 import { xpToNext } from '../src/renderer/core/systems/ProgressionSystem';
 import { TRAININGS } from '../src/renderer/core/systems/TrainingSystem';
 import { RARITY_LABEL, RARITY_COLOR } from '../src/renderer/core/data/equipment';
+import { PERSONALITY } from '../src/renderer/core/data/dialogue';
 
 const out = path.resolve(__dirname, '../../colosseum-godot/data');
 fs.mkdirSync(out, { recursive: true });
@@ -50,6 +51,7 @@ write('game_data.json', {
   rarityColor: RARITY_COLOR,
   skinNames: SKIN_NAMES,
   hairNames: HAIR_STYLE_NAMES,
+  personality: PERSONALITY,
   // nomes em inglês dos dados (na versão TS ficam em i18n/data.ts)
   en: Object.fromEntries(Object.entries(EN_DATA).filter(([k]) => k.startsWith('EN_'))),
 });

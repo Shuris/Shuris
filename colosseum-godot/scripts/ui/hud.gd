@@ -13,6 +13,11 @@ var side: PanelContainer
 var side_body: VBoxContainer
 var tab := "location"
 var toast_label: Label
+var app: Node = null   # main.gd: executa as ações dos painéis
+var st := {}           # estado da interface (abas internas, seleção)
+var body: VBoxContainer
+var scroll: ScrollContainer
+var _toasts: VBoxContainer
 
 
 func _ready() -> void:
@@ -39,21 +44,24 @@ func _ready() -> void:
 	side_body = VBoxContainer.new()
 	side_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	side_body.add_theme_constant_override("separation", 4)
-	var scroll := ScrollContainer.new()
+	scroll = ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	side_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(side_body)
 	sv.add_child(scroll)
+	body = side_body
+	_toasts = Ui.vbox(2)
+	_toasts.anchor_top = 1.0
+	_toasts.anchor_bottom = 1.0
+	_toasts.offset_left = 8
+	_toasts.offset_right = 360
+	_toasts.offset_top = -120
+	_toasts.offset_bottom = -8
+	_toasts.alignment = BoxContainer.ALIGNMENT_END
+	_toasts.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_toasts)
 	toast_label = Label.new()
-	toast_label.anchor_left = 0.0
-	toast_label.anchor_top = 1.0
-	toast_label.anchor_bottom = 1.0
-	toast_label.offset_top = -28
-	toast_label.position.x = 10
-	toast_label.add_theme_color_override("font_color", UiTheme.GOLD)
-	toast_label.modulate.a = 0
-	add_child(toast_label)
 
 
 func show_location() -> void:
@@ -66,20 +74,53 @@ func show_map() -> void:
 	refresh()
 
 
-func toast(text: String) -> void:
-	toast_label.text = text
-	toast_label.modulate.a = 1
+## Aviso curto no canto; kind: "info", "good", "bad" ou "gold".
+func toast(text: String, kind := "info", ms := 3000) -> void:
+	var pc := PanelContainer.new()
+	var sb := UiTheme.panel_box()
+	sb.border_color = {"good": Color8(110, 180, 90), "bad": UiTheme.RED, "gold": UiTheme.GOLD}.get(kind, UiTheme.BRONZE)
+	sb.set_content_margin_all(3)
+	pc.add_theme_stylebox_override("panel", sb)
+	pc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pc.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var l := Label.new()
+	l.text = Panels._plain(text)
+	l.add_theme_font_size_override("font_size", 14)
+	l.add_theme_color_override("font_color", {"good": Color8(180, 236, 150), "bad": Color8(255, 160, 140), "gold": UiTheme.GOLD}.get(kind, UiTheme.CREAM))
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 240
+	pc.add_child(l)
+	_toasts.add_child(pc)
+	while _toasts.get_child_count() > 4:
+		_toasts.get_child(0).queue_free()
+		_toasts.remove_child(_toasts.get_child(0))
 	var tw := create_tween()
-	tw.tween_interval(2.5)
-	tw.tween_property(toast_label, "modulate:a", 0.0, 0.6)
+	tw.tween_interval(ms / 1000.0)
+	tw.tween_property(pc, "modulate:a", 0.0, 0.5)
+	tw.tween_callback(pc.queue_free)
+
+
+## Abre a ficha do gladiador (atributos/equipamento/histórico) no painel.
+func open_sheet(sub := "attrs") -> void:
+	if sub == "gladiator":
+		sub = "attrs"
+	st.charTab = sub
+	if tab == "map":
+		tab = "gladiator"
+		go_location.emit()
+	else:
+		tab = "gladiator"
+		refresh()
 
 
 func refresh() -> void:
 	if not Game.has_player():
 		return
+	var keep := scroll.scroll_vertical
 	_status()
 	_tabs()
 	for c in side_body.get_children():
+		side_body.remove_child(c)
 		c.queue_free()
 	match tab:
 		"map":
@@ -88,6 +129,8 @@ func refresh() -> void:
 			_gladiator_tab()
 		_:
 			_location_tab()
+	await get_tree().process_frame
+	scroll.scroll_vertical = keep
 
 
 func _status() -> void:
@@ -127,9 +170,35 @@ func _status() -> void:
 	var eb := _bar(int(p.energy), 100, Color8(90, 190, 110), "%d / 100" % p.energy)
 	eb.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	en.add_child(eb)
-	var res := Label.new()
-	res.text = "%s %d   %s %d" % [I18n.t("godot.coins"), p.coins, I18n.t("godot.fame"), p.reputation]
+	var res := Ui.hbox(2)
 	v.add_child(res)
+	res.add_child(Ui.icon("coin"))
+	res.add_child(Ui.tag(str(p.coins), UiTheme.CREAM))
+	var gap := Control.new()
+	gap.custom_minimum_size.x = 10
+	res.add_child(gap)
+	res.add_child(Ui.icon("laurel"))
+	res.add_child(Ui.tag(str(p.reputation), UiTheme.CREAM))
+	var wl := Weather.label(Weather.now(int(p.createdAt), int(p.day)))
+	if wl != "":
+		v.add_child(Ui.small(wl, Color8(170, 196, 230)))
+	var stt := Act.status(p)
+	if stt.size():
+		var sr := Ui.hbox(2)
+		v.add_child(sr)
+		for k in stt:
+			sr.add_child(Ui.icon("st_" + k))
+			sr.add_child(Ui.tag(I18n.t("status." + k), UiTheme.RED if k == "injured" else UiTheme.DIM))
+	if int(p.minutes) >= 22 * 60:
+		v.add_child(Ui.small(I18n.t("status.late"), UiTheme.RED))
+	if News.unread_count(p) > 0 and app:
+		v.add_child(Ui.button(I18n.t("status.news"), app.read_unread, false, "dark"))
+	if int(p.unspentPoints) > 0:
+		v.add_child(Ui.button(I18n.t("status.attrPoints", {"n": p.unspentPoints}), func(): open_sheet("attrs"), false, "gold"))
+	if int(p.skillPoints) > 0:
+		v.add_child(Ui.button(I18n.t("status.skillPoints", {"n": p.skillPoints}), func():
+			if app and p.location != "temple":
+				app.go_to("temple"), false, "gold"))
 
 
 func _bar(value: int, max_v: int, color: Color, text: String) -> Control:
@@ -200,10 +269,18 @@ func _location_tab() -> void:
 	var p := Game.p
 	var loc := Data.location(p.location)
 	_heading(Data.loc_name(loc.id))
-	_text(Data.loc_short(loc.id), UiTheme.DIM)
 	var open := Calendar.is_open(loc, int(p.minutes), int(p.day))
-	_text(Calendar.hours_label(loc, int(p.day)), UiTheme.CREAM if open else UiTheme.RED)
-	_text(I18n.t("godot.soon"), UiTheme.DIM)
+	if not open:
+		_text(I18n.t("status.closedNow", {"hours": Calendar.hours_label(loc, int(p.day))}), UiTheme.RED)
+	var tip_id: String = loc.id
+	if not p.settings.get("tipsSeen", []).has(tip_id) and I18n.tk(tip_id + ".tip", {}, "") != "":
+		var tc := Ui.card(side_body, UiTheme.GOLD)
+		tc.add_child(Ui.small(I18n.tk(tip_id + ".tip"), UiTheme.CREAM))
+		tc.add_child(Ui.button("OK", func(): Game.update(func(pl):
+			if not pl.settings.has("tipsSeen"):
+				pl.settings.tipsSeen = []
+			pl.settings.tipsSeen.append(tip_id))))
+	Panels.build(self, loc.id)
 
 
 func _map_tab() -> void:
@@ -225,6 +302,10 @@ func _map_tab() -> void:
 
 
 func _gladiator_tab() -> void:
+	Panels.gladiator(self)
+
+
+func _gladiator_tab_old() -> void:
 	var p := Game.p
 	_heading(I18n.t("godot.attrs"))
 	for k in PlayerFactory.ATTR_KEYS:
