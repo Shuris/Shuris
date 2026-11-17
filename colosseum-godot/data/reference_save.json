@@ -1,0 +1,178 @@
+{
+ "format": "colosseum-save",
+ "version": 5,
+ "savedAt": 1700000000000,
+ "player": {
+  "version": 5,
+  "name": "Maximus Decimus",
+  "origin": "thracian",
+  "appearance": {
+   "skin": 1,
+   "hairStyle": 3,
+   "hairColor": 2,
+   "beard": true,
+   "clothColor": 4
+  },
+  "level": 1,
+  "xp": 0,
+  "coins": 150,
+  "reputation": 0,
+  "baseAttributes": {
+   "str": 5,
+   "vit": 5,
+   "res": 5,
+   "agi": 7,
+   "prec": 6,
+   "tech": 5
+  },
+  "trainedBonus": {
+   "str": 0,
+   "vit": 0,
+   "res": 0,
+   "agi": 0,
+   "prec": 0,
+   "tech": 0
+  },
+  "unspentPoints": 0,
+  "training": {
+   "str": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "res": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "agi": {
+    "progress": 0,
+    "sessions": 0
+   },
+   "tech": {
+    "progress": 0,
+    "sessions": 0
+   }
+  },
+  "equipment": {
+   "mainHand": "i1",
+   "offHand": null,
+   "head": null,
+   "body": null,
+   "legs": null
+  },
+  "inventory": [
+   {
+    "uid": "i1",
+    "itemId": "rudis"
+   }
+  ],
+  "history": [],
+  "stats": {
+   "wins": 0,
+   "losses": 0,
+   "battles": 0
+  },
+  "strategy": "balanced",
+  "defeatedOpponents": [],
+  "selectedOpponent": "marcus",
+  "settings": {
+   "battleSpeed": 1,
+   "autoContinue": false,
+   "tipsSeen": [],
+   "volume": 0.7,
+   "muted": false,
+   "language": "pt"
+  },
+  "nextUid": 2,
+  "day": 1,
+  "minutes": 480,
+  "energy": 100,
+  "location": "home",
+  "skillPoints": 2,
+  "perks": [],
+  "respecs": 0,
+  "streak": 0,
+  "news": {
+   "editions": [
+    {
+     "day": 1,
+     "items": [
+      {
+       "id": "n1-0-702011",
+       "kind": "debut",
+       "tpl": "debut.0",
+       "v": {
+        "name": "Maximus Decimus",
+        "origin": "thracian",
+        "rival": "marcus",
+        "arena": "capua"
+       },
+       "headline": "Novo gladiador chega a Cápua",
+       "body": "Um trácio chamado Maximus Decimus foi comprado pelo ludus. Será que aguenta a areia da arena?",
+       "img": "newcomer"
+      },
+      {
+       "id": "n1-1-663541",
+       "kind": "city",
+       "tpl": "city.26",
+       "v": {
+        "name": "Maximus Decimus",
+        "origin": "thracian",
+        "rival": "marcus",
+        "arena": "capua"
+       },
+       "headline": "Festa de Saturno se aproxima",
+       "body": "Escravos e senhores trocam de lugar por um dia."
+      }
+     ],
+     "read": false
+    }
+   ],
+   "pending": [],
+   "milestones": []
+  },
+  "upgrades": [],
+  "tavern": {
+   "rumorDay": 0,
+   "heard": []
+  },
+  "rivals": {},
+  "rematch": null,
+  "lastRematchDay": 0,
+  "injury": null,
+  "tournament": {
+   "registered": 0,
+   "run": null,
+   "titles": 0,
+   "best": -1
+  },
+  "events": {
+   "armDay": 0,
+   "armWins": 0,
+   "merchantDay": 0,
+   "merchantBought": [],
+   "freeDay": 0,
+   "freeCount": 0
+  },
+  "career": {
+   "invites": [],
+   "respect": {},
+   "partner": null,
+   "quest": null,
+   "questsDone": 0,
+   "questDay": 0,
+   "rank": [],
+   "rankDay": 0,
+   "rankPts": 0,
+   "rankPrev": 0,
+   "talkDay": 0,
+   "chatDays": {},
+   "beastDay": 0,
+   "beastWins": 0,
+   "duoWins": 0,
+   "duoDay": 0,
+   "thumbsUp": 0
+  },
+  "createdAt": 1700000000000,
+  "updatedAt": 1700000000000
+ }
+}

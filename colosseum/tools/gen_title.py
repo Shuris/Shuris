@@ -210,6 +210,12 @@ def build(assets_dir):
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
+def build_small(assets_dir):
+    """Versão na grade do Godot (640x360): mesma pintura, reduzida por média de blocos."""
+    big = build(assets_dir)
+    return big.resize((640, 360), Image.BOX)
+
+
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
     assets = os.path.join(here, "..", "src", "renderer", "public", "assets")

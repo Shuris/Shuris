@@ -1,0 +1,32 @@
+{
+ "pt": {
+  "godot.imported": "(importado da versão anterior)",
+  "godot.soon": "Em breve nesta versão: as ações deste local chegam nas próximas etapas.",
+  "godot.travel": "Viajar ({n} min)",
+  "godot.here": "você está aqui",
+  "godot.closed": "fechado ({hours})",
+  "godot.attrs": "Atributos",
+  "godot.gear": "Equipamento",
+  "godot.empty": "vazio",
+  "godot.coins": "Moedas",
+  "godot.fame": "Fama",
+  "godot.fullscreen": "Tela cheia (F11)",
+  "godot.close": "Fechar",
+  "godot.palette": "Filtro de paleta"
+ },
+ "en": {
+  "godot.imported": "(imported from the previous version)",
+  "godot.soon": "Coming soon in this version: this place's actions arrive in the next stages.",
+  "godot.travel": "Travel ({n} min)",
+  "godot.here": "you are here",
+  "godot.closed": "closed ({hours})",
+  "godot.attrs": "Attributes",
+  "godot.gear": "Equipment",
+  "godot.empty": "empty",
+  "godot.coins": "Coins",
+  "godot.fame": "Fame",
+  "godot.fullscreen": "Fullscreen (F11)",
+  "godot.close": "Close",
+  "godot.palette": "Palette filter"
+ }
+}

@@ -1,0 +1,2987 @@
+{
+ "locations": [
+  {
+   "id": "home",
+   "name": "Alojamento",
+   "short": "Dormir e descansar",
+   "bg": "bg:loc_home",
+   "outdoor": false,
+   "hours": null,
+   "map": [
+    100,
+    112
+   ]
+  },
+  {
+   "id": "ludus",
+   "name": "Ludus",
+   "short": "Treinar",
+   "bg": "bg:ludus",
+   "outdoor": true,
+   "hours": [
+    360,
+    1320
+   ],
+   "map": [
+    122,
+    276
+   ]
+  },
+  {
+   "id": "market",
+   "name": "Mercado",
+   "short": "Comprar e vender",
+   "bg": "bg:loc_market",
+   "outdoor": true,
+   "hours": [
+    420,
+    1200
+   ],
+   "closedSunday": true,
+   "map": [
+    300,
+    280
+   ]
+  },
+  {
+   "id": "arena",
+   "name": "Arena",
+   "short": "Lutar",
+   "bg": "bg:arena_capua",
+   "outdoor": true,
+   "hours": [
+    420,
+    1200
+   ],
+   "map": [
+    562,
+    262
+   ]
+  },
+  {
+   "id": "temple",
+   "name": "Templo de Marte",
+   "short": "Árvore de habilidades",
+   "bg": "bg:loc_temple",
+   "outdoor": true,
+   "hours": null,
+   "map": [
+    414,
+    72
+   ]
+  },
+  {
+   "id": "forum",
+   "name": "Fórum",
+   "short": "Jornal (Capua Times)",
+   "bg": "bg:loc_forum",
+   "outdoor": true,
+   "hours": null,
+   "map": [
+    300,
+    150
+   ]
+  },
+  {
+   "id": "tavern",
+   "name": "Taverna",
+   "short": "Comida, vinho e boatos",
+   "bg": "bg:loc_tavern",
+   "outdoor": false,
+   "hours": [
+    660,
+    1440
+   ],
+   "map": [
+    404,
+    172
+   ]
+  },
+  {
+   "id": "baths",
+   "name": "Termas",
+   "short": "Recuperar energia",
+   "bg": "bg:loc_baths",
+   "outdoor": true,
+   "hours": [
+    480,
+    1260
+   ],
+   "map": [
+    212,
+    70
+   ]
+  }
+ ],
+ "weekdays": [
+  "Domingo",
+  "Segunda",
+  "Terça",
+  "Quarta",
+  "Quinta",
+  "Sexta",
+  "Sábado"
+ ],
+ "origins": [
+  {
+   "id": "gaul",
+   "name": "Gaulês",
+   "description": "Guerreiro das tribos da Gália, forte e robusto.",
+   "bonus": {
+    "str": 2,
+    "vit": 1
+   }
+  },
+  {
+   "id": "thracian",
+   "name": "Trácio",
+   "description": "Ágil combatente das montanhas da Trácia.",
+   "bonus": {
+    "agi": 2,
+    "prec": 1
+   }
+  },
+  {
+   "id": "roman",
+   "name": "Ex-legionário",
+   "description": "Antigo soldado de Roma, disciplinado e resistente.",
+   "bonus": {
+    "res": 2,
+    "tech": 1
+   }
+  },
+  {
+   "id": "greek",
+   "name": "Grego",
+   "description": "Treinado nos ginásios helênicos, valoriza a técnica.",
+   "bonus": {
+    "tech": 2,
+    "prec": 1
+   }
+  }
+ ],
+ "hairColors": [
+  3810838,
+  7226402,
+  1972242,
+  11041342,
+  9058846,
+  10130828
+ ],
+ "clothColors": [
+  13125690,
+  15260864,
+  4876968,
+  5933642,
+  14197824,
+  8014474
+ ],
+ "attributes": {
+  "str": {
+   "name": "Força",
+   "short": "FOR",
+   "icon": "attr_str",
+   "description": "Aumenta o dano dos ataques físicos."
+  },
+  "vit": {
+   "name": "Vitalidade",
+   "short": "VIT",
+   "icon": "attr_vit",
+   "description": "Aumenta a vida máxima."
+  },
+  "res": {
+   "name": "Resistência",
+   "short": "RES",
+   "icon": "attr_res",
+   "description": "Reduz o dano recebido, aumenta a resistência máxima e diminui a fadiga."
+  },
+  "agi": {
+   "name": "Agilidade",
+   "short": "AGI",
+   "icon": "attr_agi",
+   "description": "Aumenta a velocidade de ataque, de movimento e a chance de esquiva."
+  },
+  "prec": {
+   "name": "Precisão",
+   "short": "PRE",
+   "icon": "attr_prec",
+   "description": "Aumenta a chance de acertar e de causar golpes críticos."
+  },
+  "tech": {
+   "name": "Técnica",
+   "short": "TEC",
+   "icon": "attr_tech",
+   "description": "Melhora a eficiência das habilidades especiais e dos bloqueios."
+  }
+ },
+ "constants": {
+  "BASE_ATTRIBUTE": 5,
+  "MAX_ATTRIBUTE": 99,
+  "POINTS_PER_LEVEL": 3,
+  "MAX_LEVEL": 30,
+  "MAX_PLUS": 3
+ },
+ "xpTable": [
+  0,
+  100,
+  182,
+  283,
+  398,
+  526,
+  664,
+  812,
+  969,
+  1134,
+  1306,
+  1485,
+  1671,
+  1863,
+  2062,
+  2266,
+  2475,
+  2690,
+  2910,
+  3135,
+  3364,
+  3599,
+  3838,
+  4081,
+  4328,
+  4580,
+  4836,
+  5095,
+  5359,
+  5626,
+  null
+ ],
+ "items": [
+  {
+   "id": "rudis",
+   "name": "Rúdis de treino",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "common",
+   "description": "Espada de madeira usada nos treinos do ludus. Leve, mas pouco letal.",
+   "price": 10,
+   "minLevel": 1,
+   "shop": false,
+   "mods": {
+    "damage": 2,
+    "reach": 22
+   },
+   "visual": {
+    "sheets": [
+     "weapon_rudis"
+    ],
+    "icon": "weapon_rudis"
+   }
+  },
+  {
+   "id": "short_sword",
+   "name": "Espada curta",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "common",
+   "description": "Lâmina curta e ágil. Permite golpes mais rápidos, com menos alcance.",
+   "price": 70,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "damage": 4,
+    "reach": 20,
+    "attackSpeed": -0.15,
+    "attrs": {
+     "agi": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_shortsword"
+    ],
+    "icon": "weapon_shortsword"
+   }
+  },
+  {
+   "id": "gladius",
+   "name": "Gládio",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "common",
+   "description": "A espada romana clássica, feita para estocadas precisas.",
+   "price": 90,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "damage": 6,
+    "reach": 24,
+    "attrs": {
+     "prec": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_gladius"
+    ],
+    "icon": "weapon_gladius"
+   }
+  },
+  {
+   "id": "spear",
+   "name": "Lança",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "uncommon",
+   "description": "Hasta de freixo com ponta de ferro. Grande alcance, golpes um pouco mais lentos.",
+   "price": 220,
+   "minLevel": 3,
+   "shop": true,
+   "mods": {
+    "damage": 7,
+    "reach": 42,
+    "attackSpeed": 0.12,
+    "attrs": {
+     "prec": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_spear"
+    ],
+    "icon": "weapon_spear"
+   }
+  },
+  {
+   "id": "gladius_pompeii",
+   "name": "Gládio de Pompeia",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "uncommon",
+   "description": "Gládio de lâmina reta e ponta triangular, forjado na Campânia.",
+   "price": 260,
+   "minLevel": 5,
+   "shop": true,
+   "mods": {
+    "damage": 9,
+    "reach": 24,
+    "attrs": {
+     "prec": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_gladius"
+    ],
+    "tint": 14214399,
+    "icon": "weapon_gladius"
+   }
+  },
+  {
+   "id": "trident",
+   "name": "Tridente",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "rare",
+   "description": "Arma do retiário. Mantém o adversário à distância e exige técnica.",
+   "price": 420,
+   "minLevel": 6,
+   "shop": true,
+   "mods": {
+    "damage": 9,
+    "reach": 40,
+    "attackSpeed": 0.15,
+    "attrs": {
+     "tech": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_trident"
+    ],
+    "icon": "weapon_trident"
+   }
+  },
+  {
+   "id": "sica",
+   "name": "Sica trácia",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "rare",
+   "description": "Lâmina curta e curva dos gladiadores trácios. Rápida e traiçoeira.",
+   "price": 480,
+   "minLevel": 9,
+   "shop": true,
+   "mods": {
+    "damage": 10,
+    "reach": 21,
+    "attackSpeed": -0.2,
+    "attrs": {
+     "agi": 2,
+     "tech": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_sica"
+    ],
+    "icon": "weapon_sica"
+   }
+  },
+  {
+   "id": "gladius_mainz",
+   "name": "Gládio de Mainz",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "rare",
+   "description": "Gládio longo e pesado, de ponta afilada. Favorece gladiadores fortes.",
+   "price": 520,
+   "minLevel": 10,
+   "shop": true,
+   "mods": {
+    "damage": 12,
+    "reach": 25,
+    "attrs": {
+     "str": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_gladius"
+    ],
+    "icon": "weapon_gladius"
+   }
+  },
+  {
+   "id": "hoplomachus_spear",
+   "name": "Lança do Hoplômaco",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "rare",
+   "description": "Lança de guerra balanceada, herança dos hoplitas gregos.",
+   "price": 560,
+   "minLevel": 12,
+   "shop": true,
+   "mods": {
+    "damage": 12,
+    "reach": 44,
+    "attackSpeed": 0.1,
+    "attrs": {
+     "prec": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_spear"
+    ],
+    "tint": 14203024,
+    "icon": "weapon_spear"
+   }
+  },
+  {
+   "id": "champion_gladius",
+   "name": "Gládio do Campeão",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "epic",
+   "description": "Presente de um editor dos jogos a um campeão invicto. Equilíbrio perfeito.",
+   "price": 1400,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "damage": 16,
+    "reach": 25,
+    "attrs": {
+     "str": 3,
+     "prec": 3
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_gladius"
+    ],
+    "tint": 16769162,
+    "icon": "weapon_gladius"
+   }
+  },
+  {
+   "id": "champion_trident",
+   "name": "Tridente do Retiário Lendário",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "epic",
+   "description": "Tridente de bronze trabalhado, usado por um retiário celebrado em Roma.",
+   "price": 1450,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "damage": 15,
+    "reach": 42,
+    "attackSpeed": 0.1,
+    "attrs": {
+     "agi": 3,
+     "tech": 3
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_trident"
+    ],
+    "tint": 16769162,
+    "icon": "weapon_trident"
+   }
+  },
+  {
+   "id": "arbelas",
+   "name": "Arbelas",
+   "category": "weapon",
+   "slot": "mainHand",
+   "rarity": "rare",
+   "description": "Tubo de ferro que cobre o antebraço e termina numa lâmina em meia-lua. A arma do scissor.",
+   "price": 420,
+   "minLevel": 8,
+   "shop": true,
+   "mods": {
+    "damage": 9,
+    "reach": 22,
+    "attackSpeed": -0.05,
+    "attrs": {
+     "tech": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "weapon_arbelas"
+    ],
+    "icon": "weapon_arbelas"
+   }
+  },
+  {
+   "id": "parmula",
+   "name": "Escudo pequeno",
+   "category": "shield",
+   "slot": "offHand",
+   "rarity": "common",
+   "description": "Parmula de madeira com aro de bronze. Leve e fácil de manejar.",
+   "price": 60,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "defense": 3,
+    "block": 0.4
+   },
+   "visual": {
+    "sheets": [
+     "shield_parmula"
+    ],
+    "icon": "shield_parmula"
+   }
+  },
+  {
+   "id": "scutum",
+   "name": "Scutum",
+   "category": "shield",
+   "slot": "offHand",
+   "rarity": "uncommon",
+   "description": "Grande escudo retangular. Excelente proteção, mas reduz a mobilidade.",
+   "price": 240,
+   "minLevel": 3,
+   "shop": true,
+   "mods": {
+    "defense": 7,
+    "block": 0.6,
+    "attackSpeed": 0.08,
+    "attrs": {
+     "agi": -2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "shield_scutum"
+    ],
+    "icon": "shield_scutum"
+   }
+  },
+  {
+   "id": "thracian_parma",
+   "name": "Parma trácia",
+   "category": "shield",
+   "slot": "offHand",
+   "rarity": "rare",
+   "description": "Escudo quadrado e côncavo dos trácios, equilibrando defesa e agilidade.",
+   "price": 450,
+   "minLevel": 8,
+   "shop": true,
+   "mods": {
+    "defense": 6,
+    "block": 0.5,
+    "attrs": {
+     "agi": 1,
+     "tech": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "shield_parma"
+    ],
+    "icon": "shield_parma"
+   }
+  },
+  {
+   "id": "reinforced_scutum",
+   "name": "Scutum reforçado",
+   "category": "shield",
+   "slot": "offHand",
+   "rarity": "rare",
+   "description": "Scutum com bordas de ferro e umbo pesado.",
+   "price": 600,
+   "minLevel": 11,
+   "shop": true,
+   "mods": {
+    "defense": 11,
+    "block": 0.65,
+    "attackSpeed": 0.08,
+    "attrs": {
+     "agi": -2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "shield_scutum"
+    ],
+    "tint": 14214399,
+    "icon": "shield_scutum"
+   }
+  },
+  {
+   "id": "champion_scutum",
+   "name": "Scutum do Campeão",
+   "category": "shield",
+   "slot": "offHand",
+   "rarity": "epic",
+   "description": "Escudo ornamentado com louros dourados, símbolo de muitas vitórias.",
+   "price": 1500,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "defense": 14,
+    "block": 0.72,
+    "attackSpeed": 0.05,
+    "attrs": {
+     "vit": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "shield_scutum"
+    ],
+    "tint": 16769162,
+    "icon": "shield_scutum"
+   }
+  },
+  {
+   "id": "twin_gladius",
+   "name": "Segundo gládio",
+   "category": "weapon",
+   "slot": "offHand",
+   "rarity": "uncommon",
+   "description": "Uma espada para cada mão, como os dimachaeri. Ataques mais rápidos, mas sem escudo para bloquear.",
+   "price": 260,
+   "minLevel": 5,
+   "shop": true,
+   "mods": {
+    "damage": 3,
+    "attackSpeed": -0.12,
+    "attrs": {
+     "agi": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "offhand_gladius"
+    ],
+    "icon": "offhand_gladius"
+   }
+  },
+  {
+   "id": "leather_cap",
+   "name": "Capacete de couro",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "common",
+   "description": "Gorro de couro endurecido. Proteção modesta.",
+   "price": 50,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "defense": 2
+   },
+   "visual": {
+    "sheets": [
+     "helmet_cap"
+    ],
+    "icon": "helmet_cap"
+   }
+  },
+  {
+   "id": "galea",
+   "name": "Capacete de gladiador",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "uncommon",
+   "description": "Galea de bronze com grade facial e penacho. Protege bem, mas limita a visão.",
+   "price": 200,
+   "minLevel": 3,
+   "shop": true,
+   "mods": {
+    "defense": 6,
+    "attrs": {
+     "prec": -1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "helmet_galea"
+    ],
+    "icon": "helmet_galea"
+   }
+  },
+  {
+   "id": "murmillo_helm",
+   "name": "Galea do Mirmilão",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "rare",
+   "description": "Capacete pesado com crista alta, típico dos mirmilões.",
+   "price": 480,
+   "minLevel": 9,
+   "shop": true,
+   "mods": {
+    "defense": 9,
+    "attrs": {
+     "res": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "helmet_murmillo"
+    ],
+    "icon": "helmet_murmillo"
+   }
+  },
+  {
+   "id": "champion_helm",
+   "name": "Galea dourada",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "epic",
+   "description": "Elmo cerimonial dourado, reservado aos grandes campeões da arena.",
+   "price": 1300,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "defense": 12,
+    "attrs": {
+     "tech": 2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "helmet_galea"
+    ],
+    "tint": 16769162,
+    "icon": "helmet_galea"
+   }
+  },
+  {
+   "id": "provocator_helm",
+   "name": "Elmo do Provocator",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "uncommon",
+   "description": "Elmo de legionário com viseira fechada e abas no pescoço, sem aba larga.",
+   "price": 260,
+   "minLevel": 5,
+   "shop": true,
+   "mods": {
+    "defense": 7
+   },
+   "visual": {
+    "sheets": [
+     "helmet_provocator"
+    ],
+    "icon": "helmet_provocator"
+   }
+  },
+  {
+   "id": "secutor_helm",
+   "name": "Elmo do Secutor",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "rare",
+   "description": "Elmo liso e arredondado, com dois furos pequenos para os olhos: a rede do retiário escorrega nele.",
+   "price": 380,
+   "minLevel": 7,
+   "shop": true,
+   "mods": {
+    "defense": 8,
+    "attrs": {
+     "prec": -1,
+     "res": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "helmet_secutor"
+    ],
+    "icon": "helmet_secutor"
+   }
+  },
+  {
+   "id": "crupellarius_helm",
+   "name": "Elmo fechado de Crupellarius",
+   "category": "helmet",
+   "slot": "head",
+   "rarity": "rare",
+   "description": "Elmo de ferro inteiriço dos crupellarii gauleses. Quase nada o atravessa, mas é pesado.",
+   "price": 560,
+   "minLevel": 12,
+   "shop": true,
+   "mods": {
+    "defense": 11,
+    "attrs": {
+     "agi": -1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "helmet_crupellarius"
+    ],
+    "icon": "helmet_crupellarius"
+   }
+  },
+  {
+   "id": "light_armor",
+   "name": "Armadura leve",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "common",
+   "description": "Peitoral de couro e linho acolchoado. Não atrapalha os movimentos.",
+   "price": 80,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "defense": 5
+   },
+   "visual": {
+    "sheets": [
+     "armor_light"
+    ],
+    "icon": "armor_light"
+   }
+  },
+  {
+   "id": "medium_armor",
+   "name": "Armadura média",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "uncommon",
+   "description": "Lorica segmentata: faixas de ferro presas por correias de couro.",
+   "price": 260,
+   "minLevel": 4,
+   "shop": true,
+   "mods": {
+    "defense": 10,
+    "attrs": {
+     "agi": -1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "armor_medium"
+    ],
+    "icon": "armor_medium"
+   }
+  },
+  {
+   "id": "bronze_cuirass",
+   "name": "Peitoral de bronze",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "rare",
+   "description": "Couraça anatômica de bronze martelado.",
+   "price": 560,
+   "minLevel": 10,
+   "shop": true,
+   "mods": {
+    "defense": 14,
+    "attrs": {
+     "agi": -1,
+     "vit": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "armor_heavy"
+    ],
+    "icon": "armor_heavy"
+   }
+  },
+  {
+   "id": "champion_cuirass",
+   "name": "Couraça do Campeão",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "epic",
+   "description": "Couraça dourada com relevos de vitória.",
+   "price": 1600,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "defense": 18,
+    "attrs": {
+     "vit": 3
+    }
+   },
+   "visual": {
+    "sheets": [
+     "armor_heavy"
+    ],
+    "tint": 16769162,
+    "icon": "armor_heavy"
+   }
+  },
+  {
+   "id": "cardiophylax",
+   "name": "Cardiophylax",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "uncommon",
+   "description": "Placa de bronze presa ao peito por correias, a proteção típica do provocator.",
+   "price": 170,
+   "minLevel": 3,
+   "shop": true,
+   "mods": {
+    "defense": 7
+   },
+   "visual": {
+    "sheets": [
+     "armor_cardio"
+    ],
+    "icon": "armor_cardio"
+   }
+  },
+  {
+   "id": "scale_armor",
+   "name": "Lorica squamata",
+   "category": "armor",
+   "slot": "body",
+   "rarity": "rare",
+   "description": "Couraça de escamas de ferro sobre couro, usada pelos crupellarii. Muito resistente e pesada.",
+   "price": 640,
+   "minLevel": 12,
+   "shop": true,
+   "mods": {
+    "defense": 16,
+    "attackSpeed": 0.08,
+    "attrs": {
+     "agi": -2
+    }
+   },
+   "visual": {
+    "sheets": [
+     "armor_scale"
+    ],
+    "icon": "armor_scale"
+   }
+  },
+  {
+   "id": "greaves",
+   "name": "Proteção de pernas",
+   "category": "legs",
+   "slot": "legs",
+   "rarity": "common",
+   "description": "Caneleiras de ferro presas com tiras de couro.",
+   "price": 60,
+   "minLevel": 1,
+   "shop": true,
+   "mods": {
+    "defense": 3
+   },
+   "visual": {
+    "sheets": [
+     "legsb_iron",
+     "legsf_iron"
+    ],
+    "icon": "legs_iron"
+   }
+  },
+  {
+   "id": "bronze_greaves",
+   "name": "Grevas de bronze",
+   "category": "legs",
+   "slot": "legs",
+   "rarity": "uncommon",
+   "description": "Ocreae de bronze com joelheiras.",
+   "price": 210,
+   "minLevel": 4,
+   "shop": true,
+   "mods": {
+    "defense": 6
+   },
+   "visual": {
+    "sheets": [
+     "legsb_bronze",
+     "legsf_bronze"
+    ],
+    "icon": "legs_bronze"
+   }
+  },
+  {
+   "id": "ornate_greaves",
+   "name": "Ocreae ornamentadas",
+   "category": "legs",
+   "slot": "legs",
+   "rarity": "rare",
+   "description": "Grevas altas decoradas, leves e resistentes.",
+   "price": 450,
+   "minLevel": 9,
+   "shop": true,
+   "mods": {
+    "defense": 8,
+    "attrs": {
+     "agi": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "legsb_bronze",
+     "legsf_bronze"
+    ],
+    "tint": 14203024,
+    "icon": "legs_bronze"
+   }
+  },
+  {
+   "id": "champion_greaves",
+   "name": "Grevas do Campeão",
+   "category": "legs",
+   "slot": "legs",
+   "rarity": "epic",
+   "description": "Grevas douradas que acompanham a armadura do campeão.",
+   "price": 1200,
+   "minLevel": 15,
+   "shop": false,
+   "mods": {
+    "defense": 10,
+    "attrs": {
+     "agi": 2,
+     "res": 1
+    }
+   },
+   "visual": {
+    "sheets": [
+     "legsb_bronze",
+     "legsf_bronze"
+    ],
+    "tint": 16769162,
+    "icon": "legs_bronze"
+   }
+  }
+ ],
+ "opponents": [
+  {
+   "id": "marcus",
+   "name": "Marcus",
+   "epithet": "o Novato",
+   "level": 1,
+   "description": "Recruta recém-chegado ao ludus. Luta com uma rúdis de madeira e pouca experiência.",
+   "weights": {
+    "str": 1,
+    "vit": 1,
+    "res": 1,
+    "agi": 1,
+    "prec": 1,
+    "tech": 0.5
+   },
+   "equipment": {
+    "mainHand": "rudis"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "mars",
+    "minerva",
+    "mercury"
+   ],
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 0,
+    "hairColor": 1,
+    "beard": false,
+    "clothColor": 1
+   }
+  },
+  {
+   "id": "cassius",
+   "name": "Cassius",
+   "epithet": "o Andabata",
+   "level": 3,
+   "description": "Lutador impetuoso que ataca sem parar. Rápido, porém descuidado na defesa.",
+   "weights": {
+    "str": 1.2,
+    "vit": 0.8,
+    "res": 0.6,
+    "agi": 1.6,
+    "prec": 1,
+    "tech": 0.5
+   },
+   "equipment": {
+    "mainHand": "short_sword",
+    "offHand": "parmula",
+    "head": "leather_cap"
+   },
+   "strategy": "aggressive",
+   "paths": [
+    "mercury",
+    "mars",
+    "minerva"
+   ],
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 2,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 0
+   }
+  },
+  {
+   "id": "rufus",
+   "name": "Rufus",
+   "epithet": "o Retiário",
+   "level": 5,
+   "description": "Retiário ágil que usa o alcance do tridente para manter os rivais à distância.",
+   "weights": {
+    "str": 1.1,
+    "vit": 1.2,
+    "res": 0.8,
+    "agi": 1.5,
+    "prec": 1.2,
+    "tech": 0.8
+   },
+   "equipment": {
+    "mainHand": "trident",
+    "body": "light_armor",
+    "legs": "greaves"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "minerva",
+    "mars"
+   ],
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 1,
+    "hairColor": 2,
+    "beard": false,
+    "clothColor": 2
+   }
+  },
+  {
+   "id": "brutus",
+   "name": "Brutus",
+   "epithet": "o Secutor",
+   "level": 8,
+   "description": "Secutor pesado e paciente, protegido por um grande scutum.",
+   "weights": {
+    "str": 1.5,
+    "vit": 1.4,
+    "res": 1.4,
+    "agi": 0.5,
+    "prec": 0.9,
+    "tech": 0.7
+   },
+   "equipment": {
+    "mainHand": "gladius",
+    "offHand": "scutum",
+    "head": "galea",
+    "legs": "greaves"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 0,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 0
+   }
+  },
+  {
+   "id": "spiculus",
+   "name": "Spiculus",
+   "epithet": "o Hoplômaco",
+   "level": 11,
+   "description": "Hoplômaco preciso, famoso pelas estocadas de lança à longa distância.",
+   "weights": {
+    "str": 1.3,
+    "vit": 1.2,
+    "res": 1,
+    "agi": 1.1,
+    "prec": 1.4,
+    "tech": 0.8
+   },
+   "equipment": {
+    "mainHand": "spear",
+    "offHand": "parmula",
+    "head": "galea",
+    "body": "light_armor",
+    "legs": "bronze_greaves"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "mars",
+    "minerva"
+   ],
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 0,
+    "hairColor": 0,
+    "beard": false,
+    "clothColor": 4
+   }
+  },
+  {
+   "id": "crixus",
+   "name": "Crixus",
+   "epithet": "o Gaulês",
+   "level": 14,
+   "description": "Gigante gaulês de força brutal. Prefere terminar as lutas rapidamente.",
+   "weights": {
+    "str": 1.8,
+    "vit": 1.5,
+    "res": 1.1,
+    "agi": 0.7,
+    "prec": 0.9,
+    "tech": 0.6
+   },
+   "equipment": {
+    "mainHand": "gladius_pompeii",
+    "offHand": "scutum",
+    "head": "leather_cap",
+    "body": "medium_armor",
+    "legs": "greaves"
+   },
+   "strategy": "aggressive",
+   "paths": [
+    "mars",
+    "minerva",
+    "mercury"
+   ],
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 1,
+    "hairColor": 4,
+    "beard": true,
+    "clothColor": 3
+   }
+  },
+  {
+   "id": "verus",
+   "name": "Verus",
+   "epithet": "o Trácio",
+   "level": 18,
+   "description": "Trácio veterano, veloz e técnico, que pune cada erro com contra-ataques.",
+   "weights": {
+    "str": 1.3,
+    "vit": 1.2,
+    "res": 0.9,
+    "agi": 1.5,
+    "prec": 1.1,
+    "tech": 1.2
+   },
+   "equipment": {
+    "mainHand": "sica",
+    "offHand": "thracian_parma",
+    "head": "galea",
+    "body": "light_armor",
+    "legs": "bronze_greaves"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "mars",
+    "minerva"
+   ],
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 2,
+    "hairColor": 0,
+    "beard": true,
+    "clothColor": 5
+   }
+  },
+  {
+   "id": "priscus",
+   "name": "Priscus",
+   "epithet": "o Mirmilão",
+   "level": 22,
+   "description": "Mirmilão de defesa quase impenetrável. Espera o cansaço do rival para atacar.",
+   "weights": {
+    "str": 1.3,
+    "vit": 1.4,
+    "res": 1.8,
+    "agi": 0.6,
+    "prec": 1,
+    "tech": 1.1
+   },
+   "equipment": {
+    "mainHand": "gladius_mainz",
+    "offHand": "reinforced_scutum",
+    "head": "murmillo_helm",
+    "body": "medium_armor",
+    "legs": "ornate_greaves"
+   },
+   "strategy": "defensive",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 0,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 1
+   }
+  },
+  {
+   "id": "flamma",
+   "name": "Flamma",
+   "epithet": "o Campeão",
+   "level": 27,
+   "description": "O campeão de Roma, invicto há anos. Domina todas as técnicas da arena.",
+   "weights": {
+    "str": 1.4,
+    "vit": 1.3,
+    "res": 1.2,
+    "agi": 1.1,
+    "prec": 1.2,
+    "tech": 1.3
+   },
+   "equipment": {
+    "mainHand": "champion_gladius",
+    "offHand": "champion_scutum",
+    "head": "champion_helm",
+    "body": "bronze_cuirass",
+    "legs": "ornate_greaves"
+   },
+   "strategy": "balanced",
+   "paths": [
+    "mars",
+    "minerva",
+    "mercury"
+   ],
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 0,
+    "hairColor": 0,
+    "beard": false,
+    "clothColor": 4
+   }
+  }
+ ],
+ "upgrades": [
+  {
+   "id": "bed_wool",
+   "place": "home",
+   "price": 180,
+   "minLevel": 1,
+   "napBonus": 12,
+   "icon": "up_bed"
+  },
+  {
+   "id": "bed_noble",
+   "place": "home",
+   "price": 520,
+   "minLevel": 6,
+   "requires": "bed_wool",
+   "napBonus": 25,
+   "icon": "up_bed2"
+  },
+  {
+   "id": "stone_weights",
+   "place": "ludus",
+   "price": 220,
+   "minLevel": 2,
+   "training": {
+    "id": "str",
+    "mul": 1.35
+   },
+   "icon": "up_weights"
+  },
+  {
+   "id": "sand_track",
+   "place": "ludus",
+   "price": 200,
+   "minLevel": 2,
+   "training": {
+    "id": "res",
+    "mul": 1.35
+   },
+   "icon": "up_track"
+  },
+  {
+   "id": "agility_stakes",
+   "place": "ludus",
+   "price": 220,
+   "minLevel": 3,
+   "training": {
+    "id": "agi",
+    "mul": 1.35
+   },
+   "icon": "up_stakes"
+  },
+  {
+   "id": "iron_palus",
+   "place": "ludus",
+   "price": 240,
+   "minLevel": 3,
+   "training": {
+    "id": "tech",
+    "mul": 1.35
+   },
+   "icon": "up_palus"
+  },
+  {
+   "id": "doctore",
+   "place": "ludus",
+   "price": 650,
+   "minLevel": 8,
+   "trainEnergyCut": 3,
+   "icon": "up_doctore"
+  },
+  {
+   "id": "bronze_weights",
+   "place": "ludus",
+   "price": 560,
+   "minLevel": 7,
+   "requires": "stone_weights",
+   "training": {
+    "id": "str",
+    "mul": 1.3
+   },
+   "icon": "up_weights2",
+   "tier": 2
+  },
+  {
+   "id": "long_track",
+   "place": "ludus",
+   "price": 520,
+   "minLevel": 7,
+   "requires": "sand_track",
+   "training": {
+    "id": "res",
+    "mul": 1.3
+   },
+   "icon": "up_track2",
+   "tier": 2
+  },
+  {
+   "id": "swing_stakes",
+   "place": "ludus",
+   "price": 560,
+   "minLevel": 8,
+   "requires": "agility_stakes",
+   "training": {
+    "id": "agi",
+    "mul": 1.3
+   },
+   "icon": "up_stakes2",
+   "tier": 2
+  },
+  {
+   "id": "bronze_palus",
+   "place": "ludus",
+   "price": 600,
+   "minLevel": 8,
+   "requires": "iron_palus",
+   "training": {
+    "id": "tech",
+    "mul": 1.3
+   },
+   "icon": "up_palus2",
+   "tier": 2
+  },
+  {
+   "id": "doctore_legend",
+   "place": "ludus",
+   "price": 1300,
+   "minLevel": 12,
+   "requires": "doctore",
+   "trainEnergyCut": 3,
+   "icon": "up_doctore2",
+   "tier": 2
+  }
+ ],
+ "perks": [
+  {
+   "id": "m1",
+   "branch": "mars",
+   "tier": 1,
+   "name": "Braço forte",
+   "short": "+5% de dano",
+   "cost": 1,
+   "requires": [],
+   "mods": {
+    "damageMul": 0.05
+   },
+   "icon": "attr_str"
+  },
+  {
+   "id": "m2",
+   "branch": "mars",
+   "tier": 2,
+   "name": "Golpe poderoso",
+   "short": "Habilidade: golpe muito forte",
+   "cost": 1,
+   "requires": [
+    "m1"
+   ],
+   "skill": "power_strike",
+   "icon": "skill_power_strike"
+  },
+  {
+   "id": "m3a",
+   "branch": "mars",
+   "tier": 3,
+   "name": "Fúria",
+   "short": "+4% de crítico",
+   "cost": 2,
+   "requires": [
+    "m2"
+   ],
+   "mods": {
+    "critAdd": 0.04
+   },
+   "icon": "attr_prec"
+  },
+  {
+   "id": "m3b",
+   "branch": "mars",
+   "tier": 3,
+   "name": "Peso do golpe",
+   "short": "Golpe poderoso +25%",
+   "cost": 2,
+   "requires": [
+    "m2"
+   ],
+   "mods": {
+    "powerStrikeBonus": 0.25
+   },
+   "icon": "skill_power_strike"
+  },
+  {
+   "id": "m4",
+   "branch": "mars",
+   "tier": 4,
+   "name": "Quebra-guarda",
+   "short": "Ignora 12% do bloqueio",
+   "cost": 2,
+   "requires": [
+    "m3a",
+    "m3b"
+   ],
+   "mods": {
+    "blockPierce": 0.12
+   },
+   "icon": "attr_tech"
+  },
+  {
+   "id": "m5",
+   "branch": "mars",
+   "tier": 5,
+   "name": "Ira de Marte",
+   "short": "+8% dano, +4% crítico",
+   "cost": 3,
+   "requires": [
+    "m4"
+   ],
+   "mods": {
+    "damageMul": 0.08,
+    "critAdd": 0.04
+   },
+   "icon": "attr_str"
+  },
+  {
+   "id": "v1",
+   "branch": "mercury",
+   "tier": 1,
+   "name": "Pés leves",
+   "short": "+4% de esquiva",
+   "cost": 1,
+   "requires": [],
+   "mods": {
+    "dodgeAdd": 0.04
+   },
+   "icon": "attr_agi"
+  },
+  {
+   "id": "v2",
+   "branch": "mercury",
+   "tier": 2,
+   "name": "Ataque rápido",
+   "short": "Habilidade: golpe veloz",
+   "cost": 1,
+   "requires": [
+    "v1"
+   ],
+   "skill": "quick_strike",
+   "icon": "skill_quick_strike"
+  },
+  {
+   "id": "v3a",
+   "branch": "mercury",
+   "tier": 3,
+   "name": "Ritmo",
+   "short": "Ataca 8% mais rápido",
+   "cost": 2,
+   "requires": [
+    "v2"
+   ],
+   "mods": {
+    "intervalMul": 0.08
+   },
+   "icon": "attr_agi"
+  },
+  {
+   "id": "v3b",
+   "branch": "mercury",
+   "tier": 3,
+   "name": "Olhos de águia",
+   "short": "+6% de acerto",
+   "cost": 2,
+   "requires": [
+    "v2"
+   ],
+   "mods": {
+    "hitAdd": 0.06
+   },
+   "icon": "attr_prec"
+  },
+  {
+   "id": "v4",
+   "branch": "mercury",
+   "tier": 4,
+   "name": "Contra-ataque",
+   "short": "Habilidade: revida após defender",
+   "cost": 2,
+   "requires": [
+    "v3a",
+    "v3b"
+   ],
+   "skill": "counter",
+   "icon": "skill_counter"
+  },
+  {
+   "id": "v5",
+   "branch": "mercury",
+   "tier": 5,
+   "name": "Asas de Mercúrio",
+   "short": "+5% esquiva, 8% mais rápido",
+   "cost": 3,
+   "requires": [
+    "v4"
+   ],
+   "mods": {
+    "dodgeAdd": 0.05,
+    "intervalMul": 0.08
+   },
+   "icon": "attr_agi"
+  },
+  {
+   "id": "d1",
+   "branch": "minerva",
+   "tier": 1,
+   "name": "Pele dura",
+   "short": "+6% de vida",
+   "cost": 1,
+   "requires": [],
+   "mods": {
+    "hpMul": 0.06
+   },
+   "icon": "attr_vit"
+  },
+  {
+   "id": "d2",
+   "branch": "minerva",
+   "tier": 2,
+   "name": "Defesa reforçada",
+   "short": "Habilidade: reduz o dano",
+   "cost": 1,
+   "requires": [
+    "d1"
+   ],
+   "skill": "iron_guard",
+   "icon": "skill_iron_guard"
+  },
+  {
+   "id": "d3a",
+   "branch": "minerva",
+   "tier": 3,
+   "name": "Fôlego de ferro",
+   "short": "+25% de fôlego",
+   "cost": 2,
+   "requires": [
+    "d2"
+   ],
+   "mods": {
+    "regenMul": 0.25
+   },
+   "icon": "attr_res"
+  },
+  {
+   "id": "d3b",
+   "branch": "minerva",
+   "tier": 3,
+   "name": "Muralha",
+   "short": "+6% de bloqueio",
+   "cost": 2,
+   "requires": [
+    "d2"
+   ],
+   "mods": {
+    "blockAdd": 0.06
+   },
+   "icon": "skill_iron_guard"
+  },
+  {
+   "id": "d4",
+   "branch": "minerva",
+   "tier": 4,
+   "name": "Segundo fôlego",
+   "short": "Recupera vida 1x por luta",
+   "cost": 2,
+   "requires": [
+    "d3a",
+    "d3b"
+   ],
+   "mods": {
+    "secondWind": true
+   },
+   "icon": "attr_vit"
+  },
+  {
+   "id": "d5",
+   "branch": "minerva",
+   "tier": 5,
+   "name": "Escudo de Minerva",
+   "short": "−8% dano, +8% vida",
+   "cost": 3,
+   "requires": [
+    "d4"
+   ],
+   "mods": {
+    "damageTakenMul": 0.08,
+    "hpMul": 0.08
+   },
+   "icon": "attr_res"
+  }
+ ],
+ "branches": {
+  "mars": {
+   "name": "Marte",
+   "subtitle": "Ataque",
+   "color": "#e0584a"
+  },
+  "mercury": {
+   "name": "Mercúrio",
+   "subtitle": "Velocidade",
+   "color": "#6ab0ff"
+  },
+  "minerva": {
+   "name": "Minerva",
+   "subtitle": "Defesa",
+   "color": "#8ad866"
+  }
+ },
+ "skills": {
+  "power_strike": {
+   "id": "power_strike",
+   "name": "Golpe poderoso",
+   "cooldown": 9,
+   "staminaCost": 24,
+   "description": "Ataque preparado com o peso do corpo. Causa muito mais dano e consome mais resistência. A Técnica aumenta o dano.",
+   "trigger": "Usado quando há fôlego de sobra (resistência acima de 45%).",
+   "icon": "skill_power_strike"
+  },
+  "iron_guard": {
+   "id": "iron_guard",
+   "name": "Defesa reforçada",
+   "cooldown": 18,
+   "staminaCost": 14,
+   "description": "Fecha a guarda e reduz o dano recebido por alguns segundos. A Técnica aumenta a redução e a duração.",
+   "trigger": "Usado quando a vida cai abaixo de 65% e o adversário está próximo.",
+   "icon": "skill_iron_guard"
+  },
+  "quick_strike": {
+   "id": "quick_strike",
+   "name": "Ataque rápido",
+   "cooldown": 5,
+   "staminaCost": 8,
+   "description": "Estocada veloz com preparação e recuperação curtas. Dano um pouco menor.",
+   "trigger": "Usado quando o adversário se recupera de um golpe, está atordoado ou exausto.",
+   "icon": "skill_quick_strike"
+  },
+  "counter": {
+   "id": "counter",
+   "name": "Contra-ataque",
+   "cooldown": 7,
+   "staminaCost": 8,
+   "description": "Após bloquear ou esquivar, responde imediatamente com dano adicional. Não pode ser bloqueado nem esquivado.",
+   "trigger": "Chance após um bloqueio ou esquiva bem-sucedidos (maior com Técnica).",
+   "icon": "skill_counter"
+  }
+ },
+ "strategies": {
+  "aggressive": {
+   "id": "aggressive",
+   "name": "Agressiva",
+   "description": "Prioriza ataques e pressão constante. Ataca com mais frequência e força, mas consome mais resistência e defende pouco.",
+   "intervalMul": 0.78,
+   "staminaMul": 1.25,
+   "damageMul": 1.12,
+   "blockChance": 0.12,
+   "dodgeChance": 0.08,
+   "blockBonus": 0,
+   "dodgeBonus": 0,
+   "powerChance": 0.8,
+   "caution": 0.05
+  },
+  "balanced": {
+   "id": "balanced",
+   "name": "Equilibrada",
+   "description": "Distribui o esforço entre ataque e defesa.",
+   "intervalMul": 1,
+   "staminaMul": 1,
+   "damageMul": 1,
+   "blockChance": 0.3,
+   "dodgeChance": 0.18,
+   "blockBonus": 0.05,
+   "dodgeBonus": 0.02,
+   "powerChance": 0.5,
+   "caution": 0.25
+  },
+  "defensive": {
+   "id": "defensive",
+   "name": "Defensiva",
+   "description": "Prioriza bloqueios e esquivas e espera o adversário errar. Ataca menos, mas defende com mais eficiência.",
+   "intervalMul": 1.3,
+   "staminaMul": 0.9,
+   "damageMul": 0.96,
+   "blockChance": 0.5,
+   "dodgeChance": 0.28,
+   "blockBonus": 0.1,
+   "dodgeBonus": 0.06,
+   "powerChance": 0.3,
+   "caution": 0.6
+  }
+ },
+ "arenas": [
+  {
+   "id": "capua",
+   "name": "Arena de Cápua",
+   "bg": "bg:arena_capua",
+   "crowd": "bg:crowd_capua"
+  },
+  {
+   "id": "pompeii",
+   "name": "Anfiteatro de Pompeia",
+   "bg": "bg:arena_pompeii",
+   "crowd": "bg:crowd_pompeii"
+  },
+  {
+   "id": "verona",
+   "name": "Arena de Verona",
+   "bg": "bg:arena_verona",
+   "crowd": "bg:crowd_verona"
+  },
+  {
+   "id": "leptis",
+   "name": "Anfiteatro de Leptis Magna",
+   "bg": "bg:arena_leptis",
+   "crowd": "bg:crowd_leptis"
+  },
+  {
+   "id": "rome",
+   "name": "Coliseu de Roma",
+   "bg": "bg:arena_rome",
+   "crowd": "bg:crowd_rome"
+  },
+  {
+   "id": "villa",
+   "name": "Arena da Villa de Lucullus",
+   "bg": "bg:arena_villa",
+   "crowd": "bg:crowd_villa"
+  },
+  {
+   "id": "senator",
+   "name": "Anfiteatro do Senador Varro",
+   "bg": "bg:arena_senator",
+   "crowd": "bg:crowd_senator"
+  },
+  {
+   "id": "baiae",
+   "name": "Arena de Ouro de Baiae",
+   "bg": "bg:arena_baiae",
+   "crowd": "bg:crowd_baiae"
+  }
+ ],
+ "classes": {
+  "murmillo": {
+   "id": "murmillo",
+   "strategy": "defensive",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "weights": {
+    "str": 1.3,
+    "vit": 1.4,
+    "res": 1.6,
+    "agi": 0.6,
+    "prec": 1,
+    "tech": 1
+   },
+   "gear": [
+    {
+     "mainHand": "gladius",
+     "offHand": "scutum",
+     "head": "leather_cap"
+    },
+    {
+     "mainHand": "gladius",
+     "offHand": "scutum",
+     "head": "galea",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "gladius_pompeii",
+     "offHand": "scutum",
+     "head": "murmillo_helm",
+     "body": "medium_armor",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "gladius_mainz",
+     "offHand": "reinforced_scutum",
+     "head": "murmillo_helm",
+     "body": "medium_armor",
+     "legs": "bronze_greaves"
+    }
+   ]
+  },
+  "thraex": {
+   "id": "thraex",
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "mars",
+    "minerva"
+   ],
+   "weights": {
+    "str": 1.2,
+    "vit": 1.1,
+    "res": 0.9,
+    "agi": 1.5,
+    "prec": 1.1,
+    "tech": 1.2
+   },
+   "gear": [
+    {
+     "mainHand": "short_sword",
+     "offHand": "parmula"
+    },
+    {
+     "mainHand": "sica",
+     "offHand": "parmula",
+     "head": "galea",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "sica",
+     "offHand": "thracian_parma",
+     "head": "galea",
+     "body": "light_armor",
+     "legs": "bronze_greaves"
+    },
+    {
+     "mainHand": "sica",
+     "offHand": "thracian_parma",
+     "head": "galea",
+     "body": "light_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  },
+  "hoplomachus": {
+   "id": "hoplomachus",
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "mars",
+    "minerva"
+   ],
+   "weights": {
+    "str": 1.2,
+    "vit": 1.1,
+    "res": 1,
+    "agi": 1.1,
+    "prec": 1.5,
+    "tech": 0.9
+   },
+   "gear": [
+    {
+     "mainHand": "spear",
+     "offHand": "parmula"
+    },
+    {
+     "mainHand": "spear",
+     "offHand": "parmula",
+     "head": "galea",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "hoplomachus_spear",
+     "offHand": "parmula",
+     "head": "galea",
+     "body": "light_armor",
+     "legs": "bronze_greaves"
+    },
+    {
+     "mainHand": "hoplomachus_spear",
+     "offHand": "thracian_parma",
+     "head": "galea",
+     "body": "medium_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  },
+  "secutor": {
+   "id": "secutor",
+   "strategy": "balanced",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "weights": {
+    "str": 1.4,
+    "vit": 1.4,
+    "res": 1.4,
+    "agi": 0.6,
+    "prec": 1,
+    "tech": 0.8
+   },
+   "gear": [
+    {
+     "mainHand": "gladius",
+     "offHand": "parmula",
+     "head": "leather_cap"
+    },
+    {
+     "mainHand": "gladius",
+     "offHand": "scutum",
+     "head": "secutor_helm"
+    },
+    {
+     "mainHand": "gladius_pompeii",
+     "offHand": "scutum",
+     "head": "secutor_helm",
+     "legs": "bronze_greaves"
+    },
+    {
+     "mainHand": "gladius_mainz",
+     "offHand": "reinforced_scutum",
+     "head": "secutor_helm",
+     "body": "medium_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  },
+  "retiarius": {
+   "id": "retiarius",
+   "strategy": "balanced",
+   "paths": [
+    "mercury",
+    "minerva",
+    "mars"
+   ],
+   "weights": {
+    "str": 1,
+    "vit": 1.1,
+    "res": 0.8,
+    "agi": 1.6,
+    "prec": 1.3,
+    "tech": 1
+   },
+   "gear": [
+    {
+     "mainHand": "spear"
+    },
+    {
+     "mainHand": "trident",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "trident",
+     "body": "light_armor",
+     "legs": "bronze_greaves"
+    },
+    {
+     "mainHand": "champion_trident",
+     "body": "light_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  },
+  "provocator": {
+   "id": "provocator",
+   "strategy": "balanced",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "fresh": true,
+   "weights": {
+    "str": 1.3,
+    "vit": 1.3,
+    "res": 1.3,
+    "agi": 0.9,
+    "prec": 1.1,
+    "tech": 1
+   },
+   "gear": [
+    {
+     "mainHand": "gladius",
+     "offHand": "parmula",
+     "body": "cardiophylax"
+    },
+    {
+     "mainHand": "gladius",
+     "offHand": "scutum",
+     "head": "provocator_helm",
+     "body": "cardiophylax"
+    },
+    {
+     "mainHand": "gladius_pompeii",
+     "offHand": "scutum",
+     "head": "provocator_helm",
+     "body": "cardiophylax",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "gladius_mainz",
+     "offHand": "reinforced_scutum",
+     "head": "provocator_helm",
+     "body": "bronze_cuirass",
+     "legs": "bronze_greaves"
+    }
+   ]
+  },
+  "dimachaerus": {
+   "id": "dimachaerus",
+   "strategy": "aggressive",
+   "paths": [
+    "mars",
+    "mercury",
+    "minerva"
+   ],
+   "fresh": true,
+   "weights": {
+    "str": 1.3,
+    "vit": 1,
+    "res": 0.8,
+    "agi": 1.6,
+    "prec": 1.2,
+    "tech": 0.9
+   },
+   "gear": [
+    {
+     "mainHand": "short_sword",
+     "offHand": "twin_gladius"
+    },
+    {
+     "mainHand": "gladius",
+     "offHand": "twin_gladius",
+     "head": "leather_cap",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "sica",
+     "offHand": "twin_gladius",
+     "head": "galea",
+     "body": "light_armor",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "gladius_mainz",
+     "offHand": "twin_gladius",
+     "head": "galea",
+     "body": "light_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  },
+  "scissor": {
+   "id": "scissor",
+   "strategy": "aggressive",
+   "paths": [
+    "mars",
+    "minerva",
+    "mercury"
+   ],
+   "fresh": true,
+   "weights": {
+    "str": 1.5,
+    "vit": 1.3,
+    "res": 1.2,
+    "agi": 0.8,
+    "prec": 1,
+    "tech": 1.1
+   },
+   "gear": [
+    {
+     "mainHand": "gladius",
+     "body": "light_armor"
+    },
+    {
+     "mainHand": "arbelas",
+     "head": "secutor_helm",
+     "body": "light_armor"
+    },
+    {
+     "mainHand": "arbelas",
+     "head": "secutor_helm",
+     "body": "medium_armor",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "arbelas",
+     "head": "secutor_helm",
+     "body": "scale_armor",
+     "legs": "bronze_greaves"
+    }
+   ]
+  },
+  "crupellarius": {
+   "id": "crupellarius",
+   "strategy": "defensive",
+   "paths": [
+    "minerva",
+    "mars",
+    "mercury"
+   ],
+   "fresh": true,
+   "weights": {
+    "str": 1.4,
+    "vit": 1.5,
+    "res": 1.8,
+    "agi": 0.4,
+    "prec": 0.9,
+    "tech": 0.9
+   },
+   "gear": [
+    {
+     "mainHand": "gladius",
+     "offHand": "parmula",
+     "body": "medium_armor"
+    },
+    {
+     "mainHand": "gladius",
+     "offHand": "parmula",
+     "head": "galea",
+     "body": "medium_armor",
+     "legs": "greaves"
+    },
+    {
+     "mainHand": "gladius_pompeii",
+     "offHand": "parmula",
+     "head": "crupellarius_helm",
+     "body": "scale_armor",
+     "legs": "bronze_greaves"
+    },
+    {
+     "mainHand": "gladius_mainz",
+     "offHand": "thracian_parma",
+     "head": "crupellarius_helm",
+     "body": "scale_armor",
+     "legs": "ornate_greaves"
+    }
+   ]
+  }
+ },
+ "pool": [
+  {
+   "id": "pool_aulus",
+   "name": "Aulus",
+   "cls": "murmillo",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 0,
+    "hairColor": 0,
+    "beard": true,
+    "clothColor": 0
+   }
+  },
+  {
+   "id": "pool_tetraites",
+   "name": "Tetraites",
+   "cls": "dimachaerus",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 2,
+    "hairColor": 2,
+    "beard": false,
+    "clothColor": 4
+   }
+  },
+  {
+   "id": "pool_celadus",
+   "name": "Celadus",
+   "cls": "thraex",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 1,
+    "hairColor": 3,
+    "beard": false,
+    "clothColor": 2
+   }
+  },
+  {
+   "id": "pool_ursus",
+   "name": "Ursus",
+   "cls": "crupellarius",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 1,
+    "hairColor": 4,
+    "beard": true,
+    "clothColor": 3
+   }
+  },
+  {
+   "id": "pool_hermes",
+   "name": "Hermes",
+   "cls": "retiarius",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 0,
+    "hairColor": 2,
+    "beard": false,
+    "clothColor": 1
+   }
+  },
+  {
+   "id": "pool_draco",
+   "name": "Draco",
+   "cls": "scissor",
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 2,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 0
+   }
+  },
+  {
+   "id": "pool_felix",
+   "name": "Felix",
+   "cls": "provocator",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 0,
+    "hairColor": 1,
+    "beard": false,
+    "clothColor": 4
+   }
+  },
+  {
+   "id": "pool_columbus",
+   "name": "Columbus",
+   "cls": "secutor",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 0,
+    "hairColor": 5,
+    "beard": true,
+    "clothColor": 5
+   }
+  },
+  {
+   "id": "pool_tigris",
+   "name": "Tigris",
+   "cls": "dimachaerus",
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 1,
+    "hairColor": 2,
+    "beard": false,
+    "clothColor": 5
+   }
+  },
+  {
+   "id": "pool_decimus",
+   "name": "Decimus",
+   "cls": "hoplomachus",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 0,
+    "hairColor": 0,
+    "beard": true,
+    "clothColor": 2
+   }
+  },
+  {
+   "id": "pool_varro",
+   "name": "Varro",
+   "cls": "provocator",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 2,
+    "hairColor": 1,
+    "beard": true,
+    "clothColor": 1
+   }
+  },
+  {
+   "id": "pool_nubia",
+   "name": "Juba",
+   "cls": "scissor",
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 0,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 3
+   }
+  },
+  {
+   "id": "pool_sextus",
+   "name": "Sextus",
+   "cls": "murmillo",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 1,
+    "hairColor": 0,
+    "beard": false,
+    "clothColor": 0
+   }
+  },
+  {
+   "id": "pool_brennus",
+   "name": "Brennus",
+   "cls": "crupellarius",
+   "appearance": {
+    "skin": 0,
+    "hairStyle": 1,
+    "hairColor": 3,
+    "beard": true,
+    "clothColor": 2
+   }
+  },
+  {
+   "id": "pool_atticus",
+   "name": "Atticus",
+   "cls": "thraex",
+   "appearance": {
+    "skin": 1,
+    "hairStyle": 2,
+    "hairColor": 2,
+    "beard": true,
+    "clothColor": 4
+   }
+  },
+  {
+   "id": "pool_titus",
+   "name": "Titus",
+   "cls": "secutor",
+   "appearance": {
+    "skin": 2,
+    "hairStyle": 0,
+    "hairColor": 2,
+    "beard": false,
+    "clothColor": 5
+   }
+  }
+ ],
+ "skinNames": [
+  "Clara",
+  "Morena",
+  "Escura",
+  "Muito clara",
+  "Retinta"
+ ],
+ "hairNames": [
+  "Curto",
+  "Longo",
+  "Raspado",
+  "Cacheado",
+  "Rabo de cavalo",
+  "Crista",
+  "Coque"
+ ],
+ "en": {
+  "EN_ITEMS": {
+   "rudis": {
+    "name": "Training rudis",
+    "description": "Wooden sword used for practice in the ludus. Light, but hardly lethal."
+   },
+   "short_sword": {
+    "name": "Short sword",
+    "description": "Short, nimble blade. Faster strikes, less reach."
+   },
+   "gladius": {
+    "name": "Gladius",
+    "description": "The classic Roman sword, made for precise thrusts."
+   },
+   "spear": {
+    "name": "Spear",
+    "description": "Ash shaft with an iron head. Long reach, slightly slower strikes."
+   },
+   "gladius_pompeii": {
+    "name": "Pompeii gladius",
+    "description": "Straight-bladed gladius with a triangular point, forged in Campania."
+   },
+   "trident": {
+    "name": "Trident",
+    "description": "The retiarius weapon. Keeps rivals at a distance and demands technique."
+   },
+   "sica": {
+    "name": "Thracian sica",
+    "description": "Short curved blade of the Thracian gladiators. Fast and treacherous."
+   },
+   "gladius_mainz": {
+    "name": "Mainz gladius",
+    "description": "Long, heavy gladius with a sharp point. Suits strong fighters."
+   },
+   "hoplomachus_spear": {
+    "name": "Hoplomachus spear",
+    "description": "Well-balanced war spear, a legacy of the Greek hoplites."
+   },
+   "champion_gladius": {
+    "name": "Champion's gladius",
+    "description": "A gift from a games sponsor to an undefeated champion. Perfect balance."
+   },
+   "champion_trident": {
+    "name": "Trident of the Legendary Retiarius",
+    "description": "Worked bronze trident used by a celebrated retiarius in Rome."
+   },
+   "parmula": {
+    "name": "Small shield",
+    "description": "Wooden parmula with a bronze rim. Light and easy to handle."
+   },
+   "scutum": {
+    "name": "Scutum",
+    "description": "Large rectangular shield. Excellent protection, but reduces mobility."
+   },
+   "thracian_parma": {
+    "name": "Thracian parma",
+    "description": "Square, concave Thracian shield that balances defense and agility."
+   },
+   "reinforced_scutum": {
+    "name": "Reinforced scutum",
+    "description": "Scutum with iron edges and a heavy boss."
+   },
+   "champion_scutum": {
+    "name": "Champion's scutum",
+    "description": "Shield adorned with golden laurels, a symbol of many victories."
+   },
+   "leather_cap": {
+    "name": "Leather cap",
+    "description": "Hardened leather cap. Modest protection."
+   },
+   "galea": {
+    "name": "Gladiator helmet",
+    "description": "Bronze galea with a face grille and plume. Good protection, limited vision."
+   },
+   "murmillo_helm": {
+    "name": "Murmillo galea",
+    "description": "Heavy helmet with a tall crest, typical of the murmillones."
+   },
+   "champion_helm": {
+    "name": "Golden galea",
+    "description": "Ceremonial golden helmet, reserved for the great arena champions."
+   },
+   "light_armor": {
+    "name": "Light armor",
+    "description": "Leather and padded linen breastplate. Does not hinder movement."
+   },
+   "medium_armor": {
+    "name": "Medium armor",
+    "description": "Lorica segmentata: iron bands held together by leather straps."
+   },
+   "bronze_cuirass": {
+    "name": "Bronze breastplate",
+    "description": "Anatomical cuirass of hammered bronze."
+   },
+   "champion_cuirass": {
+    "name": "Champion's cuirass",
+    "description": "Golden cuirass with victory reliefs."
+   },
+   "greaves": {
+    "name": "Leg guards",
+    "description": "Iron shin guards tied with leather straps."
+   },
+   "bronze_greaves": {
+    "name": "Bronze greaves",
+    "description": "Bronze ocreae with knee guards."
+   },
+   "ornate_greaves": {
+    "name": "Ornate ocreae",
+    "description": "Tall decorated greaves, light and tough."
+   },
+   "champion_greaves": {
+    "name": "Champion's greaves",
+    "description": "Golden greaves that match the champion's armor."
+   },
+   "arbelas": {
+    "name": "Arbelas",
+    "description": "An iron tube covering the forearm that ends in a crescent blade. The scissor’s weapon."
+   },
+   "twin_gladius": {
+    "name": "Second gladius",
+    "description": "One sword for each hand, like the dimachaeri. Faster attacks, but no shield to block."
+   },
+   "provocator_helm": {
+    "name": "Provocator helmet",
+    "description": "Legionary helmet with a closed visor and neck flaps, without a wide brim."
+   },
+   "secutor_helm": {
+    "name": "Secutor helmet",
+    "description": "Smooth, rounded helmet with two small eye holes: the retiarius’ net slides off it."
+   },
+   "crupellarius_helm": {
+    "name": "Closed crupellarius helmet",
+    "description": "One-piece iron helmet of the Gallic crupellarii. Almost nothing gets through, but it is heavy."
+   },
+   "cardiophylax": {
+    "name": "Cardiophylax",
+    "description": "Bronze plate strapped to the chest, the typical protection of the provocator."
+   },
+   "scale_armor": {
+    "name": "Lorica squamata",
+    "description": "Iron scales over leather, worn by the crupellarii. Very tough and heavy."
+   }
+  },
+  "EN_OPPONENTS": {
+   "marcus": {
+    "epithet": "the Rookie",
+    "description": "A recruit fresh to the ludus. Fights with a wooden rudis and little experience."
+   },
+   "cassius": {
+    "epithet": "the Andabata",
+    "description": "A reckless fighter who never stops attacking. Fast, but careless on defense."
+   },
+   "rufus": {
+    "epithet": "the Retiarius",
+    "description": "A nimble retiarius who uses the trident’s reach to keep rivals at bay."
+   },
+   "brutus": {
+    "epithet": "the Secutor",
+    "description": "A heavy, patient secutor protected by a large scutum."
+   },
+   "spiculus": {
+    "epithet": "the Hoplomachus",
+    "description": "A precise hoplomachus, famous for long-range spear thrusts."
+   },
+   "crixus": {
+    "epithet": "the Gaul",
+    "description": "A Gallic giant of brutal strength. Likes to end fights quickly."
+   },
+   "verus": {
+    "epithet": "the Thracian",
+    "description": "A fast, technical Thracian veteran who punishes every mistake with counters."
+   },
+   "priscus": {
+    "epithet": "the Murmillo",
+    "description": "A murmillo with an almost impenetrable guard. Waits for rivals to tire before striking."
+   },
+   "flamma": {
+    "epithet": "the Champion",
+    "description": "The champion of Rome, undefeated for years. Masters every technique of the arena."
+   }
+  },
+  "EN_SKILLS": {
+   "power_strike": {
+    "name": "Power strike",
+    "description": "A blow loaded with body weight. Deals much more damage and costs more stamina. Technique increases the damage.",
+    "trigger": "Used when there is stamina to spare (above 45%)."
+   },
+   "iron_guard": {
+    "name": "Iron guard",
+    "description": "Closes the guard and reduces damage taken for a few seconds. Technique increases the reduction and duration.",
+    "trigger": "Used when health drops below 65% and the rival is close."
+   },
+   "quick_strike": {
+    "name": "Quick strike",
+    "description": "A fast thrust with short windup and recovery. Slightly less damage.",
+    "trigger": "Used when the rival is recovering from a blow, stunned or exhausted."
+   },
+   "counter": {
+    "name": "Counterattack",
+    "description": "After a block or dodge, strikes back at once with extra damage. Cannot be blocked or dodged.",
+    "trigger": "Chance after a successful block or dodge (higher with Technique)."
+   }
+  },
+  "EN_STRATEGIES": {
+   "aggressive": {
+    "name": "Aggressive",
+    "description": "Constant attacks and pressure. Strikes more often and harder, but burns more stamina and defends little."
+   },
+   "balanced": {
+    "name": "Balanced",
+    "description": "Splits the effort between attack and defense."
+   },
+   "defensive": {
+    "name": "Defensive",
+    "description": "Blocks and dodges, waiting for the rival to make a mistake. Attacks less, defends better."
+   }
+  },
+  "EN_ATTRIBUTES": {
+   "str": {
+    "name": "Strength",
+    "short": "STR",
+    "description": "Increases the damage of physical attacks."
+   },
+   "vit": {
+    "name": "Vitality",
+    "short": "VIT",
+    "description": "Increases maximum health."
+   },
+   "res": {
+    "name": "Endurance",
+    "short": "END",
+    "description": "Reduces damage taken, raises maximum stamina and lowers fatigue."
+   },
+   "agi": {
+    "name": "Agility",
+    "short": "AGI",
+    "description": "Increases attack speed, movement speed and dodge chance."
+   },
+   "prec": {
+    "name": "Precision",
+    "short": "PRE",
+    "description": "Increases hit chance and critical hits."
+   },
+   "tech": {
+    "name": "Technique",
+    "short": "TEC",
+    "description": "Improves special skills and blocking."
+   }
+  },
+  "EN_ORIGINS": {
+   "gaul": {
+    "name": "Gaul",
+    "description": "A warrior of the Gallic tribes, strong and sturdy."
+   },
+   "thracian": {
+    "name": "Thracian",
+    "description": "A nimble fighter from the mountains of Thrace."
+   },
+   "roman": {
+    "name": "Ex-legionary",
+    "description": "A former soldier of Rome, disciplined and tough."
+   },
+   "greek": {
+    "name": "Greek",
+    "description": "Trained in the Hellenic gymnasia, values technique."
+   }
+  },
+  "EN_PERKS": {
+   "m1": {
+    "name": "Strong arm",
+    "short": "+5% damage"
+   },
+   "m2": {
+    "name": "Power strike",
+    "short": "Skill: very strong blow"
+   },
+   "m3a": {
+    "name": "Fury",
+    "short": "+4% critical"
+   },
+   "m3b": {
+    "name": "Heavy blow",
+    "short": "Power strike +25%"
+   },
+   "m4": {
+    "name": "Guard breaker",
+    "short": "Ignores 12% of blocks"
+   },
+   "m5": {
+    "name": "Wrath of Mars",
+    "short": "+8% damage, +4% critical"
+   },
+   "v1": {
+    "name": "Light feet",
+    "short": "+4% dodge"
+   },
+   "v2": {
+    "name": "Quick strike",
+    "short": "Skill: fast blow"
+   },
+   "v3a": {
+    "name": "Rhythm",
+    "short": "Attacks 8% faster"
+   },
+   "v3b": {
+    "name": "Eagle eyes",
+    "short": "+6% hit chance"
+   },
+   "v4": {
+    "name": "Counterattack",
+    "short": "Skill: strikes back after defending"
+   },
+   "v5": {
+    "name": "Wings of Mercury",
+    "short": "+5% dodge, 8% faster"
+   },
+   "d1": {
+    "name": "Thick skin",
+    "short": "+6% health"
+   },
+   "d2": {
+    "name": "Iron guard",
+    "short": "Skill: reduces damage"
+   },
+   "d3a": {
+    "name": "Iron lungs",
+    "short": "+25% stamina recovery"
+   },
+   "d3b": {
+    "name": "Bulwark",
+    "short": "+6% block"
+   },
+   "d4": {
+    "name": "Second wind",
+    "short": "Heals once per fight"
+   },
+   "d5": {
+    "name": "Shield of Minerva",
+    "short": "−8% damage taken, +8% health"
+   }
+  },
+  "EN_BRANCHES": {
+   "mars": {
+    "name": "Mars",
+    "subtitle": "Attack"
+   },
+   "mercury": {
+    "name": "Mercury",
+    "subtitle": "Speed"
+   },
+   "minerva": {
+    "name": "Minerva",
+    "subtitle": "Defense"
+   }
+  },
+  "EN_LOCATIONS": {
+   "home": {
+    "name": "Lodging",
+    "short": "Sleep and rest"
+   },
+   "ludus": {
+    "name": "Ludus",
+    "short": "Train"
+   },
+   "market": {
+    "name": "Market",
+    "short": "Buy and sell"
+   },
+   "arena": {
+    "name": "Arena",
+    "short": "Fight"
+   },
+   "temple": {
+    "name": "Temple of Mars",
+    "short": "Skill tree"
+   },
+   "forum": {
+    "name": "Forum",
+    "short": "Newspaper (Capua Times)"
+   },
+   "baths": {
+    "name": "Baths",
+    "short": "Recover energy"
+   },
+   "tavern": {
+    "name": "Tavern",
+    "short": "Food, wine and rumors"
+   }
+  },
+  "EN_ARENAS": {
+   "capua": "Arena of Capua",
+   "pompeii": "Amphitheater of Pompeii",
+   "verona": "Arena of Verona",
+   "leptis": "Amphitheater of Leptis Magna",
+   "rome": "Colosseum of Rome",
+   "villa": "Arena of the Villa of Lucullus",
+   "senator": "Amphitheater of Senator Varro",
+   "baiae": "Golden Arena of Baiae"
+  },
+  "EN_TRAININGS": {
+   "str": {
+    "name": "Strength training",
+    "description": "Repeated blows on the palus with stone weights."
+   },
+   "res": {
+    "name": "Endurance training",
+    "description": "Running in the sand carrying the scutum under the sun."
+   },
+   "agi": {
+    "name": "Agility training",
+    "description": "Dodges and jumps over stakes and ropes."
+   },
+   "tech": {
+    "name": "Technique training",
+    "description": "Fencing drills with the ludus instructor."
+   }
+  },
+  "EN_RARITY": {
+   "common": "Common",
+   "uncommon": "Uncommon",
+   "rare": "Rare",
+   "epic": "Epic"
+  },
+  "EN_SLOTS": {
+   "mainHand": "Weapon",
+   "offHand": "Shield",
+   "head": "Helmet",
+   "body": "Armor",
+   "legs": "Legs"
+  },
+  "EN_SKIN": [
+   "Fair",
+   "Tan",
+   "Dark",
+   "Very fair",
+   "Deep"
+  ],
+  "EN_HAIR": [
+   "Short",
+   "Long",
+   "Shaved",
+   "Curly",
+   "Ponytail",
+   "Crest",
+   "Bun"
+  ]
+ }
+}
