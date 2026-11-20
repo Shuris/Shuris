@@ -19,6 +19,14 @@ const SAMPLES := 260
 static func choose(world: World, id: String) -> Variant:
 	var def: Dictionary = GameData.items[id]
 	var rule: String = def.get("placement", "meadow")
+	var p: Variant = _choose_rule(world, id, rule)
+	# natural growths (rare flower) fall back to open ground if the banks are full
+	if p == null and def.get("hidden", false) and rule != "meadow":
+		p = _choose_rule(world, id, "meadow")
+	return p
+
+
+static func _choose_rule(world: World, id: String, rule: String) -> Variant:
 	if rule == "bridge":
 		var b: Dictionary = GameData.scene["bridge"]
 		return Vector2(float(b["x"]), float(b["y"]))

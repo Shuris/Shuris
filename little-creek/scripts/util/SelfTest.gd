@@ -281,12 +281,14 @@ func _run() -> void:
 	# natural events can all trigger
 	var ev: NatureEvents = main.get_node("Systems/NatureEvents")
 	var ok_all := true
+	var failed: Array = []
 	var n_log := NatureLog.events.size()
 	for id in ["butterfly_swarm", "deer_fawn", "ducks", "bird_flock", "rare_animal", "rare_flower"]:
 		if not ev.trigger(id):
 			ok_all = false
+			failed.append(id)
 	_check("natural events trigger and are logged", ok_all and NatureLog.events.size() >= n_log + 5 and gs.ducks_resident
-		and gs.item_count("rare_flower") == 1)
+		and gs.item_count("rare_flower") == 1, "failed=%s log+%d" % [str(failed), NatureLog.events.size() - n_log])
 	var fawn_deer := false
 	for c in get_tree().get_nodes_in_group("creatures"):
 		if c is Deer and c.fawn != null:

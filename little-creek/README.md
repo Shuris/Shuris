@@ -1,4 +1,4 @@
-# Little Creek — protótipo mobile v0.2.0 (Godot 4.7)
+# Little Creek — protótipo mobile v0.3.0 (Godot 4.7)
 
 Jogo de gerenciamento de ecossistema (semi-clicker + idle + simulação de
 natureza) em pixel art de alta definição. Você recebe um riacho abandonado e o
@@ -6,9 +6,15 @@ transforma, aos poucos, num refúgio natural cheio de vida.
 
 ![Estágio 4](docs/screenshots/03_estagio4.png)
 
-**Novidades da v0.2.0** (detalhes em [docs/CHANGELOG.md](docs/CHANGELOG.md)): veado e visitantes
-refeitos com anatomia convincente e animações nas duas direções, e escala do mundo revisada
-(vegetação, pedras e personagens proporcionais às árvores).
+**Novidades da v0.3.0** (detalhes em [docs/CHANGELOG.md](docs/CHANGELOG.md)): ciclo de dia e
+noite, quatro estações graduais (30 dias de jogo cada), chuva fraca e forte com poças e arco-íris,
+correnteza com redemoinhos, vagalumes, folhas que flutuam no riacho, animais com horários e
+estações (coruja, raposa, patos, filhote de veado, lobo-guará raro), ninhos, acontecimentos
+naturais, diário de biodiversidade, ponte de madeira, visitantes raros e sazonais, compra
+automática com limites, trilha sonora lo-fi com ambiente dinâmico e modo fotografia com zoom.
+
+![Ciclo do dia](docs/screenshots/v0.3_dia.png)
+![Estações](docs/screenshots/v0.3_estacoes.png)
 
 ![Comparação v0.1 × v0.2](docs/screenshots/v0.2_comparacao.png)
 
@@ -36,7 +42,7 @@ horizontal, 1280×720 de referência, adapta-se a 16:9, 20:9 e 4:3.
 | Raios de sol volumétricos, névoa, partículas de poeira, pólen e folhas caindo, balanço das plantas com o vento | ✅ |
 | Recursos: Água, Sementes, Vitalidade, Biodiversidade, Beleza (+ Qualidade da água e Reputação) | ✅ |
 | Toque na água (coleta + respingo + som), produção passiva, 6 melhorias | ✅ |
-| Construção com pré-visualização e validação por zonas (terra firme / dentro d'água / trilha), remoção com reembolso | ✅ 13 elementos |
+| Compra automática: cada elemento entra sozinho num lugar coerente (regras por categoria), com limite por tipo | ✅ 14 elementos + flor rara |
 | Fauna com comportamento: sabiá-laranjeira, saíra-sete-cores, borboletas, libélulas, lambaris, veado-catingueiro (macho e fêmea; anda, bebe, observa, orelhas, cauda, alerta, foge galopando) | ✅ 6 espécies |
 | Visitantes (estágio 4): 3 personagens distintos; trilha, contemplar, sentar no banco, fotografar animais, alimentar pássaros, doações e reputação | ✅ |
 | 4 estágios com mudanças visuais (chão "brota" em aglomerados, musgo nas pedras, água clareia, trilha aparece) | ✅ |
@@ -50,7 +56,12 @@ input, abrir menus, posicionar flores por toque, recusar flores na água,
 plantas aquáticas na água, comprar melhoria, avançar de estágio, elegibilidade
 da fauna, salvar/carregar, progresso offline, todas as animações do veado e dos
 visitantes nas duas direções, ciclo completo do veado (chegar, beber, partir),
-fuga ao toque e visitante percorrendo a trilha — **19/19 passando**.
+fuga ao toque, visitante percorrendo a trilha, relógio/clima/estação salvos,
+avanço offline limitado, compra automática sem sobreposição, limites, ponte e
+rotas que nunca cruzam a água sem ponte, rotinas por horário/estação/clima,
+frequência de visitantes, diário, ninhos, acontecimentos, vagalumes, folhas
+descendo a correnteza, música e ambiente por horário/clima e modo fotografia
+— **44/44 passando**.
 
 > Não foi possível testar em um aparelho físico neste ambiente (sem
 > dispositivo conectado). A renderização foi verificada com OpenGL por
@@ -59,11 +70,14 @@ fuga ao toque e visitante percorrendo a trilha — **19/19 passando**.
 ## Controles
 
 - **Tocar na água**: coleta água (às vezes uma semente).
-- **Construir**: escolha um cartão → toque/arraste no cenário (fantasma verde
-  = válido, vermelho = inválido) → solte para posicionar. Repita ou *Concluir*.
+- **Construir**: toque em *Comprar* no cartão; o elemento aparece no cenário
+  num lugar adequado. O cartão mostra quantidade, limite e o próximo preço.
+- **Diário**: espécies avistadas e acontecimentos especiais.
+- **Câmera** (canto superior direito): modo fotografia (zoom, arrastar,
+  pinça, *Enquadrar*, *Capturar*).
 - **Tocar em animais**: interage (o pássaro canta e voa, o veado se assusta…).
 - **Tocar nas copas / plantas**: o vento balança as folhas.
-- **Info**: volumes de música e efeitos, *Velocidade do tempo ×1/×5/×20*
+- **Info**: volumes de música, ambiente e efeitos, *Velocidade do tempo ×1/×5/×20/×60*
   (para testar a progressão rapidamente) e apagar progresso.
 
 ## Estrutura do projeto
@@ -74,13 +88,15 @@ little-creek/
   scenes/Main.tscn             cena raiz (o resto é montado por código)
   scripts/
     autoload/                  GameData (JSON), GameState, SaveSystem, AudioManager
-    systems/                   EcosystemRules (regras puras), WildlifeDirector, VisitorDirector
-    world/                     World (camadas, consultas espaciais), PlacedItem
+    autoload/ (v0.3)           Clock (dia/estações), Weather (chuva), NatureLog (diário)
+    systems/                   EcosystemRules, WildlifeDirector, VisitorDirector, AutoPlacer, NestSystem, NatureEvents
+    world/                     World, PlacedItem, Atmosphere (luz/estação), WeatherFX, Fireflies, FloatingLeaves
     creatures/                 Creature (base, animações direcionais, sombra) + Bird, Butterfly, Dragonfly, Fish, Deer, Visitor
-    ui/                        UITheme, HUD, BuildPanel, UpgradePanel, EcoPanel, InfoPanel
+    ui/                        UITheme, HUD, BuildPanel, UpgradePanel, EcoPanel, InfoPanel, JournalPanel, PhotoMode
     util/                      Palette, SpriteLib, NumFmt, DevTools, SelfTest
   shaders/                     water, dissolve, sway, light_rays, fog, reveal, underwater
-  data/                        items, upgrades, species, stages (balanceamento)
+  data/                        config (tempo, clima, eventos, visitantes, efeitos), fauna (rotinas),
+                               items, upgrades, species, stages (balanceamento)
                                creatures.json e scene_points.json (gerados com a arte)
   assets/sprites/{environment,vegetation,water,rocks,animals,humans,effects,ui}
   assets/audio/{music,ambience,sfx}, assets/fonts (Pixelify Sans, OFL)
@@ -103,6 +119,7 @@ python3 tools/art/gen_creatures.py     # animais e visitantes (+ data/creatures.
 python3 tools/art/gen_effects.py       # ruído, partículas, respingos
 python3 tools/art/gen_ui.py            # painéis, botões, ícones
 python3 tools/audio/gen_audio.py       # sons e música (precisa de ffmpeg com libvorbis)
+python3 tools/audio/gen_audio.py v3    # trilha lo-fi, ambientes e efeitos da v0.3
 ```
 
 `gen_environment.py` também gera `zones.png` (onde se pode construir) e
@@ -145,6 +162,11 @@ Argumentos após `--` (ex.: `godot --path . -- --state=stage4`):
 - `--spawn=deer,visitor,fish,butterfly,dragonfly,sabia,saira` força aparições;
   `sitter`, `feeder`, `photo`, `look` forçam visitantes em cada atividade.
 - `--seed=N` torna a cena de demonstração reproduzível (comparações antes/depois).
+- `--time=dawn|day|dusk|night|HH`, `--season=spring|summer|autumn|winter[:dia]`,
+  `--weather=clear|light|heavy`, `--rainbow`, `--prewarm` (vagalumes/folhas),
+  `--autofill` (compra uma série de itens pelo AutoPlacer), `--photo=zoom,x,y`,
+  `--perf` (mede fps/tempo de processamento).
+- Novos `--spawn`: `fox`, `maned_wolf`, `fawn`, `duck`, `owl_perched`, `nest`, `crosser`.
 - `--ui=build|upgrades|eco|info` abre um painel.
 - `--shot=arquivo.png --frames=N --quit` captura a tela.
 - `--selftest --out=pasta` executa o teste automático.

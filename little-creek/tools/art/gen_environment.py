@@ -810,7 +810,8 @@ def seasonal_overlays(cr, rmask):
     # --- winter frost: pale crystals on grass tips, denser in shade and on rock tops
     fr = Canvas(W, H)
     shade = 1.0 - SUN
-    pick = (rng.random((H, W)) < (0.05 + 0.12 * shade) * ground) & (dist > 2)
+    frost_n = value_noise(W, H, 14, R(905), octaves=2, sx=2.0)
+    pick = (rng.random((H, W)) < (0.004 + 0.05 * shade * np.clip(frost_n - 0.35, 0, 1) * 2.0) * ground) & (dist > 2)
     for y, x in zip(*np.nonzero(pick)):
         fr.pixel(x, y, (222, 236, 246) if rng.random() < 0.6 else (190, 212, 230))
     top = rmask & ~np.roll(rmask, 1, axis=0)

@@ -117,3 +117,25 @@ usada como guia de proporção e acabamento — os pixels não foram copiados.
 Pixel art retrô de baixa resolução, estética voxel, contornos pretos grossos,
 flat/vetor, emojis, gradientes borrados, mistura de densidades de pixel,
 redimensionamento com interpolação.
+
+
+## 7. Tempo, clima e estações (v0.3)
+
+- A luz do dia é uma **gradação por cima da cena** (shader `grade`), feita por
+  pixel de arte: cor da luz, cor das sombras, saturação e brilho seguem
+  keyframes por hora (`Clock.KEYS`). A noite é azulada, mas os realces continuam
+  legíveis; nunca é só "escurecer a tela".
+- Raios de sol mudam de cor (dourado de manhã, laranja no fim da tarde,
+  azul-lua à noite) e somem com a chuva.
+- **Estações** recolorem apenas pixels de folhagem (detector de verde) em
+  aglomerados com ruído no espaço do mundo: cada copa muda num dia diferente.
+  Outono: laranjas e vermelhos com algumas copas douradas; inverno: tons frios,
+  copas ralas por tufos; primavera: botões brancos e rosa nas copas.
+- Sobreposições sazonais pintadas por código: serapilheira de outono (densa nas
+  margens e sob as árvores), geada de inverno e flores silvestres de
+  primavera, reveladas por dissolução.
+- Chuva em dois planos (gotas longas na frente, curtas atrás), respingos de 4
+  quadros, anéis de chuva quantizados na água e nas poças.
+- Vagalumes: corpo de 1×2 px e halo em anéis de opacidade (não é um gradiente
+  borrado), somados numa camada de luz.
+- Zoom do modo fotografia usa escalas 1, 1,5, 2, 3 e 4 com filtro nearest.

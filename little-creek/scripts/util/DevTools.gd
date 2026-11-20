@@ -40,6 +40,10 @@ func _ready() -> void:
 			call_deferred("_autofill")
 		elif a.begins_with("--photo="):
 			call_deferred("_photo", a.substr(8))
+		elif a == "--clean":
+			call_deferred("_clean")
+		elif a == "--perf":
+			call_deferred("_perf")
 		elif a == "--prewarm":
 			call_deferred("_prewarm")
 		elif a == "--rainbow":
@@ -187,6 +191,57 @@ func _photo(arg: String) -> void:
 	main.pan = Vector2(float(p[1]), float(p[2])) - Vector2(400, 180)
 	main._apply_view()
 	main.photo._update_label()
+
+
+## Screenshots: hide the start-up discovery toasts and the tutorial hint.
+func _clean() -> void:
+	await get_tree().process_frame
+	main.hud.toast_box.visible = false
+	main.hud.hint_panel.modulate.a = 0.0
+
+
+func _perf() -> void:
+	await get_tree().create_timer(6.0).timeout
+	var t0 := Time.get_ticks_usec()
+	var frames := 0
+	var proc := 0.0
+	while Time.get_ticks_usec() - t0 < 4000000:
+		await get_tree().process_frame
+		frames += 1
+		proc += Performance.get_monitor(Performance.TIME_PROCESS)
+	# per-system cost of _process (ms per call), measured by toggling processing
+	var report := []
+	for path in ["Systems/WildlifeDirector", "Systems/VisitorDirector", "Systems/Atmosphere", "Systems/NestSystem",
+			"Systems/NatureEvents", "HUD"]:
+		var n: Node = main.get_node_or_null(path)
+		if n == null:
+			continue
+		var t1 := Time.get_ticks_usec()
+		for k in 50:
+			n._process(0.016)
+		report.append("%s=%.3f" % [path.get_file(), (Time.get_ticks_usec() - t1) / 50000.0])
+	for sysname in ["fireflies", "leaf_system", "weather_fx"]:
+		var n2: Node = main.world.get(sysname)
+		var t2 := Time.get_ticks_usec()
+		for k in 50:
+			n2._process(0.016)
+		report.append("%s=%.3f" % [sysname, (Time.get_ticks_usec() - t2) / 50000.0])
+	var t3 := Time.get_ticks_usec()
+	for k in 50:
+		main.world._process(0.016)
+	report.append("world=%.3f" % ((Time.get_ticks_usec() - t3) / 50000.0))
+	for al in ["GameState", "Clock", "Weather", "AudioManager", "SaveSystem"]:
+		var an: Node = get_node("/root/" + al)
+		var t4 := Time.get_ticks_usec()
+		for k in 50:
+			an._process(0.016)
+		report.append("%s=%.3f" % [al, (Time.get_ticks_usec() - t4) / 50000.0])
+	print("PERFSYS ", " ".join(report))
+	print("PERF fps=%.1f process_ms=%.2f nodes=%d objects=%d draw_calls=%d creatures=%d" % [
+		frames / 4.0, proc / frames * 1000.0, Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		Performance.get_monitor(Performance.OBJECT_COUNT),
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		get_tree().get_nodes_in_group("creatures").size()])
 
 
 func _rainbow() -> void:

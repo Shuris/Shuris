@@ -61,3 +61,53 @@ Grama, flores (4 cores), pedra pequena, pedra grande, samambaia, arbusto
 árvore jovem, árvore frondosa (estágio 2), banco, comedouro e mirante
 (estágio 4). Cada um tem custo, beleza, vitalidade e efeito ecológico
 (poleiro, atrai borboletas, limpa a água, gera sementes, ponto de visitantes).
+
+## v0.3 — Tempo, clima, fauna e acontecimentos
+
+### Tempo (`data/config.json → time`)
+- 1 dia de jogo = 24 min reais. Períodos: amanhecer 5h–7h30, dia 7h30–17h,
+  entardecer 17h–19h30, noite 19h30–5h.
+- Estação = 30 dias de jogo (ano = 120 dias). Novas partidas começam no dia 11
+  da primavera.
+- Offline: o relógio avança no máximo 18 h de jogo.
+
+### Clima (`weather`)
+- Checagem a cada 2 h de jogo após um intervalo seco de 8–16 h.
+- Chance de chuva: primavera 16%, verão 20%, outono 14%, inverno 9%; parte delas
+  é forte (30/40/25/15%). Chuva fraca 1,5–4 h; forte 1–2,5 h.
+- 40% de chance de arco-íris quando uma chuva termina de dia.
+
+### Fauna (`data/fauna.json`)
+População-alvo = alvo ecológico × atividade (período × estação × clima).
+Veado e raposa visitam por intervalos de 5–14 h e 10–30 h de jogo (divididos
+pela atividade). Coruja: um sorteio por noite (60%). Máximo de 12 animais.
+
+| Espécie | Condição ecológica |
+|---|---|
+| Corujinha-do-mato | estágio 2+, pelo menos uma árvore plantada |
+| Raposa-do-campo | vitalidade 45%, 7 espécies |
+| Marreca-pé-vermelho | qualidade 50+, planta aquática e o acontecimento "patos" |
+| Lobo-guará | só pelo acontecimento raro (estágio 3+, vitalidade 65%, à noite, sem visitantes) |
+
+### Acontecimentos (`events`)
+Checados a cada hora de jogo, com pelo menos 3 h entre um e outro.
+
+| Acontecimento | Chance/h | Intervalo mínimo |
+|---|---|---|
+| Grupo de borboletas | 10% | 20 h |
+| Veado com filhote | 8% | 48 h |
+| Ninho | 12% | 24 h |
+| Patos no riacho | 7% | 36 h |
+| Flor rara | 5% | 72 h |
+| Bando de pássaros | 10% | 16 h |
+| Animal raro | 2,5% | 96 h |
+
+### Visitantes (`visitors`)
+Intervalo base 160–380 s reais ÷ multiplicador (estação: primavera 1,2, verão
+1,4, outono 0,9, inverno 0,35; chuva fraca 0,35, forte 0; noite 0; beleza,
+bancos/comedouros/mirante e ponte aumentam um pouco). Um grupo por vez.
+
+### Limites de compra
+Grama 14, flores 12, pedra pequena 8, pedra grande 5, samambaia 10, arbusto 9,
+tronco 3, plantas aquáticas 6, árvore jovem 7, árvore frondosa 4, banco 2,
+comedouro 2, mirante 1, ponte 1.
