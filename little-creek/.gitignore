@@ -2,3 +2,5 @@
 build/
 *.keystore
 export_credentials.cfg
+__pycache__/
+*.pyc
