@@ -1,0 +1,558 @@
+{
+ "bird_sabia": {
+  "sheet": "res://assets/sprites/animals/bird_sabia.png",
+  "w": 13,
+  "h": 10,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "peck": {
+    "frames": [
+     0,
+     2,
+     2,
+     0
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "sing": {
+    "frames": [
+     3,
+     0,
+     3,
+     0,
+     3,
+     3,
+     0
+    ],
+    "fps": 7,
+    "loop": false
+   },
+   "fly": {
+    "frames": [
+     4,
+     5,
+     6,
+     5
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "glide": {
+    "frames": [
+     5
+    ],
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "bird_saira": {
+  "sheet": "res://assets/sprites/animals/bird_saira.png",
+  "w": 13,
+  "h": 10,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "peck": {
+    "frames": [
+     0,
+     2,
+     2,
+     0
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "sing": {
+    "frames": [
+     3,
+     0,
+     3,
+     0,
+     3,
+     3,
+     0
+    ],
+    "fps": 7,
+    "loop": false
+   },
+   "fly": {
+    "frames": [
+     4,
+     5,
+     6,
+     5
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "glide": {
+    "frames": [
+     5
+    ],
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "butterfly_orange": {
+  "sheet": "res://assets/sprites/animals/butterfly_orange.png",
+  "w": 9,
+  "h": 6,
+  "anims": {
+   "fly": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 14,
+    "loop": true
+   },
+   "rest": {
+    "frames": [
+     2,
+     2,
+     1,
+     0,
+     1,
+     2,
+     2,
+     2
+    ],
+    "fps": 3,
+    "loop": true
+   }
+  }
+ },
+ "butterfly_blue": {
+  "sheet": "res://assets/sprites/animals/butterfly_blue.png",
+  "w": 9,
+  "h": 6,
+  "anims": {
+   "fly": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 14,
+    "loop": true
+   },
+   "rest": {
+    "frames": [
+     2,
+     2,
+     1,
+     0,
+     1,
+     2,
+     2,
+     2
+    ],
+    "fps": 3,
+    "loop": true
+   }
+  }
+ },
+ "butterfly_yellow": {
+  "sheet": "res://assets/sprites/animals/butterfly_yellow.png",
+  "w": 9,
+  "h": 6,
+  "anims": {
+   "fly": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 14,
+    "loop": true
+   },
+   "rest": {
+    "frames": [
+     2,
+     2,
+     1,
+     0,
+     1,
+     2,
+     2,
+     2
+    ],
+    "fps": 3,
+    "loop": true
+   }
+  }
+ },
+ "butterfly_white": {
+  "sheet": "res://assets/sprites/animals/butterfly_white.png",
+  "w": 9,
+  "h": 6,
+  "anims": {
+   "fly": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 14,
+    "loop": true
+   },
+   "rest": {
+    "frames": [
+     2,
+     2,
+     1,
+     0,
+     1,
+     2,
+     2,
+     2
+    ],
+    "fps": 3,
+    "loop": true
+   }
+  }
+ },
+ "dragonfly": {
+  "sheet": "res://assets/sprites/animals/dragonfly.png",
+  "w": 10,
+  "h": 4,
+  "anims": {
+   "fly": {
+    "frames": [
+     0,
+     1
+    ],
+    "fps": 24,
+    "loop": true
+   }
+  }
+ },
+ "fish": {
+  "sheet": "res://assets/sprites/animals/fish.png",
+  "w": 10,
+  "h": 3,
+  "anims": {
+   "swim": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 6,
+    "loop": true
+   },
+   "dart": {
+    "frames": [
+     0,
+     1,
+     2,
+     1
+    ],
+    "fps": 16,
+    "loop": true
+   }
+  }
+ },
+ "deer": {
+  "sheet": "res://assets/sprites/animals/deer.png",
+  "w": 34,
+  "h": 30,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     2,
+     0
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "look": {
+    "frames": [
+     3
+    ],
+    "fps": 1,
+    "loop": true
+   },
+   "walk": {
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "fps": 8,
+    "loop": true
+   },
+   "lower": {
+    "frames": [
+     10,
+     11
+    ],
+    "fps": 4,
+    "loop": false
+   },
+   "raise": {
+    "frames": [
+     11,
+     10,
+     0
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "drink": {
+    "frames": [
+     11,
+     12,
+     12,
+     11,
+     12
+    ],
+    "fps": 3,
+    "loop": true
+   }
+  }
+ },
+ "visitor_0": {
+  "sheet": "res://assets/sprites/humans/visitor_0.png",
+  "w": 16,
+  "h": 28,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "walk": {
+    "frames": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "fps": 7,
+    "loop": true
+   },
+   "sit": {
+    "frames": [
+     8,
+     8,
+     8,
+     9,
+     8,
+     8
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo": {
+    "frames": [
+     10,
+     11,
+     10
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed": {
+    "frames": [
+     12,
+     13,
+     14,
+     13,
+     12
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "look": {
+    "frames": [
+     15
+    ],
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "visitor_1": {
+  "sheet": "res://assets/sprites/humans/visitor_1.png",
+  "w": 16,
+  "h": 28,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "walk": {
+    "frames": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "fps": 7,
+    "loop": true
+   },
+   "sit": {
+    "frames": [
+     8,
+     8,
+     8,
+     9,
+     8,
+     8
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo": {
+    "frames": [
+     10,
+     11,
+     10
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed": {
+    "frames": [
+     12,
+     13,
+     14,
+     13,
+     12
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "look": {
+    "frames": [
+     15
+    ],
+    "fps": 1,
+    "loop": true
+   }
+  }
+ },
+ "visitor_2": {
+  "sheet": "res://assets/sprites/humans/visitor_2.png",
+  "w": 16,
+  "h": 28,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "walk": {
+    "frames": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "fps": 7,
+    "loop": true
+   },
+   "sit": {
+    "frames": [
+     8,
+     8,
+     8,
+     9,
+     8,
+     8
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo": {
+    "frames": [
+     10,
+     11,
+     10
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed": {
+    "frames": [
+     12,
+     13,
+     14,
+     13,
+     12
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "look": {
+    "frames": [
+     15
+    ],
+    "fps": 1,
+    "loop": true
+   }
+  }
+ }
+}

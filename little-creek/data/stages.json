@@ -1,0 +1,6 @@
+[
+  {"id": 1, "name": "Riacho Abandonado", "desc": "Água turva, solo seco e quase nenhuma vida. Toque na água e comece a cuidar do lugar.", "req": {}},
+  {"id": 2, "name": "Florescimento", "desc": "Flores, musgos e borboletas: o riacho começa a respirar.", "req": {"beauty": 15, "vitality": 25}},
+  {"id": 3, "name": "Ecossistema", "desc": "Peixes no riacho e veados à beira da água.", "req": {"beauty": 45, "vitality": 50, "biodiversity": 8}},
+  {"id": 4, "name": "Refúgio Natural", "desc": "Uma trilha se abre e visitantes chegam para contemplar.", "req": {"beauty": 100, "vitality": 72, "biodiversity": 12}}
+]

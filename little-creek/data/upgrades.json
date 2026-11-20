@@ -1,0 +1,14 @@
+[
+  {"id": "tap", "name": "Mãos na água", "desc": "Cada toque no riacho rende mais água.", "icon": "tap",
+    "base_cost": {"water": 20, "seeds": 0}, "growth": 1.55, "max_level": 25, "unlock_stage": 1},
+  {"id": "spring", "name": "Desobstruir a nascente", "desc": "Remove galhos e lixo: mais água por segundo.", "icon": "spring",
+    "base_cost": {"water": 35, "seeds": 0}, "growth": 1.5, "max_level": 30, "unlock_stage": 1},
+  {"id": "filter", "name": "Filtro de cascalho", "desc": "Melhora a qualidade da água (+9).", "icon": "filter",
+    "base_cost": {"water": 60, "seeds": 4}, "growth": 1.75, "max_level": 8, "unlock_stage": 1},
+  {"id": "seedbank", "name": "Banco de sementes", "desc": "Coleta sementes nativas automaticamente.", "icon": "seedbank",
+    "base_cost": {"water": 50, "seeds": 0}, "growth": 1.6, "max_level": 20, "unlock_stage": 1},
+  {"id": "corridor", "name": "Corredor ecológico", "desc": "Liga o riacho à mata: biodiversidade rende +15%.", "icon": "corridor",
+    "base_cost": {"water": 160, "seeds": 12}, "growth": 1.8, "max_level": 10, "unlock_stage": 2},
+  {"id": "rain", "name": "Ciclo das chuvas", "desc": "O riacho trabalha por mais tempo enquanto você está fora (+1h).", "icon": "rain",
+    "base_cost": {"water": 220, "seeds": 6}, "growth": 1.9, "max_level": 6, "unlock_stage": 2}
+]
