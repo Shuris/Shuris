@@ -1,10 +1,16 @@
-# Little Creek — protótipo mobile (Godot 4.7)
+# Little Creek — protótipo mobile v0.2.0 (Godot 4.7)
 
 Jogo de gerenciamento de ecossistema (semi-clicker + idle + simulação de
 natureza) em pixel art de alta definição. Você recebe um riacho abandonado e o
 transforma, aos poucos, num refúgio natural cheio de vida.
 
 ![Estágio 4](docs/screenshots/03_estagio4.png)
+
+**Novidades da v0.2.0** (detalhes em [docs/CHANGELOG.md](docs/CHANGELOG.md)): veado e visitantes
+refeitos com anatomia convincente e animações nas duas direções, e escala do mundo revisada
+(vegetação, pedras e personagens proporcionais às árvores).
+
+![Comparação v0.1 × v0.2](docs/screenshots/v0.2_comparacao.png)
 
 | Estágio 1 — Riacho Abandonado | Estágio 3 — Ecossistema |
 |---|---|
@@ -31,8 +37,8 @@ horizontal, 1280×720 de referência, adapta-se a 16:9, 20:9 e 4:3.
 | Recursos: Água, Sementes, Vitalidade, Biodiversidade, Beleza (+ Qualidade da água e Reputação) | ✅ |
 | Toque na água (coleta + respingo + som), produção passiva, 6 melhorias | ✅ |
 | Construção com pré-visualização e validação por zonas (terra firme / dentro d'água / trilha), remoção com reembolso | ✅ 13 elementos |
-| Fauna com comportamento: sabiá-laranjeira, saíra-sete-cores, borboletas, libélulas, lambaris, veado-catingueiro | ✅ 6 espécies |
-| Visitantes (estágio 4): trilha, contemplar, sentar no banco, fotografar animais, alimentar pássaros, doações e reputação | ✅ |
+| Fauna com comportamento: sabiá-laranjeira, saíra-sete-cores, borboletas, libélulas, lambaris, veado-catingueiro (macho e fêmea; anda, bebe, observa, orelhas, cauda, alerta, foge galopando) | ✅ 6 espécies |
+| Visitantes (estágio 4): 3 personagens distintos; trilha, contemplar, sentar no banco, fotografar animais, alimentar pássaros, doações e reputação | ✅ |
 | 4 estágios com mudanças visuais (chão "brota" em aglomerados, musgo nas pedras, água clareia, trilha aparece) | ✅ |
 | HUD mobile, gaveta inferior (Construir, Melhorias, Ecossistema, Info), diário de espécies, dicas iniciais | ✅ |
 | Áudio procedural: água, vento, cantos de pássaros, efeitos, música ambiente; volumes independentes | ✅ |
@@ -42,7 +48,9 @@ horizontal, 1280×720 de referência, adapta-se a 16:9, 20:9 e 4:3.
 Testes automáticos (`-- --selftest`): toque na água pelo caminho real de
 input, abrir menus, posicionar flores por toque, recusar flores na água,
 plantas aquáticas na água, comprar melhoria, avançar de estágio, elegibilidade
-da fauna, salvar/carregar e progresso offline — **14/14 passando**.
+da fauna, salvar/carregar, progresso offline, todas as animações do veado e dos
+visitantes nas duas direções, ciclo completo do veado (chegar, beber, partir),
+fuga ao toque e visitante percorrendo a trilha — **19/19 passando**.
 
 > Não foi possível testar em um aparelho físico neste ambiente (sem
 > dispositivo conectado). A renderização foi verificada com OpenGL por
@@ -68,7 +76,7 @@ little-creek/
     autoload/                  GameData (JSON), GameState, SaveSystem, AudioManager
     systems/                   EcosystemRules (regras puras), WildlifeDirector, VisitorDirector
     world/                     World (camadas, consultas espaciais), PlacedItem
-    creatures/                 Creature (base) + Bird, Butterfly, Dragonfly, Fish, Deer, Visitor
+    creatures/                 Creature (base, animações direcionais, sombra) + Bird, Butterfly, Dragonfly, Fish, Deer, Visitor
     ui/                        UITheme, HUD, BuildPanel, UpgradePanel, EcoPanel, InfoPanel
     util/                      Palette, SpriteLib, NumFmt, DevTools, SelfTest
   shaders/                     water, dissolve, sway, light_rays, fog, reveal, underwater
@@ -77,6 +85,7 @@ little-creek/
   assets/sprites/{environment,vegetation,water,rocks,animals,humans,effects,ui}
   assets/audio/{music,ambience,sfx}, assets/fonts (Pixelify Sans, OFL)
   tools/art/*.py, tools/audio/gen_audio.py   geradores de todos os assets
+                               (rig.py + creatures_deer.py + creatures_humans.py: personagens)
   docs/ART_DIRECTION.md, docs/GAME_DESIGN.md
 ```
 
@@ -90,7 +99,7 @@ de referência: densidade de pixels, paleta, luz, texturas). Para regenerar:
 pip install numpy pillow scipy
 python3 tools/art/gen_environment.py   # cenário, água, zonas, pontos do cenário
 python3 tools/art/gen_props.py         # elementos construíveis
-python3 tools/art/gen_creatures.py     # animais e visitantes (+ data/creatures.json)
+python3 tools/art/gen_creatures.py     # animais e visitantes (+ data/creatures.json; veado/humanos via rig.py, ~1 min)
 python3 tools/art/gen_effects.py       # ruído, partículas, respingos
 python3 tools/art/gen_ui.py            # painéis, botões, ícones
 python3 tools/audio/gen_audio.py       # sons e música (precisa de ffmpeg com libvorbis)
@@ -133,7 +142,9 @@ ou `adb install build/LittleCreek.apk`.
 Argumentos após `--` (ex.: `godot --path . -- --state=stage4`):
 
 - `--state=stage2|stage3|stage4` monta um ecossistema de demonstração (não salva).
-- `--spawn=deer,visitor,fish,butterfly,dragonfly,sabia,saira` força aparições.
+- `--spawn=deer,visitor,fish,butterfly,dragonfly,sabia,saira` força aparições;
+  `sitter`, `feeder`, `photo`, `look` forçam visitantes em cada atividade.
+- `--seed=N` torna a cena de demonstração reproduzível (comparações antes/depois).
 - `--ui=build|upgrades|eco|info` abre um painel.
 - `--shot=arquivo.png --frames=N --quit` captura a tela.
 - `--selftest --out=pasta` executa o teste automático.

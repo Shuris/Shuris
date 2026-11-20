@@ -366,11 +366,10 @@ func placement_error(id: String, p: Vector2) -> String:
 	if not zone_ok(zone, p):
 		return "Aqui não: precisa ser dentro d'água calma." if zone == "water" \
 			else "Aqui não: escolha terra firme, longe da água e das pedras."
-	var tex := SpriteLib.tex(GameData.item_sprite_path(id, 0))
-	var r := clampf(tex.get_width() / 2.0 * 0.75, 3.0, 22.0)
+	var r := float(def.get("footprint", 8.0))
 	for n in items.values():
-		var d: float = (n.position - p).length()
-		var min_d: float = (r + n.footprint()) * 0.55
+		var d: float = Vector2((n.position - p).x, (n.position - p).y * 1.8).length()
+		var min_d: float = (r + n.footprint()) * 0.8
 		if d < min_d:
 			return "Muito perto de outro elemento."
 	return ""

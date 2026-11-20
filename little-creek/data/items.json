@@ -1,41 +1,281 @@
 {
-  "grass": {"name": "Grama nativa", "desc": "Segura o solo e abriga pequenos insetos.", "category": "plants",
-    "cost": {"water": 12, "seeds": 1}, "beauty": 1, "vitality": 1.0, "seed_rate": 0.0, "species": "grass",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/grass_%d.png", "variants": 3, "sway": 1.0, "unlock_stage": 1},
-  "flowers": {"name": "Flores silvestres", "desc": "Atraem borboletas e polinizadores.", "category": "plants",
-    "cost": {"water": 25, "seeds": 3}, "beauty": 3, "vitality": 1.0, "seed_rate": 0.012, "species": "flowers",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/flowers_%d.png", "variants": 4, "sway": 1.0, "unlock_stage": 1, "flower": true},
-  "small_rock": {"name": "Pedra pequena", "desc": "Abrigo para insetos; ganha musgo com o tempo.", "category": "rocks",
-    "cost": {"water": 15, "seeds": 0}, "beauty": 1, "vitality": 0.5, "seed_rate": 0.0, "species": "",
-    "zone": "ground", "sprite": "res://assets/sprites/rocks/small_rock_%d.png", "moss": "res://assets/sprites/rocks/small_rock_%d_moss.png", "variants": 3, "sway": 0.0, "unlock_stage": 1},
-  "big_rock": {"name": "Pedra grande", "desc": "Pássaros pousam nela para observar o riacho.", "category": "rocks",
-    "cost": {"water": 60, "seeds": 0}, "beauty": 4, "vitality": 1.0, "seed_rate": 0.0, "species": "",
-    "zone": "ground", "sprite": "res://assets/sprites/rocks/big_rock_%d.png", "moss": "res://assets/sprites/rocks/big_rock_%d_moss.png", "variants": 3, "sway": 0.0, "unlock_stage": 1, "perch": [0, -13]},
-  "fern": {"name": "Samambaia", "desc": "Gosta de sombra e umidade perto da água.", "category": "plants",
-    "cost": {"water": 40, "seeds": 4}, "beauty": 3, "vitality": 2.0, "seed_rate": 0.0, "species": "fern",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/fern_%d.png", "variants": 3, "sway": 1.0, "unlock_stage": 1},
-  "shrub": {"name": "Arbusto", "desc": "Frutinhas alimentam os pássaros.", "category": "plants",
-    "cost": {"water": 70, "seeds": 6}, "beauty": 4, "vitality": 3.0, "seed_rate": 0.02, "species": "shrub",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/shrub_%d.png", "variants": 3, "sway": 1.0, "unlock_stage": 1, "perch": [0, -17]},
-  "log": {"name": "Tronco caído", "desc": "Ao se decompor, alimenta fungos e o solo.", "category": "rocks",
-    "cost": {"water": 90, "seeds": 0}, "beauty": 3, "vitality": 2.5, "seed_rate": 0.0, "species": "fungi",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/log_%d.png", "moss": "res://assets/sprites/vegetation/log_%d_moss.png", "variants": 2, "sway": 0.0, "unlock_stage": 1, "perch": [6, -10]},
-  "aquatic": {"name": "Plantas aquáticas", "desc": "Filtram a água. Peixes precisam delas.", "category": "plants",
-    "cost": {"water": 80, "seeds": 5}, "beauty": 3, "vitality": 2.0, "seed_rate": 0.0, "species": "aquatic", "quality": 6,
-    "zone": "water", "sprite": "res://assets/sprites/vegetation/aquatic_%d.png", "variants": 3, "sway": 0.6, "unlock_stage": 1},
-  "tree_small": {"name": "Árvore jovem", "desc": "Sombra, abrigo e poleiro para pássaros.", "category": "trees",
-    "cost": {"water": 150, "seeds": 10}, "beauty": 6, "vitality": 5.0, "seed_rate": 0.04, "species": "tree",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/tree_small_%d.png", "variants": 3, "sway": 1.0, "unlock_stage": 1, "perch": [0, -38]},
-  "tree_big": {"name": "Árvore frondosa", "desc": "O coração da floresta. Muitos poleiros.", "category": "trees",
-    "cost": {"water": 450, "seeds": 25}, "beauty": 14, "vitality": 10.0, "seed_rate": 0.08, "species": "tree_big",
-    "zone": "ground", "sprite": "res://assets/sprites/vegetation/tree_big_%d.png", "variants": 2, "sway": 1.4, "unlock_stage": 2, "perch": [-6, -82]},
-  "bench": {"name": "Banco de madeira", "desc": "Visitantes param para descansar e contemplar.", "category": "structures",
-    "cost": {"water": 300, "seeds": 0}, "beauty": 4, "vitality": 0.0, "seed_rate": 0.0, "species": "",
-    "zone": "ground", "sprite": "res://assets/sprites/environment/bench_%d.png", "variants": 1, "sway": 0.0, "unlock_stage": 4, "poi": "bench"},
-  "feeder": {"name": "Comedouro", "desc": "Visitantes alimentam os pássaros aqui.", "category": "structures",
-    "cost": {"water": 250, "seeds": 10}, "beauty": 3, "vitality": 0.5, "seed_rate": 0.0, "species": "",
-    "zone": "ground", "sprite": "res://assets/sprites/environment/feeder_%d.png", "variants": 1, "sway": 0.0, "unlock_stage": 4, "poi": "feeder", "perch": [0, -19]},
-  "deck": {"name": "Mirante", "desc": "Um lugar para fotografar o riacho.", "category": "structures",
-    "cost": {"water": 800, "seeds": 0}, "beauty": 10, "vitality": 0.0, "seed_rate": 0.0, "species": "",
-    "zone": "ground", "sprite": "res://assets/sprites/environment/deck_%d.png", "variants": 1, "sway": 0.0, "unlock_stage": 4, "poi": "deck"}
+ "grass": {
+  "name": "Grama nativa",
+  "desc": "Segura o solo e abriga pequenos insetos.",
+  "category": "plants",
+  "cost": {
+   "water": 12,
+   "seeds": 1
+  },
+  "beauty": 1,
+  "vitality": 1.0,
+  "seed_rate": 0.0,
+  "species": "grass",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/grass_%d.png",
+  "variants": 3,
+  "sway": 1.0,
+  "unlock_stage": 1,
+  "footprint": 6
+ },
+ "flowers": {
+  "name": "Flores silvestres",
+  "desc": "Atraem borboletas e polinizadores.",
+  "category": "plants",
+  "cost": {
+   "water": 25,
+   "seeds": 3
+  },
+  "beauty": 3,
+  "vitality": 1.0,
+  "seed_rate": 0.012,
+  "species": "flowers",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/flowers_%d.png",
+  "variants": 4,
+  "sway": 1.0,
+  "unlock_stage": 1,
+  "flower": true,
+  "footprint": 8
+ },
+ "small_rock": {
+  "name": "Pedra pequena",
+  "desc": "Abrigo para insetos; ganha musgo com o tempo.",
+  "category": "rocks",
+  "cost": {
+   "water": 15,
+   "seeds": 0
+  },
+  "beauty": 1,
+  "vitality": 0.5,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/rocks/small_rock_%d.png",
+  "moss": "res://assets/sprites/rocks/small_rock_%d_moss.png",
+  "variants": 3,
+  "sway": 0.0,
+  "unlock_stage": 1,
+  "footprint": 8
+ },
+ "big_rock": {
+  "name": "Pedra grande",
+  "desc": "Pássaros pousam nela para observar o riacho.",
+  "category": "rocks",
+  "cost": {
+   "water": 60,
+   "seeds": 0
+  },
+  "beauty": 4,
+  "vitality": 1.0,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/rocks/big_rock_%d.png",
+  "moss": "res://assets/sprites/rocks/big_rock_%d_moss.png",
+  "variants": 3,
+  "sway": 0.0,
+  "unlock_stage": 1,
+  "perch": [
+   0,
+   -24
+  ],
+  "footprint": 17
+ },
+ "fern": {
+  "name": "Samambaia",
+  "desc": "Gosta de sombra e umidade perto da água.",
+  "category": "plants",
+  "cost": {
+   "water": 40,
+   "seeds": 4
+  },
+  "beauty": 3,
+  "vitality": 2.0,
+  "seed_rate": 0.0,
+  "species": "fern",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/fern_%d.png",
+  "variants": 3,
+  "sway": 1.0,
+  "unlock_stage": 1,
+  "footprint": 11
+ },
+ "shrub": {
+  "name": "Arbusto",
+  "desc": "Frutinhas alimentam os pássaros.",
+  "category": "plants",
+  "cost": {
+   "water": 70,
+   "seeds": 6
+  },
+  "beauty": 4,
+  "vitality": 3.0,
+  "seed_rate": 0.02,
+  "species": "shrub",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/shrub_%d.png",
+  "variants": 3,
+  "sway": 1.0,
+  "unlock_stage": 1,
+  "perch": [
+   0,
+   -27
+  ],
+  "footprint": 16
+ },
+ "log": {
+  "name": "Tronco caído",
+  "desc": "Ao se decompor, alimenta fungos e o solo.",
+  "category": "rocks",
+  "cost": {
+   "water": 90,
+   "seeds": 0
+  },
+  "beauty": 3,
+  "vitality": 2.5,
+  "seed_rate": 0.0,
+  "species": "fungi",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/log_%d.png",
+  "moss": "res://assets/sprites/vegetation/log_%d_moss.png",
+  "variants": 2,
+  "sway": 0.0,
+  "unlock_stage": 1,
+  "perch": [
+   10,
+   -17
+  ],
+  "footprint": 22
+ },
+ "aquatic": {
+  "name": "Plantas aquáticas",
+  "desc": "Filtram a água. Peixes precisam delas.",
+  "category": "plants",
+  "cost": {
+   "water": 80,
+   "seeds": 5
+  },
+  "beauty": 3,
+  "vitality": 2.0,
+  "seed_rate": 0.0,
+  "species": "aquatic",
+  "quality": 6,
+  "zone": "water",
+  "sprite": "res://assets/sprites/vegetation/aquatic_%d.png",
+  "variants": 3,
+  "sway": 0.6,
+  "unlock_stage": 1,
+  "footprint": 10
+ },
+ "tree_small": {
+  "name": "Árvore jovem",
+  "desc": "Sombra, abrigo e poleiro para pássaros.",
+  "category": "trees",
+  "cost": {
+   "water": 150,
+   "seeds": 10
+  },
+  "beauty": 6,
+  "vitality": 5.0,
+  "seed_rate": 0.04,
+  "species": "tree",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/tree_small_%d.png",
+  "variants": 3,
+  "sway": 1.0,
+  "unlock_stage": 1,
+  "perch": [
+   0,
+   -98
+  ],
+  "footprint": 10
+ },
+ "tree_big": {
+  "name": "Árvore frondosa",
+  "desc": "O coração da floresta. Muitos poleiros.",
+  "category": "trees",
+  "cost": {
+   "water": 450,
+   "seeds": 25
+  },
+  "beauty": 14,
+  "vitality": 10.0,
+  "seed_rate": 0.08,
+  "species": "tree_big",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/tree_big_%d.png",
+  "variants": 2,
+  "sway": 1.4,
+  "unlock_stage": 2,
+  "perch": [
+   -8,
+   -170
+  ],
+  "footprint": 16
+ },
+ "bench": {
+  "name": "Banco de madeira",
+  "desc": "Visitantes param para descansar e contemplar.",
+  "category": "structures",
+  "cost": {
+   "water": 300,
+   "seeds": 0
+  },
+  "beauty": 4,
+  "vitality": 0.0,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/environment/bench_%d.png",
+  "variants": 1,
+  "sway": 0.0,
+  "unlock_stage": 4,
+  "poi": "bench",
+  "footprint": 18
+ },
+ "feeder": {
+  "name": "Comedouro",
+  "desc": "Visitantes alimentam os pássaros aqui.",
+  "category": "structures",
+  "cost": {
+   "water": 250,
+   "seeds": 10
+  },
+  "beauty": 3,
+  "vitality": 0.5,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/environment/feeder_%d.png",
+  "variants": 1,
+  "sway": 0.0,
+  "unlock_stage": 4,
+  "poi": "feeder",
+  "perch": [
+   0,
+   -32
+  ],
+  "footprint": 7
+ },
+ "deck": {
+  "name": "Mirante",
+  "desc": "Um lugar para fotografar o riacho.",
+  "category": "structures",
+  "cost": {
+   "water": 800,
+   "seeds": 0
+  },
+  "beauty": 10,
+  "vitality": 0.0,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/environment/deck_%d.png",
+  "variants": 1,
+  "sway": 0.0,
+  "unlock_stage": 4,
+  "poi": "deck",
+  "footprint": 34
+ }
 }

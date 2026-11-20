@@ -1,17 +1,83 @@
 {
-  "grass":      {"name": "Gramíneas nativas", "kind": "plant", "hint": "Plante grama."},
-  "flowers":    {"name": "Flores silvestres", "kind": "plant", "hint": "Plante flores."},
-  "fern":       {"name": "Samambaias", "kind": "plant", "hint": "Plante samambaias."},
-  "shrub":      {"name": "Arbustos frutíferos", "kind": "plant", "hint": "Plante arbustos."},
-  "fungi":      {"name": "Fungos", "kind": "plant", "hint": "Troncos caídos abrigam fungos."},
-  "aquatic":    {"name": "Plantas aquáticas", "kind": "plant", "hint": "Plante dentro do riacho."},
-  "tree":       {"name": "Árvores jovens", "kind": "plant", "hint": "Plante árvores."},
-  "tree_big":   {"name": "Árvores frondosas", "kind": "plant", "hint": "Disponível no Florescimento."},
-  "moss":       {"name": "Musgos", "kind": "plant", "hint": "Surgem com vitalidade acima de 30%."},
-  "sabia":      {"name": "Sabiá-laranjeira", "kind": "animal", "hint": "Visita o riacho desde o início. Mais árvores, mais sabiás.", "sprite": "bird_sabia"},
-  "saira":      {"name": "Saíra-sete-cores", "kind": "animal", "hint": "Precisa de arbustos com frutinhas e vitalidade 35%.", "sprite": "bird_saira"},
-  "butterfly":  {"name": "Borboletas", "kind": "animal", "hint": "Aparecem com flores e vitalidade 20%.", "sprite": "butterfly"},
-  "dragonfly":  {"name": "Libélulas", "kind": "animal", "hint": "Água com qualidade 35+ e plantas aquáticas.", "sprite": "dragonfly"},
-  "fish":       {"name": "Lambaris", "kind": "animal", "hint": "Água com qualidade 45+ e plantas aquáticas.", "sprite": "fish"},
-  "deer":       {"name": "Veado-catingueiro", "kind": "animal", "hint": "Vitalidade 55%, 8 espécies e mata densa (4+ árvores/arbustos).", "sprite": "deer"}
+ "grass": {
+  "name": "Gramíneas nativas",
+  "kind": "plant",
+  "hint": "Plante grama."
+ },
+ "flowers": {
+  "name": "Flores silvestres",
+  "kind": "plant",
+  "hint": "Plante flores."
+ },
+ "fern": {
+  "name": "Samambaias",
+  "kind": "plant",
+  "hint": "Plante samambaias."
+ },
+ "shrub": {
+  "name": "Arbustos frutíferos",
+  "kind": "plant",
+  "hint": "Plante arbustos."
+ },
+ "fungi": {
+  "name": "Fungos",
+  "kind": "plant",
+  "hint": "Troncos caídos abrigam fungos."
+ },
+ "aquatic": {
+  "name": "Plantas aquáticas",
+  "kind": "plant",
+  "hint": "Plante dentro do riacho."
+ },
+ "tree": {
+  "name": "Árvores jovens",
+  "kind": "plant",
+  "hint": "Plante árvores."
+ },
+ "tree_big": {
+  "name": "Árvores frondosas",
+  "kind": "plant",
+  "hint": "Disponível no Florescimento."
+ },
+ "moss": {
+  "name": "Musgos",
+  "kind": "plant",
+  "hint": "Surgem com vitalidade acima de 30%."
+ },
+ "sabia": {
+  "name": "Sabiá-laranjeira",
+  "kind": "animal",
+  "hint": "Visita o riacho desde o início. Mais árvores, mais sabiás.",
+  "sprite": "bird_sabia"
+ },
+ "saira": {
+  "name": "Saíra-sete-cores",
+  "kind": "animal",
+  "hint": "Precisa de arbustos com frutinhas e vitalidade 35%.",
+  "sprite": "bird_saira"
+ },
+ "butterfly": {
+  "name": "Borboletas",
+  "kind": "animal",
+  "hint": "Aparecem com flores e vitalidade 20%.",
+  "sprite": "butterfly"
+ },
+ "dragonfly": {
+  "name": "Libélulas",
+  "kind": "animal",
+  "hint": "Água com qualidade 35+ e plantas aquáticas.",
+  "sprite": "dragonfly"
+ },
+ "fish": {
+  "name": "Lambaris",
+  "kind": "animal",
+  "hint": "Água com qualidade 45+ e plantas aquáticas.",
+  "sprite": "fish"
+ },
+ "deer": {
+  "name": "Veado-catingueiro",
+  "kind": "animal",
+  "hint": "Vitalidade 55%, 8 espécies e mata densa (4+ árvores/arbustos).",
+  "sprite": "deer_m"
+ }
 }

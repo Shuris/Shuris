@@ -139,6 +139,7 @@ static func cost_row(cost: Dictionary, size: int = 16) -> HBoxContainer:
 
 ## Integer-scaled preview size for pixel textures (fits inside box).
 static func pixel_fit(tex: Texture2D, box: Vector2) -> Vector2:
-	var s := floorf(minf(box.x / tex.get_width(), box.y / tex.get_height()))
-	s = maxf(1.0, s)
+	var fit := minf(box.x / tex.get_width(), box.y / tex.get_height())
+	# integer up-scaling, or exact 1/n down-scaling for very large sprites
+	var s := floorf(fit) if fit >= 1.0 else 1.0 / ceilf(1.0 / fit)
 	return Vector2(tex.get_width(), tex.get_height()) * s

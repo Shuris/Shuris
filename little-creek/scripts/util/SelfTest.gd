@@ -166,6 +166,66 @@ func _run() -> void:
 	_check("offline progress capped", bool(rep2.get("capped", false)))
 	SaveSystem.delete_save()
 
+	# 9) v0.2 sprites: every animation exists in both directions
+	var need := {"deer_m": ["idle", "walk", "run", "look", "alert", "ears", "tail", "lower", "drink", "raise"],
+		"deer_f": ["idle", "walk", "run", "drink"],
+		"visitor_0": ["idle", "walk", "sit", "look", "photo", "feed"],
+		"visitor_1": ["idle", "walk", "sit", "look", "photo", "feed"],
+		"visitor_2": ["idle", "walk", "sit", "look", "photo", "feed"]}
+	var missing: Array = []
+	for sheet in need.keys():
+		var sf := SpriteLib.frames(sheet)
+		for a in need[sheet]:
+			for sfx in ["", "_l"]:
+				if not sf.has_animation(a + sfx) or sf.get_frame_count(a + sfx) == 0:
+					missing.append(sheet + ":" + a + sfx)
+	_check("all deer/visitor animations present", missing.is_empty(), str(missing))
+
+	# 10) behaviour cycles run end to end (time accelerated)
+	Engine.time_scale = 12.0
+	var spots: Array = GameData.scene["drink_spots"]
+	_check("deer has a drinking spot", spots.size() > 0)
+	var deer := Deer.new()
+	world.entities.add_child(deer)
+	deer.setup(world, spots[0])
+	var seen := {}
+	var states := {}
+	for i in 1500:
+		if not is_instance_valid(deer):
+			break
+		seen[String(deer.sprite.animation).trim_suffix("_l")] = true
+		states[deer.state] = true
+		await get_tree().process_frame
+	_check("deer drinks and leaves", not is_instance_valid(deer) and states.has("drink") and seen.has("drink")
+		and seen.has("walk"), "anims %s" % str(seen.keys()))
+	var deer2 := Deer.new()
+	world.entities.add_child(deer2)
+	deer2.setup(world, spots[0])
+	deer2.position = Vector2(float(spots[0]["x"]), float(spots[0]["y"]))
+	deer2.set_state("idle")
+	deer2.on_tap()
+	var ran := false
+	for i in 600:
+		if not is_instance_valid(deer2):
+			break
+		if String(deer2.sprite.animation).begins_with("run"):
+			ran = true
+		await get_tree().process_frame
+	_check("tapped deer is alerted and flees running", ran and not is_instance_valid(deer2))
+	var v := Visitor.new()
+	world.entities.add_child(v)
+	v.add_to_group("visitors")
+	v.setup(world, 1, main.visitors)
+	var vstates := {}
+	for i in 3000:
+		if not is_instance_valid(v):
+			break
+		vstates[v.state] = true
+		await get_tree().process_frame
+	_check("visitor walks the trail and leaves", not is_instance_valid(v) and vstates.has("walk")
+		and vstates.has("activity"), str(vstates.keys()))
+	Engine.time_scale = 1.0
+
 	var fails := 0
 	for r in results:
 		if not r[1]:

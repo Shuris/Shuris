@@ -7,7 +7,7 @@ config_version=5
 
 config/name="Little Creek"
 config/description="Um pequeno riacho para cuidar e ver florescer."
-config/version="0.1.0"
+config/version="0.2.0"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://assets/sprites/ui/icon.png"

@@ -41,6 +41,29 @@ static func tex(path: String) -> Texture2D:
 	return _tex_cache[path]
 
 
+## Soft, dithered contact shadow (pixel-art friendly), cached by size.
+static func shadow_tex(w: int, h: int) -> Texture2D:
+	var key := "shadow#%dx%d" % [w, h]
+	if _tex_cache.has(key):
+		return _tex_cache[key]
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var bayer: Array[int] = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+	for y in h:
+		for x in w:
+			var dx := (x + 0.5 - w / 2.0) / (w / 2.0)
+			var dy := (y + 0.5 - h / 2.0) / (h / 2.0)
+			var d := dx * dx + dy * dy
+			if d > 1.0:
+				continue
+			var a := 1.0 - d
+			var thr: float = (bayer[(x % 4) + (y % 4) * 4] + 0.5) / 16.0
+			if a * 1.6 > thr:
+				img.set_pixel(x, y, Color(0.04, 0.09, 0.11, 0.42 if d < 0.45 else 0.3))
+	var t := ImageTexture.create_from_image(img)
+	_tex_cache[key] = t
+	return t
+
+
 ## Simple horizontal strip -> SpriteFrames with one animation.
 static func strip(path: String, frame_w: int, fps: float, loop: bool) -> SpriteFrames:
 	var key := "%s#%d" % [path, frame_w]

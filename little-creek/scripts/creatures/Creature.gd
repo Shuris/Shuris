@@ -13,6 +13,10 @@ var state: String = ""
 var state_time: float = 0.0
 var hit_radius: float = 6.0
 var _leaving := false
+var facing := 1            # 1 = right, -1 = left
+var directional := false   # sheet has dedicated left-facing animations (*_l)
+var base_anim := ""
+var shadow: Sprite2D
 
 
 func setup_sprite(sheet: String, anim: String = "") -> void:
@@ -20,8 +24,15 @@ func setup_sprite(sheet: String, anim: String = "") -> void:
 	sprite.sprite_frames = SpriteLib.frames(sheet)
 	sprite.centered = false
 	var meta: Dictionary = GameData.creatures[sheet]
+	directional = bool(meta.get("directional", false))
 	# anchor: bottom-center (feet / perch contact point)
 	sprite.offset = Vector2(-floorf(float(meta["w"]) / 2.0), -float(meta["h"]))
+	if meta.has("shadow"):
+		var sd: Array = meta["shadow"]
+		shadow = Sprite2D.new()
+		shadow.texture = SpriteLib.shadow_tex(int(sd[0]), int(sd[1]))
+		shadow.position = Vector2(0, -3)
+		add_child(shadow)
 	add_child(sprite)
 	if anim != "":
 		sprite.play(anim)
@@ -33,14 +44,37 @@ func set_state(s: String) -> void:
 	state_time = 0.0
 
 
+func _resolved(anim: String) -> String:
+	if directional and facing < 0 and sprite.sprite_frames.has_animation(anim + "_l"):
+		return anim + "_l"
+	return anim
+
+
 func play(anim: String) -> void:
-	if sprite.animation != anim or not sprite.is_playing():
-		sprite.play(anim)
+	base_anim = anim
+	var a := _resolved(anim)
+	if sprite.animation != a or not sprite.is_playing():
+		sprite.play(a)
 
 
 func face(dir_x: float) -> void:
-	if absf(dir_x) > 0.01:
-		sprite.flip_h = dir_x < 0.0
+	if absf(dir_x) <= 0.01:
+		return
+	var nf := -1 if dir_x < 0.0 else 1
+	if nf == facing:
+		return
+	facing = nf
+	if directional:
+		# swap to the matching left/right animation, keeping the frame
+		if base_anim != "":
+			var f := sprite.frame
+			var playing := sprite.is_playing()
+			sprite.play(_resolved(base_anim))
+			sprite.frame = f
+			if not playing:
+				sprite.pause()
+	else:
+		sprite.flip_h = facing < 0
 
 
 ## Move toward target at speed; returns true when arrived.

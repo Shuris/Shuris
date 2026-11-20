@@ -73,4 +73,4 @@ func hit_test(p: Vector2) -> bool:
 
 
 func footprint() -> float:
-	return clampf(half_width * 0.75, 3.0, 22.0)
+	return float(def.get("footprint", clampf(half_width * 0.75, 3.0, 22.0)))

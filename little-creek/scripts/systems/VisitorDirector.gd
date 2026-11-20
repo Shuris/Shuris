@@ -62,4 +62,4 @@ func reward(v: Node2D, kind: String, subject: String) -> void:
 			rep = 0.5
 			txt = "acenou"
 	GameState.add_resources(w, 0.0, rep)
-	world.floating_text.emit(v.position + Vector2(0, -26), "%s  +%s" % [txt, NumFmt.short(w)] if w > 0 else txt, Palette.GOLD)
+	world.floating_text.emit(v.position + Vector2(0, -44), "%s  +%s" % [txt, NumFmt.short(w)] if w > 0 else txt, Palette.GOLD)

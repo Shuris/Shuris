@@ -101,7 +101,7 @@ func sing() -> void:
 	AudioManager.play_bird(kind)
 	var n := Sprite2D.new()
 	n.texture = load("res://assets/sprites/effects/note.png")
-	n.position = position + Vector2(4 if not sprite.flip_h else -6, -12)
+	n.position = position + Vector2(4 if facing > 0 else -6, -12)
 	world.fx_layer.add_child(n)
 	var t := n.create_tween()
 	t.set_parallel(true)

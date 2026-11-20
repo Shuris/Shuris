@@ -243,7 +243,7 @@ def creek_rock_list(cr):
             if rng.random() < 0.55:
                 edge = left[yi] if side < 0 else right[yi]
                 big = rng.random() < 0.28
-                rx = ((9 + rng.random() * 9) if big else (2.5 + rng.random() * 5)) * (0.35 + persp)
+                rx = ((13 + rng.random() * 11) if big else (3.5 + rng.random() * 6)) * (0.35 + persp)
                 ry = rx * (0.5 + rng.random() * 0.18)
                 x = edge + side * rx * (0.05 + rng.random() * 0.45)
                 rocks.append((x, y + ry * 0.3, rx, ry, int(rng.integers(1e9)), False))
@@ -254,20 +254,20 @@ def creek_rock_list(cr):
         c = cx[lip]
         h = hw[lip]
         for side in (-1, 1):
-            rx = (10 + rng.random() * 8) * (0.45 + persp)
+            rx = (15 + rng.random() * 10) * (0.45 + persp)
             rocks.append((c + side * (h + rx * 0.35), base - (base - lip) * 0.2, rx,
                           (base - lip) * 0.7 + 4, int(rng.integers(1e9)), False))
         nsplit = 1 if h < 12 else 2
         for k in range(nsplit):
             fx = c + (k - (nsplit - 1) / 2) * h * 0.9 + (rng.random() - 0.5) * 4
-            rx = 3 + h * 0.2
+            rx = 4 + h * 0.26
             rocks.append((fx, lip + (base - lip) * 0.6, rx, (base - lip) * 0.45 + 1.5,
                           int(rng.integers(1e9)), True))
         for k in range(2 + int(h / 9)):
             yy = base + 7 + rng.random() * 14
             yi = min(int(yy), H - 1)
             xx = cx[yi] + (rng.random() - 0.5) * hw[yi] * 1.5
-            r = 2 + rng.random() * 3.5
+            r = 2.5 + rng.random() * 4.5
             rocks.append((xx, yy, r, r * 0.6, int(rng.integers(1e9)), True))
     for k in range(9):
         yy = 195 + rng.random() * 160
@@ -609,7 +609,7 @@ def paint_trail(cr):
         d = np.sqrt(((xs - p[0]) / 1.0) ** 2 + ((ys - p[1]) * 2.2) ** 2)
         mind = np.minimum(mind, d)
     persp = np.clip((ys - HORIZON) / 190.0, 0.15, 1.0)
-    half = 6 + 13 * persp
+    half = 8 + 16 * persp
     n = value_noise(W, H, 3, R(602), octaves=2)
     m = (mind < half + (n - 0.5) * 3) & ~cr["mask"]
     v = 0.45 + (n - 0.5) * 0.4 + SUN * 0.3 - (mind / half) * 0.15
@@ -637,7 +637,7 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
     for (name, x, by, w), (cv, (ox, oy)) in zip(FRAME_TREES, frame_canvases):
         blocked |= (np.abs(xs - x) < w * 0.75 + 6) & (ys > by - 40) & (ys < by + 6)
         blocked |= (np.abs(xs - x) < w * 0.6) & (ys <= by)
-    ground = (ys >= 194) & (ys <= 352) & ~water_near & ~rock_near & ~blocked \
+    ground = (ys >= 206) & (ys <= 352) & ~water_near & ~rock_near & ~blocked \
         & (xs > SAFE_X0 + 6) & (xs < SAFE_X1 - 6)
     meta_ok = (cr["fall"] == 0) & (cr["foam"] < 0.2) & (cr["depth"] > 0.12)
     water_ok = m & ~ndimage.binary_dilation(rmask, iterations=2) & meta_ok & (ys >= 200) \
@@ -650,22 +650,29 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
     # deer drinking spots: the whole body (in perspective) must stand on dry
     # ground while the muzzle reaches the water. Deer sprite: ~32 px long,
     # ~24 px tall, anchored at the feet, muzzle ~16 px ahead.
-    dry = ~m & ~rock_near & ~blocked & (xs > SAFE_X0 + 20) & (xs < SAFE_X1 - 20)
+    dry = ~ndimage.binary_dilation(m, iterations=1) & ~(rmask) & ~blocked & (xs > SAFE_X0 + 20) & (xs < SAFE_X1 - 20)
     drink = []
+    def hits_fall(yy, x0, x1):
+        for l, b, _s in FALLS:
+            fx0, fx1 = cr["cx"][b] - cr["hw"][b] - 8, cr["cx"][b] + cr["hw"][b] + 8
+            if yy - 32 <= b + 14 and yy >= l - 4 and x1 >= fx0 and x0 <= fx1:
+                return True
+        return False
+
     for yy in range(236, 346, 2):
         for side in (-1, 1):
             f = -side  # face toward the water
             edge = cr["left"][yy] if side < 0 else cr["right"][yy]
-            for dd in range(14, 30):
+            for dd in range(12, 30):
                 x = int(round(edge + side * dd))
-                x0, x1 = sorted((x - 15 * f, x + 9 * f))
+                x0, x1 = sorted((x - 19 * f, x + 13 * f))
                 if x0 < 0 or x1 >= W:
                     continue
-                body = dry[yy - 22:yy + 1, x0:x1 + 1]
-                if body.size == 0 or not body.all():
+                body = dry[yy - 13:yy + 1, x0:x1 + 1]
+                if body.size == 0 or body.mean() < 0.88 or hits_fall(yy, x0, x1):
                     continue
-                mx, my = x + 17 * f, yy - 4
-                near = m[max(my - 3, 0):my + 4, max(min(mx, mx + 6 * f) - 3, 0):max(mx, mx + 6 * f) + 4]
+                mx, my = x + 21 * f, yy - 9
+                near = m[max(my - 3, 0):my + 3, max(mx - 2, 0):mx + 3]
                 if near.any():
                     if all(abs(d2["y"] - yy) > 14 or d2["face"] != f for d2 in drink):
                         drink.append({"x": float(x), "y": float(yy), "face": f})

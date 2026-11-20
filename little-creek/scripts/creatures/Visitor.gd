@@ -4,7 +4,7 @@ extends Creature
 ## water, sits on benches, photographs animals and feeds birds. Leaves small
 ## donations and reputation.
 
-const SPEED := 11.0
+const SPEED := 15.0
 const VIEW_INDEX := 5  # trail point beside the pool
 
 var path: Array = []
@@ -21,7 +21,7 @@ func setup(w: World, variant: int, d: Node) -> void:
 	director = d
 	species = "visitor"
 	setup_sprite("visitor_%d" % variant, "walk")
-	hit_radius = 7.0
+	hit_radius = 10.0
 	for p in GameData.scene.get("trail", []):
 		path.append(Vector2(float(p["x"]), float(p["y"])))
 	if randf() < 0.5:
@@ -88,7 +88,7 @@ func _arrived_at_point() -> void:
 		activity = plan.pop_front()
 		var n: Node2D = activity["node"]
 		if is_instance_valid(n):
-			var off := Vector2(0, 2) if activity["type"] == "bench" else Vector2(-10 if n.position.x > position.x else 10, 3)
+			var off := Vector2(0, 2) if activity["type"] == "bench" else Vector2(-16 if n.position.x > position.x else 16, 4)
 			activity["target"] = n.position + off
 			set_state("goto")
 			play("walk")
@@ -111,7 +111,6 @@ func _start_activity() -> void:
 		"bench":
 			var n: Node2D = activity["node"]
 			position = n.position + Vector2(0, 1)
-			sprite.offset.y += 4
 			face(1.0 if n.position.x < 470 else -1.0)
 			play("sit")
 			wait = randf_range(8.0, 14.0)
@@ -144,7 +143,7 @@ func _photo() -> void:
 	play("photo")
 	var f := Sprite2D.new()
 	f.texture = load("res://assets/sprites/effects/flash.png")
-	f.position = position + Vector2(4 if not sprite.flip_h else -4, -21)
+	f.position = position + Vector2(6 * facing, -36)
 	world.fx_layer.add_child(f)
 	var t := f.create_tween()
 	t.tween_property(f, "modulate:a", 0.0, 0.5)
@@ -163,7 +162,6 @@ func _photo() -> void:
 func _end_activity() -> void:
 	match activity["type"]:
 		"bench":
-			sprite.offset.y -= 4
 			director.reward(self, "bench", "")
 		"feeder":
 			director.reward(self, "feeder", "")

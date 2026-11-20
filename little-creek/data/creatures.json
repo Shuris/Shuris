@@ -283,10 +283,10 @@
    }
   }
  },
- "deer": {
-  "sheet": "res://assets/sprites/animals/deer.png",
-  "w": 34,
-  "h": 30,
+ "deer_m": {
+  "sheet": "res://assets/sprites/animals/deer_m.png",
+  "w": 76,
+  "h": 64,
   "anims": {
    "idle": {
     "frames": [
@@ -297,6 +297,8 @@
      0,
      0,
      2,
+     3,
+     2,
      0
     ],
     "fps": 3,
@@ -304,13 +306,478 @@
    },
    "look": {
     "frames": [
-     3
+     4,
+     4,
+     4,
+     5,
+     5,
+     4
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "alert": {
+    "frames": [
+     6
     ],
     "fps": 1,
     "loop": true
    },
+   "ears": {
+    "frames": [
+     7,
+     8,
+     7
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "tail": {
+    "frames": [
+     9,
+     10,
+     9,
+     10,
+     9
+    ],
+    "fps": 8,
+    "loop": false
+   },
    "walk": {
     "frames": [
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "run": {
+    "frames": [
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "lower": {
+    "frames": [
+     25,
+     26
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "drink": {
+    "frames": [
+     27,
+     28,
+     28,
+     27,
+     28,
+     27,
+     27
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "raise": {
+    "frames": [
+     26,
+     25,
+     0
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "idle_l": {
+    "frames": [
+     29,
+     29,
+     29,
+     30,
+     29,
+     29,
+     31,
+     32,
+     31,
+     29
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "look_l": {
+    "frames": [
+     33,
+     33,
+     33,
+     34,
+     34,
+     33
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "alert_l": {
+    "frames": [
+     35
+    ],
+    "fps": 1,
+    "loop": true
+   },
+   "ears_l": {
+    "frames": [
+     36,
+     37,
+     36
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "tail_l": {
+    "frames": [
+     38,
+     39,
+     38,
+     39,
+     38
+    ],
+    "fps": 8,
+    "loop": false
+   },
+   "walk_l": {
+    "frames": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "run_l": {
+    "frames": [
+     48,
+     49,
+     50,
+     51,
+     52,
+     53
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "lower_l": {
+    "frames": [
+     54,
+     55
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "drink_l": {
+    "frames": [
+     56,
+     57,
+     57,
+     56,
+     57,
+     56,
+     56
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "raise_l": {
+    "frames": [
+     55,
+     54,
+     29
+    ],
+    "fps": 5,
+    "loop": false
+   }
+  },
+  "muzzle": [
+   21.5,
+   -9.6
+  ],
+  "shadow": [
+   36.0,
+   7.0
+  ],
+  "directional": true
+ },
+ "deer_f": {
+  "sheet": "res://assets/sprites/animals/deer_f.png",
+  "w": 76,
+  "h": 64,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     0,
+     1,
+     0,
+     0,
+     2,
+     3,
+     2,
+     0
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "look": {
+    "frames": [
+     4,
+     4,
+     4,
+     5,
+     5,
+     4
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "alert": {
+    "frames": [
+     6
+    ],
+    "fps": 1,
+    "loop": true
+   },
+   "ears": {
+    "frames": [
+     7,
+     8,
+     7
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "tail": {
+    "frames": [
+     9,
+     10,
+     9,
+     10,
+     9
+    ],
+    "fps": 8,
+    "loop": false
+   },
+   "walk": {
+    "frames": [
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "run": {
+    "frames": [
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "lower": {
+    "frames": [
+     25,
+     26
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "drink": {
+    "frames": [
+     27,
+     28,
+     28,
+     27,
+     28,
+     27,
+     27
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "raise": {
+    "frames": [
+     26,
+     25,
+     0
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "idle_l": {
+    "frames": [
+     29,
+     29,
+     29,
+     30,
+     29,
+     29,
+     31,
+     32,
+     31,
+     29
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "look_l": {
+    "frames": [
+     33,
+     33,
+     33,
+     34,
+     34,
+     33
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "alert_l": {
+    "frames": [
+     35
+    ],
+    "fps": 1,
+    "loop": true
+   },
+   "ears_l": {
+    "frames": [
+     36,
+     37,
+     36
+    ],
+    "fps": 6,
+    "loop": false
+   },
+   "tail_l": {
+    "frames": [
+     38,
+     39,
+     38,
+     39,
+     38
+    ],
+    "fps": 8,
+    "loop": false
+   },
+   "walk_l": {
+    "frames": [
+     40,
+     41,
+     42,
+     43,
+     44,
+     45,
+     46,
+     47
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "run_l": {
+    "frames": [
+     48,
+     49,
+     50,
+     51,
+     52,
+     53
+    ],
+    "fps": 12,
+    "loop": true
+   },
+   "lower_l": {
+    "frames": [
+     54,
+     55
+    ],
+    "fps": 5,
+    "loop": false
+   },
+   "drink_l": {
+    "frames": [
+     56,
+     57,
+     57,
+     56,
+     57,
+     56,
+     56
+    ],
+    "fps": 3,
+    "loop": true
+   },
+   "raise_l": {
+    "frames": [
+     55,
+     54,
+     29
+    ],
+    "fps": 5,
+    "loop": false
+   }
+  },
+  "muzzle": [
+   21.5,
+   -9.6
+  ],
+  "shadow": [
+   36.0,
+   7.0
+  ],
+  "directional": true
+ },
+ "visitor_0": {
+  "sheet": "res://assets/sprites/humans/visitor_0.png",
+  "w": 36,
+  "h": 54,
+  "anims": {
+   "idle": {
+    "frames": [
+     0,
+     0,
+     1,
+     1
+    ],
+    "fps": 2,
+    "loop": true
+   },
+   "walk": {
+    "frames": [
+     2,
+     3,
      4,
      5,
      6,
@@ -318,111 +785,132 @@
      8,
      9
     ],
-    "fps": 8,
-    "loop": true
-   },
-   "lower": {
-    "frames": [
-     10,
-     11
-    ],
-    "fps": 4,
-    "loop": false
-   },
-   "raise": {
-    "frames": [
-     11,
-     10,
-     0
-    ],
-    "fps": 5,
-    "loop": false
-   },
-   "drink": {
-    "frames": [
-     11,
-     12,
-     12,
-     11,
-     12
-    ],
-    "fps": 3,
-    "loop": true
-   }
-  }
- },
- "visitor_0": {
-  "sheet": "res://assets/sprites/humans/visitor_0.png",
-  "w": 16,
-  "h": 28,
-  "anims": {
-   "idle": {
-    "frames": [
-     0,
-     0,
-     1,
-     1
-    ],
-    "fps": 2,
-    "loop": true
-   },
-   "walk": {
-    "frames": [
-     2,
-     3,
-     4,
-     5,
-     6,
-     7
-    ],
-    "fps": 7,
+    "fps": 9,
     "loop": true
    },
    "sit": {
     "frames": [
-     8,
-     8,
-     8,
-     9,
-     8,
-     8
+     10,
+     10,
+     10,
+     11,
+     10,
+     10
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look": {
+    "frames": [
+     12,
+     12,
+     13,
+     13
     ],
     "fps": 1.5,
     "loop": true
    },
    "photo": {
     "frames": [
-     10,
-     11,
-     10
+     14,
+     15,
+     14
     ],
     "fps": 2,
     "loop": false
    },
    "feed": {
     "frames": [
-     12,
-     13,
-     14,
-     13,
-     12
+     16,
+     17,
+     18,
+     19,
+     18,
+     17,
+     16
     ],
-    "fps": 6,
+    "fps": 7,
     "loop": false
    },
-   "look": {
+   "idle_l": {
     "frames": [
-     15
+     20,
+     20,
+     21,
+     21
     ],
-    "fps": 1,
+    "fps": 2,
     "loop": true
+   },
+   "walk_l": {
+    "frames": [
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "sit_l": {
+    "frames": [
+     30,
+     30,
+     30,
+     31,
+     30,
+     30
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look_l": {
+    "frames": [
+     32,
+     32,
+     33,
+     33
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo_l": {
+    "frames": [
+     34,
+     35,
+     34
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed_l": {
+    "frames": [
+     36,
+     37,
+     38,
+     39,
+     38,
+     37,
+     36
+    ],
+    "fps": 7,
+    "loop": false
    }
-  }
+  },
+  "shadow": [
+   16,
+   5
+  ],
+  "directional": true
  },
  "visitor_1": {
   "sheet": "res://assets/sprites/humans/visitor_1.png",
-  "w": 16,
-  "h": 28,
+  "w": 36,
+  "h": 54,
   "anims": {
    "idle": {
     "frames": [
@@ -441,56 +929,136 @@
      4,
      5,
      6,
-     7
+     7,
+     8,
+     9
     ],
-    "fps": 7,
+    "fps": 9,
     "loop": true
    },
    "sit": {
     "frames": [
-     8,
-     8,
-     8,
-     9,
-     8,
-     8
+     10,
+     10,
+     10,
+     11,
+     10,
+     10
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look": {
+    "frames": [
+     12,
+     12,
+     13,
+     13
     ],
     "fps": 1.5,
     "loop": true
    },
    "photo": {
     "frames": [
-     10,
-     11,
-     10
+     14,
+     15,
+     14
     ],
     "fps": 2,
     "loop": false
    },
    "feed": {
     "frames": [
-     12,
-     13,
-     14,
-     13,
-     12
+     16,
+     17,
+     18,
+     19,
+     18,
+     17,
+     16
     ],
-    "fps": 6,
+    "fps": 7,
     "loop": false
    },
-   "look": {
+   "idle_l": {
     "frames": [
-     15
+     20,
+     20,
+     21,
+     21
     ],
-    "fps": 1,
+    "fps": 2,
     "loop": true
+   },
+   "walk_l": {
+    "frames": [
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "sit_l": {
+    "frames": [
+     30,
+     30,
+     30,
+     31,
+     30,
+     30
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look_l": {
+    "frames": [
+     32,
+     32,
+     33,
+     33
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo_l": {
+    "frames": [
+     34,
+     35,
+     34
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed_l": {
+    "frames": [
+     36,
+     37,
+     38,
+     39,
+     38,
+     37,
+     36
+    ],
+    "fps": 7,
+    "loop": false
    }
-  }
+  },
+  "shadow": [
+   16,
+   5
+  ],
+  "directional": true
  },
  "visitor_2": {
   "sheet": "res://assets/sprites/humans/visitor_2.png",
-  "w": 16,
-  "h": 28,
+  "w": 36,
+  "h": 54,
   "anims": {
    "idle": {
     "frames": [
@@ -509,50 +1077,130 @@
      4,
      5,
      6,
-     7
+     7,
+     8,
+     9
     ],
-    "fps": 7,
+    "fps": 9,
     "loop": true
    },
    "sit": {
     "frames": [
-     8,
-     8,
-     8,
-     9,
-     8,
-     8
+     10,
+     10,
+     10,
+     11,
+     10,
+     10
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look": {
+    "frames": [
+     12,
+     12,
+     13,
+     13
     ],
     "fps": 1.5,
     "loop": true
    },
    "photo": {
     "frames": [
-     10,
-     11,
-     10
+     14,
+     15,
+     14
     ],
     "fps": 2,
     "loop": false
    },
    "feed": {
     "frames": [
-     12,
-     13,
-     14,
-     13,
-     12
+     16,
+     17,
+     18,
+     19,
+     18,
+     17,
+     16
     ],
-    "fps": 6,
+    "fps": 7,
     "loop": false
    },
-   "look": {
+   "idle_l": {
     "frames": [
-     15
+     20,
+     20,
+     21,
+     21
     ],
-    "fps": 1,
+    "fps": 2,
     "loop": true
+   },
+   "walk_l": {
+    "frames": [
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28,
+     29
+    ],
+    "fps": 9,
+    "loop": true
+   },
+   "sit_l": {
+    "frames": [
+     30,
+     30,
+     30,
+     31,
+     30,
+     30
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "look_l": {
+    "frames": [
+     32,
+     32,
+     33,
+     33
+    ],
+    "fps": 1.5,
+    "loop": true
+   },
+   "photo_l": {
+    "frames": [
+     34,
+     35,
+     34
+    ],
+    "fps": 2,
+    "loop": false
+   },
+   "feed_l": {
+    "frames": [
+     36,
+     37,
+     38,
+     39,
+     38,
+     37,
+     36
+    ],
+    "fps": 7,
+    "loop": false
    }
-  }
+  },
+  "shadow": [
+   16,
+   5
+  ],
+  "directional": true
  }
 }

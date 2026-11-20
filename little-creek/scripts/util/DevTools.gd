@@ -14,6 +14,9 @@ var _count := 0
 
 func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--seed="):
+			seed(int(a.substr(7)))
+	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--shot="):
 			_shot = a.substr(7)
 		elif a.begins_with("--frames="):
@@ -51,6 +54,29 @@ func _spawn(names: PackedStringArray) -> void:
 				v.setup(main.world, randi() % 3, main.visitors)
 				v.position = v.path[3] if v.path.size() > 3 else v.position
 				v.idx = 4
+			"sitter", "feeder", "photo", "look":
+				var v2 := Visitor.new()
+				main.world.entities.add_child(v2)
+				v2.add_to_group("visitors")
+				v2.setup(main.world, {"sitter": 1, "feeder": 0, "photo": 1, "look": 2}[n], main.visitors)
+				v2.modulate.a = 1.0
+				var poi: String = {"sitter": "bench", "feeder": "feeder"}.get(n, "")
+				var nodes: Array = main.world.items_with_poi(poi) if poi != "" else []
+				if poi != "" and not nodes.is_empty():
+					var node: Node2D = nodes[0]
+					v2.position = node.position + (Vector2(0, 1) if poi == "bench" else Vector2(-16, 4))
+					v2.activity = {"type": poi, "node": node}
+				else:
+					v2.position = v2.path[min(5, v2.path.size() - 1)] if n == "look" else Vector2(470, 316)
+					v2.activity = {"type": "view"}
+				v2._start_activity()
+				v2.wait = 999.0
+				if n == "photo":
+					v2.position = Vector2(560, 318)
+					v2.face(-1.0)
+					v2.play("photo")
+				elif n == "look":
+					v2.play("look")
 			_:
 				wd._spawn(n)
 
@@ -72,15 +98,15 @@ func seed_state(name: String) -> void:
 	GameState.water = 5000.0
 	GameState.seeds = 400.0
 	var layout := [
-		["flowers", 230, 250], ["flowers", 300, 300], ["flowers", 600, 270], ["grass", 270, 280],
-		["fern", 380, 300], ["shrub", 170, 280], ["big_rock", 330, 248], ["flowers", 640, 316],
+		["flowers", 236, 256], ["flowers", 300, 312], ["flowers", 610, 280], ["grass", 268, 290],
+		["fern", 372, 318], ["shrub", 170, 292], ["big_rock", 340, 262], ["flowers", 650, 326],
 	]
 	if lvl >= 3:
-		layout += [["aquatic", 456, 268], ["aquatic", 470, 330], ["tree_small", 600, 230],
-			["tree_small", 250, 222], ["shrub", 650, 300], ["fern", 560, 320], ["tree_big", 180, 244],
-			["shrub", 540, 240], ["flowers", 200, 306]]
+		layout += [["aquatic", 470, 300], ["aquatic", 480, 336], ["tree_small", 604, 236],
+			["tree_small", 262, 226], ["shrub", 664, 304], ["fern", 566, 330], ["tree_big", 176, 250],
+			["shrub", 552, 252], ["flowers", 214, 318], ["grass", 590, 300], ["flowers", 196, 272]]
 	if lvl >= 4:
-		layout += [["bench", 400, 296], ["feeder", 230, 262], ["tree_big", 640, 262]]
+		layout += [["bench", 236, 300], ["feeder", 154, 318], ["tree_big", 650, 268]]
 	GameState.upgrades = {"filter": 2 + (lvl - 2) * 3, "spring": 4, "tap": 3}
 	GameState.stage = lvl
 	for e in layout:
