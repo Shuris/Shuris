@@ -52,7 +52,8 @@ class Part:
 class Rig:
     """bones: {name: (parent or None, (px, py) pivot in parent space)}"""
 
-    def __init__(self, bones, parts, lines=(), dots=()):
+    def __init__(self, bones, parts, lines=(), dots=(), scale=1.0):
+        self.scale = scale
         self.bones = bones
         self.parts = sorted(parts, key=lambda p: p.z)
         self.lines = lines  # (bone, [(x,y),...], color, z_after_part or None, condition)
@@ -68,6 +69,7 @@ class Rig:
             if name in T:
                 return T[name]
             parent, piv = self.bones[name]
+            piv = (piv[0] * self.scale, piv[1] * self.scale)
             ang = math.radians(pose.get(name, 0.0))
             if parent is None:
                 T[name] = (np.array(root_pos, float) + np.array(piv, float), ang)
@@ -82,8 +84,8 @@ class Rig:
             get(b)
         return T
 
-    @staticmethod
-    def to_world(T, bone, p):
+    def to_world(self, T, bone, p):
+        p = (p[0] * self.scale, p[1] * self.scale)
         o, a = T[bone]
         c, s = math.cos(a), math.sin(a)
         return o + np.array([c * p[0] - s * p[1], s * p[0] + c * p[1]])

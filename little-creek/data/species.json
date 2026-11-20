@@ -48,36 +48,115 @@
   "name": "Sabiá-laranjeira",
   "kind": "animal",
   "hint": "Visita o riacho desde o início. Mais árvores, mais sabiás.",
-  "sprite": "bird_sabia"
+  "sprite": "bird_sabia",
+  "desc": "O pássaro-símbolo do Brasil, de canto melodioso e peito alaranjado.",
+  "active": "Manhã",
+  "season": "Primavera",
+  "habitat": "Copas, arbustos e margens",
+  "fact": "Canta mais forte ao amanhecer, sobretudo na primavera, época de formar casais."
  },
  "saira": {
   "name": "Saíra-sete-cores",
   "kind": "animal",
   "hint": "Precisa de arbustos com frutinhas e vitalidade 35%.",
-  "sprite": "bird_saira"
+  "sprite": "bird_saira",
+  "desc": "Pequena e muito colorida, vive em bandos mistos nas copas.",
+  "active": "Manhã",
+  "season": "Verão",
+  "habitat": "Arbustos com frutos",
+  "fact": "Apesar do nome, não tem exatamente sete cores: o brilho muda com a luz."
  },
  "butterfly": {
   "name": "Borboletas",
   "kind": "animal",
   "hint": "Aparecem com flores e vitalidade 20%.",
-  "sprite": "butterfly"
+  "sprite": "butterfly",
+  "desc": "Várias espécies visitam as flores em busca de néctar.",
+  "active": "Dia",
+  "season": "Primavera",
+  "habitat": "Canteiros de flores",
+  "fact": "Precisam do sol para aquecer as asas antes de voar."
  },
  "dragonfly": {
   "name": "Libélulas",
   "kind": "animal",
   "hint": "Água com qualidade 35+ e plantas aquáticas.",
-  "sprite": "dragonfly"
+  "sprite": "dragonfly",
+  "desc": "Caçadoras ágeis que patrulham a água limpa.",
+  "active": "Dia",
+  "season": "Verão",
+  "habitat": "Sobre a água calma",
+  "fact": "Suas larvas vivem meses dentro do riacho: só existem onde a água é boa."
  },
  "fish": {
   "name": "Lambaris",
   "kind": "animal",
   "hint": "Água com qualidade 45+ e plantas aquáticas.",
-  "sprite": "fish"
+  "sprite": "fish",
+  "desc": "Peixinhos prateados de nadadeiras alaranjadas.",
+  "active": "Entardecer",
+  "season": "Verão",
+  "habitat": "Riacho, perto das plantas aquáticas",
+  "fact": "São ótimos indicadores da qualidade da água."
  },
  "deer": {
   "name": "Veado-catingueiro",
   "kind": "animal",
   "hint": "Vitalidade 55%, 8 espécies e mata densa (4+ árvores/arbustos).",
-  "sprite": "deer_m"
+  "sprite": "deer_m",
+  "desc": "Cervídeo discreto das matas brasileiras.",
+  "active": "Amanhecer e entardecer",
+  "season": "Primavera",
+  "habitat": "Mata densa à beira d'água",
+  "fact": "Os filhotes nascem com pintas brancas que ajudam na camuflagem."
+ },
+ "owl": {
+  "kind": "animal",
+  "name": "Corujinha-do-mato",
+  "desc": "Pequena coruja de olhos amarelos e voo silencioso.",
+  "active": "Noite",
+  "season": "Outono",
+  "habitat": "Galhos das árvores grandes",
+  "fact": "Gira a cabeça até 270 graus para observar sem se mexer.",
+  "sprite": "owl",
+  "hint": "Aparece à noite quando há árvores (estágio 2+)."
+ },
+ "fox": {
+  "kind": "animal",
+  "name": "Raposa-do-campo",
+  "desc": "Canídeo pequeno e esquivo de cauda volumosa.",
+  "active": "Entardecer e noite",
+  "season": "Inverno",
+  "habitat": "Bordas da mata",
+  "fact": "Evita pessoas: só aparece quando o lugar está tranquilo.",
+  "sprite": "fox",
+  "hint": "Vitalidade 45% e 7 espécies; prefere o entardecer e a noite."
+ },
+ "duck": {
+  "kind": "animal",
+  "name": "Marreca-pé-vermelho",
+  "desc": "Ave aquática que forrageia na água rasa.",
+  "active": "Manhã",
+  "season": "Primavera",
+  "habitat": "Remansos do riacho",
+  "fact": "Mergulha a cabeça para comer, deixando só a cauda para fora.",
+  "sprite": "duck",
+  "hint": "Água com qualidade 50+ e plantas aquáticas atraem patos."
+ },
+ "maned_wolf": {
+  "kind": "animal",
+  "name": "Lobo-guará",
+  "desc": "O maior canídeo da América do Sul, de pernas longas e pelagem ruiva.",
+  "active": "Noite",
+  "season": "Todas",
+  "habitat": "Campos e matas abertas",
+  "fact": "Raríssimo: vê-lo é sinal de um ecossistema muito saudável.",
+  "sprite": "maned_wolf",
+  "hint": "Muito raro. Só em ecossistemas muito saudáveis, à noite."
+ },
+ "rare_flower": {
+  "name": "Orquídea-do-brejo",
+  "kind": "plant",
+  "hint": "Rara: pode florescer sozinha em ecossistemas saudáveis."
  }
 }

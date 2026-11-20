@@ -65,7 +65,11 @@ H_UP = [(-4.5, -5.2), (2.0, -5.8), (6.5, -3.2), (9.6, -1.5), (11.4, -1.0), (11.8
 H_LO = [(0.0, -1.1), (5.5, -0.85), (11.5, -0.75), (11.7, 0.75), (5.5, 0.9), (0.0, 1.4)]
 
 
-def build(male=True):
+SPOTS = [(-12.0, -4.0), (-8.0, -5.2), (-4.0, -4.6), (0.0, -5.4), (4.0, -4.8), (8.0, -5.0), (-10.0, -1.2),
+         (-6.0, -2.0), (-2.0, -1.4), (2.0, -2.2), (6.0, -1.6), (-14.0, -6.0)]
+
+
+def build(male=True, fawn=False):
     P = []
     z = 0
     # far limbs and far ear first
@@ -114,6 +118,9 @@ def build(male=True):
                   ("head", [(2.4, -3.0), (2.4, -5.8), (1.6, -8.6)], col)]
     dots = [("head", (4.4, -1.0), NOSE[0]), ("head", (5.0, -1.4), FUR[9]),
             ("head", (12.0, 0.4), NOSE[2])]
+    if fawn:
+        dots += [("torso", q, BELLY[4]) for q in SPOTS]
+        return Rig(BONES, P, [], dots, scale=0.6)
     return Rig(BONES, P, lines, dots)
 
 
@@ -194,8 +201,9 @@ def blend(a, b, t):
     return {k: a.get(k, 0.0) * (1 - t) + b.get(k, 0.0) * t for k in set(a) | set(b)}
 
 
-def frames(male=True):
-    rig = build(male)
+def frames(male=True, fawn=False):
+    rig = build(male, fawn)
+    W, H, GROUND = (48, 40, 37) if fawn else (globals()["W"], globals()["H"], globals()["GROUND"])
     seq = []  # (anim, pose, lift)
     idle = base_pose()
     seq += [("idle", idle, 0), ("idle", pose(ear_n=14, ear_f=10), 0), ("idle", pose(tail=-22), 0),

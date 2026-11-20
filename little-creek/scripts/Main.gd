@@ -79,6 +79,18 @@ func _ready() -> void:
 		visitors.world = world
 		systems.add_child(visitors)
 
+	var nests := NestSystem.new()
+	nests.name = "NestSystem"
+	nests.world = world
+	nests.wildlife = wildlife
+	systems.add_child(nests)
+	var events := NatureEvents.new()
+	events.name = "NatureEvents"
+	events.world = world
+	events.wildlife = wildlife
+	events.nests = nests
+	systems.add_child(events)
+
 	var atmo := Atmosphere.new()
 	atmo.name = "Atmosphere"
 	atmo.main = self

@@ -72,42 +72,37 @@ func _run() -> void:
 	await _shot("02_build_panel")
 	_check("build drawer opens", hud.drawer_open and hud.drawer_name == "build")
 
-	# 3) placement via touch
-	hud.start_placement("flowers")
-	await _wait(5)
+	# 3) automatic purchase (v0.3: no manual placement)
 	var n0: int = gs.placed.size()
-	var target := Vector2(250, 240)
-	for tx in range(150, 380, 12):
-		var cand := Vector2(tx, 250)
-		if world.placement_error("flowers", cand) == "":
-			target = cand
-			break
-	var sp: Vector2 = main.world_to_screen(target)
-	_touch(sp, true)
-	await _wait(3)
-	await _shot("03_placing_ghost")
-	_touch(sp, false)
-	await _wait(5)
-	_check("place flowers by touch", gs.placed.size() == n0 + 1, "at %s" % target)
-	# invalid placement (in water) must fail
-	var n1: int = gs.placed.size()
-	await _tap_screen(main.world_to_screen(wp))
-	_check("cannot place flowers in water", gs.placed.size() == n1)
-	# aquatic plant in water must succeed
-	hud.start_placement("aquatic")
-	var placed_aquatic := false
-	for row in GameData.scene["creek_rows"]:
-		var y := float(row["y"])
-		if y < 250:
-			continue
-		var cand := Vector2((float(row["l"]) + float(row["r"])) / 2.0, y)
-		if world.placement_error("aquatic", cand) == "":
-			await _tap_screen(main.world_to_screen(cand))
-			placed_aquatic = true
-			break
-	_check("place aquatic plant in water", placed_aquatic and gs.counts.get("aquatic", 0) >= 1)
-	hud.cancel_modes()
+	var d0: Dictionary = world.buy("flowers")
+	var ok_ground := not d0.is_empty() and world.zone_ok("ground", Vector2(float(d0["x"]), float(d0["y"])))
+	_check("buy flowers places them automatically on ground", gs.placed.size() == n0 + 1 and ok_ground, str(d0))
+	var da: Dictionary = world.buy("aquatic")
+	_check("buy aquatic plant places it in water", not da.is_empty() and world.is_water(Vector2(float(da["x"]), float(da["y"]))))
+	# placements never overlap
+	var overlap := false
+	var its: Array = world.items.values()
+	for i in its.size():
+		for j in range(i + 1, its.size()):
+			var a2: PlacedItem = its[i]
+			var b2: PlacedItem = its[j]
+			if a2.id == "bridge" or b2.id == "bridge":
+				continue
+			var dd := Vector2(a2.position.x - b2.position.x, (a2.position.y - b2.position.y) * 1.8).length()
+			if dd < (a2.footprint() + b2.footprint()) * 0.79:
+				overlap = true
+	_check("auto-placed elements do not overlap", not overlap)
+	# limits
+	gs.water = 1e7
+	gs.seeds = 1e5
+	var bought := 0
+	for i in 30:
+		if not world.buy("log").is_empty():
+			bought += 1
+	_check("purchase limit enforced", gs.item_count("log") == gs.item_limit("log") and world.last_buy_error != "",
+		"%d/%d (%s)" % [gs.item_count("log"), gs.item_limit("log"), world.last_buy_error])
 	await _wait(10)
+	await _shot("03_auto_placed")
 
 	# 4) upgrades
 	hud.open_panel("upgrades")
@@ -129,14 +124,10 @@ func _run() -> void:
 	hud.close_drawer()
 	await _wait(20)
 
-	# 6) progression to stage 2 by placing more items
+	# 6) progression to stage 2 by buying more items
 	for i in 12:
 		var id: String = ["flowers", "grass", "fern", "big_rock"][i % 4]
-		for k in 40:
-			var c := Vector2(randf_range(130, 690), randf_range(200, 345))
-			if world.placement_error(id, c) == "":
-				gs.place_item(id, c, 0)
-				break
+		world.buy(id)
 	await _wait(10)
 	_check("reached stage 2", gs.stage >= 2, "stage=%d beauty=%d vit=%d" % [gs.stage, int(gs.beauty), int(gs.vitality)])
 	await _wait(60)
@@ -201,6 +192,110 @@ func _run() -> void:
 				if not sf.has_animation(a + sfx) or sf.get_frame_count(a + sfx) == 0:
 					missing.append(sheet + ":" + a + sfx)
 	_check("all deer/visitor animations present", missing.is_empty(), str(missing))
+
+	# 9b) visitors respect the creek: without the bridge no route crosses water
+	var crosses_water := func(route: Array) -> bool:
+		for i in route.size() - 1:
+			for k in 12:
+				var q: Vector2 = (route[i] as Vector2).lerp(route[i + 1], k / 12.0)
+				if q.x > 0 and q.x < World.W and world.is_water(q):
+					return true
+		return false
+	gs.stage = 4
+	var probe := Visitor.new()
+	world.entities.add_child(probe)
+	probe.setup(world, 0, main.visitors)
+	var any_cross := false
+	for i in 30:
+		probe.build_route()
+		if crosses_water.call(probe.path):
+			any_cross = true
+	_check("no bridge: visitor routes never cross the creek", not any_cross and not gs.has_bridge())
+	var db: Dictionary = world.buy("bridge")
+	_check("bridge can be built (stage 4)", not db.is_empty() and gs.has_bridge(), world.last_buy_error)
+	var crossed := false
+	var on_deck := true
+	for i in 30:
+		probe.build_route()
+		if probe.crosses:
+			crossed = true
+			# the only water-crossing segment must be over the bridge span
+			var b: Dictionary = GameData.scene["bridge"]
+			for q in probe.path:
+				if q.x > 0 and q.x < World.W and world.is_water(q) and absf(q.x - float(b["x"])) > 50.0:
+					on_deck = false
+	_check("with bridge: visitors cross only over the bridge", crossed and on_deck)
+	probe.queue_free()
+
+	# 9c) v0.3 routines: activity by time of day / season / weather
+	Weather.force("clear")
+	Clock.set_season(1, 10.0)
+	Clock.set_hour(23.0)
+	var owl_night := EcosystemRules.activity("owl")
+	var bf_night := EcosystemRules.activity("butterfly")
+	Clock.set_hour(12.0)
+	var owl_day := EcosystemRules.activity("owl")
+	var bf_day := EcosystemRules.activity("butterfly")
+	_check("owls at night, butterflies by day", owl_night > 0.5 and owl_day == 0.0 and bf_day > 0.5 and bf_night == 0.0)
+	Clock.set_hour(6.5)
+	var deer_dawn := EcosystemRules.activity("deer")
+	Clock.set_hour(13.0)
+	_check("deer prefer dawn over midday", deer_dawn > EcosystemRules.activity("deer") * 2.0)
+	Clock.set_season(3, 10.0)
+	var bf_winter := EcosystemRules.activity("butterfly")
+	Weather.force("heavy")
+	_check("winter and heavy rain reduce activity", bf_winter < 0.3 and EcosystemRules.activity("sabia") == 0.0)
+	# visitors: rarer in winter, none in heavy rain or at night
+	var vd: Node = main.visitors
+	var m_winter: float = vd.frequency_mult()
+	Weather.force("clear")
+	Clock.set_season(1, 10.0)
+	var m_summer: float = vd.frequency_mult()
+	Weather.force("light")
+	var m_light: float = vd.frequency_mult()
+	Weather.force("clear")
+	Clock.set_hour(23.0)
+	var m_night: float = vd.frequency_mult()
+	Clock.set_hour(12.0)
+	_check("visitor frequency: summer > light rain > winter, none at night", m_summer > m_light and m_summer > 2.0 * 0.0 + 0.0
+		and m_summer > m_winter * 2.0 and m_night == 0.0, "summer %.2f light %.2f winter %.2f" % [m_summer, m_light, m_winter])
+	_check("visitor interval is long (>= 2.5 min base)", float(GameData.config["visitors"]["min_interval_s"]) >= 150.0)
+	# journal: sightings are counted once per individual visit
+	var c0 := NatureLog.count("fox")
+	NatureLog.sight("fox")
+	NatureLog.sight("fox")
+	_check("journal counts sightings", NatureLog.count("fox") == c0 + 1 and NatureLog.sightings["fox"].has("first_h"))
+	# nests: build -> eggs -> chicks -> gone
+	var ns: NestSystem = main.get_node("Systems/NestSystem")
+	gs.recompute()
+	world.buy("tree_small")
+	var started := ns.start_nest()
+	var stages_seen := {}
+	if started:
+		for age in [2.0, 10.0, 20.0, 40.0, 90.0, 150.0]:
+			stages_seen[ns._stage_for(age)] = true
+	_check("nest goes through all stages", started and stages_seen.has("build1") and stages_seen.has("eggs") and stages_seen.has("chicks"))
+	ns.nests[-1]["start_h"] = Clock.total_hours - 300.0
+	await _wait(3)
+	_check("old nests are abandoned", ns.nests.size() == 0 or float(ns.nests[-1]["start_h"]) > Clock.total_hours - 200.0)
+	# natural events can all trigger
+	var ev: NatureEvents = main.get_node("Systems/NatureEvents")
+	var ok_all := true
+	var n_log := NatureLog.events.size()
+	for id in ["butterfly_swarm", "deer_fawn", "ducks", "bird_flock", "rare_animal", "rare_flower"]:
+		if not ev.trigger(id):
+			ok_all = false
+	_check("natural events trigger and are logged", ok_all and NatureLog.events.size() >= n_log + 5 and gs.ducks_resident
+		and gs.item_count("rare_flower") == 1)
+	var fawn_deer := false
+	for c in get_tree().get_nodes_in_group("creatures"):
+		if c is Deer and c.fawn != null:
+			fawn_deer = true
+	_check("deer with fawn spawned", fawn_deer)
+	for c in get_tree().get_nodes_in_group("creatures"):
+		if c is Deer or c is Wanderer:
+			c.queue_free()
+	await _wait(2)
 
 	# 10) behaviour cycles run end to end (time accelerated)
 	Engine.time_scale = 12.0

@@ -21,7 +21,7 @@ var _season := -1
 
 func _ready() -> void:
 	cfg = GameData.config.get("time", {})
-	total_hours = float(cfg.get("start_hour", 7.0))
+	total_hours = float(cfg.get("start_day", 10)) * 24.0 + float(cfg.get("start_hour", 7.0))
 	_sync_signals(true)
 
 

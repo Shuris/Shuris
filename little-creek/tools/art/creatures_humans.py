@@ -63,6 +63,16 @@ CHARS = [
 ]
 
 
+CHARS.append({  # child of the family (shown with Lia and Davi)
+    "skin": SKIN_M, "hair": ramp("#2a1a10", "#4a3220", "#6b4a2e", "#8c6640"),
+    "shirt": ramp("#6e5a10", "#9a7f1c", "#c9a42f", "#e8c64e", "#f6df8a"),
+    "pants": ramp("#1a3a2a", "#25543a", "#326e4b", "#43895d"),
+    "shoes": ramp("#5a1a1a", "#8a2a26", "#b8443a", "#d96a5a"),
+    "sole": ramp("#5a5e5c", "#7d827e", "#9fa49f"),
+    "torso_len": 12.0, "thigh": 8.0, "shin": 7.8, "width": 1.0, "scale": 0.66,
+})
+
+
 def build(ci):
     c = CHARS[ci]
     tl, th, sh, wf = c["torso_len"], c["thigh"], c["shin"], c["width"]
@@ -169,6 +179,7 @@ def build(ci):
         1: [(1.0, -3.4), (4.4, -3.6), (6.9, -2.0), (7.4, 0.6), (6.6, 2.5), (5.6, 1.2), (4.8, -0.8), (2.4, -1.2),
             (0.6, -2.0)],
         2: [(2.4, -3.6), (5.2, -3.8), (7.6, -2.0), (8.0, 1.0), (6.9, 2.7), (5.8, 1.6), (4.8, -0.6), (2.6, -1.6)],
+        3: [(1.4, -3.4), (4.6, -3.7), (7.2, -2.2), (7.6, 0.8), (6.6, 2.2), (5.6, 0.8), (4.6, -1.0), (2.2, -1.4)],
     }[ci]
     P.append(Part("hair", "head", hair_cap, c["hair"], z, bias=0.04, tex=0.08 if ci == 2 else 0.03,
                   tex_scale=0.9 if ci == 2 else 2.0, clip=None if ci == 2 else "head"))
@@ -201,7 +212,7 @@ def build(ci):
         lines.append(("torso", [(tl + 0.2, 1.0), (tl - 5.5, 2.9)], hx("#141414")))
         dots += [("torso", (tl - 5.6, 3.2), SHADOW[0]), ("torso", (tl - 6.4, 3.2), SHADOW[1]),
                  ("torso", (tl - 5.6, 4.0), hx("#5a7fd6"))]
-    return Rig(bones, P, lines, dots)
+    return Rig(bones, P, lines, dots, scale=c.get("scale", 1.0))
 
 
 # ------------------------------------------------------------------ poses
@@ -246,7 +257,10 @@ def poses(ci):
     sit = mod(torso=-3, leg_n_u=-88, leg_n_l=88, foot_n=0, leg_f_u=-84, leg_f_l=84, foot_f=0,
               arm_n_u=-30, arm_n_l=-6, arm_f_u=-28, arm_f_l=-8, pony=-30)
     seq += [("sit", sit), ("sit", dict(sit, head=6.0))]
-    if ci == 0:  # observe with binoculars
+    if ci == 3:  # child: points at things
+        look = mod(arm_n_u=-96, arm_n_l=-6, head=-4)
+        seq += [("look", look), ("look", dict(look, head=-8.0))]
+    elif ci == 0:  # observe with binoculars
         look = mod(arm_n_u=-94, arm_n_l=-104, arm_f_u=-98, arm_f_l=-100, head=4)
         seq += [("look", look), ("look", dict(look, head=7.0))]
     else:  # hand shading the eyes

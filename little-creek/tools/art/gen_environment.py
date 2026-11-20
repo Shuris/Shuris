@@ -664,19 +664,28 @@ def paint_fg_bottom(lush):
 
 TRAIL = [(60, 318), (120, 306), (190, 296), (262, 290), (320, 282), (362, 270),
          (350, 250), (318, 236), (300, 220), (306, 204), (322, 192)]
+# east bank path: from the bridge's east end toward the right forest edge
+# bridge over the calm stretch between the two lower falls (clear of the deer's drinking spot)
+BRIDGE = {"x": 474.0, "y": 270.0, "w": 104, "h": 46, "west": (424.0, 271.0), "east": (526.0, 268.0)}
+TRAIL_EAST = [(526, 268), (566, 262), (610, 256), (656, 252), (706, 250), (760, 250)]
+TRAIL_SPUR = [(362, 270), (394, 272), (424, 271)]  # main trail -> bridge west end
 
 
-def paint_trail(cr):
-    cv = Canvas(W, H)
-    rng = R(601)
-    xs, ys = grid(W, H)
-    pts = np.array(TRAIL, np.float32)
+def _dense(path):
+    pts = np.array(path, np.float32)
     dense = []
     for i in range(len(pts) - 1):
         for t in np.linspace(0, 1, 30, endpoint=False):
             dense.append(pts[i] * (1 - t) + pts[i + 1] * t)
     dense.append(pts[-1])
-    dense = np.array(dense)
+    return np.array(dense)
+
+
+def paint_trail(cr, path=None, seed=601):
+    cv = Canvas(W, H)
+    rng = R(seed)
+    xs, ys = grid(W, H)
+    dense = _dense(path if path is not None else TRAIL)
     mind = np.full((H, W), 1e9, np.float32)
     for p in dense:
         d = np.sqrt(((xs - p[0]) / 1.0) ** 2 + ((ys - p[1]) * 2.2) ** 2)
@@ -765,6 +774,9 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
                         for (n, x, by, w), (_, o) in zip(FRAME_TREES, frame_canvases)],
         "drink_spots": drink, "fish_rows": fish, "perches": perches,
         "trail": [{"x": float(x), "y": float(y)} for x, y in TRAIL],
+        "trail_spur": [{"x": float(x), "y": float(y)} for x, y in TRAIL_SPUR],
+        "trail_east": [{"x": float(x), "y": float(y)} for x, y in TRAIL_EAST],
+        "bridge": BRIDGE,
         "falls": [{"lip": l, "base": b, "x": float(cr["cx"][b]), "hw": float(cr["hw"][b])}
                   for l, b, s in FALLS],
         "creek_rows": [{"y": int(y), "l": float(cr["left"][y]), "r": float(cr["right"][y])}
@@ -862,6 +874,11 @@ if __name__ == "__main__":
     paint_fg_bottom(True).save(os.path.join(SPR, "environment", "fg_bottom_lush.png"))
     tr, tmask = paint_trail(cr)
     tr.save(os.path.join(SPR, "environment", "trail.png"))
+    tr2, tmask2 = paint_trail(cr, TRAIL_SPUR, 611)
+    tr3, tmask3 = paint_trail(cr, TRAIL_EAST, 612)
+    tr2.blend_over(tr3)
+    tr2.save(os.path.join(SPR, "environment", "trail_bridge.png"))
+    tmask = tmask | tmask2 | tmask3
     seasonal_overlays(cr, rmask)
     pud, pspots = make_puddles(cr, rmask, tmask)
     save_png(pud, os.path.join(SPR, "environment", "puddles.png"))

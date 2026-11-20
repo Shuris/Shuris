@@ -26,6 +26,7 @@ var next_uid: int = 1
 var total_taps: int = 0
 var play_time: float = 0.0
 var tutorial_step: int = 0
+var ducks_resident := false     # set by the "ducks" natural event
 
 # --- derived (recomputed)
 var counts: Dictionary = {}
@@ -63,6 +64,7 @@ func reset_state() -> void:
 	total_taps = 0
 	play_time = 0.0
 	tutorial_step = 0
+	ducks_resident = false
 	_add_initial_scenery()
 	recompute(false)
 
@@ -267,9 +269,33 @@ func buy_upgrade(id: String) -> bool:
 	return true
 
 
+func item_limit(id: String) -> int:
+	return int(GameData.items[id].get("limit", 99))
+
+
+func item_count(id: String) -> int:
+	return int(counts.get(id, 0))
+
+
+func has_bridge() -> bool:
+	return item_count("bridge") > 0
+
+
+## Why an item cannot be bought right now ("" = can buy).
+func buy_block_reason(id: String) -> String:
+	var it: Dictionary = GameData.items[id]
+	if stage < int(it.get("unlock_stage", 1)):
+		return "Disponível no estágio %d" % int(it["unlock_stage"])
+	if item_count(id) >= item_limit(id):
+		return "Limite atingido"
+	if not can_afford(item_cost(id)):
+		return "Recursos insuficientes"
+	return ""
+
+
 func place_item(id: String, pos: Vector2, variant: int) -> Dictionary:
 	var cost := item_cost(id)
-	if not can_afford(cost):
+	if not can_afford(cost) or item_count(id) >= item_limit(id):
 		return {}
 	_spend(cost)
 	var d := {"uid": next_uid, "id": id, "x": pos.x, "y": pos.y, "v": variant}
@@ -307,7 +333,8 @@ func discover(id: String) -> void:
 func to_dict() -> Dictionary:
 	return {"water": water, "seeds": seeds, "reputation": reputation, "stage": stage,
 		"upgrades": upgrades, "placed": placed, "discovered": discovered, "next_uid": next_uid,
-		"total_taps": total_taps, "play_time": play_time, "tutorial_step": tutorial_step}
+		"total_taps": total_taps, "play_time": play_time, "tutorial_step": tutorial_step,
+		"ducks_resident": ducks_resident}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -328,4 +355,5 @@ func from_dict(d: Dictionary) -> void:
 	total_taps = int(d.get("total_taps", 0))
 	play_time = float(d.get("play_time", 0.0))
 	tutorial_step = int(d.get("tutorial_step", 0))
+	ducks_resident = bool(d.get("ducks_resident", false))
 	recompute(false)

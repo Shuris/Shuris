@@ -16,7 +16,9 @@
   "variants": 3,
   "sway": 1.0,
   "unlock_stage": 1,
-  "footprint": 6
+  "footprint": 6,
+  "limit": 14,
+  "placement": "meadow"
  },
  "flowers": {
   "name": "Flores silvestres",
@@ -36,7 +38,9 @@
   "sway": 1.0,
   "unlock_stage": 1,
   "flower": true,
-  "footprint": 8
+  "footprint": 8,
+  "limit": 12,
+  "placement": "meadow"
  },
  "small_rock": {
   "name": "Pedra pequena",
@@ -56,7 +60,9 @@
   "variants": 3,
   "sway": 0.0,
   "unlock_stage": 1,
-  "footprint": 8
+  "footprint": 8,
+  "limit": 8,
+  "placement": "bank"
  },
  "big_rock": {
   "name": "Pedra grande",
@@ -80,7 +86,9 @@
    0,
    -24
   ],
-  "footprint": 17
+  "footprint": 17,
+  "limit": 5,
+  "placement": "bank"
  },
  "fern": {
   "name": "Samambaia",
@@ -99,7 +107,9 @@
   "variants": 3,
   "sway": 1.0,
   "unlock_stage": 1,
-  "footprint": 11
+  "footprint": 11,
+  "limit": 10,
+  "placement": "shade"
  },
  "shrub": {
   "name": "Arbusto",
@@ -122,7 +132,9 @@
    0,
    -27
   ],
-  "footprint": 16
+  "footprint": 16,
+  "limit": 9,
+  "placement": "edge"
  },
  "log": {
   "name": "Tronco caído",
@@ -146,7 +158,9 @@
    10,
    -17
   ],
-  "footprint": 22
+  "footprint": 22,
+  "limit": 3,
+  "placement": "edge"
  },
  "aquatic": {
   "name": "Plantas aquáticas",
@@ -166,7 +180,9 @@
   "variants": 3,
   "sway": 0.6,
   "unlock_stage": 1,
-  "footprint": 10
+  "footprint": 10,
+  "limit": 6,
+  "placement": "water"
  },
  "tree_small": {
   "name": "Árvore jovem",
@@ -189,7 +205,9 @@
    0,
    -98
   ],
-  "footprint": 10
+  "footprint": 10,
+  "limit": 7,
+  "placement": "grove"
  },
  "tree_big": {
   "name": "Árvore frondosa",
@@ -212,7 +230,9 @@
    -8,
    -170
   ],
-  "footprint": 16
+  "footprint": 16,
+  "limit": 4,
+  "placement": "grove"
  },
  "bench": {
   "name": "Banco de madeira",
@@ -232,7 +252,9 @@
   "sway": 0.0,
   "unlock_stage": 4,
   "poi": "bench",
-  "footprint": 18
+  "footprint": 18,
+  "limit": 2,
+  "placement": "trail"
  },
  "feeder": {
   "name": "Comedouro",
@@ -256,7 +278,9 @@
    0,
    -32
   ],
-  "footprint": 7
+  "footprint": 7,
+  "limit": 2,
+  "placement": "trail"
  },
  "deck": {
   "name": "Mirante",
@@ -276,6 +300,52 @@
   "sway": 0.0,
   "unlock_stage": 4,
   "poi": "deck",
-  "footprint": 34
+  "footprint": 34,
+  "limit": 1,
+  "placement": "view"
+ },
+ "bridge": {
+  "name": "Ponte de madeira",
+  "desc": "Permite que os visitantes atravessem o riacho e explorem a outra margem.",
+  "category": "structures",
+  "cost": {
+   "water": 1200,
+   "seeds": 30
+  },
+  "beauty": 12,
+  "vitality": 0.0,
+  "seed_rate": 0.0,
+  "species": "",
+  "zone": "fixed",
+  "sprite": "res://assets/sprites/environment/bridge_0.png",
+  "variants": 1,
+  "sway": 0.0,
+  "unlock_stage": 4,
+  "limit": 1,
+  "placement": "bridge",
+  "footprint": 0,
+  "poi": "bridge"
+ },
+ "rare_flower": {
+  "name": "Orquídea-do-brejo",
+  "desc": "Uma flor rara que nasceu sozinha perto da margem.",
+  "category": "plants",
+  "cost": {
+   "water": 0,
+   "seeds": 0
+  },
+  "beauty": 8,
+  "vitality": 2.0,
+  "seed_rate": 0.0,
+  "species": "rare_flower",
+  "zone": "ground",
+  "sprite": "res://assets/sprites/vegetation/rare_flower_%d.png",
+  "variants": 1,
+  "sway": 0.8,
+  "unlock_stage": 1,
+  "limit": 1,
+  "placement": "bank",
+  "footprint": 8,
+  "hidden": true
  }
 }

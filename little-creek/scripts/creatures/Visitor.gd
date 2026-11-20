@@ -5,7 +5,7 @@ extends Creature
 ## donations and reputation.
 
 const SPEED := 15.0
-const VIEW_INDEX := 5  # trail point beside the pool
+const VIEW_INDEX := 5  # trail point beside the pool (where the bridge spur starts)
 
 var path: Array = []
 var idx := 0
@@ -14,6 +14,74 @@ var activity: Dictionary = {}
 var wait := 0.0
 var director: Node
 var returning := false
+var view_idx := -1          # index in `path` of the creek view point
+var bridge_mid_idx := -1    # index in `path` of the middle of the bridge
+var crosses := false
+var profile := "visitor"
+var leader: Visitor = null
+var follow_gap := 0
+
+
+## Family members walk the leader's route a few steps behind and only stop
+## where the leader stops to look.
+func follow(l: Visitor, n: int) -> void:
+	leader = l
+	follow_gap = n
+	path = l.path.duplicate()
+	view_idx = l.view_idx
+	bridge_mid_idx = l.bridge_mid_idx
+	crosses = l.crosses
+	plan = [{"type": "view"}]
+	position = l.position - Vector2(10.0 * n * (1 if path[1].x > path[0].x else -1), -2.0 * n)
+	modulate.a = l.modulate.a
+	if l.modulate.a < 1.0:
+		create_tween().tween_property(self, "modulate:a", 1.0, 2.0)
+
+
+static func _pts(key: String) -> Array:
+	var out: Array = []
+	for p in GameData.scene.get(key, []):
+		out.append(Vector2(float(p["x"]), float(p["y"])))
+	return out
+
+
+## Points along the arched deck (walkers follow the arch, never the water).
+static func bridge_points() -> Array:
+	var b: Dictionary = GameData.scene["bridge"]
+	var out: Array = []
+	var x0 := float(b["x"]) - 46.0
+	var x1 := float(b["x"]) + 46.0
+	for i in 13:
+		var t := i / 12.0
+		var x := lerpf(x0, x1, t)
+		out.append(Vector2(x, float(b["y"]) + 3.0 - 10.0 * sin(PI * t)))
+	return out
+
+
+## Builds the walking route. Without the bridge, visitors stay on the west
+## bank trail. With it, some cross to the east bank and leave on that side.
+func build_route() -> void:
+	var trail := _pts("trail")
+	path = []
+	crosses = GameState.has_bridge() and randf() < 0.65
+	if crosses:
+		var west: Array = trail.slice(0, VIEW_INDEX + 1)
+		var spur: Array = _pts("trail_spur").slice(1)
+		var br := bridge_points()
+		var east: Array = _pts("trail_east")
+		east.append(Vector2(World.W + 24.0, east[-1].y))
+		path = west + spur + br + east.slice(1)
+		view_idx = -1
+		bridge_mid_idx = west.size() + spur.size() + 6
+		if randf() < 0.5:
+			path.reverse()
+			bridge_mid_idx = path.size() - 1 - bridge_mid_idx
+	else:
+		path = trail
+		view_idx = VIEW_INDEX
+		if randf() < 0.5:
+			path.reverse()
+			view_idx = path.size() - 1 - VIEW_INDEX
 
 
 func setup(w: World, variant: int, d: Node) -> void:
@@ -22,13 +90,12 @@ func setup(w: World, variant: int, d: Node) -> void:
 	species = "visitor"
 	setup_sprite("visitor_%d" % variant, "walk")
 	hit_radius = 10.0
-	for p in GameData.scene.get("trail", []):
-		path.append(Vector2(float(p["x"]), float(p["y"])))
-	if randf() < 0.5:
-		path.reverse()
+	build_route()
 	position = path[0]
 	if path[0].x < 100:
 		position.x = -20.0
+	elif path[0].x > World.W:
+		pass
 	else:
 		modulate.a = 0.0
 		create_tween().tween_property(self, "modulate:a", 1.0, 2.0)
@@ -38,7 +105,9 @@ func setup(w: World, variant: int, d: Node) -> void:
 
 
 func _make_plan() -> void:
-	plan = [{"type": "view", "at": VIEW_INDEX}]
+	plan = [{"type": "view"}]
+	if profile == "family":
+		return
 	for b in world.items_with_poi("bench"):
 		if randf() < 0.7:
 			plan.append({"type": "bench", "node": b})
@@ -79,12 +148,12 @@ func _process(delta: float) -> void:
 
 func _arrived_at_point() -> void:
 	# view point on the trail
-	if plan.size() > 0 and plan[0]["type"] == "view" and _trail_index_matches(VIEW_INDEX):
+	if plan.size() > 0 and plan[0]["type"] == "view" and (idx == view_idx or idx == bridge_mid_idx):
 		activity = plan.pop_front()
 		_start_activity()
 		return
-	# detours to structures once past the view point
-	if plan.size() > 0 and plan[0]["type"] != "view":
+	# detours to structures once past the view point (only along the west trail)
+	if plan.size() > 0 and plan[0]["type"] != "view" and position.x < 420.0:
 		activity = plan.pop_front()
 		var n: Node2D = activity["node"]
 		if is_instance_valid(n):
@@ -96,16 +165,11 @@ func _arrived_at_point() -> void:
 	idx += 1
 
 
-func _trail_index_matches(i: int) -> bool:
-	var real_i := idx if path[0].x < path[-1].x else (path.size() - 1 - idx)
-	return real_i == i
-
-
 func _start_activity() -> void:
 	set_state("activity")
 	match activity["type"]:
 		"view":
-			face(1.0)
+			face(1.0 if idx != bridge_mid_idx else (1.0 if randf() < 0.5 else -1.0))
 			play("look" if randf() < 0.5 else "idle")
 			wait = randf_range(4.0, 7.0)
 		"bench":

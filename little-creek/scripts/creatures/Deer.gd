@@ -9,7 +9,47 @@ var spot: Dictionary = {}
 var exit_point := Vector2.ZERO
 var drinks := 0
 var sheet_name := "deer_m"
+var fawn: Creature            # optional young following its mother
 var wait := 0.0
+
+
+func add_fawn() -> void:
+	sheet_name = "deer_f"
+	setup_sprite_swap("deer_f")
+	fawn = Creature.new()
+	fawn.world = world
+	fawn.species = ""
+	world.entities.add_child(fawn)
+	fawn.setup_sprite("fawn", "walk")
+	fawn.position = position + Vector2(-16 * facing, 3)
+
+
+func setup_sprite_swap(sheet: String) -> void:
+	sprite.sprite_frames = SpriteLib.frames(sheet)
+	play(base_anim if base_anim != "" else "walk")
+
+
+func _update_fawn(delta: float) -> void:
+	if fawn == null or not is_instance_valid(fawn):
+		return
+	var goal := position + Vector2(-17.0 * facing, 4.0)
+	var moving := fawn.position.distance_to(goal) > 1.5
+	if moving:
+		fawn.step_to(goal, maxf(18.0, fawn.position.distance_to(goal) * 2.5), delta)
+	fawn.face(float(facing) if not moving else goal.x - fawn.position.x)
+	var a := base_anim
+	if a in ["walk", "run"] or moving:
+		fawn.play("run" if a == "run" else "walk")
+	elif a in ["lower", "drink", "raise", "look", "alert"]:
+		fawn.play("look" if a in ["look", "alert"] else "idle")
+	else:
+		fawn.play("idle")
+
+
+func depart() -> void:
+	if fawn and is_instance_valid(fawn):
+		fawn.queue_free()
+	super.depart()
 
 
 func setup(w: World, s: Dictionary) -> void:
@@ -28,6 +68,7 @@ func setup(w: World, s: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	state_time += delta
+	_update_fawn(delta)
 	match state:
 		"walk_in":
 			if step_to(Vector2(float(spot["x"]), float(spot["y"])), WALK_SPEED, delta):

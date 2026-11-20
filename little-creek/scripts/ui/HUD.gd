@@ -73,6 +73,7 @@ func _ready() -> void:
 	world.floating_text.connect(_on_floating_text)
 	world.water_tapped.connect(_on_water_tapped)
 	SaveSystem.loaded.connect(_on_resume_report)
+	NatureLog.notify.connect(func(t: String) -> void: toast(t, Palette.TEXT))
 	_refresh_resources()
 	_refresh_stats()
 
@@ -179,6 +180,27 @@ func _build_stage_card() -> void:
 			"beauty":
 				stat_beauty = l
 	_pin(p, Vector2(1, 0), Vector2(-14, 12))
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(row)
+	var clock_chip := UITheme.panel("chip.png", 8, 8)
+	clock_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var ch := HBoxContainer.new()
+	ch.add_theme_constant_override("separation", 6)
+	clock_chip.add_child(ch)
+	weather_icon = UITheme.icon("sun", 24)
+	ch.add_child(weather_icon)
+	clock_label = UITheme.label("", 15, Palette.TEXT)
+	ch.add_child(clock_label)
+	row.add_child(clock_chip)
+	row.add_child(_chip_button("camera", func() -> void:
+		if main.has_method("enter_photo_mode"):
+			main.enter_photo_mode()))
+	row.add_child(_chip_button("info", func() -> void: open_panel("info")))
+	clock_row = row
+	_refresh_clock()
+	_pin(row, Vector2(1, 0), Vector2(-14, 12 + p.get_combined_minimum_size().y + 6))
 
 
 func _refresh_resources() -> void:
@@ -198,6 +220,43 @@ func _refresh_stats() -> void:
 	stat_bio.text = str(GameState.biodiversity)
 	stat_beauty.text = str(int(GameState.beauty))
 	_update_hint()
+
+
+var clock_label: Label
+var weather_icon: TextureRect
+var clock_row: HBoxContainer
+var _clock_t := 0.0
+
+
+func _chip_button(icon_name: String, cb: Callable) -> Control:
+	var b := TextureButton.new()
+	b.texture_normal = load(UITheme.UI + "chip.png")
+	b.ignore_texture_size = true
+	b.stretch_mode = TextureButton.STRETCH_SCALE
+	b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	b.custom_minimum_size = Vector2(52, 44)
+	var ic := UITheme.icon(icon_name, 28)
+	ic.position = Vector2(12, 8)
+	b.add_child(ic)
+	b.pressed.connect(func() -> void:
+		AudioManager.play("click", 0.05, -6.0)
+		cb.call())
+	return b
+
+
+func _refresh_clock() -> void:
+	if clock_label == null:
+		return
+	clock_label.text = "%s  %s" % [Clock.date_string(), Clock.time_string()]
+	var icon := "rain" if Weather.state != "clear" else ("moon" if Clock.is_night() else "sun")
+	weather_icon.texture = load(UITheme.ICONS + icon + ".png")
+
+
+func _process(delta: float) -> void:
+	_clock_t += delta
+	if _clock_t > 1.0:
+		_clock_t = 0.0
+		_refresh_clock()
 
 
 # ------------------------------------------------------------------ buttons
@@ -234,7 +293,7 @@ func _build_buttons() -> void:
 	buttons.add_child(_round_button("build", "Construir", func() -> void: open_panel("build")))
 	buttons.add_child(_round_button("upgrade", "Melhorias", func() -> void: open_panel("upgrades")))
 	buttons.add_child(_round_button("eco", "Ecossistema", func() -> void: open_panel("eco")))
-	buttons.add_child(_round_button("info", "Info", func() -> void: open_panel("info")))
+	buttons.add_child(_round_button("journal", "Diário", func() -> void: open_panel("journal")))
 	_pin(buttons, Vector2(1, 1), Vector2(-14, -6))
 
 
@@ -255,7 +314,7 @@ func _update_hint() -> void:
 	if gs.total_taps < 5:
 		t = "Toque na água do riacho para coletar água"
 	elif gs.placed.size() <= 6:
-		t = "Abra  Construir  e plante algo à beira do riacho"
+		t = "Abra  Construir  e compre flores ou plantas para o riacho"
 	elif gs.upgrade_level("filter") == 0 and gs.stage == 1:
 		t = "Em  Melhorias,  o filtro de cascalho limpa a água"
 	elif gs.stage == 1:
@@ -298,8 +357,9 @@ func _build_drawer() -> void:
 	v.add_child(drawer_body)
 
 
-const PANEL_TITLES := {"build": "Construir", "upgrades": "Melhorias", "eco": "Ecossistema", "info": "Informações"}
-const PANEL_HEIGHT := {"build": 290, "upgrades": 300, "eco": 420, "info": 380}
+const PANEL_TITLES := {"build": "Construir", "upgrades": "Melhorias", "eco": "Ecossistema", "info": "Informações",
+	"journal": "Diário de biodiversidade"}
+const PANEL_HEIGHT := {"journal": 430, "build": 318, "upgrades": 300, "eco": 420, "info": 380}
 
 
 func open_panel(name: String) -> void:
@@ -311,7 +371,8 @@ func open_panel(name: String) -> void:
 		drawer_content.queue_free()
 		drawer_content = null
 	var script_path := {"build": "res://scripts/ui/BuildPanel.gd", "upgrades": "res://scripts/ui/UpgradePanel.gd",
-		"eco": "res://scripts/ui/EcoPanel.gd", "info": "res://scripts/ui/InfoPanel.gd"}[name] as String
+		"eco": "res://scripts/ui/EcoPanel.gd", "info": "res://scripts/ui/InfoPanel.gd",
+		"journal": "res://scripts/ui/JournalPanel.gd"}[name] as String
 	drawer_content = load(script_path).new()
 	drawer_content.set("hud", self)
 	drawer_body.add_child(drawer_content)
@@ -374,6 +435,23 @@ func _build_mode_bar() -> void:
 	add_child(mode_bar)
 
 
+## Buy an element: it is added to the scene automatically.
+func buy_item(id: String) -> void:
+	var d: Dictionary = world.buy(id)
+	if d.is_empty():
+		toast(world.last_buy_error)
+		AudioManager.play("error", 0.0, -6.0)
+		return
+	var it: Dictionary = GameData.items[id]
+	AudioManager.play("place_rock" if it["category"] == "rocks" or it["category"] == "structures" else "place_plant", 0.1, -3.0)
+	_on_floating_text(Vector2(float(d["x"]), float(d["y"])) + Vector2(0, -14), "+%d beleza" % int(it["beauty"]), Palette.ACCENT)
+	if id == "bridge":
+		toast("A ponte foi construída: os visitantes já podem atravessar o riacho.", Palette.GOLD)
+	if drawer_content and drawer_content.has_method("refresh_card"):
+		drawer_content.refresh_card(id)
+
+
+## Legacy manual placement (v0.1-0.2), kept for dev tools only.
 func start_placement(id: String) -> void:
 	var it: Dictionary = GameData.items[id]
 	if GameState.stage < int(it.get("unlock_stage", 1)):
@@ -526,8 +604,10 @@ func _on_species(id: String) -> void:
 	var sp: Dictionary = GameData.species.get(id, {})
 	if sp.is_empty():
 		return
-	var kind := "Nova espécie" if sp.get("kind", "") == "animal" else "Nova planta no ecossistema"
-	toast("%s: %s!" % [kind, sp["name"]], Palette.GOLD)
+	if sp.get("kind", "") == "animal":
+		toast("Nova espécie descoberta: %s!" % sp["name"], Palette.GOLD)
+	else:
+		toast("Nova planta no ecossistema: %s" % sp["name"], Palette.ACCENT)
 	AudioManager.play("discover", 0.0, -4.0)
 
 

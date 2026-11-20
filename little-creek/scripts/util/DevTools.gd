@@ -36,6 +36,8 @@ func _ready() -> void:
 			Clock.set_season(Clock.SEASONS.find(parts[0]), float(parts[1]) if parts.size() > 1 else 14.0)
 		elif a.begins_with("--weather="):
 			Weather.force(a.substr(10), 3.0)
+		elif a == "--autofill":
+			call_deferred("_autofill")
 		elif a == "--rainbow":
 			call_deferred("_rainbow")
 		elif a == "--layout":
@@ -65,6 +67,21 @@ func _spawn(names: PackedStringArray) -> void:
 				v.setup(main.world, randi() % 3, main.visitors)
 				v.position = v.path[3] if v.path.size() > 3 else v.position
 				v.idx = 4
+			"crosser":
+				# a visitor standing on the bridge, mid-crossing
+				var v3 := Visitor.new()
+				main.world.entities.add_child(v3)
+				v3.add_to_group("visitors")
+				v3.setup(main.world, randi() % 3, main.visitors)
+				for k in 20:
+					v3.build_route()
+					if v3.crosses:
+						break
+				v3.plan = []
+				var off: int = [-4, 1][get_tree().get_nodes_in_group("visitors").size() % 2]
+				v3.idx = v3.bridge_mid_idx + off + 1
+				v3.position = v3.path[v3.bridge_mid_idx + off]
+				v3.modulate.a = 1.0
 			"sitter", "feeder", "photo", "look":
 				var v2 := Visitor.new()
 				main.world.entities.add_child(v2)
@@ -88,8 +105,54 @@ func _spawn(names: PackedStringArray) -> void:
 					v2.play("photo")
 				elif n == "look":
 					v2.play("look")
+			"fox", "maned_wolf":
+				var wn: Wanderer = wd.spawn_wanderer(n)
+				wn.position = wn.waypoints[0]
+				wn.wi = 1
+				wn.set_state("pause")
+				wn.pause = 999.0
+				wn.play("look")
+			"fawn":
+				var df: Deer = wd.spawn_deer(true)
+				df.position = Vector2(float(df.spot["x"]), float(df.spot["y"]))
+				df.face(float(df.spot["face"]))
+				df.set_state("drink")
+				df.wait = 999.0
+				df.play("drink")
+				df.fawn.position = df.position + Vector2(-17.0 * df.facing, 4.0)
+			"nest":
+				var ns: Node = main.get_node("Systems/NestSystem")
+				if ns.start_nest():
+					ns.nests[-1]["start_h"] = Clock.total_hours - 80.0
+					var it: PlacedItem = main.world.items[int(ns.nests[-1]["tree_uid"])]
+					print("NEST at ", ns._nest_pos(it), " tree ", it.id, " ", it.position)
+			"owl_perched":
+				var ow: Owl = wd._spawn("owl")
+				ow.position = ow.target
+				ow.t = 1.0
+			"duck":
+				GameState.ducks_resident = true
+				GameState.recompute(false)
+				wd._spawn("duck")
 			_:
 				wd._spawn(n)
+
+
+## Fill the creek by buying through the AutoPlacer (like a player would).
+func _autofill() -> void:
+	await get_tree().process_frame
+	SaveSystem._loaded = false
+	GameState.stage = 4
+	GameState.water = 1e7
+	GameState.seeds = 1e5
+	GameState.upgrades = {"filter": 5, "spring": 4, "tap": 3}
+	var order := ["flowers", "flowers", "grass", "shrub", "tree_small", "fern", "big_rock", "flowers", "aquatic",
+		"tree_big", "shrub", "grass", "flowers", "fern", "small_rock", "tree_small", "aquatic", "shrub",
+		"flowers", "tree_big", "bench", "feeder", "grass", "fern", "flowers", "bridge", "tree_small", "shrub"]
+	for id in order:
+		main.world.buy(id)
+	GameState.recompute(false)
+	main.world.trail_amount = 1.0
 
 
 func _rainbow() -> void:
@@ -110,6 +173,7 @@ func _print_layout() -> void:
 
 
 func _open_ui(name: String) -> void:
+	await get_tree().create_timer(2.2).timeout
 	if main.hud and main.hud.has_method("open_panel"):
 		main.hud.open_panel(name)
 

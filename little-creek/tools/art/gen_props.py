@@ -10,6 +10,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(__file__))
 from palette import *  # noqa
+from palette import hx
 from pixlib import *  # noqa
 from gen_environment import fern, blend_ramp
 
@@ -284,6 +285,74 @@ def deck():
     return cv
 
 
+def rare_flower():
+    """Orquídea-do-brejo: a tall, glowing violet-white orchid clump (rare event)."""
+    rng = R(777)
+    cv = Canvas(26, 30)
+    shadow(cv, 13, 28, 9, 1.8)
+    foliage_cluster(cv, 13, 25, 9, 3.4, GRASS[1:8], rng, blob=(1.2, 2.2), lobes=4, flat_bottom=0.2, dither=0.3)
+    for k, (x, top) in enumerate([(9, 6), (13, 2), (17, 7)]):
+        for y in range(top + 3, 25):
+            cv.pixel(x + (y - top) * 0.05 * (x - 13), y, GRASS[3 + (y % 2)])
+        petal = [hx("#4a2a6e"), hx("#8c6bc8"), hx("#c8b0ee"), hx("#f4eefc")]
+        for dx, dy, lv in ((0, 0, 3), (-1, 0, 2), (1, 0, 2), (-2, 1, 1), (2, 1, 1), (0, -1, 3), (-1, 1, 2),
+                           (1, 1, 2), (0, 1, 0), (0, 2, 1), (-1, -1, 2), (1, -1, 2)):
+            cv.pixel(x + dx, top + dy, petal[lv])
+        cv.pixel(x, top + 1, FLOWER["yellow"][3])
+    return cv
+
+
+def bridge():
+    """Arched wooden footbridge seen from the elevated 3/4 view.
+
+    Spans ~92 px (creek at y~284 is ~73 px wide). Deck planks across the
+    walking direction, log stringers, handrails with posts on both sides.
+    The near rail is drawn in a separate sprite (bridge_front) so walkers
+    are sorted between the two rails.
+    """
+    W_, H_ = 104, 46
+    back = Canvas(W_, H_)
+    front = Canvas(W_, H_)
+    xs, ys = grid(W_, H_)
+    x0, x1 = 6, 98
+    def arch(x):
+        t = (x - x0) / (x1 - x0)
+        return 10.0 * np.sin(np.clip(t, 0, 1) * np.pi)
+    deck_top = 26
+    deck_h = 9
+    # deck
+    for x in range(x0, x1 + 1):
+        a = arch(x)
+        y_top = int(round(deck_top - a))
+        for y in range(y_top, y_top + deck_h):
+            plank = (x - x0) % 5 == 0
+            v = 0.72 - (y - y_top) / deck_h * 0.3 - (0.18 if plank else 0.0) + ((x * 7) % 3) * 0.03
+            back.pixel(x, y, WOOD[int(np.clip(v, 0, 0.99) * len(WOOD))])
+        # stringer (side beam) under the deck, darker
+        for y in range(y_top + deck_h, y_top + deck_h + 3):
+            back.pixel(x, y, BARK_WARM[2 + (y - y_top - deck_h == 0)])
+    # shadow of the bridge on the water / banks
+    sm = ellipse_mask(W_, H_, W_ / 2, deck_top + deck_h + 8, 46, 3.5)
+    back.put_color(sm & (back.px[..., 3] == 0), (10, 22, 28, 80))
+    def rail(cv, off_y, light):
+        # posts + rail
+        for px_ in range(x0, x1 + 1, 13):
+            y_top = int(round(deck_top - arch(px_))) + off_y
+            for y in range(y_top - 10, y_top + 1):
+                cv.pixel(px_, y, WOOD[3 if light else 2])
+                cv.pixel(px_ + 1, y, WOOD[2 if light else 1])
+        for x in range(x0, x1 + 2):
+            y = int(round(deck_top - arch(x))) + off_y - 10
+            cv.pixel(x, y, WOOD[6 if light else 4])
+            cv.pixel(x, y + 1, WOOD[4 if light else 2])
+            ym = y + 5
+            if (x - x0) % 13 not in (0, 1):
+                cv.pixel(x, ym, WOOD[4 if light else 2])
+    rail(back, 0, False)          # far rail (behind walkers)
+    rail(front, deck_h - 1, True)  # near rail (in front of walkers)
+    return back, front
+
+
 def main():
     for d in (VEG, RCK, STR):
         os.makedirs(d, exist_ok=True)
@@ -313,6 +382,10 @@ def main():
     bench().save(os.path.join(STR, "bench_0.png"))
     feeder().save(os.path.join(STR, "feeder_0.png"))
     deck().save(os.path.join(STR, "deck_0.png"))
+    rare_flower().save(os.path.join(VEG, "rare_flower_0.png"))
+    b, f = bridge()
+    b.save(os.path.join(STR, "bridge_0.png"))
+    f.save(os.path.join(STR, "bridge_front.png"))
     print("props done")
 
 

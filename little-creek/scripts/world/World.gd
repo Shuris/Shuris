@@ -36,6 +36,9 @@ var rays_mat: ShaderMaterial
 var fog_mat: ShaderMaterial
 
 var weather_fx: WeatherFX
+var bridge_layer: Node2D
+var trail2_mat: ShaderMaterial
+var trail2_amount := 0.0
 var season_mats: Dictionary = {}  # "litter"/"frost"/"flowers" -> reveal material
 var fish_layer: Node2D
 var entities: Node2D
@@ -146,6 +149,15 @@ func _build_layers() -> void:
 	rocks_mat.set_shader_parameter("season_k", 0.25)
 	rocks.material = rocks_mat
 
+	bridge_layer = Node2D.new()
+	bridge_layer.name = "BridgeLayer"
+	add_child(bridge_layer)
+	var trail2 := _sprite(ENV + "trail_bridge.png")
+	trail2_mat = ShaderMaterial.new()
+	trail2_mat.shader = REVEAL
+	trail2_mat.set_shader_parameter("noise_tex", noise_tex)
+	trail2.material = trail2_mat
+	move_child(trail2, trail.get_index() + 1)
 	var mid := _sprite(ENV + "mid_trees.png")
 	mid.material = _foliage_mat(1.0, 0.9)
 
@@ -299,6 +311,9 @@ func rebuild_items() -> void:
 	for n in items.values():
 		n.queue_free()
 	items.clear()
+	if bridge_front:
+		bridge_front.queue_free()
+		bridge_front = null
 	for d in GameState.placed:
 		_spawn_item(d, false)
 	lush = GameState.lushness()
@@ -308,9 +323,26 @@ func rebuild_items() -> void:
 	_apply_visuals()
 
 
+var bridge_front: Sprite2D
+
+
 func _spawn_item(d: Dictionary, animate: bool) -> PlacedItem:
 	var n := PlacedItem.new()
 	n.setup(d, noise_tex)
+	if n.id == "bridge":
+		# deck + far rail below the walkers; near rail y-sorted in front of them
+		n.sprite.offset = Vector2(-52, -31)
+		bridge_layer.add_child(n)
+		bridge_front = Sprite2D.new()
+		bridge_front.texture = load(ENV + "bridge_front.png")
+		bridge_front.centered = false
+		bridge_front.position = n.position + Vector2(0, 22)
+		bridge_front.offset = Vector2(-52, -31 - 22)
+		entities.add_child(bridge_front)
+		items[n.uid] = n
+		if animate:
+			n.pop_in()
+		return n
 	entities.add_child(n)
 	items[n.uid] = n
 	if animate:
@@ -330,6 +362,8 @@ func _on_item_placed(d: Dictionary) -> void:
 
 
 func _on_item_removed(uid: int) -> void:
+	if items.has(uid) and items[uid].id == "bridge" and bridge_front:
+		bridge_front.queue_free()
 	if items.has(uid):
 		items[uid].queue_free()
 		items.erase(uid)
@@ -356,6 +390,8 @@ func _apply_visuals() -> void:
 	var moss := clampf((GameState.vitality - 22.0) / 55.0, 0.0, 1.0)
 	rocks_mat.set_shader_parameter("amount", moss)
 	trail_mat.set_shader_parameter("amount", trail_amount)
+	trail2_amount = move_toward(trail2_amount, 1.0 if GameState.has_bridge() else 0.0, 0.01)
+	trail2_mat.set_shader_parameter("amount", trail2_amount)
 	water_mat.set_shader_parameter("quality", quality)
 	water_mat.set_shader_parameter("flow_speed", (0.75 + quality * 0.35) * (1.0 + Weather.rain * (0.6 if Weather.state == "heavy" else 0.2)))
 	pollen.emitting = GameState.stage >= 2
@@ -390,19 +426,57 @@ func zone_ok(zone: String, p: Vector2) -> bool:
 	if x < 0 or y < 0 or x >= W or y >= H:
 		return false
 	var c := zones.get_pixel(x, y)
+	# the bridge site is always reserved (it can be built later)
+	var b: Dictionary = GameData.scene.get("bridge", {})
+	if not b.is_empty() and absf(p.x - float(b["x"])) < 60.0 and p.y > float(b["y"]) - 34.0 and p.y < float(b["y"]) + 34.0:
+		return false
 	if zone == "water":
 		return c.g > 0.5
 	if c.r < 0.5:
 		return false
-	if trail_amount > 0.5 and c.b > 0.5:
+	# trails (including the future east trail) stay free
+	if c.b > 0.5:
 		return false
 	return true
+
+
+## Buys an element and lets the AutoPlacer choose a natural spot for it.
+## Returns the placed record, or {} with `last_buy_error` set.
+var last_buy_error := ""
+
+
+func buy(id: String) -> Dictionary:
+	last_buy_error = GameState.buy_block_reason(id)
+	if last_buy_error != "":
+		return {}
+	var p: Variant = AutoPlacer.choose(self, id)
+	if p == null:
+		last_buy_error = "Não há mais espaço adequado para isso"
+		return {}
+	var v := randi() % int(GameData.items[id].get("variants", 1))
+	return GameState.place_item(id, (p as Vector2).round(), v)
+
+
+## Places an element for free (natural events, e.g. the rare flower).
+func place_free(id: String) -> Dictionary:
+	var p: Variant = AutoPlacer.choose(self, id)
+	if p == null:
+		return {}
+	var d := {"uid": GameState.next_uid, "id": id, "x": (p as Vector2).x, "y": (p as Vector2).y, "v": 0}
+	GameState.next_uid += 1
+	GameState.placed.append(d)
+	GameState.recompute()
+	GameState.item_placed.emit(d)
+	SaveSystem.request_save()
+	return d
 
 
 ## Validates a placement. Returns "" when OK, otherwise a short reason.
 func placement_error(id: String, p: Vector2) -> String:
 	var def: Dictionary = GameData.items[id]
 	var zone: String = def.get("zone", "ground")
+	if zone == "fixed":
+		return ""
 	if not zone_ok(zone, p):
 		return "Aqui não: precisa ser dentro d'água calma." if zone == "water" \
 			else "Aqui não: escolha terra firme, longe da água e das pedras."

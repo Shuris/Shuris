@@ -204,6 +204,135 @@ def rig_sheet(name, frames_, anims, extra, folder):
     META[name] = {"sheet": rel, "w": fw, "h": fh, "anims": anims, **extra}
 
 
+# ------------------------------------------------------------------ owl / ducks / nest
+OWL_C = {"o": hx("#1d140e"), "b": hx("#4a3424"), "B": hx("#6e5236"), "l": hx("#93744f"), "c": hx("#cdb78e"),
+         "w": hx("#ece2c8"), "e": hx("#f2c94a"), "k": hx("#0c0a08"), "y": hx("#c99a3a"), "t": hx("#3a2a1c")}
+OWL = {
+    "idle": ["...o...o...",
+             "..obo.obo..",
+             "..oBBBBBo..",
+             ".oBwwBwwBo.",
+             ".oweknekwo.",
+             ".oBwwywwBo.",
+             ".obBcccBbo.",
+             "obBclclcBbo",
+             "obBcclccBbo",
+             "obBclclcBbo",
+             ".obBcccBbo.",
+             "..obBBBbo..",
+             "...y.o.y...",
+             "ttttttttttt"],
+}
+OWL["blink"] = [r.replace("ekn", "BBB").replace("nek", "BBB") for r in OWL["idle"]]
+OWL["blink"][4] = ".owBBBBBBwo."[:11]
+OWL["look"] = [r for r in OWL["idle"]]
+OWL["look"][3] = ".oBBwwBwwBo"
+OWL["look"][4] = ".oBweknekwo"
+OWL["look"][5] = ".oBBwwywwBo"
+OWL["fly0"] = ["o.........o",
+               "ob..ooo..bo",
+               "oBb.oBo.bBo",
+               ".oBboekobBo",
+               "..oBBywBBo.",
+               "...obcbo...",
+               "....obo....",
+               "...........",
+               "...........", "...........", "...........", "...........", "...........", "..........."]
+OWL["fly1"] = ["...........",
+               "....ooo....",
+               "....oBo....",
+               "...oekeo...",
+               ".obBBywBbo.",
+               "obBboccobBo",
+               "o...obo...o",
+               "...........",
+               "...........", "...........", "...........", "...........", "...........", "..........."]
+
+DUCK_C = {"o": hx("#141a14"), "g": hx("#1f5a3a"), "G": hx("#2f7a4c"), "w": hx("#e8e2d0"), "b": hx("#6a5a46"),
+          "B": hx("#8c7a5e"), "y": hx("#e3a63a"), "c": hx("#bcae92"), "r": (216, 240, 230, 180), "s": hx("#3a5aa8"),
+          "k": hx("#0c0c0c")}
+DUCK = {
+    "swim0": [".....oo.......",
+              "....oGgo......",
+              "...ykgGo......",
+              "....ogwoooo...",
+              "...oBBbbbBBoo.",
+              "..obBcBsbbBBo.",
+              "..oBccccbBBo..",
+              "...ooooooo....",
+              "rr..rrr..rr.rr"],
+    "swim1": [".....oo.......",
+              "....oGgo......",
+              "...ykgGo......",
+              "....ogwoooo...",
+              "...oBBbbbBBoo.",
+              "..obBcBsbbBBo.",
+              "..oBccccbBBo..",
+              "...ooooooo....",
+              ".rr..rr.rrr..r"],
+    "dabble": ["..............",
+               "..............",
+               "........oo....",
+               ".......oBBo...",
+               "....ooobbBo...",
+               "...oBcBsbBo...",
+               "..oBcccbBo....",
+               "..ykooooo.....",
+               "rrrr..rr.rrr.."],
+}
+DUCKLING_C = {"o": hx("#3a2a14"), "y": hx("#e8c84a"), "Y": hx("#f6e08a"), "b": hx("#8a6a2a"), "k": hx("#0c0c0c"),
+              "r": (216, 240, 230, 160), "p": hx("#d9822d")}
+DUCKLING = {
+    "swim0": ["..oo...",
+              ".oYko..",
+              "poYYo..",
+              ".oyyyoo",
+              ".obyyyo",
+              "..ooooo",
+              "rr.rr.r"],
+    "swim1": ["..oo...",
+              ".oYko..",
+              "poYYo..",
+              ".oyyyoo",
+              ".obyyyo",
+              "..ooooo",
+              ".rr.rr."],
+}
+NEST_C = {"o": hx("#3a2814"), "t": hx("#7a5530"), "T": hx("#a87a46"), "l": hx("#d0a868"), "L": hx("#e8c890"),
+          "e": hx("#dceef2"), "E": hx("#a8c8d2"), "c": hx("#8a6a4a"), "C": hx("#b89878"), "y": hx("#f6c84a"),
+          "k": hx("#0c0c0c"), "r": hx("#e8783a")}
+_BOWL = ["..TlLlTtLlTlL..",
+         ".tTlTLtlTLlTlt.",
+         "otTlTtlTtTlTlto",
+         ".otTtloTtlotto.",
+         "..ooottooottoo."]
+NEST = {
+    "build1": ["...............", "...............", "...............", "...............",
+               "...T....l...L..", "..tTl..tT.lT...", ".o.tT.oTt..to..", "...............", "..............."],
+    "build2": ["...............", "...............", "...............", "...............",
+               "..TlL.TtLlT.L..", ".tTlTLtl.LlTlt.", "otTlTt.TtT.Tlto", ".otTtloTtlotto.", "..............."],
+    "nest": ["...............", "...............", "...............", "..............."] + _BOWL,
+    "eggs": ["...............", "...............", "...............", "....eE.Ee.eE..."] + _BOWL,
+    "chicks0": ["...............", "...............", "....C...C......", "...CkC.CkCr.C.."] + _BOWL,
+    "chicks1": ["...C...........", "..CkCr..C...C..", "..CyyC.CkC.CkCr", "...CC..CyC.CC.."] + _BOWL,
+}
+
+
+def small_sheet(name, defs, colors, anims):
+    keys = list(defs.keys())
+    frames_ = [from_ascii(defs[k], colors) for k in keys]
+    h = max(f.shape[0] for f in frames_)
+    w = max(f.shape[1] for f in frames_)
+    padded = []
+    for f in frames_:
+        pf = np.zeros((h, w, 4), np.uint8)
+        pf[h - f.shape[0]:, :f.shape[1]] = f
+        padded.append(pf)
+    resolved = {a: {"frames": [keys.index(k) for k in v["frames"]], "fps": v["fps"], "loop": v["loop"]}
+                for a, v in anims.items()}
+    sheet(name, padded, resolved, ANI)
+
+
 def main():
     os.makedirs(ANI, exist_ok=True)
     os.makedirs(HUM, exist_ok=True)
@@ -222,10 +351,32 @@ def main():
     sheet("fish", [from_ascii(f, FISH_C) for f in FISH],
           {"swim": {"frames": [0, 1, 2, 1], "fps": 6, "loop": True},
            "dart": {"frames": [0, 1, 2, 1], "fps": 16, "loop": True}}, ANI)
+    small_sheet("owl", OWL, OWL_C, {
+        "idle": {"frames": ["idle", "idle", "idle", "blink", "idle", "idle", "idle", "idle"], "fps": 3, "loop": True},
+        "look": {"frames": ["look"], "fps": 1, "loop": True},
+        "fly": {"frames": ["fly0", "fly1"], "fps": 6, "loop": True}})
+    small_sheet("duck", DUCK, DUCK_C, {
+        "swim": {"frames": ["swim0", "swim1"], "fps": 3, "loop": True},
+        "dabble": {"frames": ["dabble", "dabble", "swim0"], "fps": 2, "loop": False}})
+    small_sheet("duckling", DUCKLING, DUCKLING_C, {"swim": {"frames": ["swim0", "swim1"], "fps": 4, "loop": True}})
+    small_sheet("nest", NEST, NEST_C, {
+        "build1": {"frames": ["build1"], "fps": 1, "loop": True},
+        "build2": {"frames": ["build2"], "fps": 1, "loop": True},
+        "nest": {"frames": ["nest"], "fps": 1, "loop": True},
+        "eggs": {"frames": ["eggs"], "fps": 1, "loop": True},
+        "chicks": {"frames": ["chicks0", "chicks1", "chicks0", "chicks0"], "fps": 3, "loop": True}})
+    import creatures_canid
+    for key, name in (("fox", "fox"), ("wolf", "maned_wolf")):
+        fr, an, ex = creatures_canid.frames(key)
+        rig_sheet(name, fr, an, ex, ANI)
+    fr, an, ex = creatures_deer.frames(False, fawn=True)
+    ex = {k: (list(map(float, v)) if isinstance(v, list) else v) for k, v in ex.items()}
+    ex["shadow"] = [22, 5]
+    rig_sheet("fawn", fr, an, ex, ANI)
     for name, male in (("deer_m", True), ("deer_f", False)):
         fr, an, ex = creatures_deer.frames(male)
         rig_sheet(name, fr, an, {k: (list(map(float, v)) if isinstance(v, list) else v) for k, v in ex.items()}, ANI)
-    for i in range(3):
+    for i in range(4):
         fr, an, ex = creatures_humans.frames(i)
         rig_sheet("visitor_%d" % i, fr, an, ex, HUM)
     with open(os.path.join(ROOT, "data", "creatures.json"), "w") as f:

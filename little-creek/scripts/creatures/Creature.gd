@@ -37,6 +37,23 @@ func setup_sprite(sheet: String, anim: String = "") -> void:
 	if anim != "":
 		sprite.play(anim)
 	add_to_group("creatures")
+	# register a sighting once the creature is actually visible in the scene
+	var t := Timer.new()
+	t.wait_time = 1.0
+	t.autostart = true
+	t.timeout.connect(_check_sighted)
+	add_child(t)
+
+
+var _sighted := false
+
+
+func _check_sighted() -> void:
+	if _sighted or species == "" or species == "visitor":
+		return
+	if position.x > 90.0 and position.x < 710.0 and position.y > 0.0 and modulate.a > 0.5:
+		_sighted = true
+		NatureLog.sight(species)
 
 
 func set_state(s: String) -> void:
