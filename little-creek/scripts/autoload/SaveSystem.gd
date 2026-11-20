@@ -11,7 +11,7 @@ const AUTOSAVE_INTERVAL := 20.0
 const OFFLINE_BASE_HOURS := 2.0
 const OFFLINE_EFFICIENCY := 0.6
 
-var settings := {"music": 0.7, "sfx": 0.85}
+var settings := {"music": 0.7, "amb": 0.8, "sfx": 0.85}
 var last_report: Dictionary = {}
 var _timer := 0.0
 var _pending := false

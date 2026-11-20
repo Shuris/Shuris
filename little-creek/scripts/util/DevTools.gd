@@ -38,6 +38,10 @@ func _ready() -> void:
 			Weather.force(a.substr(10), 3.0)
 		elif a == "--autofill":
 			call_deferred("_autofill")
+		elif a.begins_with("--photo="):
+			call_deferred("_photo", a.substr(8))
+		elif a == "--prewarm":
+			call_deferred("_prewarm")
 		elif a == "--rainbow":
 			call_deferred("_rainbow")
 		elif a == "--layout":
@@ -153,6 +157,36 @@ func _autofill() -> void:
 		main.world.buy(id)
 	GameState.recompute(false)
 	main.world.trail_amount = 1.0
+
+
+## Fill fireflies and leaves immediately (for screenshots).
+func _prewarm() -> void:
+	await get_tree().create_timer(0.3).timeout
+	var w: World = main.world
+	for i in w.fireflies.target_count():
+		w.fireflies._spawn()
+		w.fireflies.flies[-1]["life"] = 5.0
+	if Clock.season() == 2:
+		for i in 18:
+			w.leaf_system._spawn()
+			var L: Dictionary = w.leaf_system.leaves[-1]
+			var n: Node2D = L["node"]
+			if i < 10:
+				n.position = w.random_water_point(220.0)
+				L["state"] = "float"
+			else:
+				n.position.y = randf_range(40, 200)
+
+
+## Photo mode at a zoom level, centred on a world point "z,x,y".
+func _photo(arg: String) -> void:
+	await get_tree().create_timer(0.5).timeout
+	var p := arg.split(",")
+	main.enter_photo_mode()
+	main.zoom = float(p[0])
+	main.pan = Vector2(float(p[1]), float(p[2])) - Vector2(400, 180)
+	main._apply_view()
+	main.photo._update_label()
 
 
 func _rainbow() -> void:

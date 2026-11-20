@@ -49,7 +49,7 @@
     "rain_drops_heavy": 560,
     "rain_ripples_per_s_light": 6.0,
     "rain_ripples_per_s_heavy": 16.0,
-    "fireflies_max": 26,
+    "fireflies_max": 40,
     "leaves_max": 26,
     "puddles": true
   }

@@ -180,6 +180,32 @@ func reset_view() -> void:
 	_apply_view()
 
 
+var photo: PhotoMode
+
+
+func enter_photo_mode() -> void:
+	if photo:
+		return
+	if hud:
+		hud.close_drawer()
+		hud.visible = false
+	touch_layer.visible = false
+	photo = PhotoMode.new()
+	photo.main = self
+	add_child(photo)
+
+
+func exit_photo_mode() -> void:
+	if photo == null:
+		return
+	photo.queue_free()
+	photo = null
+	reset_view()
+	touch_layer.visible = true
+	if hud:
+		hud.visible = true
+
+
 ## Screen (Main local) -> world pixel coordinates.
 func screen_to_world(p: Vector2) -> Vector2:
 	return (p - world_rect.position) / view_scale()

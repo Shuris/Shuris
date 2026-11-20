@@ -16,7 +16,8 @@ func _ready() -> void:
 	add_child(left)
 	left.add_child(UITheme.label("Som", 18, Palette.ACCENT))
 	left.add_child(_slider("music", "Música", AudioManager.music_volume, AudioManager.set_music_volume))
-	left.add_child(_slider("sound", "Efeitos e ambiente", AudioManager.sfx_volume, AudioManager.set_sfx_volume))
+	left.add_child(_slider("rain", "Sons ambientes", AudioManager.amb_volume, AudioManager.set_amb_volume))
+	left.add_child(_slider("sound", "Efeitos sonoros", AudioManager.sfx_volume, AudioManager.set_sfx_volume))
 	left.add_child(UITheme.label("Teste", 18, Palette.ACCENT))
 	_speed_btn = Button.new()
 	_speed_btn.custom_minimum_size = Vector2(0, 50)
@@ -40,17 +41,17 @@ func _ready() -> void:
 	mid.add_child(scroll)
 	var help := UITheme.label(
 		"• Toque na água do riacho para coletar água. O riacho também produz sozinho, mesmo com o jogo fechado (até 2h, mais com o Ciclo das chuvas).\n" +
-		"• Construir: plante grama, flores, samambaias, arbustos e árvores; posicione pedras e troncos. Plantas aquáticas vão dentro d'água.\n" +
-		"• Melhorias: limpe a nascente, filtre a água e colete sementes.\n" +
-		"• Vitalidade vem da água limpa e da vegetação. Biodiversidade conta as espécies presentes e multiplica a produção.\n" +
-		"• Os animais aparecem quando encontram o que precisam: flores para borboletas, água limpa e plantas aquáticas para peixes, mata densa para o veado.\n" +
-		"• No Refúgio Natural chegam visitantes: bancos, comedouros e mirantes atraem passeios e doações.\n" +
-		"• Toque nos animais para conhecê-los. O progresso é salvo automaticamente.", 15, Palette.TEXT)
+		"• Construir: compre flores, plantas, pedras, árvores e construções. Cada elemento entra sozinho no cenário, num lugar que combine com ele. Cada tipo tem um limite.\n" +
+		"• O tempo passa: amanhecer, dia, entardecer e noite; cada estação dura 30 dias de jogo e muda a floresta aos poucos. Às vezes chove.\n" +
+		"• Cada animal tem seus horários: pássaros cantam de manhã, veados bebem água ao amanhecer e ao entardecer, corujas e vagalumes aparecem à noite.\n" +
+		"• Acontecimentos surgem sozinhos: ninhos, filhotes, patos, flores raras, arco-íris depois da chuva. Tudo fica no Diário.\n" +
+		"• No Refúgio Natural chegam visitantes de vez em quando. Com a ponte, eles podem atravessar o riacho.\n" +
+		"• Botão da câmera: modo fotografia, com zoom e captura sem interface. O progresso é salvo automaticamente.", 15, Palette.TEXT)
 	help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help.custom_minimum_size = Vector2(380, 0)
 	scroll.add_child(help)
-	var cred := UITheme.label("Little Creek · protótipo 0.2 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
+	var cred := UITheme.label("Little Creek · protótipo 0.3 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
 	mid.add_child(cred)
 
 
@@ -75,7 +76,7 @@ func _slider(icon_name: String, text: String, value: float, setter: Callable) ->
 
 
 func _cycle_speed() -> void:
-	var speeds := [1.0, 5.0, 20.0]
+	var speeds := [1.0, 5.0, 20.0, 60.0]
 	var i := speeds.find(GameState.time_scale)
 	GameState.time_scale = speeds[(i + 1) % speeds.size()]
 	_update_speed()

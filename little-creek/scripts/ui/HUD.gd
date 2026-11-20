@@ -359,7 +359,7 @@ func _build_drawer() -> void:
 
 const PANEL_TITLES := {"build": "Construir", "upgrades": "Melhorias", "eco": "Ecossistema", "info": "Informações",
 	"journal": "Diário de biodiversidade"}
-const PANEL_HEIGHT := {"journal": 430, "build": 318, "upgrades": 300, "eco": 420, "info": 380}
+const PANEL_HEIGHT := {"journal": 430, "build": 318, "upgrades": 300, "eco": 420, "info": 440}
 
 
 func open_panel(name: String) -> void:
@@ -570,6 +570,20 @@ func _on_floating_text(wp: Vector2, text: String, color: Color) -> void:
 	t.tween_property(l, "position:y", l.position.y - 46, 1.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	t.tween_property(l, "modulate:a", 0.0, 1.1).set_delay(0.35)
 	t.chain().tween_callback(l.queue_free)
+
+
+var _photo_msg := ""
+
+
+## Shown when the player leaves photo mode (the HUD is hidden while taking photos).
+func toast_queue_after_photo(path: String) -> void:
+	_photo_msg = "Foto salva: " + path.get_file()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and visible and _photo_msg != "":
+		toast(_photo_msg, Palette.ACCENT)
+		_photo_msg = ""
 
 
 func toast(text: String, color: Color = Palette.TEXT) -> void:

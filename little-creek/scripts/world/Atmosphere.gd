@@ -54,8 +54,7 @@ func _process(_delta: float) -> void:
 	world.season_mats["litter"].set_shader_parameter("amount", clampf(float(fs["autumn"]) * 1.1, 0.0, 1.0) * (0.6 if Clock.season() == 3 else 1.0))
 	world.season_mats["frost"].set_shader_parameter("amount", float(fs["winter"]) * frost_time * (1.0 - r))
 	world.season_mats["flowers"].set_shader_parameter("amount", float(fs["bloom"]) * clampf(GameState.lushness() * 1.3, 0.2, 1.0))
-	world.leaves.texture = world.leaf_tex_autumn if float(fs["autumn"]) > 0.3 else world.leaf_tex_green
-	world.leaves.amount = 14 if Clock.season() == 2 else 5
+	world.leaves.emitting = false  # replaced by FloatingLeaves (interacts with water)
 	var glint := float(L["rays"]) * (1.0 - r)
 	world.water_mat.set_shader_parameter("glint", glint)
 	world.water_mat.set_shader_parameter("glint_col", _v3((L["ray_col"] as Color).lerp(Color.WHITE, 0.4)))

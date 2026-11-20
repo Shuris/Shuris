@@ -297,6 +297,74 @@ func _run() -> void:
 			c.queue_free()
 	await _wait(2)
 
+	# 9d) fireflies at night only; leaves float downstream and stay on water
+	Weather.force("clear")
+	Clock.set_season(1, 12.0)
+	Clock.set_hour(12.0)
+	var ff_day := world.fireflies.target_count()
+	Clock.set_hour(22.5)
+	var ff_night := world.fireflies.target_count()
+	Clock.set_season(3, 12.0)
+	var ff_winter := world.fireflies.target_count()
+	_check("fireflies: night only, none in winter", ff_day == 0 and ff_night > 5 and ff_winter == 0,
+		"day %d night %d winter %d" % [ff_day, ff_night, ff_winter])
+	Clock.set_season(2, 16.0)
+	Clock.set_hour(12.0)
+	var ls: FloatingLeaves = world.leaf_system
+	ls._spawn(Vector2(470, 240))
+	var L: Dictionary = ls.leaves[-1]
+	var leaf: Node2D = L["node"]
+	leaf.position = world.random_water_point(250.0)
+	L["state"] = "float"
+	var y0 := leaf.position.y
+	var stayed_wet := true
+	for i in 90:
+		await get_tree().process_frame
+		if not is_instance_valid(leaf):
+			break
+		if L["state"] == "float" and not world.is_water(leaf.position):
+			stayed_wet = false
+	_check("floating leaf drifts downstream on the water", is_instance_valid(leaf) == false or (leaf.position.y > y0 + 1.0 and stayed_wet),
+		"%.1f -> %.1f state %s" % [y0, leaf.position.y if is_instance_valid(leaf) else -1.0, L["state"]])
+
+	# 9e) audio follows time and weather
+	Weather.force("clear")
+	Clock.set_season(1, 10.0)
+	Clock.set_hour(6.5)
+	var tr_dawn: String = AudioManager.wanted_track()
+	var lt_dawn: Dictionary = AudioManager.layer_targets()
+	Clock.set_hour(23.0)
+	var tr_night: String = AudioManager.wanted_track()
+	var lt_night: Dictionary = AudioManager.layer_targets()
+	Weather.force("heavy")
+	var lt_rain: Dictionary = AudioManager.layer_targets()
+	Weather.force("clear")
+	_check("music changes with time of day", tr_dawn == "lofi_morning" and tr_night == "lofi_night")
+	_check("ambience: birds at dawn, crickets at night, rain when raining",
+		float(lt_dawn["birds_loop"]) > -30.0 and float(lt_night["birds_loop"]) <= -60.0
+		and float(lt_night["crickets_loop"]) > -30.0 and float(lt_rain["rain_heavy_loop"]) > -20.0)
+	_check("three independent volume buses", AudioServer.get_bus_index("Music") >= 0 and AudioServer.get_bus_index("Ambience") >= 0
+		and AudioServer.get_bus_index("SFX") >= 0 and AudioServer.get_bus_send(AudioServer.get_bus_index("Ambience")) == &"Master")
+
+	# 9f) photo mode: hides HUD, crisp zoom, consistent picking, capture
+	Clock.set_hour(12.0)
+	main.enter_photo_mode()
+	await _wait(3)
+	var hud_hidden: bool = not main.hud.visible
+	var k1: float = main.view_scale()
+	main.set_zoom(2.0)
+	var k2: float = main.view_scale()
+	var wp2: Vector2 = Vector2(470, 260)
+	var round_trip: Vector2 = main.screen_to_world(main.world_to_screen(wp2))
+	_check("photo mode hides the interface and zooms in integer steps", hud_hidden and is_equal_approx(k2, k1 * 2.0)
+		and round_trip.distance_to(wp2) < 0.01)
+	var path: String = await main.photo.capture()
+	_check("photo capture saved", FileAccess.file_exists(path), path)
+	await _shot("08_photo_mode")
+	main.exit_photo_mode()
+	await _wait(3)
+	_check("leaving photo mode restores view and HUD", main.hud.visible and is_equal_approx(main.view_scale(), k1))
+
 	# 10) behaviour cycles run end to end (time accelerated)
 	Engine.time_scale = 12.0
 	var spots: Array = GameData.scene["drink_spots"]

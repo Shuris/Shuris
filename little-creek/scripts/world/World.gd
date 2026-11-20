@@ -36,6 +36,8 @@ var rays_mat: ShaderMaterial
 var fog_mat: ShaderMaterial
 
 var weather_fx: WeatherFX
+var fireflies: Fireflies
+var leaf_system: FloatingLeaves
 var bridge_layer: Node2D
 var trail2_mat: ShaderMaterial
 var trail2_amount := 0.0
@@ -67,6 +69,14 @@ func _ready() -> void:
 	zones = (load(ENV + "zones.png") as Texture2D).get_image()
 	_build_layers()
 	weather_fx.setup(self)
+	fireflies = Fireflies.new()
+	fireflies.name = "Fireflies"
+	add_child(fireflies)
+	fireflies.setup(self)
+	leaf_system = FloatingLeaves.new()
+	leaf_system.name = "FloatingLeaves"
+	add_child(leaf_system)
+	leaf_system.setup(self)
 	GameState.item_placed.connect(_on_item_placed)
 	GameState.item_removed.connect(_on_item_removed)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -566,7 +576,7 @@ func handle_tap(p: Vector2) -> void:
 		fgt_mat.set_shader_parameter("gust", 2.0)
 		var t := create_tween()
 		t.tween_method(func(v: float) -> void: fgt_mat.set_shader_parameter("gust", v), 2.0, 0.0, 1.6)
-		leaves.restart()
+		leaf_system.burst(p + Vector2(0, 10), 6)
 		AudioManager.play("rustle", 0.1, -8.0)
 
 

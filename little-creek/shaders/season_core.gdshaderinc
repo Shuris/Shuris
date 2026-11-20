@@ -43,12 +43,16 @@ vec4 apply_season(vec4 c, vec2 wpx) {
 	c.rgb = mix(vec3(lum), c.rgb, 1.0 + 0.12 * season_lush * season_k);
 	// autumn
 	float turn = smoothstep(region * 0.8, region * 0.8 + 0.18, season_autumn) * isg * season_k;
-	vec3 deep = mix(vec3(0.36, 0.13, 0.08), vec3(0.42, 0.24, 0.06), hue);
-	vec3 mid = mix(vec3(0.78, 0.33, 0.10), vec3(0.85, 0.55, 0.12), hue);
-	vec3 high = mix(vec3(0.95, 0.66, 0.24), vec3(0.98, 0.84, 0.38), hue);
-	float l2 = clamp(lum * 1.3 - 0.05, 0.0, 1.0);
+	// most crowns turn orange-red, some golden-yellow, a few deep red
+	float tint_y = smoothstep(0.62, 0.8, hue);       // yellow crowns
+	float tint_r = 1.0 - smoothstep(0.15, 0.3, hue);  // red crowns
+	vec3 deep = mix(vec3(0.40, 0.10, 0.05), vec3(0.36, 0.20, 0.04), tint_y);
+	vec3 mid = mix(vec3(0.84, 0.30, 0.07), vec3(0.86, 0.56, 0.10), tint_y);
+	vec3 high = mix(vec3(0.97, 0.56, 0.16), vec3(0.98, 0.82, 0.30), tint_y);
+	mid = mix(mid, vec3(0.70, 0.12, 0.08), tint_r);
+	high = mix(high, vec3(0.92, 0.34, 0.18), tint_r);
+	float l2 = clamp(lum * 1.15, 0.0, 1.0);
 	vec3 aut = l2 < 0.5 ? mix(deep, mid, l2 * 2.0) : mix(mid, high, (l2 - 0.5) * 2.0);
-	aut = mix(aut, vec3(lum) * vec3(1.1, 0.95, 0.7), 0.06);
 	c.rgb = mix(c.rgb, aut, turn * (canopy > 0.5 ? 1.0 : 0.6));
 	// winter: dull olive-grey, cold
 	vec3 dull = mix(vec3(lum) * vec3(0.92, 0.97, 1.06), vec3(lum * 1.02, lum * 0.94, lum * 0.78), 0.45);

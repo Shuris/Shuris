@@ -8,6 +8,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.dirname(__file__))
 from palette import *  # noqa
+from palette import hx
 from pixlib import *  # noqa
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -67,7 +68,7 @@ def main():
     Image.fromarray(sp, "RGBA").save(os.path.join(OUT, "sparkle.png"))
 
     # falling leaf: 4 frames, 4x4
-    lc = {"a": LEAF[7], "b": LEAF[5], "c": LEAF_DRY[6], "d": LEAF_DRY[4]}
+    lc = {"a": LEAF[7], "b": LEAF[5], "c": hx("#e8862d"), "d": hx("#a8441c")}
     frames = [
         ["..a.", ".ab.", "ab..", "b..."],
         ["....", "aab.", ".bb.", "...."],
@@ -158,6 +159,17 @@ def main():
         keep = m & (a > bay * 0.9)
         cv.put_color(keep, col + (int(255 * 0.75),))
     cv.save(os.path.join(OUT, "rainbow.png"))
+    # firefly glow (stepped rings, additive) and body
+    G = 15
+    cv = Canvas(G, G)
+    xs, ys = grid(G, G)
+    d = np.sqrt((xs - G // 2) ** 2 + (ys - G // 2) ** 2)
+    for r, a in ((7.2, 45), (5.2, 95), (3.4, 170), (2.0, 235), (1.0, 255)):
+        m = d <= r
+        cv.put_color(m, (255, 255, 255, a))
+    cv.save(os.path.join(OUT, "glow.png"))
+    body = from_ascii(["Y", "o"], {"Y": (236, 250, 140, 255), "o": (40, 34, 20, 255)})
+    Image.fromarray(body, "RGBA").save(os.path.join(OUT, "firefly.png"))
     print("effects done")
 
 

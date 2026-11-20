@@ -666,9 +666,9 @@ TRAIL = [(60, 318), (120, 306), (190, 296), (262, 290), (320, 282), (362, 270),
          (350, 250), (318, 236), (300, 220), (306, 204), (322, 192)]
 # east bank path: from the bridge's east end toward the right forest edge
 # bridge over the calm stretch between the two lower falls (clear of the deer's drinking spot)
-BRIDGE = {"x": 474.0, "y": 270.0, "w": 104, "h": 46, "west": (424.0, 271.0), "east": (526.0, 268.0)}
-TRAIL_EAST = [(526, 268), (566, 262), (610, 256), (656, 252), (706, 250), (760, 250)]
-TRAIL_SPUR = [(362, 270), (394, 272), (424, 271)]  # main trail -> bridge west end
+BRIDGE = {"x": 464.0, "y": 263.0, "w": 104, "h": 46, "west": (414.0, 264.0), "east": (516.0, 261.0)}
+TRAIL_EAST = [(516, 261), (560, 256), (606, 252), (654, 249), (706, 248), (760, 248)]
+TRAIL_SPUR = [(362, 270), (390, 268), (414, 264)]  # main trail -> bridge west end
 
 
 def _dense(path):
