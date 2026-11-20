@@ -17,6 +17,25 @@ var _timer := 0.0
 var _pending := false
 var _loaded := false
 var _paused_at := 0.0
+## Systems that persist their own state (journal, nests...): key -> object
+## with to_dict() / from_dict(d). Registered before load_game().
+var extra_providers: Dictionary = {}
+var _pending_extra: Dictionary = {}
+
+
+func register(key: String, obj: Object) -> void:
+	extra_providers[key] = obj
+	if _pending_extra.has(key):
+		obj.call("from_dict", _pending_extra[key])
+
+
+func _load_extra(data: Dictionary) -> void:
+	for k in extra_providers.keys():
+		if data.has(k):
+			extra_providers[k].call("from_dict", data[k])
+	for k in data.keys():
+		if not extra_providers.has(k):
+			_pending_extra[k] = data[k]
 
 
 func _ready() -> void:
@@ -33,6 +52,9 @@ func load_game() -> Dictionary:
 		if data is Dictionary:
 			settings.merge(data.get("settings", {}), true)
 			GameState.from_dict(data.get("state", {}))
+			Clock.from_dict(data.get("clock", {}))
+			Weather.from_dict(data.get("weather", {}))
+			_load_extra(data)
 			report = _apply_offline(float(data.get("last_unix", 0.0)))
 		else:
 			push_warning("SaveSystem: corrupt save ignored")
@@ -55,6 +77,8 @@ func _apply_offline(last_unix: float) -> Dictionary:
 	var w := GameState.water_rate * eff
 	var s := GameState.seed_rate * eff
 	GameState.add_resources(w, s)
+	# the world clock moves on too, but capped (no seasons flying by)
+	Clock.advance_offline(elapsed)
 	return {"elapsed": elapsed, "capped": elapsed > cap, "cap_hours": cap / 3600.0, "water": w, "seeds": s}
 
 
@@ -70,7 +94,13 @@ func save_now() -> void:
 		"last_unix": Time.get_unix_time_from_system(),
 		"settings": settings,
 		"state": GameState.to_dict(),
+		"clock": Clock.to_dict(),
+		"weather": Weather.to_dict(),
 	}
+	for k in extra_providers.keys():
+		var obj: Object = extra_providers[k]
+		if is_instance_valid(obj):
+			data[k] = obj.call("to_dict")
 	var f := FileAccess.open(TMP_PATH, FileAccess.WRITE)
 	if f == null:
 		push_error("SaveSystem: cannot write save (%d)" % FileAccess.get_open_error())

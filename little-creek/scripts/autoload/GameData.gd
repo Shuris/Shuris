@@ -10,6 +10,7 @@ var species: Dictionary = {}
 var stages: Array = []
 var scene: Dictionary = {}
 var creatures: Dictionary = {}
+var config: Dictionary = {}
 
 
 func _ready() -> void:
@@ -22,6 +23,7 @@ func _ready() -> void:
 	stages = _load_json("res://data/stages.json")
 	scene = _load_json("res://data/scene_points.json")
 	creatures = _load_json("res://data/creatures.json")
+	config = _load_json("res://data/config.json")
 
 
 func _load_json(path: String) -> Variant:

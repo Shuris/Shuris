@@ -27,6 +27,17 @@ func _ready() -> void:
 			seed_state(a.substr(8))
 		elif a.begins_with("--spawn="):
 			call_deferred("_spawn", a.substr(8).split(","))
+		elif a.begins_with("--time="):
+			var t := a.substr(7)
+			var hours := {"dawn": 6.4, "day": 11.0, "dusk": 18.2, "night": 22.5}
+			Clock.set_hour(float(hours.get(t, t.to_float())))
+		elif a.begins_with("--season="):
+			var parts := a.substr(9).split(":")
+			Clock.set_season(Clock.SEASONS.find(parts[0]), float(parts[1]) if parts.size() > 1 else 14.0)
+		elif a.begins_with("--weather="):
+			Weather.force(a.substr(10), 3.0)
+		elif a == "--rainbow":
+			call_deferred("_rainbow")
 		elif a == "--layout":
 			call_deferred("_print_layout")
 		elif a.begins_with("--ui="):
@@ -81,8 +92,19 @@ func _spawn(names: PackedStringArray) -> void:
 				wd._spawn(n)
 
 
+func _rainbow() -> void:
+	await get_tree().process_frame
+	Weather.wetness = 0.7
+	main.world.weather_fx.show_rainbow(2.0)
+	main.world.weather_fx.rainbow_amount = 1.0
+
+
 func _print_layout() -> void:
 	await get_tree().process_frame
+	await get_tree().create_timer(1.0).timeout
+	var it: PlacedItem = main.world.items.values()[0]
+	print("item ", it.id, " autumn=", it.mat.get_shader_parameter("season_autumn"), " k=", it.mat.get_shader_parameter("season_k"), " shader=", it.mat.shader.resource_path)
+	print("season globals ", RenderingServer.global_shader_parameter_get("season_autumn"), " ", Clock.foliage_state(), " ", Clock.date_string())
 	print("main ", main.size, " vp ", main.get_viewport_rect().size, " hud ", main.hud.size,
 		" overlay ", main.hud.overlay.size, " buttons ", main.hud.buttons.position)
 

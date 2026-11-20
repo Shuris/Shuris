@@ -1,0 +1,55 @@
+{
+  "_doc": "Configuração central do Little Creek. Tempos em horas de jogo salvo indicação. 1 dia de jogo = time.day_real_minutes minutos reais.",
+  "time": {
+    "day_real_minutes": 24.0,
+    "days_per_season": 30,
+    "start_hour": 7.0,
+    "offline_max_game_hours": 18.0,
+    "periods": {"dawn": [5.0, 7.5], "day": [7.5, 17.0], "dusk": [17.0, 19.5], "night": [19.5, 5.0]}
+  },
+  "weather": {
+    "check_every_hours": 2.0,
+    "rain_chance": {"spring": 0.16, "summer": 0.20, "autumn": 0.14, "winter": 0.09},
+    "heavy_ratio": {"spring": 0.30, "summer": 0.40, "autumn": 0.25, "winter": 0.15},
+    "light_hours": [1.5, 4.0],
+    "heavy_hours": [1.0, 2.5],
+    "cooldown_hours": [8.0, 16.0],
+    "fade_hours": 0.35,
+    "dry_hours": 3.0,
+    "rainbow_chance": 0.4
+  },
+  "events": {
+    "check_every_hours": 1.0,
+    "min_gap_hours": 3.0,
+    "butterfly_swarm": {"chance": 0.10, "cooldown": 20},
+    "deer_fawn": {"chance": 0.08, "cooldown": 48},
+    "nest": {"chance": 0.12, "cooldown": 24},
+    "ducks": {"chance": 0.07, "cooldown": 36},
+    "rare_flower": {"chance": 0.05, "cooldown": 72},
+    "bird_flock": {"chance": 0.10, "cooldown": 16},
+    "rare_animal": {"chance": 0.025, "cooldown": 96}
+  },
+  "animals": {
+    "max_total": 12,
+    "deer_interval_hours": [5.0, 14.0],
+    "owl_chance_night": 0.6,
+    "fox_interval_hours": [10.0, 30.0]
+  },
+  "visitors": {
+    "min_interval_s": 160.0,
+    "max_interval_s": 380.0,
+    "max_groups": 1,
+    "season_mult": {"spring": 1.2, "summer": 1.4, "autumn": 0.9, "winter": 0.35},
+    "rain_mult": {"clear": 1.0, "light": 0.35, "heavy": 0.0},
+    "night_mult": 0.0
+  },
+  "effects": {
+    "rain_drops_light": 220,
+    "rain_drops_heavy": 560,
+    "rain_ripples_per_s_light": 6.0,
+    "rain_ripples_per_s_heavy": 16.0,
+    "fireflies_max": 26,
+    "leaves_max": 26,
+    "puddles": true
+  }
+}

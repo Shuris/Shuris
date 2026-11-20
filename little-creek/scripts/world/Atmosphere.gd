@@ -1,0 +1,65 @@
+class_name Atmosphere
+extends Node
+## Keeps the look of the world in sync with time of day, weather and season:
+## colour grading, sun/moon rays, morning mist, dust motes, water glints.
+## Only shader parameters are touched each frame (cheap on mobile).
+
+var main: Node
+var world: World
+var _local_accum := 10.0
+
+
+func _process(_delta: float) -> void:
+	if world == null or not world._initialized:
+		return
+	var L := Clock.lighting()
+	var fs := Clock.foliage_state()
+	var r := Weather.rain
+	var h := Clock.hour()
+	var g: ShaderMaterial = main.grade_mat
+	g.set_shader_parameter("tint", _v3(L["tint"]))
+	g.set_shader_parameter("shadow_lift", _v3(L["shadow"]))
+	g.set_shader_parameter("saturation", float(L["sat"]) * (1.0 + 0.08 * float(fs["lush"]) + 0.06 * float(fs["bloom"])))
+	g.set_shader_parameter("brightness", float(L["bright"]) * (1.04 if Clock.season() == 1 else 1.0) * (1.0 + world.weather_fx.flash * 0.9))
+	g.set_shader_parameter("night", float(L["night"]))
+	g.set_shader_parameter("rain", r)
+	g.set_shader_parameter("cold", float(fs["winter"]) * 0.7)
+	g.set_shader_parameter("vignette", 0.2 + 0.55 * float(L["night"]) + 0.3 * r)
+	# rays: sunbeams by day, faint moonbeams by night, hidden by rain clouds
+	var season_k := 0.75 if Clock.season() == 3 else (1.1 if Clock.season() == 1 else 1.0)
+	world.rays_mat.set_shader_parameter("intensity", float(L["rays"]) * (1.0 - 0.92 * r) * season_k)
+	world.rays_mat.set_shader_parameter("ray_col", _v3(L["ray_col"]))
+	# morning mist peaks around dawn; rain thickens the air
+	var mist := exp(-pow((h - 6.3) / 1.4, 2.0))
+	world.fog_mat.set_shader_parameter("density", 0.45 + 1.0 * mist + 0.7 * r + 0.25 * float(fs["winter"]))
+	var fog_col := Color(0.82, 0.88, 0.80).lerp(Color(0.98, 0.86, 0.80), mist * 0.6)
+	world.fog_mat.set_shader_parameter("fog_col", _v3(fog_col))
+	world.motes.emitting = float(L["rays"]) > 0.5 and r < 0.15 and not Clock.is_night()
+	# seasons (global shader uniforms shared by all vegetation shaders)
+	for k in ["autumn", "bare", "winter", "bloom", "lush"]:
+		RenderingServer.global_shader_parameter_set("season_" + k, float(fs[k]))
+	RenderingServer.global_shader_parameter_set("world_wind", Weather.wind)
+	_local_accum += _delta
+	if _local_accum >= 0.5:
+		_local_accum = 0.0
+		var mats: Array = [world.fgb_mat, world.fgt_mat]
+		for n in world.items.values():
+			mats.append(n.mat)
+		for m in mats:
+			for k in ["autumn", "bare", "winter", "bloom", "lush"]:
+				m.set_shader_parameter("season_" + k, float(fs[k]))
+			m.set_shader_parameter("world_wind", Weather.wind)
+			m.set_shader_parameter("season_noise", world.noise_tex)
+	var frost_time := 1.0 if (h < 8.5 or h > 19.0) else 0.25
+	world.season_mats["litter"].set_shader_parameter("amount", clampf(float(fs["autumn"]) * 1.1, 0.0, 1.0) * (0.6 if Clock.season() == 3 else 1.0))
+	world.season_mats["frost"].set_shader_parameter("amount", float(fs["winter"]) * frost_time * (1.0 - r))
+	world.season_mats["flowers"].set_shader_parameter("amount", float(fs["bloom"]) * clampf(GameState.lushness() * 1.3, 0.2, 1.0))
+	world.leaves.texture = world.leaf_tex_autumn if float(fs["autumn"]) > 0.3 else world.leaf_tex_green
+	world.leaves.amount = 14 if Clock.season() == 2 else 5
+	var glint := float(L["rays"]) * (1.0 - r)
+	world.water_mat.set_shader_parameter("glint", glint)
+	world.water_mat.set_shader_parameter("glint_col", _v3((L["ray_col"] as Color).lerp(Color.WHITE, 0.4)))
+
+
+static func _v3(c: Color) -> Vector3:
+	return Vector3(c.r, c.g, c.b)

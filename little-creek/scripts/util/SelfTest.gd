@@ -166,6 +166,27 @@ func _run() -> void:
 	_check("offline progress capped", bool(rep2.get("capped", false)))
 	SaveSystem.delete_save()
 
+	# 8b) v0.3 clock / weather persistence and capped offline time
+	Clock.set_season(2, 10.0)
+	Clock.set_hour(18.2)
+	Weather.force("light", 2.0)
+	SaveSystem.save_now()
+	var f2 := FileAccess.open(SaveSystem.SAVE_PATH, FileAccess.READ)
+	var d2: Dictionary = JSON.parse_string(f2.get_as_text())
+	Clock.set_season(0, 1.0)
+	Weather.force("clear")
+	Clock.from_dict(d2["clock"])
+	Weather.from_dict(d2["weather"])
+	_check("clock & weather persist", Clock.season() == 2 and Clock.period() == "dusk" and Weather.state == "light",
+		"%s %s %s" % [Clock.date_string(), Clock.time_string(), Weather.state])
+	var h0 := Clock.total_hours
+	Clock.advance_offline(3600.0 * 72.0)
+	_check("offline clock advance is capped", Clock.total_hours - h0 <= 18.01, "+%.1f h" % (Clock.total_hours - h0))
+	var fs := Clock.foliage_state()
+	_check("autumn foliage state", fs["autumn"] > 0.3, str(fs))
+	Weather.force("clear")
+	SaveSystem.delete_save()
+
 	# 9) v0.2 sprites: every animation exists in both directions
 	var need := {"deer_m": ["idle", "walk", "run", "look", "alert", "ears", "tail", "lower", "drink", "raise"],
 		"deer_f": ["idle", "walk", "run", "drink"],

@@ -19,6 +19,8 @@ const SWAY := preload("res://shaders/sway.gdshader")
 const WATER_SHADER := preload("res://shaders/water.gdshader")
 const RAYS := preload("res://shaders/light_rays.gdshader")
 const FOG := preload("res://shaders/fog.gdshader")
+const FOLIAGE := preload("res://shaders/foliage.gdshader")
+const REVEAL := preload("res://shaders/reveal.gdshader")
 
 var noise_tex: Texture2D
 var zones: Image
@@ -31,7 +33,10 @@ var fgb_mat: ShaderMaterial
 var fgt_mat: ShaderMaterial
 var water_mat: ShaderMaterial
 var rays_mat: ShaderMaterial
+var fog_mat: ShaderMaterial
 
+var weather_fx: WeatherFX
+var season_mats: Dictionary = {}  # "litter"/"frost"/"flowers" -> reveal material
 var fish_layer: Node2D
 var entities: Node2D
 var flyers: Node2D
@@ -39,8 +44,11 @@ var fx_layer: Node2D
 var ghost: Sprite2D
 var pollen: CPUParticles2D
 var leaves: CPUParticles2D
+var leaf_tex_green: Texture2D
+var leaf_tex_autumn: Texture2D
 var motes: CPUParticles2D
 
+var lights_root: Node2D     # additive light layer (fireflies...), set by Main
 var items: Dictionary = {}  # uid -> PlacedItem
 var frame_trees: Array = []
 
@@ -52,8 +60,10 @@ var _initialized := false
 
 func _ready() -> void:
 	noise_tex = load(FX + "noise_rgba.png")
+	RenderingServer.global_shader_parameter_set("season_noise", noise_tex)
 	zones = (load(ENV + "zones.png") as Texture2D).get_image()
 	_build_layers()
+	weather_fx.setup(self)
 	GameState.item_placed.connect(_on_item_placed)
 	GameState.item_removed.connect(_on_item_removed)
 	GameState.stage_changed.connect(_on_stage_changed)
@@ -77,12 +87,34 @@ func _dissolve_mat(tex_b_path: String) -> ShaderMaterial:
 	return m
 
 
+func _foliage_mat(canopy: float, k: float) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = FOLIAGE
+	m.set_shader_parameter("canopy", canopy)
+	m.set_shader_parameter("season_k", k)
+	return m
+
+
 func _build_layers() -> void:
-	_sprite(ENV + "bg_forest.png")
+	var bg := _sprite(ENV + "bg_forest.png")
+	bg.material = _foliage_mat(0.0, 0.85)
+	weather_fx = WeatherFX.new()
+	weather_fx.name = "WeatherFX"
+	add_child(weather_fx)
+	weather_fx.make_rainbow(self)
 
 	var ground := _sprite(ENV + "ground_dry.png")
 	ground_mat = _dissolve_mat(ENV + "ground_lush.png")
+	ground_mat.set_shader_parameter("season_k", 0.7)
 	ground.material = ground_mat
+	for key in ["flowers", "litter", "frost"]:
+		var ov := _sprite(ENV + "season_%s.png" % key)
+		var rm := ShaderMaterial.new()
+		rm.shader = REVEAL
+		rm.set_shader_parameter("noise_tex", noise_tex)
+		ov.material = rm
+		season_mats[key] = rm
+	weather_fx.make_puddles(self)
 
 	# trail: revealed in pixel clusters at stage 4
 	var trail := _sprite(ENV + "trail.png")
@@ -96,6 +128,7 @@ func _build_layers() -> void:
 	water_mat = ShaderMaterial.new()
 	water_mat.shader = WATER_SHADER
 	water_mat.set_shader_parameter("meta_tex", load("res://assets/sprites/water/water_meta.png"))
+	water_mat.set_shader_parameter("extra_tex", load("res://assets/sprites/water/water_extra.png"))
 	water_mat.set_shader_parameter("bed_tex", load("res://assets/sprites/water/water_bed.png"))
 	water_mat.set_shader_parameter("noise_tex", noise_tex)
 	water_mat.set_shader_parameter("world_size", Vector2(W, H))
@@ -110,9 +143,11 @@ func _build_layers() -> void:
 	var rocks := _sprite("res://assets/sprites/rocks/creek_rocks_bare.png")
 	rocks_mat = _dissolve_mat("res://assets/sprites/rocks/creek_rocks_moss.png")
 	rocks_mat.set_shader_parameter("edge_glow", 0.0)
+	rocks_mat.set_shader_parameter("season_k", 0.25)
 	rocks.material = rocks_mat
 
-	_sprite(ENV + "mid_trees.png")
+	var mid := _sprite(ENV + "mid_trees.png")
+	mid.material = _foliage_mat(1.0, 0.9)
 
 	var fog := ColorRect.new()
 	fog.position = Vector2(0, 126)
@@ -123,6 +158,7 @@ func _build_layers() -> void:
 	fm.set_shader_parameter("noise_tex", noise_tex)
 	fm.set_shader_parameter("rect_size", fog.size)
 	fog.material = fm
+	fog_mat = fm
 	add_child(fog)
 
 	entities = Node2D.new()
@@ -157,6 +193,7 @@ func _build_layers() -> void:
 	fgb_mat.set_shader_parameter("use_dissolve", true)
 	fgb_mat.set_shader_parameter("tex_b", load(ENV + "fg_bottom_lush.png"))
 	fgb_mat.set_shader_parameter("noise_tex", noise_tex)
+	fgb_mat.set_shader_parameter("season_k", 0.7)
 	fgb.material = fgb_mat
 
 	var fgt := _sprite(ENV + "fg_top.png")
@@ -165,7 +202,9 @@ func _build_layers() -> void:
 	fgt_mat.set_shader_parameter("strength", 1.0)
 	fgt_mat.set_shader_parameter("speed", 0.7)
 	fgt_mat.set_shader_parameter("anchor_top", true)
+	fgt_mat.set_shader_parameter("canopy", 1.0)
 	fgt.material = fgt_mat
+	weather_fx.make_rain_layers(self)
 
 	flyers = Node2D.new()
 	flyers.name = "Flyers"
@@ -227,7 +266,9 @@ func _build_particles() -> void:
 
 	# leaves drifting down from the canopy
 	leaves = CPUParticles2D.new()
-	leaves.texture = load(FX + "leaf_fall.png")
+	leaf_tex_green = load(FX + "leaf_fall.png")
+	leaf_tex_autumn = load(FX + "leaf_fall_dry.png")
+	leaves.texture = leaf_tex_green
 	var lm := CanvasItemMaterial.new()
 	lm.particles_animation = true
 	lm.particles_anim_h_frames = 4
@@ -316,8 +357,7 @@ func _apply_visuals() -> void:
 	rocks_mat.set_shader_parameter("amount", moss)
 	trail_mat.set_shader_parameter("amount", trail_amount)
 	water_mat.set_shader_parameter("quality", quality)
-	water_mat.set_shader_parameter("flow_speed", 0.75 + quality * 0.35)
-	rays_mat.set_shader_parameter("intensity", 0.8 + 0.1 * GameState.stage)
+	water_mat.set_shader_parameter("flow_speed", (0.75 + quality * 0.35) * (1.0 + Weather.rain * (0.6 if Weather.state == "heavy" else 0.2)))
 	pollen.emitting = GameState.stage >= 2
 	pollen.amount = 20 + 10 * GameState.stage if GameState.stage >= 2 else 20
 	for n in items.values():

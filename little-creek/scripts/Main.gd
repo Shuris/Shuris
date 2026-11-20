@@ -4,9 +4,17 @@ extends Control
 ## the gameplay systems and the HUD.
 
 const WORLD_SCALE := 2
+const GRADE := preload("res://shaders/grade.gdshader")
 
-var container: SubViewportContainer
+var display: Control          # holds the world image and the light layer
+var world_rect: TextureRect
+var light_rect: TextureRect
 var viewport: SubViewport
+var light_viewport: SubViewport
+var grade_mat: ShaderMaterial
+var base_scale := 1.0          # fit-to-screen scale
+var zoom := 1.0                # photo-mode zoom (integer steps)
+var pan := Vector2.ZERO        # photo-mode pan, in art pixels
 var world: World
 var touch_layer: Control
 var hud: Node
@@ -16,20 +24,39 @@ var dev: Node
 
 
 func _ready() -> void:
-	container = SubViewportContainer.new()
-	container.stretch = true
-	container.stretch_shrink = WORLD_SCALE
-	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(container)
-	viewport = SubViewport.new()
-	viewport.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
-	viewport.snap_2d_transforms_to_pixel = true
-	viewport.snap_2d_vertices_to_pixel = true
-	viewport.audio_listener_enable_2d = false
-	container.add_child(viewport)
+	viewport = _make_viewport(false)
+	light_viewport = _make_viewport(true)
+	display = Control.new()
+	display.name = "WorldDisplay"
+	display.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	display.clip_contents = false
+	add_child(display)
+	world_rect = TextureRect.new()
+	world_rect.texture = viewport.get_texture()
+	world_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	world_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	world_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	world_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	grade_mat = ShaderMaterial.new()
+	grade_mat.shader = GRADE
+	world_rect.material = grade_mat
+	display.add_child(world_rect)
+	light_rect = TextureRect.new()
+	light_rect.texture = light_viewport.get_texture()
+	light_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	light_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	light_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	light_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	light_rect.material = add
+	display.add_child(light_rect)
 	world = World.new()
 	viewport.add_child(world)
+	var lights := Node2D.new()
+	lights.name = "Lights"
+	light_viewport.add_child(lights)
+	world.lights_root = lights
 
 	touch_layer = Control.new()
 	touch_layer.name = "TouchLayer"
@@ -51,6 +78,12 @@ func _ready() -> void:
 		visitors.name = "VisitorDirector"
 		visitors.world = world
 		systems.add_child(visitors)
+
+	var atmo := Atmosphere.new()
+	atmo.name = "Atmosphere"
+	atmo.main = self
+	atmo.world = world
+	systems.add_child(atmo)
 
 	if ResourceLoader.exists("res://scripts/ui/HUD.gd"):
 		hud = load("res://scripts/ui/HUD.gd").new()
@@ -75,22 +108,73 @@ func _ready() -> void:
 		add_child(t)
 
 
+func _make_viewport(transparent: bool) -> SubViewport:
+	var vp := SubViewport.new()
+	vp.size = Vector2i(800, 360)
+	vp.transparent_bg = transparent
+	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	vp.canvas_item_default_texture_filter = Viewport.DEFAULT_CANVAS_ITEM_TEXTURE_FILTER_NEAREST
+	vp.snap_2d_transforms_to_pixel = true
+	vp.snap_2d_vertices_to_pixel = true
+	vp.audio_listener_enable_2d = false
+	add_child(vp)
+	return vp
+
+
 func _layout() -> void:
 	var vs := get_viewport_rect().size
 	var base := Vector2(800, 360) * WORLD_SCALE
-	var s := maxf(1.0, maxf(vs.x / base.x, vs.y / base.y))
-	container.size = base
-	container.scale = Vector2(s, s)
-	container.position = ((vs - base * s) / 2.0).floor()
+	base_scale = maxf(1.0, maxf(vs.x / base.x, vs.y / base.y))
+	_apply_view()
+
+
+## Pixels of screen per art pixel (integer in photo mode zoom steps).
+func view_scale() -> float:
+	return WORLD_SCALE * base_scale * zoom
+
+
+func _apply_view() -> void:
+	var vs := get_viewport_rect().size
+	var k := view_scale()
+	var size := Vector2(800, 360) * k
+	# centre of the view in art pixels (pan moves it); clamp so no void shows
+	var half := vs / (2.0 * k)
+	var c := Vector2(400, 180) + pan
+	c.x = clampf(c.x, half.x, 800.0 - half.x) if half.x < 400.0 else 400.0
+	c.y = clampf(c.y, half.y, 360.0 - half.y) if half.y < 180.0 else 180.0
+	pan = c - Vector2(400, 180)
+	var pos := (vs / 2.0 - c * k).floor()
+	for r in [world_rect, light_rect]:
+		r.position = pos
+		r.size = size
+	display.size = vs
+
+
+func set_zoom(z: float, focus_screen: Vector2 = Vector2(-1, -1)) -> void:
+	var vs := get_viewport_rect().size
+	if focus_screen.x < 0:
+		focus_screen = vs / 2.0
+	var before := screen_to_world(focus_screen)
+	zoom = clampf(z, 1.0, 4.0)
+	_apply_view()
+	var after := screen_to_world(focus_screen)
+	pan += before - after
+	_apply_view()
+
+
+func reset_view() -> void:
+	zoom = 1.0
+	pan = Vector2.ZERO
+	_apply_view()
 
 
 ## Screen (Main local) -> world pixel coordinates.
 func screen_to_world(p: Vector2) -> Vector2:
-	return (p - container.position) / (WORLD_SCALE * container.scale.x)
+	return (p - world_rect.position) / view_scale()
 
 
 func world_to_screen(p: Vector2) -> Vector2:
-	return container.position + p * WORLD_SCALE * container.scale.x
+	return world_rect.position + p * view_scale()
 
 
 var _press_pos := Vector2.ZERO

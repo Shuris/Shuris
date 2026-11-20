@@ -421,6 +421,79 @@ def paint_bed(cr):
     return cv
 
 
+def flow_with_eddies(cr, rmask):
+    """Make the current swirl around rocks that sit in the water (eddies) and
+    return an extra map: R wake (standing waves downstream of rocks),
+    G eddy strength, B slow speed variation."""
+    m = cr["mask"]
+    inwater_rocks = rmask & ndimage.binary_dilation(m, iterations=3)
+    dist, (iy, ix) = ndimage.distance_transform_edt(~inwater_rocks, return_indices=True)
+    ys, xs = np.mgrid[0:H, 0:W].astype(np.float32)
+    vx, vy = xs - ix, ys - iy
+    ln = np.sqrt(vx * vx + vy * vy) + 1e-6
+    tx, ty = -vy / ln, vx / ln  # tangent around the rock
+    # swirl direction follows the side of the rock relative to the main flow
+    side = np.sign(tx * cr["fdx"] + ty * cr["fdy"])
+    tx, ty = tx * side, ty * side
+    eddy = np.clip(1.0 - dist / 7.0, 0, 1) * m
+    fdx = cr["fdx"] * (1 - eddy * 0.75) + tx * eddy * 0.75
+    fdy = cr["fdy"] * (1 - eddy * 0.75) + ty * eddy * 0.75
+    ln2 = np.sqrt(fdx ** 2 + fdy ** 2) + 1e-6
+    cr["fdx"], cr["fdy"] = fdx / ln2, fdy / ln2
+    # wake: downstream (below) of rocks, fading with distance
+    wake = np.zeros((H, W), np.float32)
+    for k in range(1, 16):
+        shifted = np.roll(inwater_rocks, k, axis=0)
+        wake = np.maximum(wake, shifted * (1.0 - k / 16.0))
+    wake = ndimage.uniform_filter(wake, 3) * m * (~inwater_rocks)
+    var = value_noise(W, H, 22, R(77), octaves=2, sx=1.5)
+    extra = np.zeros((H, W, 4), np.uint8)
+    extra[..., 0] = np.clip(wake * 255, 0, 255)
+    extra[..., 1] = np.clip(eddy * 255, 0, 255)
+    extra[..., 2] = np.clip(var * 255, 0, 255)
+    extra[..., 3] = 255
+    return extra
+
+
+def make_puddles(cr, rmask, tmask):
+    """Low, flat spots where rain water collects (R mask, G distance to centre)."""
+    rng = R(321)
+    hgt, dist = terrain_height(cr)
+    xs, ys = grid(W, H)
+    ok = (ys > 222) & (ys < 345) & (dist > 14) & ~ndimage.binary_dilation(rmask, iterations=6) \
+        & (xs > SAFE_X0 + 30) & (xs < SAFE_X1 - 30)
+    for (name, x, by, w) in FRAME_TREES:
+        ok &= ~((np.abs(xs - x) < w * 1.4) & (ys > by - 30))
+    out = np.zeros((H, W, 4), np.uint8)
+    spots = []
+    cand = np.argwhere(ok)
+    order = np.argsort(hgt[ok])  # lowest terrain first
+    on_trail = 0
+    for idx in list(order[:4000:37]) + list(rng.permutation(len(cand))[:200]):
+        y, x = cand[idx]
+        if any((x - sx) ** 2 + ((y - sy) * 2.5) ** 2 < 70 ** 2 for sx, sy, _ in spots):
+            continue
+        if tmask[y, x]:
+            if on_trail >= 2:
+                continue
+            on_trail += 1
+        persp = float(np.clip((y - HORIZON) / 190.0, 0.3, 1.0))
+        rx = (11 + rng.random() * 12) * persp
+        spots.append((x, y, rx))
+        if len(spots) >= 8:
+            break
+    for (x, y, rx) in spots:
+        ry = rx * 0.38
+        ang = np.arctan2((ys - y) / ry, (xs - x) / rx)
+        wob = 1 + 0.18 * np.sin(ang * 3 + x) + 0.1 * np.sin(ang * 5 + y)
+        d = np.sqrt(((xs - x) / rx) ** 2 + ((ys - y) / ry) ** 2) / wob
+        m = d <= 1.0
+        out[m, 0] = 255
+        out[m, 1] = np.clip(d[m] * 255, 0, 255).astype(np.uint8)
+        out[m, 3] = 255
+    return out, spots
+
+
 def water_maps(cr):
     m = cr["mask"]
     flow = np.zeros((H, W, 4), np.uint8)
@@ -699,6 +772,53 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
     }
 
 
+def seasonal_overlays(cr, rmask):
+    """Autumn leaf litter, winter frost and spring wildflowers (revealed by shaders)."""
+    m = cr["mask"]
+    xs, ys = grid(W, H)
+    dist = ndimage.distance_transform_edt(~m)
+    ground = (ys > HORIZON + 6) & ~m
+    rng = R(901)
+    # --- autumn litter: dense along the banks and under the big trees
+    lit = Canvas(W, H)
+    aut = [hx("#5a2412"), hx("#8a3a16"), hx("#b5561c"), hx("#d9822d"), hx("#e8a640"), hx("#f0c860"), hx("#7a4a22")]
+    near_bank = np.exp(-np.maximum(dist - 2, 0) / 6.0)
+    under = np.zeros((H, W), np.float32)
+    for (x, by, w) in [(106, 352, 34), (706, 338, 28)] + [(t[0], t[1], t[2]) for t in MID_TREES]:
+        under += np.exp(-(((xs - x) / (w * 2.4 + 20)) ** 2 + ((ys - by) / 14.0) ** 2))
+    dens = (0.06 + 0.55 * near_bank + 0.5 * np.clip(under, 0, 1)) * ground
+    persp = np.clip((ys - HORIZON) / 190.0, 0.2, 1.0)
+    pick = rng.random((H, W)) < dens * 0.22 * persp
+    for y, x in zip(*np.nonzero(pick)):
+        c = aut[int(rng.random() * len(aut))]
+        lit.pixel(x, y, c)
+        if rng.random() < 0.6:
+            lit.pixel(x + 1, y, aut[max(0, aut.index(c) - 1)] if c in aut else c)
+    lit.save(os.path.join(SPR, "environment", "season_litter.png"))
+    # --- winter frost: pale crystals on grass tips, denser in shade and on rock tops
+    fr = Canvas(W, H)
+    shade = 1.0 - SUN
+    pick = (rng.random((H, W)) < (0.05 + 0.12 * shade) * ground) & (dist > 2)
+    for y, x in zip(*np.nonzero(pick)):
+        fr.pixel(x, y, (222, 236, 246) if rng.random() < 0.6 else (190, 212, 230))
+    top = rmask & ~np.roll(rmask, 1, axis=0)
+    top2 = rmask & ~np.roll(rmask, 2, axis=0)
+    for y, x in zip(*np.nonzero(top | (top2 & (rng.random((H, W)) < 0.5)))):
+        fr.pixel(x, y, (232, 242, 250))
+    fr.save(os.path.join(SPR, "environment", "season_frost.png"))
+    # --- spring wildflowers on the meadow
+    sp = Canvas(W, H)
+    cols = [FLOWER["white"][2], FLOWER["yellow"][2], FLOWER["pink"][3], FLOWER["purple"][3], FLOWER["white"][3]]
+    meadow = ground & (dist > 8) & (ys > HORIZON + 14)
+    pick = rng.random((H, W)) < 0.018 * meadow * persp
+    for y, x in zip(*np.nonzero(pick)):
+        c = cols[int(rng.random() * len(cols))]
+        sp.pixel(x, y, c)
+        if persp[y, x] > 0.6 and rng.random() < 0.5:
+            sp.pixel(x, y - 1, GRASS[4])
+    sp.save(os.path.join(SPR, "environment", "season_flowers.png"))
+
+
 def save_png(arr, path):
     Image.fromarray(arr, "RGBA").save(path)
 
@@ -722,6 +842,8 @@ if __name__ == "__main__":
     rm = paint_rocks(rocks, True)
     rb.save(os.path.join(SPR, "rocks", "creek_rocks_bare.png"))
     rm.save(os.path.join(SPR, "rocks", "creek_rocks_moss.png"))
+    extra = flow_with_eddies(cr, rb.px[..., 3] > 0)
+    save_png(extra, os.path.join(SPR, "water", "water_extra.png"))
     flow, meta = water_maps(cr)
     # foam ring around rocks in the water
     rmask = rb.px[..., 3] > 0
@@ -740,7 +862,12 @@ if __name__ == "__main__":
     paint_fg_bottom(True).save(os.path.join(SPR, "environment", "fg_bottom_lush.png"))
     tr, tmask = paint_trail(cr)
     tr.save(os.path.join(SPR, "environment", "trail.png"))
+    seasonal_overlays(cr, rmask)
+    pud, pspots = make_puddles(cr, rmask, tmask)
+    save_png(pud, os.path.join(SPR, "environment", "puddles.png"))
     zones, pts = scene_points(cr, rmask, tmask, frames)
+    zones[..., 3] = np.where(pud[..., 0] > 0, 128, 255).astype(np.uint8)
+    pts["puddles"] = [{"x": float(x), "y": float(y), "r": float(r)} for x, y, r in pspots]
     save_png(zones, os.path.join(SPR, "environment", "zones.png"))
     with open(os.path.join(ROOT, "data", "scene_points.json"), "w") as f:
         json.dump(pts, f, indent=1)

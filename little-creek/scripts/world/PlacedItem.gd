@@ -38,6 +38,9 @@ func setup(d: Dictionary, noise: Texture2D) -> void:
 		mat.set_shader_parameter("use_dissolve", true)
 		mat.set_shader_parameter("tex_b", SpriteLib.tex(moss))
 		mat.set_shader_parameter("noise_tex", noise)
+	var cat: String = def.get("category", "")
+	mat.set_shader_parameter("canopy", 1.0 if cat == "trees" else 0.0)
+	mat.set_shader_parameter("season_k", 0.0 if cat == "structures" else (0.25 if cat == "rocks" else (0.4 if id == "aquatic" else 1.0)))
 	sprite.material = mat
 	add_child(sprite)
 

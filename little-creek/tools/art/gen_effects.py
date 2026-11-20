@@ -119,6 +119,45 @@ def main():
     fl = from_ascii(["..w..", ".wWw.", "wWWWw", ".wWw.", "..w.."],
                     {"w": (255, 246, 208, 140), "W": (255, 255, 255, 255)})
     Image.fromarray(fl, "RGBA").save(os.path.join(OUT, "flash.png"))
+    # rain streaks (near: 2x7 diagonal, far: 1x4)
+    near = from_ascii(["...a", "...b", "..b.", "..c.", ".c..", ".c..", "d..."],
+                      {"a": (235, 244, 248, 140), "b": (225, 238, 244, 220), "c": (210, 230, 240, 200), "d": (195, 220, 232, 120)})
+    Image.fromarray(near, "RGBA").save(os.path.join(OUT, "rain_drop.png"))
+    far = from_ascii([".a", ".b", "b.", "c."], {"a": (225, 236, 242, 110), "b": (210, 228, 238, 170), "c": (195, 218, 232, 100)})
+    Image.fromarray(far, "RGBA").save(os.path.join(OUT, "rain_drop_far.png"))
+    # ground splash (4 frames, 7x4)
+    fr = []
+    for i in range(4):
+        cv = Canvas(7, 4)
+        if i == 0:
+            cv.pixel(3, 3, (225, 238, 245, 200))
+        elif i == 1:
+            for x, y in ((2, 2), (4, 2), (3, 3)):
+                cv.pixel(x, y, (220, 235, 245, 180))
+        elif i == 2:
+            for x, y in ((1, 1), (5, 1), (2, 3), (4, 3)):
+                cv.pixel(x, y, (210, 230, 240, 140))
+        else:
+            for x, y in ((0, 1), (6, 1)):
+                cv.pixel(x, y, (200, 225, 235, 80))
+        fr.append(cv.px)
+    save_sheet(fr, os.path.join(OUT, "rain_splash.png"))
+    # rainbow arc (dithered bands, soft ends)
+    RW, RH = 440, 170
+    cv = Canvas(RW, RH)
+    xs, ys = grid(RW, RH)
+    cx, cy, r0 = RW / 2, RH + 40, 200.0
+    d = np.sqrt((xs - cx) ** 2 + ((ys - cy) * 1.0) ** 2)
+    bands = [(214, 92, 92), (232, 152, 84), (238, 214, 110), (130, 196, 120), (110, 160, 214), (140, 110, 190)]
+    bw = 3.4
+    end_fade = np.clip(1.0 - np.abs(xs - cx) / (RW / 2), 0, 1) ** 0.6
+    bay = bayer(RW, RH) + 0.5
+    for i, col in enumerate(bands):
+        m = (d >= r0 + i * bw) & (d < r0 + (i + 1) * bw)
+        a = end_fade * 0.85
+        keep = m & (a > bay * 0.9)
+        cv.put_color(keep, col + (int(255 * 0.75),))
+    cv.save(os.path.join(OUT, "rainbow.png"))
     print("effects done")
 
 

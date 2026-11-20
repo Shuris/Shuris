@@ -24,6 +24,10 @@ GameData="*res://scripts/autoload/GameData.gd"
 GameState="*res://scripts/autoload/GameState.gd"
 AudioManager="*res://scripts/autoload/AudioManager.gd"
 SaveSystem="*res://scripts/autoload/SaveSystem.gd"
+Clock="*res://scripts/autoload/Clock.gd"
+Weather="*res://scripts/autoload/Weather.gd"
+NatureLog="*res://scripts/autoload/NatureLog.gd"
+
 
 [display]
 
@@ -57,3 +61,34 @@ textures/canvas_textures/default_texture_filter=0
 2d/snap/snap_2d_vertices_to_pixel=true
 environment/defaults/default_clear_color=Color(0.0470588, 0.0941176, 0.12549, 1)
 textures/vram_compression/import_etc2_astc=true
+
+[shader_globals]
+
+season_autumn={
+"type": "float",
+"value": 0.0
+}
+season_bare={
+"type": "float",
+"value": 0.0
+}
+season_winter={
+"type": "float",
+"value": 0.0
+}
+season_bloom={
+"type": "float",
+"value": 0.0
+}
+season_lush={
+"type": "float",
+"value": 0.0
+}
+world_wind={
+"type": "float",
+"value": 0.25
+}
+season_noise={
+"type": "sampler2D",
+"value": "res://assets/sprites/effects/noise_rgba.png"
+}
