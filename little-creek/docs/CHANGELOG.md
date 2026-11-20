@@ -1,5 +1,79 @@
 # Changelog
 
+## v0.4.0 — Correções visuais, distribuição inteligente e coelhos
+
+### Copas das árvores sem buracos
+- **Causa**: as copas eram feitas só de "tufos" de folhas sobrepostos; entre
+  tufos vizinhos sobravam pixels transparentes (até 12 px fechados, além de
+  recortes abertos na borda). No inverno, o shader de estação ainda apagava
+  tufos inteiros no meio da copa.
+- **Correção na geração** (`pixlib.foliage_cluster`): depois dos tufos, os
+  vãos internos recebem folhagem sombreada de profundidade (fechamento
+  morfológico só dentro da silhueta, que continua a mesma); uma rede de
+  segurança (`fill_enclosed_holes`) preenche qualquer pixel transparente
+  totalmente cercado em árvores, arbustos, samambaias, copas do fundo e
+  folhagem do primeiro plano. Medição: 0 pixels transparentes fechados em
+  todos os 16 sprites de folhagem (antes: até 84 px por sprite).
+- **Correção no shader**: o raleamento de outono/inverno só remove folhas da
+  franja externa da copa; no interior as folhas escurecem (efeito de copa rala
+  sem buracos).
+
+### Distribuição inteligente
+- `AutoPlacer` reescrito: o terreno é dividido em 18 regiões e cada uma gera
+  candidatos (amostragem estratificada, não só aleatória). Regras rígidas:
+  zona válida, **pegada inteira fora das estradas**, sem colisão, distância
+  mínima por tipo. Regras por categoria: grama espalhada por regiões pouco
+  usadas; flores em pequenos grupos de 2–3 em regiões diferentes; arbustos em
+  grupos de tamanho variado, sem fechar passagens; árvores espaçadas, no fundo
+  e nas laterais, fora do corredor de visão do riacho e da ponte; pedras nas
+  margens; plantas aquáticas espaçadas na água calma.
+- Teste com todas as compras até o limite: flores em ≥4 regiões (máx. 4 por
+  região), grama em ≥7 regiões (máx. 3), arbustos em ≥3 grupos, árvores a ≥54
+  px uma da outra, nenhuma sobreposição.
+- Posições continuam salvas e idênticas após fechar e abrir (testado).
+
+### Estradas protegidas
+- Máscara de estrada com margem de segurança de 5 px, incluindo o vão da
+  ponte. Cada elemento verifica 25 pontos: elipse da base e a faixa visual do
+  sprite (estruturas 70% da altura, plantas e pedras 60%, árvores o tronco).
+  Vale para todos os itens, atuais e futuros.
+
+### Ponte
+- Desenhada em coordenadas do mundo a partir das margens: começa exatamente no
+  fim da trilha oeste e termina exatamente no início da trilha leste (mesmos
+  pontos), com tabuleiro da mesma largura da estrada naquela profundidade,
+  pilares de pedra nas margens, corrimão de trás e da frente. As pontas das
+  trilhas são cortadas retas no tabuleiro. O caminho dos visitantes vem do
+  próprio desenho.
+
+### Coelhos
+- Coelho-do-mato em três pelagens (marrom, cinza, branco com manchas
+  marrons), feito no mesmo esqueleto anatômico: parado, orelhas, alerta,
+  comendo, descansando e salto de 4 quadros, nas duas direções.
+- Comportamento: sai de baixo de um arbusto, observa, pula em séries curtas
+  com pausas, come touceiras de grama (que balançam), descansa perto de
+  árvores e arbustos, esconde-se atrás dos arbustos, foge para o arbusto mais
+  próximo quando tocado, com visitantes perto ou com a raposa por perto. Nunca
+  atravessa o riacho nem para sobre estradas ou água.
+- Aparece mais ao amanhecer e entardecer, mais na primavera, menos no inverno,
+  nunca na chuva forte ou com visitantes; no máximo 2. Exige vitalidade 40%,
+  arbustos e grama. No diário de biodiversidade.
+
+### Saves antigos
+- Elementos de saves anteriores (ou do cenário inicial) que encostem numa
+  estrada são movidos uma única vez para o ponto válido mais próximo; a nova
+  posição é salva e não muda mais.
+
+### Testes
+- Autoteste: 60 verificações (passou em duas rodadas seguidas com sorteios
+  diferentes). Não testado em aparelho físico; áudio continua sem escuta humana.
+
+### Animais
+- Pontos de parada de animais (raposa/lobo-guará, coelhos) validados: terreno
+  válido, fora das estradas e da água, longe da base de árvores, pedras e
+  construções.
+
+
 ## v0.3.0 — Ecossistema vivo: clima, estações e imersão
 
 ### Tempo e atmosfera

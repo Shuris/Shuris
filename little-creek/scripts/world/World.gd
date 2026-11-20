@@ -317,10 +317,55 @@ func _build_particles() -> void:
 
 # ------------------------------------------------------------------ state sync
 ## Rebuild every placed item from GameState (after loading a save).
+## Roads must stay free: elements from older saves (or initial scenery that
+## predates a trail) that touch a road are moved once to the nearest valid
+## spot. The fixed position is stored, so it never changes again.
+func migrate_off_roads() -> int:
+	var moved := 0
+	for d in GameState.placed:
+		var id: String = d["id"]
+		if id == "bridge" or GameData.items[id].get("zone", "ground") == "fixed":
+			continue
+		var p := Vector2(float(d["x"]), float(d["y"]))
+		if footprint_clear(id, p) and zone_ok(GameData.items[id].get("zone", "ground"), p):
+			continue
+		var found := false
+		for ring in range(1, 30):
+			for k in 16:
+				var a := TAU * k / 16.0
+				var q := (p + Vector2(cos(a), sin(a) * 0.55) * ring * 4.0).round()
+				if zone_ok(GameData.items[id].get("zone", "ground"), q) and footprint_clear(id, q) \
+						and _clear_of_others(id, q, int(d["uid"])):
+					d["x"] = q.x
+					d["y"] = q.y
+					found = true
+					break
+			if found:
+				break
+		if found:
+			moved += 1
+	if moved > 0:
+		SaveSystem.request_save()
+	return moved
+
+
+func _clear_of_others(id: String, q: Vector2, uid: int) -> bool:
+	var r := float(GameData.items[id].get("footprint", 8.0))
+	for d in GameState.placed:
+		if int(d["uid"]) == uid or d["id"] == "bridge":
+			continue
+		var o := Vector2(float(d["x"]), float(d["y"]))
+		var r2 := float(GameData.items[d["id"]].get("footprint", 8.0))
+		if Vector2(o.x - q.x, (o.y - q.y) * 1.8).length() < (r + r2) * 0.8:
+			return false
+	return true
+
+
 func rebuild_items() -> void:
 	for n in items.values():
 		n.queue_free()
 	items.clear()
+	migrate_off_roads()
 	if bridge_front:
 		bridge_front.queue_free()
 		bridge_front = null
@@ -340,14 +385,17 @@ func _spawn_item(d: Dictionary, animate: bool) -> PlacedItem:
 	var n := PlacedItem.new()
 	n.setup(d, noise_tex)
 	if n.id == "bridge":
-		# deck + far rail below the walkers; near rail y-sorted in front of them
-		n.sprite.offset = Vector2(-52, -31)
+		# painted in world coordinates: deck + far rail under the walkers,
+		# near rail y-sorted at the deck's front edge (in front of walkers)
+		var b: Dictionary = GameData.scene["bridge"]
+		n.position = Vector2(float(b["x"]), float(b["y"]))
+		n.sprite.offset = -n.position
 		bridge_layer.add_child(n)
 		bridge_front = Sprite2D.new()
 		bridge_front.texture = load(ENV + "bridge_front.png")
 		bridge_front.centered = false
-		bridge_front.position = n.position + Vector2(0, 22)
-		bridge_front.offset = Vector2(-52, -31 - 22)
+		bridge_front.position = Vector2(float(b["x"]), float(b["y"]) + float(b["half_depth"]) + 1.0)
+		bridge_front.offset = -bridge_front.position
 		entities.add_child(bridge_front)
 		items[n.uid] = n
 		if animate:
@@ -436,10 +484,6 @@ func zone_ok(zone: String, p: Vector2) -> bool:
 	if x < 0 or y < 0 or x >= W or y >= H:
 		return false
 	var c := zones.get_pixel(x, y)
-	# the bridge site is always reserved (it can be built later)
-	var b: Dictionary = GameData.scene.get("bridge", {})
-	if not b.is_empty() and absf(p.x - float(b["x"])) < 60.0 and p.y > float(b["y"]) - 34.0 and p.y < float(b["y"]) + 34.0:
-		return false
 	if zone == "water":
 		return c.g > 0.5
 	if c.r < 0.5:
@@ -490,6 +534,8 @@ func placement_error(id: String, p: Vector2) -> String:
 	if not zone_ok(zone, p):
 		return "Aqui não: precisa ser dentro d'água calma." if zone == "water" \
 			else "Aqui não: escolha terra firme, longe da água e das pedras."
+	if not footprint_clear(id, p):
+		return "Aqui não: o elemento ocuparia a estrada."
 	var r := float(def.get("footprint", 8.0))
 	for n in items.values():
 		var d: float = Vector2((n.position - p).x, (n.position - p).y * 1.8).length()
@@ -499,9 +545,82 @@ func placement_error(id: String, p: Vector2) -> String:
 	return ""
 
 
+## True when the WHOLE ground area of the element (base ellipse plus the
+## bottom band of its sprite) stays off the roads (zones.b = road + margin,
+## which also covers the bridge span) and on valid ground/water.
+func footprint_clear(id: String, p: Vector2) -> bool:
+	var def: Dictionary = GameData.items[id]
+	if def.get("zone", "ground") == "fixed":
+		return true
+	var r := float(def.get("footprint", 8.0))
+	var tex := SpriteLib.tex(GameData.item_sprite_path(id, 0))
+	var hw := maxf(r, tex.get_width() * 0.42)
+	# vertical extent that visually sits on the ground: whole low props and
+	# structures (bench, deck...), only the trunk base for trees
+	var cat: String = def.get("category", "")
+	var band := minf(tex.get_height() * 0.35, 14.0)
+	if cat == "structures":
+		band = tex.get_height() * 0.7
+	elif cat in ["plants", "rocks"]:
+		band = tex.get_height() * 0.6
+	elif cat == "trees":
+		hw = r
+	var water: bool = def.get("zone", "ground") == "water"
+	for i in 25:
+		var q: Vector2
+		if i == 0:
+			q = p
+		elif i <= 8:
+			var a := TAU * i / 8.0
+			q = p + Vector2(cos(a) * r, sin(a) * r * 0.45)
+		else:
+			# bottom band of the sprite (what visually sits on the ground)
+			var k := i - 9
+			q = p + Vector2(lerpf(-hw, hw, (k % 4) / 3.0), -band * float(k / 4) / 3.0)
+		var x := int(q.x)
+		var y := int(q.y)
+		if x < 0 or y < 0 or x >= W or y >= H:
+			return false
+		var c := zones.get_pixel(x, y)
+		if c.b > 0.5:
+			return false
+		if not water and i <= 8 and _water_at(x, y):
+			return false
+	return true
+
+
+## Walkable ground for animals next to an element (ignores the elements).
+func walkable(p: Vector2) -> bool:
+	var x := int(p.x)
+	var y := int(p.y)
+	if x < 4 or y < 4 or x >= W - 4 or y >= H - 4:
+		return false
+	var c := zones.get_pixel(x, y)
+	return c.b < 0.5 and not _water_at(x, y) and y > 200
+
+
+## Ground spot for an animal: valid ground, off roads, not inside an element.
+func animal_spot_ok(p: Vector2, clearance: float = 8.0) -> bool:
+	var x := int(p.x)
+	var y := int(p.y)
+	if x < 4 or y < 4 or x >= W - 4 or y >= H - 4:
+		return false
+	var c := zones.get_pixel(x, y)
+	if c.r < 0.5 or c.b > 0.5:
+		return false
+	for n in items.values():
+		if n.id == "bridge":
+			continue
+		if Vector2(n.position.x - p.x, (n.position.y - p.y) * 1.8).length() < n.footprint() + clearance:
+			return false
+	return true
+
+
 func item_at(p: Vector2) -> PlacedItem:
 	var best: PlacedItem = null
 	for n in items.values():
+		if n.id == "bridge":
+			continue
 		if n.hit_test(p) and (best == null or n.position.y > best.position.y):
 			best = n
 	return best

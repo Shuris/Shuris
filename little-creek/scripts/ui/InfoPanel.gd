@@ -51,7 +51,7 @@ func _ready() -> void:
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help.custom_minimum_size = Vector2(380, 0)
 	scroll.add_child(help)
-	var cred := UITheme.label("Little Creek · protótipo 0.3 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
+	var cred := UITheme.label("Little Creek · protótipo 0.4 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
 	mid.add_child(cred)
 
 

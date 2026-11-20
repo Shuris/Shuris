@@ -47,14 +47,9 @@ static func _pts(key: String) -> Array:
 
 ## Points along the arched deck (walkers follow the arch, never the water).
 static func bridge_points() -> Array:
-	var b: Dictionary = GameData.scene["bridge"]
 	var out: Array = []
-	var x0 := float(b["x"]) - 46.0
-	var x1 := float(b["x"]) + 46.0
-	for i in 13:
-		var t := i / 12.0
-		var x := lerpf(x0, x1, t)
-		out.append(Vector2(x, float(b["y"]) + 3.0 - 10.0 * sin(PI * t)))
+	for p in GameData.scene["bridge"]["path"]:
+		out.append(Vector2(float(p["x"]), float(p["y"])))
 	return out
 
 
@@ -65,14 +60,16 @@ func build_route() -> void:
 	path = []
 	crosses = GameState.has_bridge() and randf() < 0.65
 	if crosses:
+		# west trail -> spur (ends exactly at the bridge's west end) -> deck
+		# (west end .. east end) -> east trail (starts at the east end)
 		var west: Array = trail.slice(0, VIEW_INDEX + 1)
-		var spur: Array = _pts("trail_spur").slice(1)
+		var spur: Array = _pts("trail_spur").slice(1, -1)
 		var br := bridge_points()
 		var east: Array = _pts("trail_east")
 		east.append(Vector2(World.W + 24.0, east[-1].y))
 		path = west + spur + br + east.slice(1)
 		view_idx = -1
-		bridge_mid_idx = west.size() + spur.size() + 6
+		bridge_mid_idx = west.size() + spur.size() + br.size() / 2
 		if randf() < 0.5:
 			path.reverse()
 			bridge_mid_idx = path.size() - 1 - bridge_mid_idx

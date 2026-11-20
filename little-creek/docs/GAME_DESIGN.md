@@ -111,3 +111,19 @@ bancos/comedouros/mirante e ponte aumentam um pouco). Um grupo por vez.
 Grama 14, flores 12, pedra pequena 8, pedra grande 5, samambaia 10, arbusto 9,
 tronco 3, plantas aquáticas 6, árvore jovem 7, árvore frondosa 4, banco 2,
 comedouro 2, mirante 1, ponte 1.
+
+## v0.4 — Distribuição e coelhos
+
+### Posicionamento automático
+Regiões: grade 6×3 sobre o terreno construível (x 96–704, y 206–350), 14
+candidatos por região. Distância mínima ao mesmo tipo (métrica com y×1,8):
+grama 40, flores 18 (dentro do grupo), pedra pequena 28, grande 46, samambaia
+34, arbusto 26, tronco 70, aquática 30, árvore jovem 58, frondosa 84, banco e
+comedouro 90. Grupos: flores 3-2-3-2, arbustos 2-1-3-2. Árvores fora do
+corredor central (x 320–590, y > 244) e a 26 px das trilhas.
+
+### Coelho-do-mato
+Elegível: vitalidade 40%, ≥1 arbusto, ≥2 gramas. Visitas a cada 3–9 h de jogo
+÷ atividade (amanhecer 1,5, dia 0,5, entardecer 1,5, noite 0,3; primavera 1,3,
+inverno 0,5; chuva fraca 0,3, forte 0). Máximo 2 (2 só com ≥4 arbustos e
+vitalidade 60%).

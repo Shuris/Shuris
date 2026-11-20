@@ -666,9 +666,87 @@ TRAIL = [(60, 318), (120, 306), (190, 296), (262, 290), (320, 282), (362, 270),
          (350, 250), (318, 236), (300, 220), (306, 204), (322, 192)]
 # east bank path: from the bridge's east end toward the right forest edge
 # bridge over the calm stretch between the two lower falls (clear of the deer's drinking spot)
-BRIDGE = {"x": 464.0, "y": 263.0, "w": 104, "h": 46, "west": (414.0, 264.0), "east": (516.0, 261.0)}
-TRAIL_EAST = [(516, 261), (560, 256), (606, 252), (654, 249), (706, 248), (760, 248)]
-TRAIL_SPUR = [(362, 270), (390, 268), (414, 264)]  # main trail -> bridge west end
+# The bridge spans the calm stretch at y = BRIDGE_Y. Its exact ends are
+# computed from the banks in build_bridge(); the two trails end exactly there.
+BRIDGE_Y = 258
+BRIDGE = {}
+TRAIL_EAST = []
+TRAIL_SPUR = []
+
+
+def road_half(y):
+    """Half width (x) of a trail at depth y; vertical half = road_half / 2.2."""
+    return 8 + 16 * float(np.clip((y - HORIZON) / 190.0, 0.15, 1.0))
+
+
+def build_bridge(cr):
+    """Fix the bridge geometry from the creek banks and route both trails to
+    its two ends, so the bridge is a seamless continuation of the path."""
+    y = BRIDGE_Y
+    x0 = float(np.floor(cr["left"][y])) - 6.0
+    x1 = float(np.ceil(cr["right"][y])) + 6.0
+    depth = road_half(y) / 2.2  # half thickness of the road at this depth
+    BRIDGE.clear()
+    BRIDGE.update({"x": (x0 + x1) / 2, "y": float(y), "x0": x0, "x1": x1, "half_depth": round(depth, 2),
+                   "arch": 5.0, "west": (x0, float(y)), "east": (x1, float(y))})
+    TRAIL_SPUR[:] = [(362, 270), (380, 266), (x0 - 14, y), (x0, y)]
+    TRAIL_EAST[:] = [(x1, y), (x1 + 14, y), (560, 254), (606, 251), (654, 249), (706, 248), (760, 248)]
+    # walking line over the deck (centre of the planks, following the arch)
+    path = []
+    for i in range(13):
+        t = i / 12.0
+        path.append({"x": round(x0 + (x1 - x0) * t, 1), "y": round(y - BRIDGE["arch"] * math.sin(math.pi * t), 1)})
+    BRIDGE["path"] = path
+
+
+def paint_bridge():
+    """Deck + far rail (below walkers) and near rail (in front of walkers),
+    painted in world coordinates so the ends meet the trails exactly."""
+    back, front = Canvas(W, H), Canvas(W, H)
+    x0, x1, yc = int(BRIDGE["x0"]), int(BRIDGE["x1"]), BRIDGE["y"]
+    hd, arch = BRIDGE["half_depth"], BRIDGE["arch"]
+    rng = R(4242)
+
+    def lift(x):
+        return arch * math.sin(math.pi * (x - x0) / (x1 - x0))
+    # stone abutments where the deck rests on each bank
+    for xe in (x0 + 3, x1 - 3):
+        rock(back, xe, yc + hd + 1, 7, 4, rng, ramp_cols=ROCK, moss=MOSS, moss_amt=0.4, cracks=False,
+             shade_fn=lambda a, b: -0.05)
+    for x in range(x0, x1 + 1):
+        a = lift(x)
+        top = int(round(yc - a - hd))
+        bot = int(round(yc - a + hd))
+        for y in range(top, bot + 1):
+            plank = (x - x0) % 4 == 0
+            t = (y - top) / max(bot - top, 1)
+            v = 0.74 - t * 0.22 - (0.2 if plank else 0.0) + ((x * 7 + y * 3) % 5) * 0.02
+            back.pixel(x, y, WOOD[int(np.clip(v, 0, 0.99) * len(WOOD))])
+        back.pixel(x, top, WOOD[6])
+        for k in range(3):  # side beam (near face)
+            back.pixel(x, bot + 1 + k, BARK_WARM[3 - k])
+    # shadow on the water under the span
+    for x in range(x0 + 6, x1 - 5):
+        for k in range(2):
+            yy = int(round(yc + hd + 5 + k))
+            if back.px[yy, x, 3] == 0:
+                back.px[yy, x] = (10, 22, 28, 90)
+
+    def rail(cv, edge, light):
+        for px_ in list(range(x0, x1 + 1, 11)) + [x1]:
+            ye = int(round(yc - lift(px_) + edge))
+            for y in range(ye - 9, ye + 1):
+                cv.pixel(px_, y, WOOD[3 if light else 2])
+                cv.pixel(px_ + 1, y, WOOD[2 if light else 1])
+        for x in range(x0, x1 + 2):
+            ye = int(round(yc - lift(x) + edge))
+            cv.pixel(x, ye - 9, WOOD[6 if light else 4])
+            cv.pixel(x, ye - 8, WOOD[4 if light else 2])
+            if (x - x0) % 11 not in (0, 1):
+                cv.pixel(x, ye - 4, WOOD[4 if light else 2])
+    rail(back, -hd, False)
+    rail(front, hd, True)
+    return back, front
 
 
 def _dense(path):
@@ -693,6 +771,10 @@ def paint_trail(cr, path=None, seed=601):
     persp = np.clip((ys - HORIZON) / 190.0, 0.15, 1.0)
     half = 8 + 16 * persp
     n = value_noise(W, H, 3, R(602), octaves=2)
+    if path is not None and BRIDGE:
+        # trail ends are cut flat at the bridge ends (no cap over the deck)
+        on_span = (xs > BRIDGE["x0"] + 1) & (xs < BRIDGE["x1"] - 1) & (np.abs(ys - BRIDGE["y"]) < 14)
+        mind = np.where(on_span, 1e9, mind)
     m = (mind < half + (n - 0.5) * 3) & ~cr["mask"]
     v = 0.45 + (n - 0.5) * 0.4 + SUN * 0.3 - (mind / half) * 0.15
     cv.put_ramp(m, v, blend_ramp(EARTH[2:], ROCK[7], 0.35), dither=0.6)
@@ -727,7 +809,11 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
     zones = np.zeros((H, W, 4), np.uint8)
     zones[..., 0] = np.where(ground, 255, 0)
     zones[..., 1] = np.where(water_ok, 255, 0)
-    zones[..., 2] = np.where(ndimage.binary_dilation(trailmask, iterations=2), 255, 0)
+    # roads + safety margin (5 px) + the bridge span: protected from any element
+    road = ndimage.binary_dilation(trailmask, iterations=5)
+    if BRIDGE:
+        road |= (xs >= BRIDGE["x0"] - 6) & (xs <= BRIDGE["x1"] + 6) & (np.abs(ys - BRIDGE["y"]) <= BRIDGE["half_depth"] + 9)
+    zones[..., 2] = np.where(road, 255, 0)
     zones[..., 3] = 255
     # deer drinking spots: the whole body (in perspective) must stand on dry
     # ground while the muzzle reaches the water. Deer sprite: ~32 px long,
@@ -776,7 +862,7 @@ def scene_points(cr, rmask, trailmask, frame_canvases):
         "trail": [{"x": float(x), "y": float(y)} for x, y in TRAIL],
         "trail_spur": [{"x": float(x), "y": float(y)} for x, y in TRAIL_SPUR],
         "trail_east": [{"x": float(x), "y": float(y)} for x, y in TRAIL_EAST],
-        "bridge": BRIDGE,
+        "bridge": {k: v for k, v in BRIDGE.items()},
         "falls": [{"lip": l, "base": b, "x": float(cr["cx"][b]), "hw": float(cr["hw"][b])}
                   for l, b, s in FALLS],
         "creek_rows": [{"y": int(y), "l": float(cr["left"][y]), "r": float(cr["right"][y])}
@@ -864,17 +950,26 @@ if __name__ == "__main__":
     meta[..., 1] = np.maximum(meta[..., 1], np.where(ring, 95, 0)).astype(np.uint8)
     save_png(flow, os.path.join(SPR, "water", "water_flow.png"))
     save_png(meta, os.path.join(SPR, "water", "water_meta.png"))
-    paint_mid_trees().save(os.path.join(SPR, "environment", "mid_trees.png"))
+    mt = paint_mid_trees()
+    fill_enclosed_holes(mt)
+    mt.save(os.path.join(SPR, "environment", "mid_trees.png"))
     frames = []
     for i, (name, x, by, w) in enumerate(FRAME_TREES):
         cv, o = paint_frame_tree(x, by, w, 700 + i)
+        fill_enclosed_holes(cv)
         cv.save(os.path.join(SPR, "environment", name + ".png"))
         frames.append((cv, o))
-    paint_fg_top().save(os.path.join(SPR, "environment", "fg_top.png"))
+    ft = paint_fg_top()
+    fill_enclosed_holes(ft)
+    ft.save(os.path.join(SPR, "environment", "fg_top.png"))
     paint_fg_bottom(False).save(os.path.join(SPR, "environment", "fg_bottom_dry.png"))
     paint_fg_bottom(True).save(os.path.join(SPR, "environment", "fg_bottom_lush.png"))
     tr, tmask = paint_trail(cr)
     tr.save(os.path.join(SPR, "environment", "trail.png"))
+    build_bridge(cr)
+    bb, bf = paint_bridge()
+    bb.save(os.path.join(SPR, "environment", "bridge_0.png"))
+    bf.save(os.path.join(SPR, "environment", "bridge_front.png"))
     tr2, tmask2 = paint_trail(cr, TRAIL_SPUR, 611)
     tr3, tmask3 = paint_trail(cr, TRAIL_EAST, 612)
     tr2.blend_over(tr3)

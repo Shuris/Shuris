@@ -1,10 +1,14 @@
-# Little Creek — protótipo mobile v0.3.0 (Godot 4.7)
+# Little Creek — protótipo mobile v0.4.0 (Godot 4.7)
 
 Jogo de gerenciamento de ecossistema (semi-clicker + idle + simulação de
 natureza) em pixel art de alta definição. Você recebe um riacho abandonado e o
 transforma, aos poucos, num refúgio natural cheio de vida.
 
 ![Estágio 4](docs/screenshots/03_estagio4.png)
+
+**Novidades da v0.4.0**: copas sem buracos, distribuição inteligente dos elementos, estradas sempre livres, ponte encaixada nas duas trilhas e coelhos.
+
+![Distribuição v0.4](docs/screenshots/v0.4/01_distribuicao_completa.png)
 
 **Novidades da v0.3.0** (detalhes em [docs/CHANGELOG.md](docs/CHANGELOG.md)): ciclo de dia e
 noite, quatro estações graduais (30 dias de jogo cada), chuva fraca e forte com poças e arco-íris,
@@ -61,7 +65,7 @@ avanço offline limitado, compra automática sem sobreposição, limites, ponte 
 rotas que nunca cruzam a água sem ponte, rotinas por horário/estação/clima,
 frequência de visitantes, diário, ninhos, acontecimentos, vagalumes, folhas
 descendo a correnteza, música e ambiente por horário/clima e modo fotografia
-— **44/44 passando**.
+— e, na v0.4, compras até o limite sem sobreposição nem elementos nas estradas, distribuição por regiões, posições idênticas após recarregar, ponte alinhada às duas trilhas sem vãos e o comportamento dos coelhos — **60/60 passando**.
 
 > Não foi possível testar em um aparelho físico neste ambiente (sem
 > dispositivo conectado). A renderização foi verificada com OpenGL por

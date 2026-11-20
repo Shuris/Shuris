@@ -12,6 +12,7 @@ var _cooldowns: Dictionary = {}
 var cfg: Dictionary = {}
 var next_deer_h := -1.0
 var next_fox_h := -1.0
+var next_rabbit_h := -1.0
 var _owl_rolled_night := -1
 
 
@@ -45,6 +46,7 @@ func _process(delta: float) -> void:
 	_handle_deer()
 	_handle_owl()
 	_handle_fox()
+	_handle_rabbit()
 
 
 func _alive_total() -> int:
@@ -148,6 +150,28 @@ func _handle_fox() -> void:
 		return
 	spawn_wanderer("fox")
 	next_fox_h = now + _interval(cfg.get("fox_interval_hours", [10.0, 30.0]), act)
+
+
+func _handle_rabbit() -> void:
+	var now := Clock.total_hours
+	if next_rabbit_h < 0.0:
+		next_rabbit_h = now + randf_range(0.5, 3.0)
+	if not GameState.eligible_animals.has("rabbit") or now < next_rabbit_h:
+		return
+	var act := EcosystemRules.activity("rabbit")
+	var cap := mini(EcosystemRules.animal_target("rabbit", GameState.ecosystem_snapshot()), int(cfg.get("rabbit_max", 2)))
+	if act < 0.4 or _alive("rabbit").size() >= cap or not get_tree().get_nodes_in_group("visitors").is_empty():
+		next_rabbit_h = now + 0.5
+		return
+	spawn_rabbit()
+	next_rabbit_h = now + _interval(cfg.get("rabbit_interval_hours", [3.0, 9.0]), act)
+
+
+func spawn_rabbit(coat: int = -1) -> Rabbit:
+	var r := Rabbit.new()
+	world.entities.add_child(r)
+	r.setup(world, coat)
+	return r
 
 
 func spawn_wanderer(kind: String) -> Wanderer:

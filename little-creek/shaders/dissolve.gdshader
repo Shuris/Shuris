@@ -27,6 +27,6 @@ void fragment() {
 	if (abs(n - amt) < 0.012 && c.a > 0.0 && amount > 0.01 && amount < 0.99) {
 		c.rgb = mix(c.rgb, vec3(0.86, 0.9, 0.55), edge_glow);
 	}
-	c = apply_season(c, wpos);
+	c = apply_season(c, wpos, 0.0);
 	COLOR = c * COLOR;
 }

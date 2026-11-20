@@ -22,7 +22,8 @@ float s_noise(vec2 q) {
 	return mix(mix(a, b, f.x), mix(c2, d, f.x), f.y);
 }
 
-vec4 apply_season(vec4 c, vec2 wpx) {
+// edge: 1 when the pixel is near the canopy silhouette (computed by the caller)
+vec4 apply_season(vec4 c, vec2 wpx, float edge) {
 	if (c.a < 0.01 || season_k <= 0.0) {
 		return c;
 	}
@@ -58,10 +59,15 @@ vec4 apply_season(vec4 c, vec2 wpx) {
 	vec3 dull = mix(vec3(lum) * vec3(0.92, 0.97, 1.06), vec3(lum * 1.02, lum * 0.94, lum * 0.78), 0.45);
 	c.rgb = mix(c.rgb, dull, season_winter * isg * 0.75 * season_k);
 	if (canopy > 0.5) {
-		// thinning crowns (leaf fall) in clumps of leaves
+		// thinning crowns (leaf fall): only the outer fringe loses leaves, the
+		// interior stays filled but darker (deeper, sparser look) - no holes
 		float clump = s_noise(p / 5.0 + vec2(41.0, 13.0));
 		if (clump < season_bare * 0.8 * isg) {
-			c.a = 0.0;
+			if (edge > 0.5) {
+				c.a = 0.0;
+			} else {
+				c.rgb *= 0.72;
+			}
 		}
 		// spring blossoms: scattered dots, grouped on some branches
 		float h = fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
@@ -71,4 +77,14 @@ vec4 apply_season(vec4 c, vec2 wpx) {
 		}
 	}
 	return c;
+}
+
+// 1 if a transparent pixel lies within 2 px (canopy fringe)
+float fringe(sampler2D tex, vec2 uv, vec2 tps) {
+	float e = 0.0;
+	e += step(texture(tex, uv + vec2(2.0, 0.0) * tps).a, 0.01);
+	e += step(texture(tex, uv + vec2(-2.0, 0.0) * tps).a, 0.01);
+	e += step(texture(tex, uv + vec2(0.0, 2.0) * tps).a, 0.01);
+	e += step(texture(tex, uv + vec2(0.0, -2.0) * tps).a, 0.01);
+	return min(e, 1.0);
 }

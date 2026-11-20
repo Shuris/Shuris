@@ -1,13 +1,212 @@
 {
-  "_doc": "Atividade relativa por período do dia, estação e clima (multiplica a população-alvo). 0 = ausente.",
-  "sabia":     {"periods": {"dawn": 1.5, "day": 1.0, "dusk": 0.7, "night": 0.0}, "seasons": {"spring": 1.3, "summer": 1.1, "autumn": 0.9, "winter": 0.6}, "rain": {"clear": 1.0, "light": 0.5, "heavy": 0.0}},
-  "saira":     {"periods": {"dawn": 1.3, "day": 1.0, "dusk": 0.5, "night": 0.0}, "seasons": {"spring": 1.2, "summer": 1.2, "autumn": 0.8, "winter": 0.5}, "rain": {"clear": 1.0, "light": 0.4, "heavy": 0.0}},
-  "butterfly": {"periods": {"dawn": 0.2, "day": 1.0, "dusk": 0.3, "night": 0.0}, "seasons": {"spring": 1.4, "summer": 1.3, "autumn": 0.6, "winter": 0.15}, "rain": {"clear": 1.0, "light": 0.1, "heavy": 0.0}},
-  "dragonfly": {"periods": {"dawn": 0.3, "day": 1.0, "dusk": 0.6, "night": 0.0}, "seasons": {"spring": 1.0, "summer": 1.4, "autumn": 0.7, "winter": 0.0}, "rain": {"clear": 1.0, "light": 0.3, "heavy": 0.0}},
-  "fish":      {"periods": {"dawn": 1.0, "day": 1.0, "dusk": 1.1, "night": 0.6}, "seasons": {"spring": 1.0, "summer": 1.1, "autumn": 1.0, "winter": 0.7}, "rain": {"clear": 1.0, "light": 1.0, "heavy": 0.4}},
-  "duck":      {"periods": {"dawn": 1.0, "day": 1.0, "dusk": 0.8, "night": 0.0}, "seasons": {"spring": 1.2, "summer": 1.0, "autumn": 1.0, "winter": 0.6}, "rain": {"clear": 1.0, "light": 1.0, "heavy": 0.3}},
-  "owl":       {"periods": {"dawn": 0.3, "day": 0.0, "dusk": 0.5, "night": 1.0}, "seasons": {"spring": 1.0, "summer": 1.0, "autumn": 1.1, "winter": 1.0}, "rain": {"clear": 1.0, "light": 0.5, "heavy": 0.0}},
-  "deer":      {"periods": {"dawn": 1.6, "day": 0.35, "dusk": 1.5, "night": 0.2}, "seasons": {"spring": 1.1, "summer": 1.0, "autumn": 1.0, "winter": 0.6}, "rain": {"clear": 1.0, "light": 0.6, "heavy": 0.1}},
-  "fox":       {"periods": {"dawn": 1.0, "day": 0.15, "dusk": 1.2, "night": 1.0}, "seasons": {"spring": 1.0, "summer": 0.9, "autumn": 1.1, "winter": 1.2}, "rain": {"clear": 1.0, "light": 0.4, "heavy": 0.0}},
-  "maned_wolf":{"periods": {"dawn": 0.6, "day": 0.0, "dusk": 1.0, "night": 1.0}, "seasons": {"spring": 1.0, "summer": 1.0, "autumn": 1.0, "winter": 1.0}, "rain": {"clear": 1.0, "light": 0.3, "heavy": 0.0}}
+ "_doc": "Atividade relativa por período do dia, estação e clima (multiplica a população-alvo). 0 = ausente.",
+ "sabia": {
+  "periods": {
+   "dawn": 1.5,
+   "day": 1.0,
+   "dusk": 0.7,
+   "night": 0.0
+  },
+  "seasons": {
+   "spring": 1.3,
+   "summer": 1.1,
+   "autumn": 0.9,
+   "winter": 0.6
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.5,
+   "heavy": 0.0
+  }
+ },
+ "saira": {
+  "periods": {
+   "dawn": 1.3,
+   "day": 1.0,
+   "dusk": 0.5,
+   "night": 0.0
+  },
+  "seasons": {
+   "spring": 1.2,
+   "summer": 1.2,
+   "autumn": 0.8,
+   "winter": 0.5
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.4,
+   "heavy": 0.0
+  }
+ },
+ "butterfly": {
+  "periods": {
+   "dawn": 0.2,
+   "day": 1.0,
+   "dusk": 0.3,
+   "night": 0.0
+  },
+  "seasons": {
+   "spring": 1.4,
+   "summer": 1.3,
+   "autumn": 0.6,
+   "winter": 0.15
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.1,
+   "heavy": 0.0
+  }
+ },
+ "dragonfly": {
+  "periods": {
+   "dawn": 0.3,
+   "day": 1.0,
+   "dusk": 0.6,
+   "night": 0.0
+  },
+  "seasons": {
+   "spring": 1.0,
+   "summer": 1.4,
+   "autumn": 0.7,
+   "winter": 0.0
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.3,
+   "heavy": 0.0
+  }
+ },
+ "fish": {
+  "periods": {
+   "dawn": 1.0,
+   "day": 1.0,
+   "dusk": 1.1,
+   "night": 0.6
+  },
+  "seasons": {
+   "spring": 1.0,
+   "summer": 1.1,
+   "autumn": 1.0,
+   "winter": 0.7
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 1.0,
+   "heavy": 0.4
+  }
+ },
+ "duck": {
+  "periods": {
+   "dawn": 1.0,
+   "day": 1.0,
+   "dusk": 0.8,
+   "night": 0.0
+  },
+  "seasons": {
+   "spring": 1.2,
+   "summer": 1.0,
+   "autumn": 1.0,
+   "winter": 0.6
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 1.0,
+   "heavy": 0.3
+  }
+ },
+ "owl": {
+  "periods": {
+   "dawn": 0.3,
+   "day": 0.0,
+   "dusk": 0.5,
+   "night": 1.0
+  },
+  "seasons": {
+   "spring": 1.0,
+   "summer": 1.0,
+   "autumn": 1.1,
+   "winter": 1.0
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.5,
+   "heavy": 0.0
+  }
+ },
+ "deer": {
+  "periods": {
+   "dawn": 1.6,
+   "day": 0.35,
+   "dusk": 1.5,
+   "night": 0.2
+  },
+  "seasons": {
+   "spring": 1.1,
+   "summer": 1.0,
+   "autumn": 1.0,
+   "winter": 0.6
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.6,
+   "heavy": 0.1
+  }
+ },
+ "fox": {
+  "periods": {
+   "dawn": 1.0,
+   "day": 0.15,
+   "dusk": 1.2,
+   "night": 1.0
+  },
+  "seasons": {
+   "spring": 1.0,
+   "summer": 0.9,
+   "autumn": 1.1,
+   "winter": 1.2
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.4,
+   "heavy": 0.0
+  }
+ },
+ "maned_wolf": {
+  "periods": {
+   "dawn": 0.6,
+   "day": 0.0,
+   "dusk": 1.0,
+   "night": 1.0
+  },
+  "seasons": {
+   "spring": 1.0,
+   "summer": 1.0,
+   "autumn": 1.0,
+   "winter": 1.0
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.3,
+   "heavy": 0.0
+  }
+ },
+ "rabbit": {
+  "periods": {
+   "dawn": 1.5,
+   "day": 0.5,
+   "dusk": 1.5,
+   "night": 0.3
+  },
+  "seasons": {
+   "spring": 1.3,
+   "summer": 1.0,
+   "autumn": 0.9,
+   "winter": 0.5
+  },
+  "rain": {
+   "clear": 1.0,
+   "light": 0.3,
+   "heavy": 0.0
+  }
+ }
 }

@@ -12,6 +12,6 @@ void vertex() {
 void fragment() {
 	vec4 c = texture(TEXTURE, UV);
 	vec2 ts = 1.0 / TEXTURE_PIXEL_SIZE;
-	c = apply_season(c, wpos - UV * ts + floor(UV * ts));
+	c = apply_season(c, wpos - UV * ts + floor(UV * ts), fringe(TEXTURE, UV, TEXTURE_PIXEL_SIZE));
 	COLOR = c * COLOR;
 }

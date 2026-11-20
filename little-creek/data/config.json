@@ -34,7 +34,9 @@
     "max_total": 12,
     "deer_interval_hours": [5.0, 14.0],
     "owl_chance_night": 0.6,
-    "fox_interval_hours": [10.0, 30.0]
+    "fox_interval_hours": [10.0, 30.0],
+    "rabbit_interval_hours": [3.0, 9.0],
+    "rabbit_max": 2
   },
   "visitors": {
     "min_interval_s": 160.0,

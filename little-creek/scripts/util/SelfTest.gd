@@ -221,9 +221,12 @@ func _run() -> void:
 			crossed = true
 			# the only water-crossing segment must be over the bridge span
 			var b: Dictionary = GameData.scene["bridge"]
-			for q in probe.path:
-				if q.x > 0 and q.x < World.W and world.is_water(q) and absf(q.x - float(b["x"])) > 50.0:
-					on_deck = false
+			for pi in probe.path.size() - 1:
+				for k in 10:
+					var q: Vector2 = (probe.path[pi] as Vector2).lerp(probe.path[pi + 1], k / 10.0)
+					if q.x > 0 and q.x < World.W and world.is_water(q) and (q.x < float(b["x0"]) or q.x > float(b["x1"])
+							or absf(q.y - float(b["y"])) > float(b["half_depth"]) + float(b["arch"])):
+						on_deck = false
 	_check("with bridge: visitors cross only over the bridge", crossed and on_deck)
 	probe.queue_free()
 
@@ -324,7 +327,7 @@ func _run() -> void:
 		await get_tree().process_frame
 		if not is_instance_valid(leaf):
 			break
-		if L["state"] == "float" and not world.is_water(leaf.position):
+		if L["state"] == "float" and leaf.position.y < World.H - 1 and not world.is_water(leaf.position):
 			stayed_wet = false
 	_check("floating leaf drifts downstream on the water", is_instance_valid(leaf) == false or (leaf.position.y > y0 + 1.0 and stayed_wet),
 		"%.1f -> %.1f state %s" % [y0, leaf.position.y if is_instance_valid(leaf) else -1.0, L["state"]])
@@ -366,6 +369,163 @@ func _run() -> void:
 	main.exit_photo_mode()
 	await _wait(3)
 	_check("leaving photo mode restores view and HUD", main.hud.visible and is_equal_approx(main.view_scale(), k1))
+
+	# 11) v0.4 distribution: many consecutive purchases (all items to their limits)
+	for c in get_tree().get_nodes_in_group("creatures"):
+		c.queue_free()
+	gs.reset_state()
+	world.rebuild_items()
+	await _wait(2)
+	gs.stage = 4
+	gs.water = 1e9
+	gs.seeds = 1e7
+	var ids := ["grass", "flowers", "small_rock", "big_rock", "fern", "shrub", "log", "aquatic", "tree_small",
+		"tree_big", "bench", "feeder", "deck", "bridge"]
+	for round in 16:
+		for id in ids:
+			world.buy(id)
+	var at_limit := true
+	for id in ids:
+		if gs.item_count(id) < gs.item_limit(id):
+			at_limit = false
+			print("  not at limit: ", id, " ", gs.item_count(id), "/", gs.item_limit(id), " ", world.last_buy_error)
+	_check("all elements bought up to their limits", at_limit)
+	var on_road: Array = []
+	for it in world.items.values():
+		if it.id != "bridge" and not world.footprint_clear(it.id, it.position):
+			on_road.append("%s@%s" % [it.id, it.position])
+	_check("no element (whole footprint) on roads or the bridge", on_road.is_empty(), str(on_road))
+	var ov := false
+	var its2: Array = world.items.values()
+	for i in its2.size():
+		for j in range(i + 1, its2.size()):
+			var a3: PlacedItem = its2[i]
+			var b3: PlacedItem = its2[j]
+			if a3.id == "bridge" or b3.id == "bridge":
+				continue
+			if Vector2(a3.position.x - b3.position.x, (a3.position.y - b3.position.y) * 1.8).length() < (a3.footprint() + b3.footprint()) * 0.79:
+				ov = true
+				print("  overlap: ", a3.id, a3.position, " ", b3.id, b3.position)
+	_check("no overlapping elements after many purchases", not ov)
+	var cells := func(id: String) -> Dictionary:
+		var d := {}
+		for it in world.items_of(id):
+			var c3 := AutoPlacer._cell(it.position)
+			d[c3] = int(d.get(c3, 0)) + 1
+		return d
+	var fc: Dictionary = cells.call("flowers")
+	var gc: Dictionary = cells.call("grass")
+	var sc: Dictionary = cells.call("shrub")
+	_check("flowers spread over many regions in small drifts", fc.size() >= 4 and fc.values().max() <= 4, str(fc))
+	_check("grass covers the terrain widely", gc.size() >= 7 and gc.values().max() <= 3, str(gc))
+	_check("shrubs in several groups", sc.size() >= 3, str(sc))
+	var trees2: Array = world.items_of("tree_small") + world.items_of("tree_big")
+	var tmin := 9999.0
+	for i in trees2.size():
+		for j in range(i + 1, trees2.size()):
+			tmin = minf(tmin, AutoPlacer._dist(trees2[i].position, trees2[j].position))
+	_check("trees keep their spacing", tmin >= 54.0, "min %.0f" % tmin)
+	await _wait(10)
+	await _shot("09_distribution")
+	# persistence of the exact positions
+	SaveSystem._loaded = true
+	SaveSystem.save_now()
+	var before := {}
+	for d in gs.placed:
+		before[int(d["uid"])] = Vector2(float(d["x"]), float(d["y"]))
+	var fsv := FileAccess.open(SaveSystem.SAVE_PATH, FileAccess.READ)
+	var dsv: Dictionary = JSON.parse_string(fsv.get_as_text())
+	gs.reset_state()
+	gs.from_dict(dsv["state"])
+	world.rebuild_items()
+	var same_pos := gs.placed.size() == before.size()
+	for d in gs.placed:
+		if not before.has(int(d["uid"])) or before[int(d["uid"])].distance_to(Vector2(float(d["x"]), float(d["y"]))) > 0.01:
+			same_pos = false
+	for it in world.items.values():
+		if it.id != "bridge" and before.has(it.uid) and it.position.distance_to(before[it.uid].round()) > 0.6:
+			same_pos = false
+	_check("positions identical after save + load", same_pos)
+	SaveSystem.delete_save()
+
+	# 12) bridge joins both roads exactly
+	var bd: Dictionary = GameData.scene["bridge"]
+	var spur_end := Vector2(float(GameData.scene["trail_spur"][-1]["x"]), float(GameData.scene["trail_spur"][-1]["y"]))
+	var east_start := Vector2(float(GameData.scene["trail_east"][0]["x"]), float(GameData.scene["trail_east"][0]["y"]))
+	var p0 := Vector2(float(bd["path"][0]["x"]), float(bd["path"][0]["y"]))
+	var p1 := Vector2(float(bd["path"][-1]["x"]), float(bd["path"][-1]["y"]))
+	_check("bridge ends coincide with both trail ends", p0.distance_to(spur_end) < 0.01 and p1.distance_to(east_start) < 0.01)
+	var road_vhalf := (8.0 + 16.0 * clampf((float(bd["y"]) - 164.0) / 190.0, 0.15, 1.0)) / 2.2
+	_check("bridge width matches the road", absf(float(bd["half_depth"]) - road_vhalf) < 1.0)
+	var bimg := (load("res://assets/sprites/environment/bridge_0.png") as Texture2D).get_image()
+	var timg := (load("res://assets/sprites/environment/trail_bridge.png") as Texture2D).get_image()
+	var gap := false
+	for side in [[int(bd["x0"]), -1], [int(bd["x1"]), 1]]:
+		for dy in range(-3, 4):
+			var yy := int(bd["y"]) + dy
+			var deck := bimg.get_pixel(side[0], yy).a > 0.5
+			var road := timg.get_pixel(side[0] + side[1] * 3, yy).a > 0.5
+			if not (deck and road):
+				gap = true
+	_check("no gap between deck and roads", not gap)
+
+	# 13) rabbits: routines, behaviour, journal
+	Weather.force("clear")
+	Clock.set_season(0, 14.0)
+	Clock.set_hour(6.5)
+	var ra_dawn := EcosystemRules.activity("rabbit")
+	Clock.set_hour(13.0)
+	var ra_day := EcosystemRules.activity("rabbit")
+	Clock.set_season(3, 14.0)
+	var ra_winter := EcosystemRules.activity("rabbit")
+	Weather.force("heavy")
+	var ra_rain := EcosystemRules.activity("rabbit")
+	Weather.force("clear")
+	Clock.set_season(0, 14.0)
+	Clock.set_hour(17.8)
+	gs.recompute()
+	_check("rabbits: dawn/dusk > midday, fewer in winter, none in heavy rain",
+		ra_dawn > ra_day * 2.0 and ra_winter < ra_dawn and ra_rain == 0.0 and gs.eligible_animals.has("rabbit"))
+	for v in get_tree().get_nodes_in_group("visitors"):
+		v.queue_free()
+	await _wait(2)
+	Engine.time_scale = 8.0
+	var rab: Rabbit = main.wildlife.spawn_rabbit(2)
+	var rstates := {}
+	var bad_spot := false
+	for i in 2200:
+		if not is_instance_valid(rab):
+			break
+		rstates[rab.state] = true
+		if rab.state in ["look", "forage", "rest"] and not world.walkable(rab.position):
+			bad_spot = true
+		await get_tree().process_frame
+	var still := is_instance_valid(rab)
+	_check("rabbit hops, looks around, eats/rests/hides", rstates.has("move") and rstates.has("look")
+		and (rstates.has("forage") or rstates.has("rest") or rstates.has("hide")), str(rstates.keys()))
+	_check("rabbit never stops on roads or water", not bad_spot)
+	if still:
+		rab.queue_free()
+	var rab2: Rabbit = main.wildlife.spawn_rabbit(0)
+	for i in 30:
+		await get_tree().process_frame
+	rab2.on_tap()
+	var fled := false
+	for i in 400:
+		if not is_instance_valid(rab2):
+			fled = true
+			break
+		if rab2._flee or rab2.state in ["hide", "exit"]:
+			fled = true
+		await get_tree().process_frame
+	_check("rabbit flees when startled", fled)
+	if is_instance_valid(rab2):
+		rab2.queue_free()
+	Engine.time_scale = 1.0
+	var nr := NatureLog.count("rabbit")
+	NatureLog.sight("rabbit")
+	_check("rabbit is in the biodiversity journal", "rabbit" in JournalPanel.ANIMALS and GameData.species.has("rabbit")
+		and NatureLog.count("rabbit") >= nr and NatureLog.sightings.has("rabbit"))
 
 	# 10) behaviour cycles run end to end (time accelerated)
 	Engine.time_scale = 12.0

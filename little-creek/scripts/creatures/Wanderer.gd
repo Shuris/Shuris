@@ -26,7 +26,7 @@ func setup(w: World, kind: String) -> void:
 		var p := Vector2.ZERO
 		for k in 20:
 			p = Vector2(randf_range(110, 360) if left else randf_range(580, 700), randf_range(232, 330))
-			if world.zone_ok("ground", p) or (not world.is_water(p) and p.y > 230):
+			if world.animal_spot_ok(p, 6.0):
 				break
 		waypoints.append(p)
 	waypoints.append(edge_point(left, y + randf_range(-20, 20)))

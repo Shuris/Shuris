@@ -4,7 +4,7 @@ extends RefCounted
 ## choices. Used by GameState (stats), WildlifeDirector (spawning) and the UI.
 
 const BASE_QUALITY := 12.0
-const ANIMALS := ["sabia", "saira", "butterfly", "dragonfly", "fish", "deer", "owl", "fox", "duck"]
+const ANIMALS := ["sabia", "saira", "butterfly", "dragonfly", "fish", "deer", "owl", "fox", "duck", "rabbit"]
 
 
 ## Time/season/weather activity multiplier for a species (data/fauna.json).
@@ -55,6 +55,8 @@ static func animal_eligible(id: String, s: Dictionary) -> bool:
 			return s["stage"] >= 2 and int(c.get("tree_small", 0)) + int(c.get("tree_big", 0)) >= 1
 		"fox":
 			return s["vitality"] >= 45.0 and s["biodiversity_base"] >= 7
+		"rabbit":
+			return s["vitality"] >= 40.0 and int(c.get("shrub", 0)) >= 1 and int(c.get("grass", 0)) >= 2
 		"duck":
 			return s["quality"] >= 50.0 and int(c.get("aquatic", 0)) >= 1 and GameState.ducks_resident
 	return false
@@ -81,6 +83,8 @@ static func animal_target(id: String, s: Dictionary) -> int:
 			return clampi(1 + int((s["quality"] - 45.0) / 12.0) + int(c.get("aquatic", 0)), 1, 6)
 		"deer", "owl", "fox":
 			return 1
+		"rabbit":
+			return 2 if int(c.get("shrub", 0)) >= 4 and s["vitality"] >= 60.0 else 1
 		"duck":
 			return 2 + int(c.get("aquatic", 0)) / 3
 	return 0

@@ -150,7 +150,7 @@ def ellipse_mask(w, h, cx, cy, rx, ry):
 def foliage_cluster(cv, cx, cy, rx, ry, ramp_cols, rng, blob=(2.0, 4.5),
                     density=1.0, light=LIGHT_DIR, bias=0.0, contrast=1.0,
                     lobes=6, rim=True, dither=0.45, alpha=255, shade_fn=None,
-                    flat_bottom=0.0):
+                    flat_bottom=0.0, fill_core=True):
     """Paint a clumpy canopy made of many small shaded leaf tufts.
 
     The canopy silhouette is a union of random ellipses (lobes). Each tuft is
@@ -174,6 +174,7 @@ def foliage_cluster(cv, cx, cy, rx, ry, ramp_cols, rng, blob=(2.0, 4.5),
                 return True
         return False
 
+    alpha_before = cv.px[..., 3].copy() if fill_core else None
     area = math.pi * rx * ry
     bmean = (blob[0] + blob[1]) / 2
     count = int(area / (bmean * bmean) * 1.6 * density) + 4
@@ -220,6 +221,21 @@ def foliage_cluster(cv, cx, cy, rx, ry, ramp_cols, rng, blob=(2.0, 4.5),
             edge = (dist > rr - 1.0) & (local < -0.35)
             v = np.where(edge, v - 0.18, v)
         cv.put_ramp(m, v, ramp_cols, dither=dither, alpha=alpha, ox=xa, oy=ya)
+    if fill_core:
+        # gaps between the ragged tufts get shaded inner leaves (depth), never
+        # transparency; the silhouette stays the one drawn by the tufts
+        from scipy import ndimage as _nd
+        new = (cv.px[..., 3] > 0) & (alpha_before == 0)
+        closed = _nd.binary_closing(new, iterations=2)
+        gaps = _nd.binary_fill_holes(new | closed) & ~new & (alpha_before == 0)
+        gaps &= _nd.binary_erosion(_nd.binary_fill_holes(new | closed), iterations=1)
+        if gaps.any():
+            gy, gx = np.mgrid[0:h, 0:w].astype(np.float32)
+            g = (gx - cx) / rx * light[0] + (gy - cy) / ry * light[1]
+            vv = 0.5 + (0.26 + 0.25 * g + bias - 0.5) * contrast
+            if shade_fn is not None:
+                vv = vv + shade_fn(gx, gy)
+            cv.put_ramp(gaps, vv, ramp_cols, dither=dither, alpha=alpha)
     return lob
 
 
@@ -394,3 +410,25 @@ def save_sheet(frames, path, cols=None):
         sheet[r * fh:(r + 1) * fh, c * fw:(c + 1) * fw] = f
     Image.fromarray(sheet, "RGBA").save(path)
     return fw, fh
+
+
+def fill_enclosed_holes(cv):
+    """Safety net: transparent pixels fully enclosed by opaque ones get the
+    darkest neighbouring colour (inner shadow). Applied to vegetation sprites."""
+    from scipy import ndimage as _nd
+    a = cv.px[..., 3] > 0
+    holes = _nd.binary_fill_holes(a) & ~a
+    if not holes.any():
+        return 0
+    ys, xs = np.nonzero(holes)
+    for y, x in zip(ys, xs):
+        best = None
+        for dy, dx in ((0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)):
+            yy, xx = y + dy, x + dx
+            if 0 <= yy < cv.h and 0 <= xx < cv.w and cv.px[yy, xx, 3] > 0:
+                c = cv.px[yy, xx]
+                if best is None or int(c[:3].sum()) < int(best[:3].sum()):
+                    best = c.copy()
+        if best is not None:
+            cv.px[y, x] = best
+    return int(holes.sum())

@@ -1,3 +1,4 @@
+class_name JournalPanel
 extends HBoxContainer
 ## Biodiversity journal: animal species (silhouettes until discovered) with
 ## illustration, description, sightings, activity time, preferred season,
@@ -8,7 +9,7 @@ var _list: GridContainer
 var _detail: VBoxContainer
 var _selected := ""
 var _showing_events := false
-const ANIMALS := ["sabia", "saira", "butterfly", "dragonfly", "fish", "duck", "owl", "deer", "fox", "maned_wolf"]
+const ANIMALS := ["sabia", "saira", "butterfly", "dragonfly", "fish", "duck", "rabbit", "owl", "deer", "fox", "maned_wolf"]
 
 
 func _ready() -> void:
@@ -39,7 +40,7 @@ func _ready() -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	left.add_child(scroll)
 	_list = GridContainer.new()
-	_list.columns = 5
+	_list.columns = 6
 	_list.add_theme_constant_override("h_separation", 6)
 	_list.add_theme_constant_override("v_separation", 6)
 	scroll.add_child(_list)
@@ -84,21 +85,21 @@ func _tex(id: String) -> Texture2D:
 func _cell(id: String) -> Control:
 	var known := GameState.discovered.has(id)
 	var cell := UITheme.panel("card.png" if known else "card_locked.png", 8, 6)
-	cell.custom_minimum_size = Vector2(98, 88)
+	cell.custom_minimum_size = Vector2(84, 88)
 	cell.mouse_filter = Control.MOUSE_FILTER_STOP
 	var v := VBoxContainer.new()
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	cell.add_child(v)
 	var tex := _tex(id)
-	var tr := UITheme.tex_rect(tex, UITheme.pixel_fit(tex, Vector2(80, 48)))
-	tr.custom_minimum_size = Vector2(80, 50)
+	var tr := UITheme.tex_rect(tex, UITheme.pixel_fit(tex, Vector2(70, 48)))
+	tr.custom_minimum_size = Vector2(70, 50)
 	if not known:
 		tr.modulate = Color(0.04, 0.07, 0.09, 0.9)   # silhouette
 	v.add_child(tr)
 	var l := UITheme.label(GameData.species[id]["name"] if known else "???", 12, Palette.TEXT if known else Palette.TEXT_MUTED)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	l.custom_minimum_size = Vector2(84, 0)
+	l.custom_minimum_size = Vector2(72, 0)
 	v.add_child(l)
 	cell.gui_input.connect(func(e: InputEvent) -> void:
 		if e is InputEventScreenTouch and not e.pressed:

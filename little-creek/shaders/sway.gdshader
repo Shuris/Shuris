@@ -39,6 +39,6 @@ void fragment() {
 		c = n < amount ? b : c;
 	}
 	// season noise in world space, using the unshifted pixel
-	c = apply_season(c, wpos - (UV * ts) + px);
+	c = apply_season(c, wpos - (UV * ts) + px, fringe(TEXTURE, uv, TEXTURE_PIXEL_SIZE));
 	COLOR = c * COLOR;
 }

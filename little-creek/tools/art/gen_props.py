@@ -353,6 +353,11 @@ def bridge():
     return back, front
 
 
+def _veg_save(cv, path):
+    fill_enclosed_holes(cv)
+    cv.save(path)
+
+
 def main():
     for d in (VEG, RCK, STR):
         os.makedirs(d, exist_ok=True)
@@ -366,9 +371,9 @@ def main():
         rock_prop(40 + i, 17, 11.5, False).save(os.path.join(RCK, f"big_rock_{i}.png"))
         rock_prop(40 + i, 17, 11.5, True).save(os.path.join(RCK, f"big_rock_{i}_moss.png"))
     for i in range(3):
-        fern_prop(50 + i).save(os.path.join(VEG, f"fern_{i}.png"))
+        _veg_save(fern_prop(50 + i), os.path.join(VEG, f"fern_{i}.png"))
     for i in range(3):
-        shrub(60 + i, berries=(i == 1)).save(os.path.join(VEG, f"shrub_{i}.png"))
+        _veg_save(shrub(60 + i, berries=(i == 1)), os.path.join(VEG, f"shrub_{i}.png"))
     for i in range(2):
         log_prop(70 + i, False).save(os.path.join(VEG, f"log_{i}.png"))
         log_prop(70 + i, True).save(os.path.join(VEG, f"log_{i}_moss.png"))
@@ -376,16 +381,14 @@ def main():
     reeds(81).save(os.path.join(VEG, "aquatic_1.png"))
     lily(82).save(os.path.join(VEG, "aquatic_2.png"))
     for i in range(3):
-        tree(90 + i, 62, 106, 6, 25, 26, 30).save(os.path.join(VEG, f"tree_small_{i}.png"))
+        _veg_save(tree(90 + i, 62, 106, 6, 25, 26, 30), os.path.join(VEG, f"tree_small_{i}.png"))
     for i in range(2):
-        tree(95 + i, 112, 184, 13, 48, 48, 52).save(os.path.join(VEG, f"tree_big_{i}.png"))
+        _veg_save(tree(95 + i, 112, 184, 13, 48, 48, 52), os.path.join(VEG, f"tree_big_{i}.png"))
     bench().save(os.path.join(STR, "bench_0.png"))
     feeder().save(os.path.join(STR, "feeder_0.png"))
     deck().save(os.path.join(STR, "deck_0.png"))
     rare_flower().save(os.path.join(VEG, "rare_flower_0.png"))
-    b, f = bridge()
-    b.save(os.path.join(STR, "bridge_0.png"))
-    f.save(os.path.join(STR, "bridge_front.png"))
+    # the bridge is painted in world coordinates by gen_environment.py
     print("props done")
 
 

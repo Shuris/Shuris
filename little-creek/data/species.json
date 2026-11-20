@@ -158,5 +158,16 @@
   "name": "Orquídea-do-brejo",
   "kind": "plant",
   "hint": "Rara: pode florescer sozinha em ecossistemas saudáveis."
+ },
+ "rabbit": {
+  "name": "Coelho-do-mato",
+  "kind": "animal",
+  "sprite": "rabbit_0",
+  "hint": "Vitalidade 40%, arbustos e grama. Prefere o amanhecer e o entardecer.",
+  "desc": "Pequeno e atento, sai dos arbustos para comer brotos de grama.",
+  "active": "Amanhecer e entardecer",
+  "season": "Primavera",
+  "habitat": "Gramados perto de arbustos",
+  "fact": "Bate as patas traseiras no chão para avisar os outros de perigo."
  }
 }

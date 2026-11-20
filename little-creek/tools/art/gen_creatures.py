@@ -365,6 +365,10 @@ def main():
         "nest": {"frames": ["nest"], "fps": 1, "loop": True},
         "eggs": {"frames": ["eggs"], "fps": 1, "loop": True},
         "chicks": {"frames": ["chicks0", "chicks1", "chicks0", "chicks0"], "fps": 3, "loop": True}})
+    import creatures_rabbit
+    for ci in range(3):
+        fr, an, ex = creatures_rabbit.frames(ci)
+        rig_sheet("rabbit_%d" % ci, fr, an, ex, ANI)
     import creatures_canid
     for key, name in (("fox", "fox"), ("wolf", "maned_wolf")):
         fr, an, ex = creatures_canid.frames(key)

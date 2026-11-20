@@ -36,6 +36,8 @@ func _ready() -> void:
 			Clock.set_season(Clock.SEASONS.find(parts[0]), float(parts[1]) if parts.size() > 1 else 14.0)
 		elif a.begins_with("--weather="):
 			Weather.force(a.substr(10), 3.0)
+		elif a == "--fillall":
+			call_deferred("_fillall")
 		elif a == "--autofill":
 			call_deferred("_autofill")
 		elif a.begins_with("--photo="):
@@ -138,6 +140,33 @@ func _spawn(names: PackedStringArray) -> void:
 				var ow: Owl = wd._spawn("owl")
 				ow.position = ow.target
 				ow.t = 1.0
+			"rabbit", "rabbits":
+				for k in (3 if n == "rabbits" else 1):
+					var rb: Rabbit = wd.spawn_rabbit(k % 3)
+					rb.modulate.a = 1.0
+					var gr: Array = main.world.items_of("grass")
+					if k < gr.size():
+						var g: PlacedItem = gr[(k * 3) % gr.size()]
+						for j in gr.size():
+							g = gr[(k * 3 + j) % gr.size()]
+							if main.world.walkable(g.position + Vector2(11, 2)):
+								break
+						rb.position = g.position + Vector2(11, 2)
+						if n == "rabbits" and k > 0:
+							# group the three near the first one (showcase)
+							var first: Vector2 = get_tree().get_meta("rabbit0", rb.position)
+							for t in 30:
+								var q := first + Vector2(randf_range(-40, 40), randf_range(-12, 12))
+								if main.world.animal_spot_ok(q, 3.0):
+									rb.position = q
+									break
+						elif n == "rabbits":
+							get_tree().set_meta("rabbit0", rb.position)
+						rb.focus = g
+						rb.face(-1.0)
+						rb.set_state("forage")
+						rb.play(["eat", "look", "idle"][k % 3])
+						rb.wait = 999.0
 			"duck":
 				GameState.ducks_resident = true
 				GameState.recompute(false)
@@ -242,6 +271,27 @@ func _perf() -> void:
 		Performance.get_monitor(Performance.OBJECT_COUNT),
 		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
 		get_tree().get_nodes_in_group("creatures").size()])
+
+
+## Buys every element up to its limit, interleaved like a player would.
+func _fillall() -> void:
+	await get_tree().process_frame
+	SaveSystem._loaded = false
+	GameState.stage = 4
+	GameState.water = 1e8
+	GameState.seeds = 1e6
+	GameState.upgrades = {"filter": 5, "spring": 4, "tap": 3}
+	var ids := ["grass", "flowers", "small_rock", "big_rock", "fern", "shrub", "log", "aquatic", "tree_small", "tree_big",
+		"bench", "feeder", "deck", "bridge"]
+	for round in 16:
+		for id in ids:
+			main.world.buy(id)
+	GameState.recompute(false)
+	main.world.trail_amount = 1.0
+	var counts := {}
+	for id in ids:
+		counts[id] = "%d/%d" % [GameState.item_count(id), GameState.item_limit(id)]
+	print("FILLALL ", counts)
 
 
 func _rainbow() -> void:
