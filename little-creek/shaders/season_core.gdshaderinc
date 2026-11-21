@@ -110,7 +110,7 @@ vec4 apply_season(vec4 c, vec2 wpx, float edge) {
 	} else if (crown && hue > 0.88) {
 		turn *= 0.35;   // late trees: still mostly green
 	}
-	c.rgb = mix(c.rgb, autumn_colour(hue, lum, crown), turn * (crown ? 1.0 : 0.55));
+	c.rgb = mix(c.rgb, autumn_colour(hue, lum, crown), turn * (crown ? 1.0 : 0.78));
 	// winter: dull, cold greens (evergreens keep a deep green)
 	vec3 dull = mix(vec3(lum) * vec3(0.92, 0.97, 1.06), vec3(lum * 1.02, lum * 0.94, lum * 0.78), 0.45);
 	c.rgb = mix(c.rgb, dull, season_winter * isg * (evergreen ? 0.3 : 0.75) * season_k);

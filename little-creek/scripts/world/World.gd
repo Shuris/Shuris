@@ -42,6 +42,8 @@ var bridge_layer: Node2D
 var trail2_mat: ShaderMaterial
 var trail2_amount := 0.0
 var snow_mat: ShaderMaterial
+var footprints: Footprints
+var season_decor: SeasonDecor
 var season_mats: Dictionary = {}  # "litter"/"frost"/"flowers" -> reveal material
 var fish_layer: Node2D
 var entities: Node2D
@@ -172,11 +174,26 @@ func _build_layers() -> void:
 	trail2_mat.set_shader_parameter("noise_tex", noise_tex)
 	trail2.material = trail2_mat
 	move_child(trail2, trail.get_index() + 1)
+	var piles := Node2D.new()
+	piles.name = "LeafPiles"
+	add_child(piles)
+	move_child(piles, trail2.get_index() + 1)
 	var snow := _sprite(ENV + "snow_ground.png")
 	snow_mat = ShaderMaterial.new()
 	snow_mat.shader = preload("res://shaders/snow_ground.gdshader")
 	snow.material = snow_mat
 	move_child(snow, trail2.get_index() + 1)
+	footprints = Footprints.new()
+	footprints.world = self
+	add_child(footprints)
+	move_child(footprints, snow.get_index() + 1)
+	var shadows := Node2D.new()
+	shadows.name = "CanopyShadows"
+	add_child(shadows)
+	move_child(shadows, footprints.get_index() + 1)
+	season_decor = SeasonDecor.new()
+	add_child(season_decor)
+	season_decor.setup(self, shadows, piles)
 	var mid := _sprite(ENV + "mid_trees.png")
 	mid.material = _foliage_mat(1.0, 0.9)
 	(mid.material as ShaderMaterial).set_shader_parameter("has_bare", true)
@@ -418,6 +435,8 @@ func rebuild_items() -> void:
 		n.queue_free()
 	items.clear()
 	migrate_off_roads()
+	if season_decor:
+		season_decor._dirty = true
 	if bridge_front:
 		bridge_front.queue_free()
 		bridge_front = null

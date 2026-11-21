@@ -46,6 +46,8 @@ func _ready() -> void:
 			call_deferred("_photo", a.substr(8))
 		elif a == "--clean":
 			call_deferred("_clean")
+		elif a == "--tracks":
+			call_deferred("_tracks")
 		elif a == "--perf":
 			call_deferred("_perf")
 		elif a == "--prewarm":
@@ -229,6 +231,20 @@ func _clean() -> void:
 	await get_tree().process_frame
 	main.hud.toast_box.visible = false
 	main.hud.hint_panel.modulate.a = 0.0
+
+
+## Let animals walk across fresh snow for a few seconds (time accelerated).
+func _tracks() -> void:
+	await get_tree().create_timer(0.4).timeout
+	var wd: Node = main.wildlife
+	for k in 3:
+		wd.spawn_rabbit(k)
+	var dr: Deer = wd.spawn_deer(false)
+	var fx: Wanderer = wd.spawn_wanderer("fox")
+	Engine.time_scale = 4.0
+	await get_tree().create_timer(5.0 * 4.0, true, false, true).timeout
+	Engine.time_scale = 1.0
+	print("PRINTS ", main.world.footprints.prints.size())
 
 
 func _perf() -> void:

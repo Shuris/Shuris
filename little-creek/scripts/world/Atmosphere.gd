@@ -17,7 +17,16 @@ func _process(_delta: float) -> void:
 	var r := Weather.rain
 	var h := Clock.hour()
 	var g: ShaderMaterial = main.grade_mat
-	g.set_shader_parameter("tint", _v3(L["tint"]))
+	# season light: golden autumn, warm summer, cold diffuse winter
+	var tint: Color = L["tint"]
+	var sk := Clock.season()
+	if sk == 2:
+		tint = tint * Color(1.0 + 0.06 * float(fs["autumn"]), 1.0 + 0.01 * float(fs["autumn"]), 1.0 - 0.08 * float(fs["autumn"]))
+	elif sk == 1:
+		tint = tint * Color(1.03, 1.01, 0.96)
+	elif sk == 3:
+		tint = tint * Color(0.97, 0.99, 1.05)
+	g.set_shader_parameter("tint", _v3(tint))
 	g.set_shader_parameter("shadow_lift", _v3(L["shadow"]))
 	g.set_shader_parameter("saturation", float(L["sat"]) * (1.0 + 0.08 * float(fs["lush"]) + 0.06 * float(fs["bloom"])))
 	g.set_shader_parameter("brightness", float(L["bright"]) * (1.04 if Clock.season() == 1 else 1.0) * (1.0 + world.weather_fx.flash * 0.9))

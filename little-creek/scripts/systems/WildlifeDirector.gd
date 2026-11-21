@@ -47,6 +47,7 @@ func _process(delta: float) -> void:
 	_handle_owl()
 	_handle_fox()
 	_handle_rabbit()
+	_winter_feeders()
 
 
 func _alive_total() -> int:
@@ -150,6 +151,16 @@ func _handle_fox() -> void:
 		return
 	spawn_wanderer("fox")
 	next_fox_h = now + _interval(cfg.get("fox_interval_hours", [10.0, 30.0]), act)
+
+
+## In winter (and while it snows) birds look for food at the feeders.
+func _winter_feeders() -> void:
+	if Clock.season() != 3 or Clock.is_night() or Weather.state == "blizzard":
+		return
+	var feeders := world.items_with_poi("feeder")
+	if feeders.is_empty() or randf() > 0.06:
+		return
+	call_bird_to(feeders[randi() % feeders.size()])
 
 
 func _handle_rabbit() -> void:

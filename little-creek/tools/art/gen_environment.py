@@ -946,6 +946,14 @@ def seasonal_overlays(cr, rmask):
         sp.pixel(x, y, c)
         if persp[y, x] > 0.6 and rng.random() < 0.5:
             sp.pixel(x, y - 1, GRASS[4])
+    # new shoots along the banks (moist soil sprouts first)
+    bank = ground & (dist > 2) & (dist < 16)
+    pick = rng.random((H, W)) < 0.03 * bank * persp
+    for y, x in zip(*np.nonzero(pick)):
+        sp.pixel(x, y, GRASS[6])
+        sp.pixel(x, y - 1, GRASS[8])
+        if rng.random() < 0.5:
+            sp.pixel(x + 1, y - 1, GRASS[7])
     sp.save(os.path.join(SPR, "environment", "season_flowers.png"))
 
 

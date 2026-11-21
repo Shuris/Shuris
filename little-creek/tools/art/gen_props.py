@@ -300,6 +300,25 @@ def deck():
     return cv
 
 
+def leaf_pile(seed):
+    """Small mound of fallen leaves in mixed autumn colours."""
+    rng = R(seed)
+    cv = Canvas(18, 8)
+    cols = [hx("#5a2412"), hx("#8a3a16"), hx("#b5561c"), hx("#d9822d"), hx("#e8a640"), hx("#f0c860"),
+            hx("#7a4a22"), hx("#9a6a32")]
+    xs, ys = grid(18, 8)
+    mound = ((xs - 9) / 8.5) ** 2 + ((ys - 6) / 4.2) ** 2 <= 1.0
+    mound &= ys <= 7
+    for y, x in zip(*np.nonzero(mound)):
+        c = cols[int(rng.random() * len(cols))]
+        shade = 0.75 if x < 6 or y > 6 else 1.0
+        cv.pixel(x, y, tuple(int(v * shade) for v in c))
+    for k in range(6):  # loose leaves around
+        x, y = int(rng.random() * 18), 6 + int(rng.random() * 2)
+        cv.pixel(x, y, cols[int(rng.random() * len(cols))])
+    return cv
+
+
 def rare_flower():
     """Orquídea-do-brejo: a tall, glowing violet-white orchid clump (rare event)."""
     rng = R(777)
@@ -405,6 +424,8 @@ def main():
     feeder().save(os.path.join(STR, "feeder_0.png"))
     deck().save(os.path.join(STR, "deck_0.png"))
     rare_flower().save(os.path.join(VEG, "rare_flower_0.png"))
+    for i in range(3):
+        leaf_pile(800 + i).save(os.path.join(VEG, f"leaf_pile_{i}.png"))
     # the bridge is painted in world coordinates by gen_environment.py
     print("props done")
 

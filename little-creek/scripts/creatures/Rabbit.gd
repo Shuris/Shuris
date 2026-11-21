@@ -77,6 +77,10 @@ func _next_activity() -> void:
 		leave()
 		return
 	var r := randf()
+	# cold weather: more time sheltering under shrubs, less foraging in the open
+	if (Clock.season() == 3 or Weather.is_snowing()) and randf() < 0.35:
+		_hide()
+		return
 	if r < 0.35:
 		var grass := world.items_of("grass").filter(func(g: PlacedItem) -> bool: return _same_bank(g.position))
 		if not grass.is_empty():
