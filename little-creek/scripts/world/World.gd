@@ -41,6 +41,7 @@ var leaf_system: FloatingLeaves
 var bridge_layer: Node2D
 var trail2_mat: ShaderMaterial
 var trail2_amount := 0.0
+var snow_mat: ShaderMaterial
 var season_mats: Dictionary = {}  # "litter"/"frost"/"flowers" -> reveal material
 var fish_layer: Node2D
 var entities: Node2D
@@ -171,6 +172,11 @@ func _build_layers() -> void:
 	trail2_mat.set_shader_parameter("noise_tex", noise_tex)
 	trail2.material = trail2_mat
 	move_child(trail2, trail.get_index() + 1)
+	var snow := _sprite(ENV + "snow_ground.png")
+	snow_mat = ShaderMaterial.new()
+	snow_mat.shader = preload("res://shaders/snow_ground.gdshader")
+	snow.material = snow_mat
+	move_child(snow, trail2.get_index() + 1)
 	var mid := _sprite(ENV + "mid_trees.png")
 	mid.material = _foliage_mat(1.0, 0.9)
 	(mid.material as ShaderMaterial).set_shader_parameter("has_bare", true)
@@ -213,6 +219,7 @@ func _build_layers() -> void:
 	add_child(rays)
 
 	_build_particles()
+	_build_steam()
 
 	var fgb := _sprite(ENV + "fg_bottom_dry.png")
 	fgb_mat = ShaderMaterial.new()
@@ -237,6 +244,7 @@ func _build_layers() -> void:
 	fgt_mat.set_shader_parameter("tree_phase", 0.12)
 	fgt.material = fgt_mat
 	weather_fx.make_rain_layers(self)
+	weather_fx.make_snow_layers(self)
 
 	flyers = Node2D.new()
 	flyers.name = "Flyers"
@@ -249,6 +257,40 @@ func _build_layers() -> void:
 	ghost.centered = false
 	ghost.visible = false
 	add_child(ghost)
+
+
+var steam: CPUParticles2D
+
+
+## Vapour rising from the (relatively warm) creek on cold winter mornings.
+func _build_steam() -> void:
+	steam = CPUParticles2D.new()
+	steam.texture = load(FX + "flake_m.png")
+	var pts := PackedVector2Array()
+	for r in GameData.scene.get("creek_rows", []):
+		if float(r["y"]) > 196.0:
+			for k in 3:
+				pts.append(Vector2(lerpf(float(r["l"]) + 4.0, float(r["r"]) - 4.0, (k + 0.5) / 3.0), float(r["y"])))
+	steam.emission_shape = CPUParticles2D.EMISSION_SHAPE_POINTS
+	steam.emission_points = pts
+	steam.amount = 60
+	steam.lifetime = 7.0
+	steam.preprocess = 7.0
+	steam.direction = Vector2(0.2, -1)
+	steam.spread = 25.0
+	steam.gravity = Vector2(0.6, -1.5)
+	steam.initial_velocity_min = 1.0
+	steam.initial_velocity_max = 3.0
+	steam.scale_amount_min = 1.0
+	steam.scale_amount_max = 2.0
+	var g := Gradient.new()
+	g.set_color(0, Color(0.92, 0.95, 1.0, 0.0))
+	g.add_point(0.3, Color(0.92, 0.95, 1.0, 0.28))
+	g.set_color(g.get_point_count() - 1, Color(0.92, 0.95, 1.0, 0.0))
+	steam.color_ramp = g
+	steam.emitting = false
+	add_child(steam)
+	move_child(steam, fish_layer.get_index() + 1)
 
 
 func _build_particles() -> void:

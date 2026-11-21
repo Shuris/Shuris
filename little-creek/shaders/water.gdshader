@@ -19,6 +19,8 @@ uniform vec3 murky[8];
 uniform vec3 foam_col = vec3(0.945, 0.953, 0.878);
 uniform vec3 glint_col = vec3(1.0, 0.98, 0.9);
 uniform float glint = 1.0;
+uniform float ice = 0.0;    // 0..1 winter shelf ice along banks and in calm shallows
+uniform float cold = 0.0;   // 0..1 winter: darker, bluer water
 
 float bayer4(vec2 p) {
 	int x = int(mod(p.x, 4.0));
@@ -136,6 +138,8 @@ void fragment() {
 	float ring = rain > 0.01 ? rain_rings(px, rain * 0.55) : 0.0;
 	v += ring * 0.35;
 
+	// winter: water darker and bluer, fewer bright crests
+	v -= cold * 0.08;
 	float d = bayer4(px) * 0.11;
 	vec3 cc = ramp_clean(clamp(v + d, 0.0, 1.0));
 	vec3 mc = ramp_murky(clamp(v * 0.78 + 0.02 + d, 0.0, 1.0));
@@ -163,6 +167,39 @@ void fragment() {
 		col = mix(col, foam_col, 0.55);
 	}
 
+	// winter ice: grows from the banks into calm, shallow water; it does not
+	// flow (static pattern), has cracks and a cold sheen; the main current,
+	// falls and foam stay open
+	if (ice > 0.01 && fall < 0.01) {
+		float near = 0.0;
+		for (int k = 1; k <= 6; k++) {
+			float o = float(k) * 1.5;
+			near = max(near, step(texture(TEXTURE, UV + vec2(-o, 0.0) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
+			near = max(near, step(texture(TEXTURE, UV + vec2(o, 0.0) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
+			near = max(near, step(texture(TEXTURE, UV + vec2(0.0, -o * 0.6) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
+		}
+		float calm = (1.0 - smoothstep(0.35, 0.8, f.b)) * (1.0 - wake) * (1.0 - foam * 1.5);
+		float in_n = texture(noise_tex, px / vec2(40.0, 18.0) + vec2(0.31, 0.77)).g;
+		float shelf = near * 1.1 + calm * (1.0 - depth) * 0.6 + (in_n - 0.5) * 0.35;
+		if (shelf > 1.05 - ice * 0.75) {
+			float crack = texture(noise_tex, px / vec2(23.0, 11.0)).b;
+			// translucent blue-grey ice (darker than snow), sheen streaks
+			vec3 ic = mix(vec3(0.46, 0.60, 0.70), vec3(0.64, 0.76, 0.84), in_n);
+			ic = mix(ic, col, 0.18);
+			if (fract((px.x * 0.35 - px.y * 0.9) / 7.0) < 0.12 && in_n > 0.45) {
+				ic = mix(ic, vec3(0.86, 0.92, 0.96), 0.7);
+			}
+			if (abs(crack - 0.5) < 0.025) {
+				ic = vec3(0.34, 0.46, 0.58);
+			}
+			if (shelf > 1.05 - ice * 0.75 + 0.08 && hash(px) > 0.985) {
+				ic = vec3(1.0);
+			}
+			col = ic;
+		} else if (shelf > 1.0 - ice * 0.75) {
+			col = mix(col, vec3(0.62, 0.74, 0.82), 0.55);   // thin rim of slush
+		}
+	}
 	// sun / moon glints
 	float sp = hash(px + floor(TIME * 7.0) * 13.1);
 	if (glint > 0.05 && sun > 0.25 && crest > 0.5 && sp > 1.0 - (0.015 + sun * 0.01) * glint) {

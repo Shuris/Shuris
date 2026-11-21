@@ -11,6 +11,8 @@ uniform float night = 0.0;              // 0..1
 uniform float rain = 0.0;               // 0..1
 uniform float cold = 0.0;               // winter coolness 0..1
 uniform float vignette = 0.0;
+uniform float haze = 0.0;               // falling snow: lower contrast / visibility
+uniform vec3 haze_col = vec3(0.80, 0.85, 0.91);
 uniform vec2 art_size = vec2(800.0, 360.0);
 
 float bayer4(vec2 p) {
@@ -34,6 +36,8 @@ void fragment() {
 	// night: moonlit highlights stay readable, mids sink into blue
 	float hl = smoothstep(0.55, 0.95, lum);
 	c = mix(c, c + vec3(0.05, 0.07, 0.12) * hl, night);
+	// snowstorm: the air fills with white, distant contrast drops
+	c = mix(c, haze_col * (0.7 + 0.3 * brightness), haze * 0.42);
 	// dithered vignette (stepped, art-pixel aligned)
 	vec2 d = (UV - 0.5) * vec2(1.0, 0.8);
 	float v = clamp(dot(d, d) * 2.4 - 0.15, 0.0, 1.0) * vignette;

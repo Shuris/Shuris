@@ -290,6 +290,8 @@ func _fillall() -> void:
 			main.world.buy(id)
 	GameState.recompute(false)
 	main.world.trail_amount = 1.0
+	main.world.quality = GameState.quality / 100.0
+	main.world.lush = GameState.lushness()
 	var counts := {}
 	for id in ids:
 		counts[id] = "%d/%d" % [GameState.item_count(id), GameState.item_limit(id)]

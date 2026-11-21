@@ -15,6 +15,7 @@ uniform float tree_phase = 0.0;  // 0..0.3, offsets leaf fall / leaf-out per tre
 uniform float snow_k = 1.0;      // 0 = no snow on this layer
 uniform int snow_mode = 0;       // 0 = caps on top edges, 1 = distant forest tint
 uniform bool evergreen = false;
+uniform float petal_k = 0.0;     // 1 for flowering plants: petals close/vanish in winter
 
 float s_hash(vec2 q) {
 	return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453);
@@ -79,6 +80,15 @@ vec4 apply_season(vec4 c, vec2 wpx, float edge) {
 	}
 	vec2 p = floor(wpx);
 	float isg = foliage_mask(c);
+	if (petal_k > 0.0 && isg < 0.2) {
+		// flower petals: gone in winter (bare green tufts remain), back in spring
+		float mx = max(c.r, max(c.g, c.b));
+		float sat = (mx - min(c.r, min(c.g, c.b))) / max(mx, 0.001);
+		bool petal = sat > 0.25 || mx > 0.8;
+		if (petal && s_noise(p / 2.0 + vec2(7.0, 3.0)) < season_winter * petal_k * 1.1) {
+			return vec4(0.0);
+		}
+	}
 	if (isg <= 0.0) {
 		return c;
 	}

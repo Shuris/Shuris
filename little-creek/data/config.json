@@ -17,7 +17,19 @@
     "cooldown_hours": [8.0, 16.0],
     "fade_hours": 0.35,
     "dry_hours": 3.0,
-    "rainbow_chance": 0.4
+    "rainbow_chance": 0.4,
+    "snow": {
+      "chance": 0.32,
+      "blizzard_ratio": 0.15,
+      "snow_light_hours": [2.0, 5.0],
+      "snow_hours": [2.0, 4.0],
+      "blizzard_hours": [1.0, 2.5],
+      "cooldown_hours": [5.0, 12.0],
+      "accum_per_hour": 0.28,
+      "melt_winter_sun": 0.012,
+      "melt_spring": 0.12,
+      "melt_other": 0.35
+    }
   },
   "events": {
     "check_every_hours": 1.0,
@@ -43,7 +55,7 @@
     "max_interval_s": 380.0,
     "max_groups": 1,
     "season_mult": {"spring": 1.2, "summer": 1.4, "autumn": 0.9, "winter": 0.35},
-    "rain_mult": {"clear": 1.0, "light": 0.35, "heavy": 0.0},
+    "rain_mult": {"clear": 1.0, "light": 0.35, "heavy": 0.0, "snow_light": 0.4, "snow": 0.15, "blizzard": 0.0},
     "night_mult": 0.0
   },
   "effects": {
@@ -51,6 +63,8 @@
     "rain_drops_heavy": 560,
     "rain_ripples_per_s_light": 6.0,
     "rain_ripples_per_s_heavy": 16.0,
+    "snow_flakes_light": 120,
+    "snow_flakes_blizzard": 420,
     "fireflies_max": 40,
     "leaves_max": 26,
     "puddles": true

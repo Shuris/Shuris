@@ -5,6 +5,7 @@ extends Node
 ## Particle counts come from data/config.json (effects).
 
 var world: World
+var snow_layers: Array = []   # [far, mid, near] CPUParticles2D
 var rain_far: CPUParticles2D
 var rain_near: CPUParticles2D
 var puddles: Sprite2D
@@ -19,6 +20,7 @@ var _thunder_t := 20.0
 var _splash_frames: SpriteFrames
 var _ground_pts: Array = []
 var cfg: Dictionary = {}
+var particle_density := 1.0   # graphics setting (0.25 .. 1.5)
 
 
 func setup(w: World) -> void:
@@ -59,6 +61,59 @@ func _rain_layer(tex: String, dir: Vector2, speed: float, life: float) -> CPUPar
 	return p
 
 
+func make_snow_layers(parent: Node) -> void:
+	# depth: far = tiny & slow, near = bigger & faster; each drifts sideways
+	# (tangential acceleration) so flakes never fall in uniform lines
+	var specs := [["flake_s", 14.0, 9.0, 0.45], ["flake_m", 24.0, 7.0, 0.35], ["flake_l", 38.0, 5.5, 0.2]]
+	for sp in specs:
+		var p := CPUParticles2D.new()
+		p.texture = load(World.FX + String(sp[0]) + ".png")
+		p.amount = 40
+		p.lifetime = float(sp[2]) * 4.0
+		p.preprocess = p.lifetime
+		p.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+		p.position = Vector2(440, -8)
+		p.emission_rect_extents = Vector2(520, 4)
+		p.direction = Vector2(0, 1)
+		p.spread = 18.0
+		p.gravity = Vector2(0, 2.0)
+		p.initial_velocity_min = float(sp[1]) * 0.7
+		p.initial_velocity_max = float(sp[1]) * 1.25
+		p.tangential_accel_min = -6.0
+		p.tangential_accel_max = 6.0
+		p.damping_min = 0.0
+		p.damping_max = 1.0
+		p.scale_amount_min = 1.0
+		p.scale_amount_max = 1.0
+		p.local_coords = false
+		p.emitting = false
+		p.set_meta("share", float(sp[3]))
+		p.set_meta("speed", float(sp[1]))
+		parent.add_child(p)
+		snow_layers.append(p)
+
+
+func _update_snow(_delta: float) -> void:
+	var sn := Weather.snow
+	var on := sn > 0.03
+	var lo := float(cfg.get("snow_flakes_light", 120))
+	var hi := float(cfg.get("snow_flakes_blizzard", 420))
+	var total := lerpf(lo, hi, clampf((sn - 0.35) / 0.65, 0.0, 1.0)) * particle_density
+	var wind := Weather.wind
+	for p in snow_layers:
+		p.emitting = on
+		var target := maxi(8, int(total * float(p.get_meta("share"))))
+		if on and absi(p.amount - target) > 12:
+			p.amount = target
+		var spd: float = p.get_meta("speed")
+		# wind pushes flakes sideways; blizzards are almost horizontal
+		var side := -(0.25 + wind * 1.8 * (0.6 + sn))
+		p.direction = Vector2(side, 1.0).normalized()
+		p.initial_velocity_min = spd * (0.7 + sn * 0.8)
+		p.initial_velocity_max = spd * (1.25 + sn * 1.2)
+		p.position.x = 440.0 + wind * 160.0 * sn   # emit upwind so the screen stays covered
+
+
 func make_puddles(parent: Node) -> void:
 	puddles = Sprite2D.new()
 	puddles.texture = load(World.ENV + "puddles.png")
@@ -91,6 +146,7 @@ func show_rainbow(game_hours: float) -> void:
 
 
 func _process(delta: float) -> void:
+	_update_snow(delta)
 	var r := Weather.rain
 	var heavy := Weather.state == "heavy"
 	# rain streaks
@@ -99,7 +155,7 @@ func _process(delta: float) -> void:
 	rain_near.emitting = on
 	var n_light := int(cfg.get("rain_drops_light", 90))
 	var n_heavy := int(cfg.get("rain_drops_heavy", 220))
-	var target := int(lerpf(n_light, n_heavy, clampf((r - 0.45) / 0.55, 0.0, 1.0)))
+	var target := int(lerpf(n_light, n_heavy, clampf((r - 0.45) / 0.55, 0.0, 1.0)) * particle_density)
 	if on and absi(rain_near.amount - target / 2) > 10:
 		rain_near.amount = maxi(10, target / 2)
 		rain_far.amount = maxi(10, target / 2)

@@ -44,6 +44,7 @@ func setup(d: Dictionary, noise: Texture2D) -> void:
 	# winter: deciduous trees swap leaves for their bare-branch twin, each at
 	# its own pace; evergreen variants keep their crown (and catch snow)
 	mat.set_shader_parameter("snow_k", 0.0 if id == "aquatic" else 1.0)
+	mat.set_shader_parameter("petal_k", 1.0 if id in ["flowers", "rare_flower", "aquatic"] else 0.0)
 	if cat == "trees":
 		var ever: Array = def.get("evergreen_variants", [])
 		mat.set_shader_parameter("evergreen", variant in ever)

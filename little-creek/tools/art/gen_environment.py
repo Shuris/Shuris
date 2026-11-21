@@ -27,6 +27,7 @@ from scipy import ndimage
 
 sys.path.insert(0, os.path.dirname(__file__))
 from palette import *  # noqa
+from palette import hx
 from pixlib import *  # noqa
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -948,6 +949,42 @@ def seasonal_overlays(cr, rmask):
     sp.save(os.path.join(SPR, "environment", "season_flowers.png"))
 
 
+def paint_snow_ground(cr, road):
+    """Snow blanket for the ground. RGB = shaded snow (warm white in the sun,
+    blue in the shade, slopes and drifts), A = accumulation order: snow shows
+    where order <= cover, so shaded flat ground whitens first, banks and sunny
+    patches later, and roads only partially (they stay readable)."""
+    m = cr["mask"]
+    xs, ys = grid(W, H)
+    hgt, dist = terrain_height(cr)
+    gy, gx = np.gradient(hgt)
+    slope_light = np.clip(gx * 0.9 - gy * 0.6, -1, 1)
+    n1 = value_noise(W, H, 9, R(951), octaves=3, sx=2.4)
+    n2 = value_noise(W, H, 3, R(952), octaves=2)
+    drift = value_noise(W, H, 22, R(953), octaves=2, sx=3.0)
+    ground = (ys >= HORIZON - 2) & ~m
+    v = 0.62 + SUN * 0.28 + slope_light * 0.25 + (n1 - 0.5) * 0.18 + (drift - 0.5) * 0.12
+    v -= np.exp(-np.maximum(dist - 1, 0) / 3.0) * 0.25          # shadowed lip at the water
+    v -= np.clip((ys - 300) / 60.0, 0, 1) * 0.06
+    snow_ramp = [hx("#5d7590"), hx("#7890aa"), hx("#93a9c2"), hx("#adc0d6"), hx("#c6d5e6"),
+                 hx("#dbe5f0"), hx("#ebf1f8"), hx("#f6f8fb"), hx("#fffdf6")]
+    cv = Canvas(W, H)
+    cv.put_ramp(ground, v, snow_ramp, dither=0.55)
+    # sparkles in the sun
+    rng = R(954)
+    sp = ground & (rng.random((H, W)) < 0.004 + 0.01 * SUN)
+    cv.px[sp, :3] = (255, 255, 255)
+    # accumulation order (0..1): shade + flat first
+    patches = value_noise(W, H, 14, R(955), octaves=3, sx=2.2)
+    order = 0.04 + patches * 0.62 + (n2 - 0.5) * 0.1 + SUN * 0.14 + np.abs(slope_light) * 0.08
+    order += np.exp(-np.maximum(dist - 1, 0) / 6.0) * 0.3       # banks whiten last
+    order = np.where(road, np.where(n2 > 0.45, 0.82 + n1 * 0.15, 2.0), order)  # partial road cover
+    order = np.clip(order, 0.02, 1.0)
+    a = np.where(ground & (order < 1.0), np.clip(order * 255, 1, 254), 0).astype(np.uint8)
+    cv.px[..., 3] = a
+    return cv
+
+
 def save_png(arr, path):
     Image.fromarray(arr, "RGBA").save(path)
 
@@ -1010,6 +1047,8 @@ if __name__ == "__main__":
     seasonal_overlays(cr, rmask)
     pud, pspots = make_puddles(cr, rmask, tmask)
     save_png(pud, os.path.join(SPR, "environment", "puddles.png"))
+    road_mask = ndimage.binary_dilation(tmask, iterations=1)
+    paint_snow_ground(cr, road_mask).save(os.path.join(SPR, "environment", "snow_ground.png"))
     zones, pts = scene_points(cr, rmask, tmask, frames)
     zones[..., 3] = np.where(pud[..., 0] > 0, 128, 255).astype(np.uint8)
     pts["puddles"] = [{"x": float(x), "y": float(y), "r": float(r)} for x, y, r in pspots]

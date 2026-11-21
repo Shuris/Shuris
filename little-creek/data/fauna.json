@@ -16,7 +16,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.5,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0.6,
+   "snow": 0.3,
+   "blizzard": 0.0
   }
  },
  "saira": {
@@ -35,7 +38,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.4,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0.5,
+   "snow": 0.2,
+   "blizzard": 0.0
   }
  },
  "butterfly": {
@@ -54,7 +60,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.1,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0,
+   "snow": 0,
+   "blizzard": 0
   }
  },
  "dragonfly": {
@@ -73,7 +82,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.3,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0,
+   "snow": 0,
+   "blizzard": 0
   }
  },
  "fish": {
@@ -92,7 +104,10 @@
   "rain": {
    "clear": 1.0,
    "light": 1.0,
-   "heavy": 0.4
+   "heavy": 0.4,
+   "snow_light": 1.0,
+   "snow": 0.9,
+   "blizzard": 0.7
   }
  },
  "duck": {
@@ -111,7 +126,10 @@
   "rain": {
    "clear": 1.0,
    "light": 1.0,
-   "heavy": 0.3
+   "heavy": 0.3,
+   "snow_light": 0.8,
+   "snow": 0.5,
+   "blizzard": 0.0
   }
  },
  "owl": {
@@ -130,7 +148,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.5,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 1.0,
+   "snow": 0.7,
+   "blizzard": 0.0
   }
  },
  "deer": {
@@ -149,7 +170,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.6,
-   "heavy": 0.1
+   "heavy": 0.1,
+   "snow_light": 0.8,
+   "snow": 0.4,
+   "blizzard": 0.0
   }
  },
  "fox": {
@@ -168,7 +192,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.4,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 1.1,
+   "snow": 0.8,
+   "blizzard": 0.0
   }
  },
  "maned_wolf": {
@@ -187,7 +214,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.3,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0.6,
+   "snow": 0.3,
+   "blizzard": 0.0
   }
  },
  "rabbit": {
@@ -206,7 +236,10 @@
   "rain": {
    "clear": 1.0,
    "light": 0.3,
-   "heavy": 0.0
+   "heavy": 0.0,
+   "snow_light": 0.7,
+   "snow": 0.3,
+   "blizzard": 0.0
   }
  }
 }

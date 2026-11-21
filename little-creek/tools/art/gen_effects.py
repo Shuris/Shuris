@@ -170,6 +170,12 @@ def main():
     cv.save(os.path.join(OUT, "glow.png"))
     body = from_ascii(["Y", "o"], {"Y": (236, 250, 140, 255), "o": (40, 34, 20, 255)})
     Image.fromarray(body, "RGBA").save(os.path.join(OUT, "firefly.png"))
+    # snowflakes: far (1px), mid (2x2 soft), near (3x3 star with soft edge)
+    Image.fromarray(from_ascii(["W"], {"W": (240, 246, 255, 200)}), "RGBA").save(os.path.join(OUT, "flake_s.png"))
+    Image.fromarray(from_ascii(["Wa", "ab"], {"W": (250, 252, 255, 245), "a": (218, 230, 246, 190), "b": (150, 168, 196, 150)}), "RGBA").save(
+        os.path.join(OUT, "flake_m.png"))
+    Image.fromarray(from_ascii([".a.", "aWa", ".ab"], {"W": (255, 255, 255, 255), "a": (225, 236, 250, 200), "b": (140, 160, 192, 170)}), "RGBA").save(
+        os.path.join(OUT, "flake_l.png"))
     print("effects done")
 
 
