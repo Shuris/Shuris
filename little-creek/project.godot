@@ -84,6 +84,14 @@ season_lush={
 "type": "float",
 "value": 0.0
 }
+season_young={
+"type": "float",
+"value": 0.0
+}
+snow_cover={
+"type": "float",
+"value": 0.0
+}
 world_wind={
 "type": "float",
 "value": 0.25

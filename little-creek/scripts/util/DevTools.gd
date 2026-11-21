@@ -34,6 +34,8 @@ func _ready() -> void:
 		elif a.begins_with("--season="):
 			var parts := a.substr(9).split(":")
 			Clock.set_season(Clock.SEASONS.find(parts[0]), float(parts[1]) if parts.size() > 1 else 14.0)
+		elif a.begins_with("--snowcover="):
+			Weather.snow_cover = a.substr(12).to_float()
 		elif a.begins_with("--weather="):
 			Weather.force(a.substr(10), 3.0)
 		elif a == "--fillall":

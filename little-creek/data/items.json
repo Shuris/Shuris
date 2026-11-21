@@ -207,7 +207,11 @@
   ],
   "footprint": 10,
   "limit": 7,
-  "placement": "grove"
+  "placement": "grove",
+  "evergreen_variants": [
+   2
+  ],
+  "bare": "res://assets/sprites/vegetation/tree_small_%d_bare.png"
  },
  "tree_big": {
   "name": "Árvore frondosa",
@@ -232,7 +236,9 @@
   ],
   "footprint": 16,
   "limit": 4,
-  "placement": "grove"
+  "placement": "grove",
+  "bare": "res://assets/sprites/vegetation/tree_big_%d_bare.png",
+  "evergreen_variants": []
  },
  "bench": {
   "name": "Banco de madeira",

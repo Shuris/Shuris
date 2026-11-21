@@ -199,20 +199,35 @@ def reeds(seed):
     return cv
 
 
-def tree(seed, w, h, trunk_w, crown_rx, crown_ry, crown_cy=None):
+def tree(seed, w, h, trunk_w, crown_rx, crown_ry, crown_cy=None, bare=False):
+    """Leafy tree, or its bare winter twin (identical trunk, natural branches
+    filling the crown silhouette). The leafy version contains the same
+    branches under the leaves, so leaf fall reveals exactly them."""
     rng = R(seed)
     cv = Canvas(w, h)
     cx = w / 2
-    shadow(cv, cx, h - 3, crown_rx * 0.75, 3)
+    shadow(cv, cx, h - 3, crown_rx * (0.75 if not bare else 0.45), 3)
     crown_cy = crown_cy if crown_cy is not None else crown_ry + 2
-    trunk(cv, cx, crown_cy, h - 4, trunk_w * 0.65, trunk_w, BARK_WARM, rng, roots=trunk_w * 0.45,
-          moss=MOSS[:6], moss_amt=0.25, texture=0.9)
-    for side in (-1, 1):  # limbs reaching into the crown
-        for t in range(int(crown_rx * 0.7)):
-            for k in range(max(1, int(trunk_w / 4))):
-                cv.pixel(cx + side * t, crown_cy + crown_ry * 0.55 - t * 0.75 + k, BARK_WARM[2 + k])
-    foliage_cluster(cv, cx, crown_cy, crown_rx, crown_ry, LEAF, rng, blob=(2.0, 3.8),
-                    density=1.15, contrast=1.15, lobes=9, dither=0.4)
+    trunk(cv, cx, crown_cy + crown_ry * 0.45, h - 4, trunk_w * 0.65, trunk_w, BARK_WARM, rng,
+          roots=trunk_w * 0.45, moss=MOSS[:6], moss_amt=0.25, texture=0.9)
+    brng = R(seed + 5000)
+    def inside(x, y):
+        return ((x - cx) / (crown_rx * 1.05)) ** 2 + ((y - crown_cy) / (crown_ry * 1.05)) ** 2 <= 1.0
+    fork_y = crown_cy + crown_ry * 0.5
+    # main limbs from the top of the trunk: a central leader and side limbs
+    limbs = [(-math.pi / 2, crown_ry * 0.95, trunk_w * 0.62)]
+    for k in range(4 if trunk_w > 8 else 3):
+        side = -1 if k % 2 == 0 else 1
+        ang = -math.pi / 2 + side * (0.45 + 0.28 * (k // 2) + brng.random() * 0.2)
+        limbs.append((ang, crown_rx * (0.75 + brng.random() * 0.25), trunk_w * (0.48 - 0.06 * (k // 2))))
+    canvas_b = Canvas(w, h)
+    for ang, ln, th in limbs:
+        branch_tree(canvas_b, cx + (brng.random() - 0.5) * 2, fork_y + 2, ang, ln * 0.55, th, 4,
+                    BARK_WARM, brng, bias=0.02, bounds=inside, spread=(0.3, 0.7), shrink=(0.62, 0.78))
+    cv.blend_over(canvas_b)
+    if not bare:
+        foliage_cluster(cv, cx, crown_cy, crown_rx, crown_ry, LEAF, rng, blob=(2.0, 3.8),
+                        density=1.15, contrast=1.15, lobes=9, dither=0.4)
     return cv
 
 
@@ -382,8 +397,10 @@ def main():
     lily(82).save(os.path.join(VEG, "aquatic_2.png"))
     for i in range(3):
         _veg_save(tree(90 + i, 62, 106, 6, 25, 26, 30), os.path.join(VEG, f"tree_small_{i}.png"))
+        tree(90 + i, 62, 106, 6, 25, 26, 30, bare=True).save(os.path.join(VEG, f"tree_small_{i}_bare.png"))
     for i in range(2):
         _veg_save(tree(95 + i, 112, 184, 13, 48, 48, 52), os.path.join(VEG, f"tree_big_{i}.png"))
+        tree(95 + i, 112, 184, 13, 48, 48, 52, bare=True).save(os.path.join(VEG, f"tree_big_{i}_bare.png"))
     bench().save(os.path.join(STR, "bench_0.png"))
     feeder().save(os.path.join(STR, "feeder_0.png"))
     deck().save(os.path.join(STR, "deck_0.png"))

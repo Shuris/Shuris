@@ -18,7 +18,10 @@ uniform bool use_dissolve = false;
 
 varying vec2 wpos;
 
+varying vec4 vcol;
+
 void vertex() {
+	vcol = COLOR;
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
 }
 
@@ -38,7 +41,14 @@ void fragment() {
 		vec4 b = texture(tex_b, uv);
 		c = n < amount ? b : c;
 	}
-	// season noise in world space, using the unshifted pixel
-	c = apply_season(c, wpos - (UV * ts) + px, fringe(TEXTURE, uv, TEXTURE_PIXEL_SIZE));
-	COLOR = c * COLOR;
+	vec2 wp = floor(wpos - (UV * ts) + px);   // world pixel (unshifted)
+	bool bare = show_bare(wp);
+	if (bare) {
+		c = texture(bare_tex, uv);
+		c = add_snow(c, SNOW_NB(bare_tex, uv, TEXTURE_PIXEL_SIZE), wp);
+	} else {
+		c = apply_season(c, wp, fringe(TEXTURE, uv, TEXTURE_PIXEL_SIZE));
+		c = add_snow(c, SNOW_NB(TEXTURE, uv, TEXTURE_PIXEL_SIZE), wp);
+	}
+	COLOR = c * vcol;  // vertex colour only (COLOR already holds the texture)
 }

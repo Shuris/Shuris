@@ -6,3 +6,5 @@ uniform float season_winter = 0.0;
 uniform float season_bloom = 0.0;
 uniform float season_lush = 0.0;
 uniform sampler2D season_noise : filter_nearest, repeat_enable;
+uniform float season_young = 0.0;
+uniform float snow_cover = 0.0;

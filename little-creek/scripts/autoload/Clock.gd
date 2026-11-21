@@ -129,24 +129,26 @@ func foliage_state() -> Dictionary:
 	var winter := 0.0
 	var bloom := 0.0
 	var lush := 0.0
+	var young := 0.0
 	match s:
-		0:  # spring: winter fades, blossoms rise
+		0:  # spring: trees leaf out over ~half the season, blossoms, fresh greens
 			winter = 1.0 - _ramp(d, 0.0, 0.3)
-			bare = 0.55 * (1.0 - _ramp(d, 0.0, 0.35))
-			bloom = _ramp(d, 0.1, 0.4) * (1.0 - 0.6 * _ramp(d, 0.7, 1.0))
-			lush = _ramp(d, 0.3, 1.0) * 0.5
+			bare = 1.0 - _ramp(d, 0.04, 0.5)
+			young = _ramp(d, 0.08, 0.25) * (1.0 - _ramp(d, 0.55, 0.85))
+			bloom = _ramp(d, 0.15, 0.4) * (1.0 - 0.6 * _ramp(d, 0.7, 1.0))
+			lush = _ramp(d, 0.4, 1.0) * 0.5
 		1:  # summer: full and lush
 			bloom = 0.4 * (1.0 - _ramp(d, 0.0, 0.3))
 			lush = 0.5 + 0.5 * _ramp(d, 0.0, 0.2)
-		2:  # autumn: colours turn over ~half the season, then leaves drop
+		2:  # autumn: colours turn over ~half the season, then leaves fall
 			autumn = _ramp(d, 0.03, 0.55)
-			bare = 0.55 * _ramp(d, 0.6, 1.0)
+			bare = 0.8 * _ramp(d, 0.45, 1.0)
 			lush = 0.6 * (1.0 - _ramp(d, 0.0, 0.3))
-		3:  # winter: cold, sparse, dull
-			autumn = 1.0 - _ramp(d, 0.0, 0.6)
-			bare = 0.55
+		3:  # winter: deciduous trees bare, cold and dull
+			autumn = 1.0 - _ramp(d, 0.0, 0.25)
+			bare = 0.8 + 0.2 * _ramp(d, 0.0, 0.15)
 			winter = _ramp(d, 0.0, 0.2)
-	return {"autumn": autumn, "bare": bare, "winter": winter, "bloom": bloom, "lush": lush}
+	return {"autumn": autumn, "bare": bare, "winter": winter, "bloom": bloom, "lush": lush, "young": young}
 
 
 ## Lighting keyframes by hour: tint (multiply), shadow colour (lift), sat,

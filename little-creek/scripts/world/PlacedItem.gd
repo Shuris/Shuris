@@ -41,6 +41,16 @@ func setup(d: Dictionary, noise: Texture2D) -> void:
 	var cat: String = def.get("category", "")
 	mat.set_shader_parameter("canopy", 1.0 if cat == "trees" else 0.0)
 	mat.set_shader_parameter("season_k", 0.0 if cat == "structures" else (0.25 if cat == "rocks" else (0.4 if id == "aquatic" else 1.0)))
+	# winter: deciduous trees swap leaves for their bare-branch twin, each at
+	# its own pace; evergreen variants keep their crown (and catch snow)
+	mat.set_shader_parameter("snow_k", 0.0 if id == "aquatic" else 1.0)
+	if cat == "trees":
+		var ever: Array = def.get("evergreen_variants", [])
+		mat.set_shader_parameter("evergreen", variant in ever)
+		if def.has("bare") and not (variant in ever):
+			mat.set_shader_parameter("has_bare", true)
+			mat.set_shader_parameter("bare_tex", SpriteLib.tex(String(def["bare"]) % variant))
+		mat.set_shader_parameter("tree_phase", fposmod(position.x * 0.137 + position.y * 0.071, 0.3))
 	sprite.material = mat
 	add_child(sprite)
 

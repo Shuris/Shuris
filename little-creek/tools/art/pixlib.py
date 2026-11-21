@@ -432,3 +432,56 @@ def fill_enclosed_holes(cv):
         if best is not None:
             cv.px[y, x] = best
     return int(holes.sum())
+
+
+def branch_tree(cv, x, y, angle, length, thick, depth, ramp_cols, rng, bias=0.0, bend=0.18,
+                children=(2, 3), spread=(0.35, 0.75), shrink=(0.62, 0.8), bounds=None, segs=None):
+    """Recursive natural branching (bare winter trees).
+
+    Each limb is drawn as a slightly curving, tapering stroke shaded from the
+    right (global light); it forks into 2-3 thinner limbs until 1px twigs.
+    bounds(x, y) -> bool keeps growth inside a crown silhouette.
+    Returns the list of segments (x0, y0, x1, y1, thickness) for snow caps.
+    """
+    if segs is None:
+        segs = []
+    steps = max(2, int(length / 2.5))
+    a = angle
+    px, py = float(x), float(y)
+    n = len(ramp_cols)
+    for i in range(steps):
+        t = i / steps
+        th = max(0.5, thick * (1.0 - 0.45 * t))
+        a += (rng.random() - 0.5) * bend
+        nx_, ny_ = px + math.cos(a) * length / steps, py + math.sin(a) * length / steps
+        if bounds is not None and not bounds(nx_, ny_):
+            a += math.copysign(0.35, (rng.random() - 0.5))
+            break
+        r = th / 2.0
+        L = int(max(abs(nx_ - px), abs(ny_ - py)) * 2) + 1
+        for k in range(L):
+            u = k / max(L - 1, 1)
+            cx_, cy_ = px + (nx_ - px) * u, py + (ny_ - py) * u
+            ix0, ix1 = int(math.floor(cx_ - r)), int(math.ceil(cx_ + r))
+            iy0, iy1 = int(math.floor(cy_ - r)), int(math.ceil(cy_ + r))
+            for yy in range(iy0, iy1 + 1):
+                for xx in range(ix0, ix1 + 1):
+                    dx, dy = xx + 0.5 - cx_, yy + 0.5 - cy_
+                    if dx * dx + dy * dy <= r * r + 0.25:
+                        # light from the right: right edge lighter, left darker
+                        side = dx / max(r, 0.5)
+                        v = 0.38 + side * 0.22 + bias + (rng.random() - 0.5) * 0.06
+                        idx = int(np.clip(v, 0, 0.999) * n)
+                        cv.pixel(xx, yy, ramp_cols[idx])
+        segs.append((px, py, nx_, ny_, th))
+        px, py = nx_, ny_
+    if depth <= 0 or thick < 0.6:
+        return segs
+    nkids = children[0] + int(rng.random() * (children[1] - children[0] + 1))
+    for c in range(nkids):
+        off = (spread[0] + rng.random() * (spread[1] - spread[0])) * (1 if c % 2 == 0 else -1)
+        if nkids == 3 and c == 2:
+            off *= 0.25
+        branch_tree(cv, px, py, a + off, length * (shrink[0] + rng.random() * (shrink[1] - shrink[0])),
+                    thick * 0.66, depth - 1, ramp_cols, rng, bias, bend, children, spread, shrink, bounds, segs)
+    return segs

@@ -13,7 +13,10 @@ uniform float edge_glow = 0.12;
 
 varying vec2 wpos;
 
+varying vec4 vcol;
+
 void vertex() {
+	vcol = COLOR;
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 0.0, 1.0)).xy;
 }
 
@@ -28,5 +31,10 @@ void fragment() {
 		c.rgb = mix(c.rgb, vec3(0.86, 0.9, 0.55), edge_glow);
 	}
 	c = apply_season(c, wpos, 0.0);
-	COLOR = c * COLOR;
+	if (n < amt) {
+		c = add_snow(c, SNOW_NB(tex_b, UV, 1.0 / tex_size), floor(wpos));
+	} else {
+		c = add_snow(c, SNOW_NB(TEXTURE, UV, 1.0 / tex_size), floor(wpos));
+	}
+	COLOR = c * vcol;  // vertex colour only (COLOR already holds the texture)
 }

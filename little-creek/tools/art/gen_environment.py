@@ -563,7 +563,7 @@ MID_TREES = [  # x, base_y, width
 ]
 
 
-def paint_mid_trees():
+def paint_mid_trees(bare=False):
     cv = Canvas(W, H)
     for i, (x, by, w) in enumerate(MID_TREES):
         rng = R(300 + i)
@@ -571,11 +571,25 @@ def paint_mid_trees():
         bark = blend_ramp(BARK, MIST[7], 0.25 + far * 0.4)
         moss = blend_ramp(MOSS[:6], MIST[7], 0.3 + far * 0.4)
         leaf = blend_ramp(LEAF[0:10], MIST[6], 0.08 + far * 0.25)
+        # branches (visible in winter; hidden under the leaves otherwise)
+        brng = R(900 + i)
+        bcv = Canvas(W, H)
+        top_y = 30 + w * 1.5
+        for k in range(5):
+            side = -1 if k % 2 == 0 else 1
+            ang = -math.pi / 2 + side * (0.35 + 0.22 * (k // 2) + brng.random() * 0.15) if k else -math.pi / 2
+            y0 = top_y + k * 8
+            branch_tree(bcv, x + side * w * 0.2, y0, ang, 28 + brng.random() * 14, w * (0.42 - 0.04 * k), 4,
+                        bark, brng, bias=-0.02, spread=(0.3, 0.7), shrink=(0.62, 0.8),
+                        bounds=lambda px, py: -6 < py < 150)
+        cv.blend_over(bcv)
         # canopy at the top (behind trunk top) + a few side branch clumps
         for k in range(4):
-            foliage_cluster(cv, x + (rng.random() - 0.5) * 70, -5 + rng.random() * 35,
-                            30 + rng.random() * 25, 16 + rng.random() * 12, leaf, rng,
-                            blob=(2.0, 3.8), contrast=1.25, bias=-0.06, dither=0.45)
+            fx, fy = x + (rng.random() - 0.5) * 70, -5 + rng.random() * 35
+            frx, fry = 30 + rng.random() * 25, 16 + rng.random() * 12
+            if not bare:
+                foliage_cluster(cv, fx, fy, frx, fry, leaf, rng,
+                                blob=(2.0, 3.8), contrast=1.25, bias=-0.06, dither=0.45)
         trunk(cv, x, -12, by, w * 0.75, w, bark, rng, lean=(rng.random() - 0.5) * 0.03,
               moss=moss, moss_amt=0.3, roots=w * 0.35, texture=1.0,
               shade_fn=lambda xx, yy: sun_at(xx, yy) * 0.15)
@@ -642,6 +656,22 @@ def paint_fg_top():
     for i in range(len(xs)):
         if rng.random() < 0.22:
             cv.pixel(xs[i], ys[i], LEAF[7 + int(rng.random() * 3)])
+    return cv
+
+
+def paint_fg_top_bare():
+    """Winter twin of the top foliage: dark near branches reaching in from
+    the top corners, with twigs (snow will settle on their upper edges)."""
+    cv = Canvas(W, H)
+    rng = R(4011)
+    dark = blend_ramp(BARK[:7], SHADOW[1], 0.35)
+    starts = [(0, 30, 0.35, 9), (20, -4, 0.75, 8), (130, -4, 1.25, 6), (210, -4, 1.0, 5),
+              (800, 40, math.pi - 0.35, 9), (780, -4, math.pi - 0.75, 8), (640, -4, math.pi - 1.2, 6),
+              (560, -4, math.pi - 1.0, 5), (420, -6, 1.45, 4), (300, -6, 1.7, 4)]
+    for x, y, ang, th in starts:
+        branch_tree(cv, x, y, ang, 40 + rng.random() * 25, th, 5, dark, rng, bias=-0.1,
+                    spread=(0.35, 0.8), shrink=(0.6, 0.78), bend=0.25,
+                    bounds=lambda px, py: py < 120 and -10 < px < W + 10)
     return cv
 
 
@@ -953,6 +983,7 @@ if __name__ == "__main__":
     mt = paint_mid_trees()
     fill_enclosed_holes(mt)
     mt.save(os.path.join(SPR, "environment", "mid_trees.png"))
+    paint_mid_trees(bare=True).save(os.path.join(SPR, "environment", "mid_trees_bare.png"))
     frames = []
     for i, (name, x, by, w) in enumerate(FRAME_TREES):
         cv, o = paint_frame_tree(x, by, w, 700 + i)
@@ -962,6 +993,7 @@ if __name__ == "__main__":
     ft = paint_fg_top()
     fill_enclosed_holes(ft)
     ft.save(os.path.join(SPR, "environment", "fg_top.png"))
+    paint_fg_top_bare().save(os.path.join(SPR, "environment", "fg_top_bare.png"))
     paint_fg_bottom(False).save(os.path.join(SPR, "environment", "fg_bottom_dry.png"))
     paint_fg_bottom(True).save(os.path.join(SPR, "environment", "fg_bottom_lush.png"))
     tr, tmask = paint_trail(cr)

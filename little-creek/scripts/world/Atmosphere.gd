@@ -36,8 +36,9 @@ func _process(_delta: float) -> void:
 	world.fog_mat.set_shader_parameter("fog_col", _v3(fog_col))
 	world.motes.emitting = float(L["rays"]) > 0.5 and r < 0.15 and not Clock.is_night()
 	# seasons (global shader uniforms shared by all vegetation shaders)
-	for k in ["autumn", "bare", "winter", "bloom", "lush"]:
+	for k in ["autumn", "bare", "winter", "bloom", "lush", "young"]:
 		RenderingServer.global_shader_parameter_set("season_" + k, float(fs[k]))
+	RenderingServer.global_shader_parameter_set("snow_cover", Weather.snow_cover)
 	RenderingServer.global_shader_parameter_set("world_wind", Weather.wind)
 	_local_accum += _delta
 	if _local_accum >= 0.5:
@@ -46,8 +47,9 @@ func _process(_delta: float) -> void:
 		for n in world.items.values():
 			mats.append(n.mat)
 		for m in mats:
-			for k in ["autumn", "bare", "winter", "bloom", "lush"]:
+			for k in ["autumn", "bare", "winter", "bloom", "lush", "young"]:
 				m.set_shader_parameter("season_" + k, float(fs[k]))
+			m.set_shader_parameter("snow_cover", Weather.snow_cover)
 			m.set_shader_parameter("world_wind", Weather.wind)
 			m.set_shader_parameter("season_noise", world.noise_tex)
 	var frost_time := 1.0 if (h < 8.5 or h > 19.0) else 0.25

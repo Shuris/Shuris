@@ -111,6 +111,8 @@ func _foliage_mat(canopy: float, k: float) -> ShaderMaterial:
 func _build_layers() -> void:
 	var bg := _sprite(ENV + "bg_forest.png")
 	bg.material = _foliage_mat(0.0, 0.85)
+	(bg.material as ShaderMaterial).set_shader_parameter("snow_mode", 1)
+	(bg.material as ShaderMaterial).set_shader_parameter("snow_k", 0.8)
 	weather_fx = WeatherFX.new()
 	weather_fx.name = "WeatherFX"
 	add_child(weather_fx)
@@ -119,6 +121,7 @@ func _build_layers() -> void:
 	var ground := _sprite(ENV + "ground_dry.png")
 	ground_mat = _dissolve_mat(ENV + "ground_lush.png")
 	ground_mat.set_shader_parameter("season_k", 0.7)
+	ground_mat.set_shader_parameter("snow_k", 0.0)  # the ground has its own snow layer
 	ground.material = ground_mat
 	for key in ["flowers", "litter", "frost"]:
 		var ov := _sprite(ENV + "season_%s.png" % key)
@@ -170,6 +173,8 @@ func _build_layers() -> void:
 	move_child(trail2, trail.get_index() + 1)
 	var mid := _sprite(ENV + "mid_trees.png")
 	mid.material = _foliage_mat(1.0, 0.9)
+	(mid.material as ShaderMaterial).set_shader_parameter("has_bare", true)
+	(mid.material as ShaderMaterial).set_shader_parameter("bare_tex", load(ENV + "mid_trees_bare.png"))
 
 	var fog := ColorRect.new()
 	fog.position = Vector2(0, 126)
@@ -193,6 +198,8 @@ func _build_layers() -> void:
 		s.centered = false
 		s.position = Vector2(float(t["x"]), float(t["base_y"]))
 		s.offset = Vector2(float(t["ox"]) - float(t["x"]), -float(t["base_y"]))
+		var fm2 := _foliage_mat(0.0, 0.0)   # big trunks: snow on roots/ledges only
+		s.material = fm2
 		entities.add_child(s)
 		frame_trees.append(s)
 
@@ -225,6 +232,9 @@ func _build_layers() -> void:
 	fgt_mat.set_shader_parameter("speed", 0.7)
 	fgt_mat.set_shader_parameter("anchor_top", true)
 	fgt_mat.set_shader_parameter("canopy", 1.0)
+	fgt_mat.set_shader_parameter("has_bare", true)
+	fgt_mat.set_shader_parameter("bare_tex", load(ENV + "fg_top_bare.png"))
+	fgt_mat.set_shader_parameter("tree_phase", 0.12)
 	fgt.material = fgt_mat
 	weather_fx.make_rain_layers(self)
 

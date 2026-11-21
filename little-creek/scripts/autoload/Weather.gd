@@ -11,6 +11,7 @@ var remaining_hours := 0.0     # time left in the current rain event
 var cooldown_hours := 6.0      # dry time before rain can start again
 var rain := 0.0                # smoothed intensity
 var wetness := 0.0
+var snow_cover := 0.0          # 0..1 snow lying on the ground and on things
 var wind := 0.25
 var cfg: Dictionary = {}
 var _check := 0.0
