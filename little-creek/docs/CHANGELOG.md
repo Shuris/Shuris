@@ -1,5 +1,82 @@
 # Changelog
 
+## v0.5.0 — Estações muito mais marcantes, inverno com neve e build para PC (Windows)
+
+> O pedido chamava esta versão de "V0.4.0", mas a 0.4.0 já tinha sido entregue
+> (copas sem buracos, distribuição, coelhos). Para não sobrescrever o número,
+> esta entrega é a **0.5.0**.
+
+### Árvores e vegetação por estação
+- Cada árvore caducifólia agora tem um **gêmeo sem folhas**: tronco e galhos
+  desenhados com ramificação natural (galhos que afinam, curvam e se dividem,
+  sombreados do lado contrário à luz). O mesmo vale para as copas do fundo e a
+  folhagem do primeiro plano.
+- **Primavera**: as folhas voltam aos poucos, por tufos, e cada árvore tem seu
+  próprio ritmo (algumas brotam antes); folhas jovens verde-claras, flores e
+  botões, brotos nas margens, borboletas.
+- **Verão**: copas densas e brilhantes, sombras das copas no chão, luz quente,
+  reflexos de sol na água.
+- **Outono**: tons graduais de amarelo, dourado, laranja, vermelho queimado e
+  marrom, com copas que ficam parcialmente verdes por mais tempo; perda gradual
+  de folhas (aparecem os galhos), folhas caindo e levadas pelo vento, montes de
+  folhas no chão (que somem sob a neve), folhas boiando no riacho, grama mais
+  amarelada e luz dourada.
+- **Inverno**: árvores caducifólias totalmente nuas; algumas árvores são
+  **perenes** e ficam verdes com neve nos tufos. Flores desaparecem.
+
+### Neve
+- Neve **respeita a geometria**: assenta no topo de galhos, copas, arbustos,
+  pedras, troncos, bancos, deque, comedouros e ponte (só superfícies voltadas
+  para cima, com lado iluminado e lado na sombra).
+- **Neve no chão acumula e derrete aos poucos** (mapa de ordem de acúmulo:
+  sombra primeiro, margens e áreas de sol por último, estradas só em manchas,
+  para continuarem legíveis). Acúmulo ~0,28/h com neve; derrete devagar sob o
+  sol do inverno, mais rápido na primavera e com chuva.
+- Três intensidades de **nevada**: leve, moderada e **nevasca** (flocos de três
+  tamanhos em três camadas de profundidade, vento lateral, névoa que reduz a
+  visibilidade). O clima de inverno sorteia neve em vez de chuva.
+
+### Água no inverno
+- **Gelo nas margens** e nas partes rasas e calmas: placas ciano foscas com
+  janelas de gelo transparente, rachaduras, brilho e borda quebrada clara junto
+  à água aberta. A correnteza, as quedas e a espuma continuam abertas — o
+  riacho não congela.
+- Água mais escura e fria, menos brilhos; vapor sobre o riacho nas manhãs frias.
+- Luz fria e difusa de dia, névoa ao amanhecer, entardecer rosado/alaranjado.
+
+### Animais
+- **Pegadas na neve**: coelho (pares de patas traseiras e dianteiras), veado
+  (cascos fendidos), raposa (linha única) e visitantes (botas). Só aparecem
+  quando o animal anda sobre neve, com passada adequada ao tamanho, e se
+  apagam com o tempo ou são cobertas por neve nova.
+- Coelhos se abrigam mais sob os arbustos no frio; pássaros procuram os
+  comedouros no inverno; tabelas de espécies por tipo de nevada.
+
+### PC (Windows)
+- Executável standalone (`LittleCreek.exe`, dados embutidos), janela inicial
+  1920×1080, redimensionável, 16:9 e outras proporções.
+- **Escala inteira de pixels** no PC: cada pixel da arte ocupa um número
+  inteiro de pixels da tela (×3 em 1080p, ×2 em 720p, ×4 em 1440p, ×6 em 4K).
+  Em resoluções "quebradas" (ex.: 1366×768) usa a escala inteira mais próxima
+  com faixas finas.
+- Tela inicial (Jogar / Configurações / Sair) e **menu de pausa** (Esc).
+- Mouse e teclado: clique coleta água e usa os botões; B/U/E/J/I abrem os
+  painéis; Esc fecha/pausa; P modo foto (roda do mouse = zoom, setas/WASD
+  enquadram, Espaço captura); F11 tela cheia. O toque continua funcionando no
+  Android.
+- **Configurações** que funcionam de verdade: modo de tela, resolução, VSync,
+  qualidade dos efeitos (baixa desliga raios de luz/névoa extra e reduz
+  partículas), densidade de partículas, volumes de música, ambiente e efeitos.
+  Tudo salvo junto com o progresso.
+- Save do Windows em `%APPDATA%\LittleCreek\little_creek_save.json`.
+
+### Correções técnicas
+- Shaders de vegetação multiplicavam a cor do vértice duas vezes (em Godot 4
+  `COLOR` já vem multiplicado pela textura) — a neve saía esverdeada e o
+  efeito de "brotar" ficava escuro. Corrigido em sway/foliage/dissolve/reveal.
+- O gelo antes só aparecia numa faixa de 1–3 px de um dos lados; agora usa a
+  distância real até a margem em 8 direções.
+
 ## v0.4.0 — Correções visuais, distribuição inteligente e coelhos
 
 ### Copas das árvores sem buracos

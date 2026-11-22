@@ -68,5 +68,7 @@ func _process(_d: float) -> void:
 	shadow_layer.modulate.a = clampf(sun * leafy * 0.85 * summer, 0.0, 1.0)
 	# piles: build up as leaves fall (late autumn), linger into early winter
 	var piles := clampf(float(fs["bare"]) * 1.6, 0.0, 1.0) if Clock.season() in [2, 3] else 0.0
+	# ...and disappear under a real snow cover
+	piles *= 1.0 - smoothstep(0.3, 0.75, Weather.snow_cover)
 	pile_layer.modulate.a = piles
 	pile_layer.visible = piles > 0.02

@@ -74,6 +74,7 @@ func _process(_delta: float) -> void:
 	var nightness := float(L["night"])
 	world.water_mat.set_shader_parameter("ice", winter_k * (0.55 + 0.35 * nightness + 0.2 * Weather.snow_cover))
 	world.water_mat.set_shader_parameter("cold", winter_k)
+	world.water_mat.set_shader_parameter("snow_cover", Weather.snow_cover)
 	# steam over the creek on cold mornings
 	var h2 := Clock.hour()
 	world.steam.emitting = winter_k > 0.4 and h2 > 5.0 and h2 < 10.0 and Weather.snow < 0.5

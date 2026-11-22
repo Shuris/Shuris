@@ -21,6 +21,8 @@ uniform vec3 glint_col = vec3(1.0, 0.98, 0.9);
 uniform float glint = 1.0;
 uniform float ice = 0.0;    // 0..1 winter shelf ice along banks and in calm shallows
 uniform float cold = 0.0;
+uniform sampler2D snow_tex : filter_nearest;   // ground snow (A = accumulation order)
+uniform float snow_cover = 0.0;
 uniform bool rain_rings = true;   // off on low quality   // 0..1 winter: darker, bluer water
 
 float bayer4(vec2 p) {
@@ -172,32 +174,54 @@ void fragment() {
 	// flow (static pattern), has cracks and a cold sheen; the main current,
 	// falls and foam stay open
 	if (ice > 0.01 && fall < 0.01) {
-		float near = 0.0;
-		for (int k = 1; k <= 6; k++) {
-			float o = float(k) * 1.5;
-			near = max(near, step(texture(TEXTURE, UV + vec2(-o, 0.0) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
-			near = max(near, step(texture(TEXTURE, UV + vec2(o, 0.0) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
-			near = max(near, step(texture(TEXTURE, UV + vec2(0.0, -o * 0.6) * tp).a, 0.5) * (1.0 - float(k) / 7.0));
+		// distance to the nearest bank (8 directions, squashed vertically for
+		// the elevated view), up to ~20 art px
+		float dist = 99.0;
+		vec2 dirs[8] = vec2[](vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 0.6), vec2(0.0, -0.6),
+				vec2(0.7, 0.42), vec2(-0.7, 0.42), vec2(0.7, -0.42), vec2(-0.7, -0.42));
+		for (int k = 1; k <= 10; k++) {
+			float o = float(k) * 2.0;
+			for (int j = 0; j < 8; j++) {
+				vec2 q = UV + dirs[j] * o * tp;
+				float sa = texture(snow_tex, q).a;
+				// a bank is dry land, or water edge hidden under the ground snow
+				if (texture(TEXTURE, q).a < 0.5 || (sa > 0.0 && sa <= snow_cover)) {
+					dist = min(dist, o);
+				}
+			}
+			if (dist < 98.0) {
+				break;
+			}
 		}
-		float calm = (1.0 - smoothstep(0.35, 0.8, f.b)) * (1.0 - wake) * (1.0 - foam * 1.5);
+		float calm = (1.0 - smoothstep(0.35, 0.8, f.b)) * (1.0 - wake) * (1.0 - clamp(foam * 1.5, 0.0, 1.0));
 		float in_n = texture(noise_tex, px / vec2(40.0, 18.0) + vec2(0.31, 0.77)).g;
-		float shelf = near * 1.1 + calm * (1.0 - depth) * 0.6 + (in_n - 0.5) * 0.35;
-		if (shelf > 1.05 - ice * 0.75) {
+		float in_f = texture(noise_tex, px / vec2(13.0, 7.0) + vec2(0.61, 0.13)).r;
+		// shelf width: wider in calm, shallow water; ragged edge from noise
+		float w = ice * (5.0 + 16.0 * in_n + 6.0 * in_f) * (0.5 + 0.5 * calm) * (1.2 - depth * 0.5);
+		float shelf = w - dist;   // > 0 inside the ice
+		if (shelf > 0.0) {
 			float crack = texture(noise_tex, px / vec2(23.0, 11.0)).b;
 			// translucent blue-grey ice (darker than snow), sheen streaks
-			vec3 ic = mix(vec3(0.46, 0.60, 0.70), vec3(0.64, 0.76, 0.84), in_n);
-			ic = mix(ic, col, 0.18);
+			// frosted pale-cyan ice (between the white snow and the teal water),
+			// with darker clear-ice windows where the water shows through
+			vec3 ic = mix(vec3(0.47, 0.69, 0.79), vec3(0.62, 0.80, 0.87), in_n);
+			if (in_f < 0.38) {
+				ic = mix(ic, col, 0.45);
+			}
 			if (fract((px.x * 0.35 - px.y * 0.9) / 7.0) < 0.12 && in_n > 0.45) {
-				ic = mix(ic, vec3(0.86, 0.92, 0.96), 0.7);
+				ic = mix(ic, vec3(0.80, 0.90, 0.96), 0.75);
 			}
 			if (abs(crack - 0.5) < 0.025) {
 				ic = vec3(0.34, 0.46, 0.58);
 			}
-			if (shelf > 1.05 - ice * 0.75 + 0.08 && hash(px) > 0.985) {
+			if (shelf < 1.0) {
+				ic = vec3(0.86, 0.93, 0.97);   // bright broken lip at the open water
+			}
+			if (shelf > 2.0 && hash(px) > 0.985) {
 				ic = vec3(1.0);
 			}
 			col = ic;
-		} else if (shelf > 1.0 - ice * 0.75) {
+		} else if (shelf > -1.5) {
 			col = mix(col, vec3(0.62, 0.74, 0.82), 0.55);   // thin rim of slush
 		}
 	}

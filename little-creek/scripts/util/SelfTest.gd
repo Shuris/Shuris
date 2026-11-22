@@ -33,7 +33,8 @@ func _shot(name: String) -> void:
 
 func _touch(screen: Vector2, pressed: bool) -> void:
 	var e := InputEventScreenTouch.new()
-	e.position = screen
+	# events are injected in window pixels; the UI works in viewport units
+	e.position = get_viewport().get_final_transform() * screen
 	e.pressed = pressed
 	e.index = 0
 	Input.parse_input_event(e)
@@ -603,6 +604,7 @@ func _run() -> void:
 		if world.footprints.prints.size() > 6:
 			break
 	var nprints := world.footprints.prints.size()
+	var old_prints: Array = world.footprints.prints.duplicate()
 	Engine.time_scale = 1.0
 	if is_instance_valid(rb3):
 		rb3.queue_free()
@@ -614,7 +616,13 @@ func _run() -> void:
 	for i in 120:
 		await get_tree().process_frame
 	GameState.time_scale = 1.0
-	_check("new snowfall buries old tracks", world.footprints.prints.size() < nprints)
+	var survived := 0
+	for o in old_prints:
+		for q in world.footprints.prints:
+			if is_same(o, q):
+				survived += 1
+				break
+	_check("new snowfall buries old tracks", survived == 0, "%d of %d old prints left, snow %.2f" % [survived, old_prints.size(), Weather.snow])
 	Weather.force("clear")
 	Weather.snow_cover = 0.0
 	# graphics settings really change the scene

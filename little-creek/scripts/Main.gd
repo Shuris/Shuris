@@ -148,7 +148,19 @@ func _layout() -> void:
 	var vs := get_viewport_rect().size
 	var base := Vector2(800, 360) * WORLD_SCALE
 	base_scale = maxf(1.0, maxf(vs.x / base.x, vs.y / base.y))
+	if Settings.is_desktop():
+		# PC: whole window pixels per art pixel (crisp pixels at any window
+		# size). Rounded cover scale; a slightly short axis gets thin bars.
+		var cs := _content_scale()
+		var cover := maxf(vs.x / 800.0, vs.y / 360.0) * cs
+		var n := maxf(1.0, roundf(cover))
+		base_scale = n / (WORLD_SCALE * cs)
 	_apply_view()
+
+
+## Window pixels per viewport unit (stretch mode "canvas_items").
+func _content_scale() -> float:
+	return get_viewport().get_final_transform().get_scale().x
 
 
 ## Pixels of screen per art pixel (integer in photo mode zoom steps).
@@ -166,7 +178,8 @@ func _apply_view() -> void:
 	c.x = clampf(c.x, half.x, 800.0 - half.x) if half.x < 400.0 else 400.0
 	c.y = clampf(c.y, half.y, 360.0 - half.y) if half.y < 180.0 else 180.0
 	pan = c - Vector2(400, 180)
-	var pos := (vs / 2.0 - c * k).floor()
+	var cs := _content_scale()
+	var pos := ((vs / 2.0 - c * k) * cs).floor() / cs
 	for r in [world_rect, light_rect]:
 		r.position = pos
 		r.size = size

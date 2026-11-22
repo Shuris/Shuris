@@ -148,6 +148,7 @@ func _build_layers() -> void:
 	water_mat.shader = WATER_SHADER
 	water_mat.set_shader_parameter("meta_tex", load("res://assets/sprites/water/water_meta.png"))
 	water_mat.set_shader_parameter("extra_tex", load("res://assets/sprites/water/water_extra.png"))
+	water_mat.set_shader_parameter("snow_tex", load(ENV + "snow_ground.png"))
 	water_mat.set_shader_parameter("bed_tex", load("res://assets/sprites/water/water_bed.png"))
 	water_mat.set_shader_parameter("noise_tex", noise_tex)
 	water_mat.set_shader_parameter("world_size", Vector2(W, H))

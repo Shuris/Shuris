@@ -29,6 +29,13 @@ Configurações (Esc → Configurações): modo de tela (janela/tela cheia),
 resolução da janela (1280×720 a 3840×2160), VSync, qualidade dos efeitos
 (baixa/média/alta), densidade de partículas e volumes de música, ambiente e efeitos.
 
+A imagem usa **escala inteira de pixels** (cada pixel da arte vira 2×2, 3×3,
+4×4… pixels da tela). Em 1920×1080 a escala é ×3 e preenche a tela; em
+resoluções fora do padrão (ex.: 1366×768) podem aparecer faixas finas nas bordas.
+
+Se o jogo não abrir, o registro de erros fica em
+`%APPDATA%\LittleCreek\logs\godot.log`.
+
 ## Android
 
 Instale `Little Creek/Android/LittleCreek-0.5.0.apk` (permita "instalar apps
