@@ -527,6 +527,124 @@ func _run() -> void:
 	_check("rabbit is in the biodiversity journal", "rabbit" in JournalPanel.ANIMALS and GameData.species.has("rabbit")
 		and NatureLog.count("rabbit") >= nr and NatureLog.sightings.has("rabbit"))
 
+	# 14) v0.5 seasons: winter trees, snow, ice, footprints, settings
+	Weather.force("clear")
+	Clock.set_season(3, 15.0)
+	var fsw := Clock.foliage_state()
+	_check("winter: deciduous trees fully bare", float(fsw["bare"]) >= 0.95)
+	Clock.set_season(0, 2.0)
+	var fs_sp0 := Clock.foliage_state()
+	Clock.set_season(0, 18.0)
+	var fs_sp1 := Clock.foliage_state()
+	_check("spring: leaves come back gradually", float(fs_sp0["bare"]) > 0.8 and float(fs_sp1["bare"]) < 0.05)
+	Clock.set_season(2, 28.0)
+	var fs_au := Clock.foliage_state()
+	_check("late autumn: trees partly bare, colours turned", float(fs_au["bare"]) > 0.4 and float(fs_au["autumn"]) > 0.9)
+	var deciduous := 0
+	var ever := 0
+	for it in world.items.values():
+		if it.id in ["tree_small", "tree_big"]:
+			if it.mat.get_shader_parameter("evergreen"):
+				ever += 1
+			elif it.mat.get_shader_parameter("has_bare") and it.mat.get_shader_parameter("bare_tex") != null:
+				deciduous += 1
+	_check("trees have bare-branch twins (evergreens excepted)", deciduous > 0, "deciduous %d evergreen %d" % [deciduous, ever])
+	# snow builds up gradually and melts in spring
+	Clock.set_season(3, 10.0)
+	Weather.snow_cover = 0.0
+	Weather.force("snow", 10.0)
+	for i in 4:
+		Weather._update_snow_cover(1.0)
+	var after4 := Weather.snow_cover
+	Weather.force("blizzard", 5.0)
+	for i in 4:
+		Weather._update_snow_cover(1.0)
+	var after8 := Weather.snow_cover
+	_check("snow accumulates gradually (not instantly)", after4 > 0.4 and after4 < 0.9 and after8 >= after4, "4h %.2f, 8h %.2f" % [after4, after8])
+	Weather.force("clear")
+	Clock.set_season(0, 3.0)
+	var sc0 := Weather.snow_cover
+	for i in 5:
+		Weather._update_snow_cover(1.0)
+	_check("snow melts gradually in spring", Weather.snow_cover < sc0 and Weather.snow_cover > 0.0, "%.2f -> %.2f" % [sc0, Weather.snow_cover])
+	for i in 20:
+		Weather._update_snow_cover(1.0)
+	_check("snow eventually melts away", Weather.snow_cover == 0.0)
+	# winter precipitation is snow, with three intensities
+	Clock.set_season(3, 12.0)
+	var kinds := {}
+	for i in 300:
+		Weather.cooldown_hours = 0.0
+		Weather.state = "clear"
+		Weather._roll()
+		kinds[Weather.state] = true
+	Weather.force("clear")
+	_check("winter weather: light snow, snow and blizzard (no rain)", kinds.has("snow_light") and kinds.has("snow")
+		and kinds.has("blizzard") and not kinds.has("light") and not kinds.has("heavy"), str(kinds.keys()))
+	# ice on the creek in winter, never in summer
+	Weather.snow_cover = 0.9
+	Clock.set_hour(7.0)
+	await _wait(4)
+	var ice_w: float = world.water_mat.get_shader_parameter("ice")
+	Clock.set_season(1, 10.0)
+	Weather.snow_cover = 0.0
+	await _wait(4)
+	var ice_s: float = world.water_mat.get_shader_parameter("ice")
+	_check("winter shelf ice on the creek, none in summer", ice_w > 0.5 and ice_s < 0.01, "%.2f / %.2f" % [ice_w, ice_s])
+	# footprints: a rabbit hopping on snow leaves tracks; new snow buries them
+	Clock.set_season(3, 12.0)
+	Clock.set_hour(17.8)
+	Weather.snow_cover = 0.9
+	world.footprints.clear()
+	Engine.time_scale = 6.0
+	var rb3: Rabbit = main.wildlife.spawn_rabbit(1)
+	for i in 500:
+		await get_tree().process_frame
+		if world.footprints.prints.size() > 6:
+			break
+	var nprints := world.footprints.prints.size()
+	Engine.time_scale = 1.0
+	if is_instance_valid(rb3):
+		rb3.queue_free()
+	_check("animals leave footprints on snow", nprints > 6, "%d prints" % nprints)
+	Weather.force("blizzard", 2.0)
+	for i in 120:
+		await get_tree().process_frame
+	GameState.time_scale = 60.0
+	for i in 120:
+		await get_tree().process_frame
+	GameState.time_scale = 1.0
+	_check("new snowfall buries old tracks", world.footprints.prints.size() < nprints)
+	Weather.force("clear")
+	Weather.snow_cover = 0.0
+	# graphics settings really change the scene
+	var sq0 := Settings.quality
+	var sp0 := Settings.particles
+	Settings.quality = 0
+	Settings.particles = 0.5
+	Settings.apply_effects()
+	var low_ok: bool = not world.rays_mat.get_meta("node").visible and world.weather_fx.particle_density < 0.3 \
+		and world.fireflies.budget < 0.3
+	Settings.quality = 2
+	Settings.particles = 1.0
+	Settings.apply_effects()
+	var high_ok: bool = world.rays_mat.get_meta("node").visible and is_equal_approx(world.weather_fx.particle_density, 1.0)
+	_check("effects quality / particle density settings take effect", low_ok and high_ok)
+	Settings.quality = sq0
+	Settings.particles = sp0
+	Settings.apply_effects()
+	Settings.store()
+	_check("video settings are saved", SaveSystem.settings.has("quality") and SaveSystem.settings.has("particles")
+		and SaveSystem.settings.has("fullscreen") and SaveSystem.settings.has("vsync"))
+	_check("save stores snow cover", Weather.to_dict().has("snow_cover"))
+	# pause menu (Esc) pauses the world and resumes
+	main.open_menu(true)
+	await _wait(3)
+	var paused := get_tree().paused
+	main.close_menu()
+	await _wait(3)
+	_check("Esc pause menu pauses and resumes the game", paused and not get_tree().paused)
+
 	# 10) behaviour cycles run end to end (time accelerated)
 	Engine.time_scale = 12.0
 	var spots: Array = GameData.scene["drink_spots"]

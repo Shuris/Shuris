@@ -209,6 +209,7 @@ func _build_layers() -> void:
 	fm.set_shader_parameter("rect_size", fog.size)
 	fog.material = fm
 	fog_mat = fm
+	fm.set_meta("node", fog)
 	add_child(fog)
 
 	entities = Node2D.new()
@@ -233,6 +234,7 @@ func _build_layers() -> void:
 	rays_mat.shader = RAYS
 	rays_mat.set_shader_parameter("noise_tex", noise_tex)
 	rays.material = rays_mat
+	rays_mat.set_meta("node", rays)
 	add_child(rays)
 
 	_build_particles()

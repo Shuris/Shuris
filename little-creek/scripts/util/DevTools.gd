@@ -46,6 +46,12 @@ func _ready() -> void:
 			call_deferred("_photo", a.substr(8))
 		elif a == "--clean":
 			call_deferred("_clean")
+		elif a == "--report":
+			call_deferred("_report")
+		elif a == "--title":
+			call_deferred("_title")
+		elif a == "--settings":
+			call_deferred("_settings_ui")
 		elif a == "--tracks":
 			call_deferred("_tracks")
 		elif a == "--perf":
@@ -234,6 +240,29 @@ func _clean() -> void:
 
 
 ## Let animals walk across fresh snow for a few seconds (time accelerated).
+## Prints the persistent state (used to compare runs of the built game).
+func _report() -> void:
+	await get_tree().create_timer(1.0).timeout
+	var c := {}
+	for d in GameState.placed:
+		c[d["id"]] = int(c.get(d["id"], 0)) + 1
+	print("REPORT water=%d seeds=%d stage=%d placed=%d counts=%s upgrades=%s clock='%s %s' weather=%s snow=%.2f discovered=%d journal=%d user_dir=%s" % [
+		int(GameState.water), int(GameState.seeds), GameState.stage, GameState.placed.size(), str(c),
+		str(GameState.upgrades), Clock.date_string(), Clock.time_string(), Weather.state, Weather.snow_cover,
+		GameState.discovered.size(), NatureLog.sightings.size(), OS.get_user_data_dir()])
+
+
+func _title() -> void:
+	await get_tree().process_frame
+	main.open_menu(false)
+
+
+func _settings_ui() -> void:
+	await get_tree().process_frame
+	main.open_menu(true)
+	main.menu._open_settings()
+
+
 func _tracks() -> void:
 	await get_tree().create_timer(0.4).timeout
 	var wd: Node = main.wildlife

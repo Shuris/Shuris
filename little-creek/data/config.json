@@ -4,7 +4,7 @@
     "day_real_minutes": 24.0,
     "days_per_season": 30,
     "start_hour": 7.0,
-    "start_day": 10,
+    "start_day": 15,
     "offline_max_game_hours": 18.0,
     "periods": {"dawn": [5.0, 7.5], "day": [7.5, 17.0], "dusk": [17.0, 19.5], "night": [19.5, 5.0]}
   },

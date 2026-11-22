@@ -108,8 +108,19 @@ func _ready() -> void:
 	var report := SaveSystem.load_game()
 	world.rebuild_items()
 	AudioManager.start_ambience()
+	Settings.world = world
+	Settings.apply_display()
+	Settings.apply_effects()
+	_setup_input()
 	if hud and hud.has_method("on_game_loaded"):
 		hud.on_game_loaded(report)
+	# title screen (skipped for automated runs: screenshots / self-test)
+	var dev_run := false
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--shot") or a == "--selftest" or a == "--notitle":
+			dev_run = true
+	if not dev_run:
+		open_menu(false)
 
 	dev = load("res://scripts/util/DevTools.gd").new()
 	dev.main = self
@@ -204,6 +215,118 @@ func exit_photo_mode() -> void:
 	touch_layer.visible = true
 	if hud:
 		hud.visible = true
+
+
+# ------------------------------------------------------------------ PC: menus & keys
+var menu: MenuScreen
+
+
+func open_menu(as_pause: bool) -> void:
+	if menu:
+		return
+	if hud:
+		hud.close_drawer()
+		hud.visible = false
+	touch_layer.visible = false
+	menu = MenuScreen.new()
+	menu.main = self
+	menu.pause = as_pause
+	add_child(menu)
+
+
+func close_menu() -> void:
+	if menu == null:
+		return
+	get_tree().paused = false
+	var m := menu
+	menu = null
+	var t := m.create_tween()
+	t.tween_property(m, "modulate:a", 0.0, 0.3)
+	t.tween_callback(m.queue_free)
+	if photo == null:
+		touch_layer.visible = true
+		if hud:
+			hud.visible = true
+
+
+const KEYS := {
+	"lc_menu": [KEY_ESCAPE], "lc_build": [KEY_B], "lc_upgrades": [KEY_U], "lc_eco": [KEY_E],
+	"lc_journal": [KEY_J], "lc_info": [KEY_I], "lc_photo": [KEY_P, KEY_F12], "lc_fullscreen": [KEY_F11],
+	"lc_zoom_in": [KEY_EQUAL, KEY_KP_ADD, KEY_PAGEUP], "lc_zoom_out": [KEY_MINUS, KEY_KP_SUBTRACT, KEY_PAGEDOWN],
+	"lc_left": [KEY_LEFT, KEY_A], "lc_right": [KEY_RIGHT, KEY_D], "lc_up": [KEY_UP, KEY_W], "lc_down": [KEY_DOWN, KEY_S],
+	"lc_capture": [KEY_SPACE, KEY_ENTER],
+}
+
+
+func _setup_input() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	for action in KEYS.keys():
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+		for k in KEYS[action]:
+			var e := InputEventKey.new()
+			e.physical_keycode = k
+			InputMap.action_add_event(action, e)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		if photo and event is InputEventKey and event.pressed:
+			pass
+		else:
+			return
+	if event.is_action_pressed("lc_fullscreen"):
+		Settings.toggle_fullscreen()
+		get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("lc_menu"):
+		get_viewport().set_input_as_handled()
+		if menu:
+			if not menu.back() and not menu.pause:
+				close_menu()   # Esc on the title screen also starts the game
+			return
+		if photo:
+			exit_photo_mode()
+			return
+		if hud and hud.drawer_open:
+			hud.close_drawer()
+			return
+		open_menu(true)
+		return
+	if menu:
+		return
+	if photo:
+		var step := 24.0 / view_scale()
+		if event.is_action_pressed("lc_zoom_in"):
+			photo._step(1)
+		elif event.is_action_pressed("lc_zoom_out"):
+			photo._step(-1)
+		elif event.is_action_pressed("lc_capture"):
+			photo.capture()
+		elif event.is_action("lc_left"):
+			pan.x -= step * 4.0
+			_apply_view()
+		elif event.is_action("lc_right"):
+			pan.x += step * 4.0
+			_apply_view()
+		elif event.is_action("lc_up"):
+			pan.y -= step * 4.0
+			_apply_view()
+		elif event.is_action("lc_down"):
+			pan.y += step * 4.0
+			_apply_view()
+		elif event.is_action_pressed("lc_photo"):
+			exit_photo_mode()
+		return
+	if event.is_action_pressed("lc_photo"):
+		enter_photo_mode()
+	elif hud:
+		for pair in [["lc_build", "build"], ["lc_upgrades", "upgrades"], ["lc_eco", "eco"], ["lc_journal", "journal"],
+				["lc_info", "info"]]:
+			if event.is_action_pressed(pair[0]):
+				hud.open_panel(pair[1])
+				get_viewport().set_input_as_handled()
+				return
 
 
 ## Screen (Main local) -> world pixel coordinates.

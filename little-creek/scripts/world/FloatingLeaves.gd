@@ -14,6 +14,7 @@ var _src_t := 0.0
 var _flow: Image
 var frames_green: SpriteFrames
 var frames_autumn: SpriteFrames
+var budget := 1.0   # graphics setting
 const SEASON_RATE := [0.12, 0.08, 0.9, 0.15]
 
 
@@ -43,7 +44,7 @@ func burst(at: Vector2, n: int = 5) -> void:
 
 
 func _spawn(p: Vector2 = Vector2.INF) -> void:
-	var mx := int(GameData.config.get("effects", {}).get("leaves_max", 26))
+	var mx := int(int(GameData.config.get("effects", {}).get("leaves_max", 26)) * budget)
 	if leaves.size() >= mx:
 		return
 	if p == Vector2.INF:

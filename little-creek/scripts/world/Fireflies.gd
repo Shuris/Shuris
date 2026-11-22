@@ -10,6 +10,7 @@ var flies: Array = []   # [{body, glow, anchor, phase, speed, blink}]
 var glow_tex: Texture2D
 var body_tex: Texture2D
 var _anchors: Array = []
+var budget := 1.0   # graphics setting
 var _anchor_t := 0.0
 const SEASON_K := [0.7, 1.0, 0.45, 0.0]
 
@@ -25,7 +26,7 @@ func target_count() -> int:
 	var night := clampf((float(L["night"]) - 0.35) / 0.5, 0.0, 1.0)
 	var veg := clampf(GameState.lushness() * 1.2, 0.15, 1.0)
 	var mx := float(GameData.config.get("effects", {}).get("fireflies_max", 26))
-	return int(mx * night * SEASON_K[Clock.season()] * veg * (1.0 - Weather.rain))
+	return int(mx * night * SEASON_K[Clock.season()] * veg * (1.0 - Weather.rain) * (1.0 - Weather.snow) * budget)
 
 
 func _refresh_anchors() -> void:

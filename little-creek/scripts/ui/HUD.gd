@@ -260,7 +260,7 @@ func _process(delta: float) -> void:
 
 
 # ------------------------------------------------------------------ buttons
-func _round_button(icon_name: String, text: String, cb: Callable) -> Control:
+func _round_button(icon_name: String, text: String, cb: Callable, key: String = "") -> Control:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", -2)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -270,6 +270,8 @@ func _round_button(icon_name: String, text: String, cb: Callable) -> Control:
 	b.texture_hover = load(UITheme.UI + "btn_round_active.png")
 	b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	b.custom_minimum_size = Vector2(80, 80)
+	if key != "" and Settings.is_desktop():
+		b.tooltip_text = "%s  (%s)" % [text, key]
 	b.ignore_texture_size = true
 	b.stretch_mode = TextureButton.STRETCH_SCALE
 	b.pressed.connect(func() -> void:
@@ -290,10 +292,10 @@ func _build_buttons() -> void:
 	buttons.add_theme_constant_override("separation", 12)
 	buttons.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(buttons)
-	buttons.add_child(_round_button("build", "Construir", func() -> void: open_panel("build")))
-	buttons.add_child(_round_button("upgrade", "Melhorias", func() -> void: open_panel("upgrades")))
-	buttons.add_child(_round_button("eco", "Ecossistema", func() -> void: open_panel("eco")))
-	buttons.add_child(_round_button("journal", "Diário", func() -> void: open_panel("journal")))
+	buttons.add_child(_round_button("build", "Construir", func() -> void: open_panel("build"), "B"))
+	buttons.add_child(_round_button("upgrade", "Melhorias", func() -> void: open_panel("upgrades"), "U"))
+	buttons.add_child(_round_button("eco", "Ecossistema", func() -> void: open_panel("eco"), "E"))
+	buttons.add_child(_round_button("journal", "Diário", func() -> void: open_panel("journal"), "J"))
 	_pin(buttons, Vector2(1, 1), Vector2(-14, -6))
 
 

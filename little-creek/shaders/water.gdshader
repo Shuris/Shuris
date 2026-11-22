@@ -20,7 +20,8 @@ uniform vec3 foam_col = vec3(0.945, 0.953, 0.878);
 uniform vec3 glint_col = vec3(1.0, 0.98, 0.9);
 uniform float glint = 1.0;
 uniform float ice = 0.0;    // 0..1 winter shelf ice along banks and in calm shallows
-uniform float cold = 0.0;   // 0..1 winter: darker, bluer water
+uniform float cold = 0.0;
+uniform bool rain_rings = true;   // off on low quality   // 0..1 winter: darker, bluer water
 
 float bayer4(vec2 p) {
 	int x = int(mod(p.x, 4.0));
@@ -58,7 +59,7 @@ float flow_noise(vec2 px, vec2 dir, float spd, vec2 scale, float rate, float off
 }
 
 // expanding rain rings, squashed for the elevated perspective
-float rain_rings(vec2 px, float density) {
+float rain_rings_at(vec2 px, float density) {
 	vec2 cell = floor(px / vec2(9.0, 5.0));
 	float h = hash(cell);
 	if (h > density) {
@@ -135,7 +136,7 @@ void fragment() {
 	}
 
 	// rain rings
-	float ring = rain > 0.01 ? rain_rings(px, rain * 0.55) : 0.0;
+	float ring = (rain > 0.01 && rain_rings) ? rain_rings_at(px, rain * 0.55) : 0.0;
 	v += ring * 0.35;
 
 	// winter: water darker and bluer, fewer bright crests

@@ -49,7 +49,8 @@ bool show_bare(vec2 p) {
 	if (!has_bare || evergreen) {
 		return false;
 	}
-	float clump = s_noise(p / 4.0 + vec2(41.0, 13.0));
+	// leaves fall in sizeable clumps (whole sprays), revealing real branches
+	float clump = s_noise(p / 6.5 + vec2(41.0, 13.0)) * 0.75 + s_noise(p / 2.5) * 0.25;
 	return clump < bare_amount();
 }
 

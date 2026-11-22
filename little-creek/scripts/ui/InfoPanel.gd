@@ -18,6 +18,14 @@ func _ready() -> void:
 	left.add_child(_slider("music", "Música", AudioManager.music_volume, AudioManager.set_music_volume))
 	left.add_child(_slider("rain", "Sons ambientes", AudioManager.amb_volume, AudioManager.set_amb_volume))
 	left.add_child(_slider("sound", "Efeitos sonoros", AudioManager.sfx_volume, AudioManager.set_sfx_volume))
+	var sb := Button.new()
+	sb.text = "Configurações de vídeo e som"
+	sb.custom_minimum_size = Vector2(0, 50)
+	sb.pressed.connect(func() -> void:
+		hud.close_drawer()
+		hud.main.open_menu(true)
+		hud.main.menu.call_deferred("_open_settings"))
+	left.add_child(sb)
 	left.add_child(UITheme.label("Teste", 18, Palette.ACCENT))
 	_speed_btn = Button.new()
 	_speed_btn.custom_minimum_size = Vector2(0, 50)
@@ -51,7 +59,7 @@ func _ready() -> void:
 	help.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	help.custom_minimum_size = Vector2(380, 0)
 	scroll.add_child(help)
-	var cred := UITheme.label("Little Creek · protótipo 0.4 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
+	var cred := UITheme.label("Little Creek · protótipo 0.5 · Godot 4 · fonte Pixelify Sans (OFL)", 13, Palette.TEXT_MUTED)
 	mid.add_child(cred)
 
 

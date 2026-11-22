@@ -60,6 +60,7 @@ func load_game() -> Dictionary:
 			push_warning("SaveSystem: corrupt save ignored")
 	_loaded = true
 	AudioManager.apply_settings(settings)
+	Settings.load_from(settings)
 	last_report = report
 	loaded.emit(report)
 	return report
