@@ -39,7 +39,7 @@ class MainActivity : Activity() {
         buildLayout()
         repo.addListener(listener)
         AppInit.onAppStart(this)
-        if (!repo.settings.onboarded) push(WelcomeScreen(this), animate = false)
+        if (!repo.settings.onboarded) push(WelcomeScreen(this), animate = false) else AppInit.maybeAskNotificationPermission(this)
         handleIntent(intent)
         if (savedInstanceState != null) switchTab(savedInstanceState.getInt("tab", 0), false)
     }

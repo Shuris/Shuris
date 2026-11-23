@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 @Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
 class UiScreenshotTest {
     private fun launch(theme: String = "light", demo: Boolean = true): MainActivity {
-        val repo = Repo.get(RuntimeEnvironment.getApplication())
+        val repo = TestRepo.fresh()
         repo.settings.onboarded = true
         repo.settings.userName = "Ana"
         repo.settings.theme = theme
@@ -59,7 +59,7 @@ class UiScreenshotTest {
 @Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
 class Stage3ScreenshotTest {
     @Test fun moodAndJournal() {
-        val repo = Repo.get(RuntimeEnvironment.getApplication())
+        val repo = TestRepo.fresh()
         repo.settings.onboarded = true; repo.settings.userName = "Ana"
         DemoData.generate(repo)
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
@@ -86,7 +86,7 @@ class Stage3ScreenshotTest {
 @Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
 class Stage4ScreenshotTest {
     @Test fun analysesGoalsConsistency() {
-        val repo = Repo.get(RuntimeEnvironment.getApplication())
+        val repo = TestRepo.fresh()
         repo.settings.onboarded = true; repo.settings.userName = "Ana"
         DemoData.generate(repo)
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()

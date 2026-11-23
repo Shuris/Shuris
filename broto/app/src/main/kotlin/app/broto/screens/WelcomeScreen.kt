@@ -17,6 +17,7 @@ class WelcomeScreen(act: MainActivity) : Screen(act) {
         repo.settings.userName = name
         repo.settings.onboarded = true
         act.back()
+        app.broto.AppInit.maybeAskNotificationPermission(act)
     }
 
     override fun build(): View = scrollPage(Theme.p.bg) {
