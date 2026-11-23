@@ -178,6 +178,20 @@ class MainActivity : Activity() {
         }
     }
 
+    private val results = HashMap<Int, (Int, Intent?) -> Unit>()
+    private var nextReq = 100
+    /** startActivityForResult com callback. */
+    fun launchForResult(i: Intent, cb: (resultCode: Int, data: Intent?) -> Unit) {
+        val code = nextReq++
+        results[code] = cb
+        try { startActivityForResult(i, code) } catch (e: Exception) { results.remove(code); snack("Não foi possível abrir: nenhum app compatível.") }
+    }
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        results.remove(requestCode)?.invoke(resultCode, data)
+    }
+
     override fun onDestroy() { repo.removeListener(listener); super.onDestroy() }
 
     /** Mensagem curta na parte inferior, com ação opcional (ex.: desfazer). */
