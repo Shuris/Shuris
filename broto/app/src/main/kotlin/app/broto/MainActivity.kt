@@ -1,0 +1,7 @@
+package app.broto
+import android.app.Activity
+import android.os.Bundle
+import android.widget.TextView
+class MainActivity : Activity() {
+    override fun onCreate(s: Bundle?) { super.onCreate(s); setContentView(TextView(this).apply { text = "Olá, ação! Ç ã é " + app.broto.core.Hello.msg(3); textSize = 32f ; setOnClickListener { text = "ok" } }) }
+}
