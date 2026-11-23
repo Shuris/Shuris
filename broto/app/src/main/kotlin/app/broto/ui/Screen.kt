@@ -41,13 +41,17 @@ abstract class Screen(val act: MainActivity) {
         return null
     }
 
+    /** Margem lateral: 20dp no celular; em telas largas o conteúdo fica centralizado com largura máxima. */
+    fun side(): Int = maxOf(20, (act.resources.configuration.screenWidthDp - 680) / 2)
+    val narrow: Boolean get() = act.resources.configuration.screenWidthDp < 360
+
     // ------------------------------------------------------------------ Estrutura padrão de página
     /** Página com barra superior (voltar + título + ações) e conteúdo rolável. */
     fun page(title: String, subtitle: String? = null, back: Boolean = true, bg: Int = Theme.p.bg,
              actions: (LinearLayout.() -> Unit)? = null, content: LinearLayout.() -> Unit): View {
         val root = LinearLayout(act).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
         root.horizontal {
-            pad(if (back) 8 else 20, 10, 12, 6); minimumHeight = dp(60)
+            pad(if (back) side() - 12 else side(), 10, side() - 8, 6); minimumHeight = dp(60)
             if (back) iconButton(Icon.BACK, Theme.p.text) { act.back() }
             vertical {
                 lp(0, WRAP, 1f, l = if (back) 4 else 0)
@@ -56,7 +60,7 @@ abstract class Screen(val act: MainActivity) {
             }
             actions?.invoke(this)
         }
-        val body = act.verticalLayout { pad(20, 6, 20, 32) }
+        val body = act.verticalLayout { pad(side(), 6, side(), 32) }
         body.content()
         root.addView(act.scrollContainer(body, bg), LinearLayout.LayoutParams(MATCH, 0, 1f))
         return root
@@ -64,7 +68,7 @@ abstract class Screen(val act: MainActivity) {
 
     /** Conteúdo rolável sem barra superior (abas principais). */
     fun scrollPage(bg: Int = Theme.p.bg, content: LinearLayout.() -> Unit): View {
-        val body = act.verticalLayout { pad(20, 14, 20, 28) }
+        val body = act.verticalLayout { pad(side(), 14, side(), 28) }
         body.content()
         return act.scrollContainer(body, bg)
     }

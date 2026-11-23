@@ -135,6 +135,9 @@ class MainActivity : Activity() {
         finish()
     }
 
+    /** Fecha a tela do topo sem consultar onBack(). */
+    fun pop() { if (stack.isNotEmpty()) popTop(true) }
+
     /** Fecha a tela atual e abre outra (ex.: editor -> detalhe). */
     fun replace(s: Screen) { popTop(false); push(s, false) }
 

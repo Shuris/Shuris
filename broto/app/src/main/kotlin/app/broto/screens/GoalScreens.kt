@@ -77,9 +77,9 @@ class GoalsScreen(act: MainActivity) : Screen(act) {
     }
 }
 
-class GoalDetailScreen(act: MainActivity, private val id: Long) : Screen(act) {
+class GoalDetailScreen(act: MainActivity, private val goalId: Long) : Screen(act) {
     override fun build(): View {
-        val g = repo.goal(id) ?: return act.verticalLayout().also { it.post { if (visible) act.back() } }
+        val g = repo.goal(goalId) ?: return act.verticalLayout().also { it.post { if (visible) act.back() } }
         val pr = repo.goalProgress(g)
         val today = LocalDate.now()
         return page(g.name, "${g.horizon.label} · ${g.category.label}", actions = {
@@ -166,12 +166,12 @@ class GoalDetailScreen(act: MainActivity, private val id: Long) : Screen(act) {
     }
 }
 
-class GoalEditorScreen(act: MainActivity, private val id: Long?) : Screen(act) {
-    private var g: Goal = id?.let { repo.goal(it) } ?: Goal(name = "", createdDay = LocalDate.now(), target = 10.0)
+class GoalEditorScreen(act: MainActivity, private val goalId: Long?) : Screen(act) {
+    private var g: Goal = goalId?.let { repo.goal(it) } ?: Goal(name = "", createdDay = LocalDate.now(), target = 10.0)
     private val emojis = listOf("🎯", "📚", "🧠", "🏃", "💪", "📵", "💻", "✍️", "🎸", "🌍", "💰", "🏆", "🌱", "🧘", "🍎", "✈️", "🏠", "❤️")
     private var newStep = ""
 
-    override fun build(): View = page(if (id == null) "Novo objetivo" else "Editar objetivo") {
+    override fun build(): View = page(if (goalId == null) "Novo objetivo" else "Editar objetivo") {
         card {
             fieldLabel("Nome")
             field("Ex.: Ler 12 livros", g.name).addTextChangedListener(watcher { g = g.copy(name = it) })
@@ -240,10 +240,10 @@ class GoalEditorScreen(act: MainActivity, private val id: Long?) : Screen(act) {
             text("Hábitos relacionados", TextStyle.SUBTITLE).lp(WRAP, WRAP, b = 8)
             multiChips(habits, habits.filter { it.id in g.habitIds }.toSet(), { "${it.emoji} ${it.name}" }) { sel -> g = g.copy(habitIds = sel.map { it.id }) }
         }
-        primaryButton(if (id == null) "Criar objetivo" else "Salvar", Icon.CHECK) {
+        primaryButton(if (goalId == null) "Criar objetivo" else "Salvar", Icon.CHECK) {
             if (g.name.isBlank()) { act.snack("Dê um nome ao objetivo."); return@primaryButton }
             if (g.mode == GoalProgressMode.STEPS && g.steps.isEmpty()) { act.snack("Adicione pelo menos uma etapa."); return@primaryButton }
-            repo.saveGoal(g); act.back(); act.snack(if (id == null) "${g.emoji} Objetivo criado!" else "Objetivo salvo.")
+            repo.saveGoal(g); act.back(); act.snack(if (goalId == null) "${g.emoji} Objetivo criado!" else "Objetivo salvo.")
         }
     }
 }

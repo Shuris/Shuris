@@ -16,7 +16,7 @@ class WelcomeScreen(act: MainActivity) : Screen(act) {
     private fun finish() {
         repo.settings.userName = name
         repo.settings.onboarded = true
-        act.back()
+        act.pop()
         app.broto.AppInit.maybeAskNotificationPermission(act)
     }
 

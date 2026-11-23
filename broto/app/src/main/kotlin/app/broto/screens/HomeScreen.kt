@@ -40,7 +40,7 @@ class HomeScreen(act: MainActivity) : Screen(act) {
                 vertical {
                     flp(MATCH, WRAP, r = 110)
                     text(Fmt.longDate(today).replaceFirstChar { it.uppercase() }, TextStyle.LABEL, Theme.p.textSoft)
-                    text(if (name.isBlank()) "${Fmt.greeting()}!" else "${Fmt.greeting()}, $name!", TextStyle.DISPLAY).lp(WRAP, WRAP, t = 6)
+                    text(if (name.isBlank()) "${Fmt.greeting()}!" else "${Fmt.greeting()}, $name!", if (narrow || name.length > 14) TextStyle.TITLE else TextStyle.DISPLAY).lp(WRAP, WRAP, t = 6)
                     text(subtitle(score, mood != null), TextStyle.BODY, Theme.p.textSoft).lp(WRAP, WRAP, t = 4)
                 }
                 horizontal {
@@ -54,7 +54,8 @@ class HomeScreen(act: MainActivity) : Screen(act) {
                 horizontal {
                     val ring = RingView(context, (score.score ?: 0) / 100f, Theme.p.primaryDark, Theme.alpha(0xFFFFFFFF.toInt(), if (Theme.p.dark) 0.12f else 0.6f), 11f)
                     ring.centerText = score.score?.toString() ?: "–"; ring.subText = "de 100"
-                    addView(ring, LinearLayout.LayoutParams(dp(112), dp(112)))
+                    if (narrow) ring.centerTextSp = 24f
+                    addView(ring, LinearLayout.LayoutParams(dp(if (narrow) 88 else 112), dp(if (narrow) 88 else 112)))
                     vertical {
                         lp(0, WRAP, 1f, l = 18)
                         text("Score de hoje", TextStyle.LABEL, Theme.p.deep)

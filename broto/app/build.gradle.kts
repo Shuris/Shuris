@@ -1,3 +1,4 @@
+import java.io.DataInputStream
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins { kotlin("jvm") }
@@ -9,7 +10,7 @@ val appVersionName = "1.0.0"
 val minSdk = 26
 val targetSdk = 34
 
-kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8); freeCompilerArgs.addAll("-Xlambdas=class", "-Xsam-conversions=class", "-Xstring-concat=inline") } }
+kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_1_8); freeCompilerArgs.addAll("-Xlambdas=class", "-Xsam-conversions=class", "-Xstring-concat=inline", "-Xjdk-release=1.8") } }
 java { sourceCompatibility = JavaVersion.VERSION_1_8; targetCompatibility = JavaVersion.VERSION_1_8 }
 
 dependencies {
@@ -51,8 +52,49 @@ val stageClasses by tasks.registering(Sync::class) {
     into(outDir.map { it.dir("classes") })
 }
 
+/**
+ * O dx não converte invokedynamic (lambdas Java 8). Garante que nenhuma classe do app/core use invokedynamic
+ * nem chame os poucos métodos do kotlin-stdlib que dependem disso.
+ */
+val verifyBytecode by tasks.registering {
+    dependsOn(tasks.named("classes"), ":core:classes")
+    val dirs = listOf(layout.buildDirectory.dir("classes/kotlin/main").get().asFile, project(":core").layout.buildDirectory.dir("classes/kotlin/main").get().asFile)
+    inputs.files(dirs)
+    doLast {
+        val forbiddenNames = setOf("then", "thenDescending", "nullsFirst", "nullsLast")
+        val problems = ArrayList<String>()
+        for (d in dirs) d.walkTopDown().filter { it.name.endsWith(".class") }.forEach { f ->
+            val inp = DataInputStream(f.inputStream().buffered())
+            inp.use { s ->
+                s.readInt(); s.readUnsignedShort(); s.readUnsignedShort()
+                val n = s.readUnsignedShort()
+                val utf = ArrayList<String>()
+                var i = 1
+                var indy = false
+                while (i < n) {
+                    when (val tag = s.readUnsignedByte()) {
+                        1 -> utf.add(s.readUTF())
+                        3, 4 -> s.readInt()
+                        5, 6 -> { s.readLong(); i++ }
+                        7, 8, 16, 19, 20 -> s.readUnsignedShort()
+                        9, 10, 11, 12 -> s.readInt()
+                        15 -> { s.readUnsignedByte(); s.readUnsignedShort() }
+                        17, 18 -> { s.readInt(); if (tag == 18) indy = true }
+                        else -> error("tag $tag desconhecida em ${f.name}")
+                    }
+                    i++
+                }
+                if (indy) problems.add("${f.name}: invokedynamic")
+                if ("kotlin/comparisons/ComparisonsKt" in utf && (utf.any { it in forbiddenNames } || "([Lkotlin/jvm/functions/Function1;)Ljava/util/Comparator;" in utf))
+                    problems.add("${f.name}: usa Comparator do stdlib que depende de invokedynamic")
+            }
+        }
+        if (problems.isNotEmpty()) throw GradleException("Bytecode incompatível com dx:\n" + problems.joinToString("\n"))
+    }
+}
+
 val dex by tasks.registering(Exec::class) {
-    dependsOn(stageClasses)
+    dependsOn(stageClasses, verifyBytecode)
     val classes = outDir.get().dir("classes").asFile
     val out = outDir.get().dir("dex").asFile
     inputs.dir(classes); outputs.dir(out)

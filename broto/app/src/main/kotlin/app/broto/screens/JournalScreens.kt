@@ -109,9 +109,9 @@ class JournalScreen(act: MainActivity) : Screen(act) {
     }
 }
 
-class JournalEntryScreen(act: MainActivity, private val id: Long) : Screen(act) {
+class JournalEntryScreen(act: MainActivity, private val entryId: Long) : Screen(act) {
     override fun build(): View {
-        val e = repo.journalEntry(id) ?: return act.verticalLayout().also { it.post { if (visible) act.back() } }
+        val e = repo.journalEntry(entryId) ?: return act.verticalLayout().also { it.post { if (visible) act.back() } }
         return page(Fmt.relative(e.day), Fmt.fullDate(e.day), actions = {
             iconButton(Icon.EDIT, Theme.p.text) { act.push(JournalEditorScreen(act, e.id)) }
             iconButton(Icon.TRASH, Theme.p.coral) {
@@ -142,8 +142,8 @@ class JournalEntryScreen(act: MainActivity, private val id: Long) : Screen(act) 
     }
 }
 
-class JournalEditorScreen(act: MainActivity, private val id: Long?) : Screen(act) {
-    private val original = id?.let { repo.journalEntry(it) }
+class JournalEditorScreen(act: MainActivity, private val entryId: Long?) : Screen(act) {
+    private val original = entryId?.let { repo.journalEntry(it) }
     private var e = original ?: JournalEntry(day = LocalDate.now(), body = "")
     private var bodyField: EditText? = null
     private var tagsText = e.tags.joinToString(", ")
