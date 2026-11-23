@@ -32,11 +32,13 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         repo = Repo.get(this)
+        security = app.broto.security.Security(this)
         Fonts.load(this)
         Theme.apply(this, repo.settings.theme, repo.settings.accent)
         setTheme(resources.getIdentifier(if (Theme.p.dark) "Theme.Broto.Dark" else "Theme.Broto", "style", packageName))
         styleWindow()
         buildLayout()
+        applySecureFlag()
         repo.addListener(listener)
         AppInit.onAppStart(this)
         if (!repo.settings.onboarded) push(WelcomeScreen(this), animate = false) else AppInit.maybeAskNotificationPermission(this)
@@ -137,7 +139,7 @@ class MainActivity : Activity() {
     fun replace(s: Screen) { popTop(false); push(s, false) }
 
     @Deprecated("Deprecated in Java")
-    override fun onBackPressed() = back()
+    override fun onBackPressed() { if (lockView != null) { moveTaskToBack(true); return }; back() }
 
     private var celebrateQueued = false
     private fun onDataChanged() {
@@ -148,6 +150,38 @@ class MainActivity : Activity() {
             root.postDelayed({ celebrateQueued = false; if (!isFinishing) AppEvents.afterCheckIn(this) }, 900)
         }
     }
+
+    lateinit var security: app.broto.security.Security
+    private var lockView: View? = null
+    private var stoppedAt = 0L
+    private var firstStart = true
+    /** Evita pedir o PIN ao voltar de telas do sistema abertas pelo próprio app (compartilhar, salvar…). */
+    var suppressLock = false
+
+    fun applySecureFlag() {
+        if (security.pinEnabled) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val now = System.currentTimeMillis()
+        if (security.pinEnabled && lockView == null && !suppressLock && (firstStart || now - stoppedAt > security.lockDelaySec * 1000L)) showLock()
+        suppressLock = false
+        firstStart = false
+    }
+
+    override fun onStop() { super.onStop(); stoppedAt = System.currentTimeMillis() }
+
+    fun showLock() {
+        val lv = app.broto.security.LockView(this, security) {
+            lockView?.let { v -> v.animate().alpha(0f).setDuration(200).withEndAction { root.removeView(v) }.start() }
+            lockView = null
+        }
+        lockView = lv
+        root.addView(lv, FrameLayout.LayoutParams(MATCH, MATCH))
+    }
+
+    override fun startActivity(intent: Intent?) { suppressLock = true; super.startActivity(intent) }
 
     override fun onResume() {
         super.onResume()
@@ -184,7 +218,7 @@ class MainActivity : Activity() {
     fun launchForResult(i: Intent, cb: (resultCode: Int, data: Intent?) -> Unit) {
         val code = nextReq++
         results[code] = cb
-        try { startActivityForResult(i, code) } catch (e: Exception) { results.remove(code); snack("Não foi possível abrir: nenhum app compatível.") }
+        try { suppressLock = true; startActivityForResult(i, code) } catch (e: Exception) { results.remove(code); snack("Não foi possível abrir: nenhum app compatível.") }
     }
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

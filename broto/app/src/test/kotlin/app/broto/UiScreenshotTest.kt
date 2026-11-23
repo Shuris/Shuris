@@ -102,3 +102,21 @@ class Stage4ScreenshotTest {
         AppEvents.celebrate(a, 7); Shots.activity(a, "27_celebrate")
     }
 }
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
+class Stage7ScreenshotTest {
+    @Test fun settingsScreens() {
+        val repo = TestRepo.fresh()
+        repo.settings.onboarded = true; repo.settings.userName = "Ana"
+        DemoData.generate(repo)
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        a.push(SettingsScreen(a), false); Shots.activity(a, "30_settings")
+        a.push(BackupScreen(a), false); Shots.view(a.currentScreen.container.getChildAt(0), "31_backup_full", fullHeight = true)
+        a.back(); a.push(SecurityScreen(a), false); Shots.activity(a, "32_security")
+        a.back(); a.push(NotificationSettingsScreen(a), false); Shots.view(a.currentScreen.container.getChildAt(0), "33_notifications_full", fullHeight = true)
+        a.back(); a.push(ReportsScreen(a), false); Shots.view(a.currentScreen.container.getChildAt(0), "34_reports_full", fullHeight = true)
+        a.back(); a.push(AboutScreen(a), false); Shots.activity(a, "35_about")
+        a.security.setPin("1234"); a.showLock(); Shots.activity(a, "36_lock")
+    }
+}
