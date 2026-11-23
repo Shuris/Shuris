@@ -46,7 +46,10 @@ object ChartPainter {
         if (labels.isNotEmpty()) {
             tp.textAlign = Paint.Align.CENTER
             val step = maxOf(1, Math.ceil(labels.size / maxLabels.toDouble()).toInt())
-            for (i in labels.indices) if (i % step == 0 || i == labels.lastIndex && (labels.lastIndex % step) > step / 2) c.drawText(labels[i], x(i), area.bottom - 2 * d, tp)
+            for (i in labels.indices) if (i % step == 0 || i == labels.lastIndex && (labels.lastIndex % step) > step / 2) {
+                val half = tp.measureText(labels[i]) / 2
+                c.drawText(labels[i], x(i).coerceIn(area.left + half, area.right - half), area.bottom - 2 * d, tp)
+            }
         }
         c.save()
         c.clipRect(area.left, area.top - 10 * d, r.left + (r.width() + 12 * d) * progress, area.bottom)

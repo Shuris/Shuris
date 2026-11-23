@@ -62,3 +62,25 @@ class StatsAndInsightsTest {
         assertEquals(data, back)
     }
 }
+
+class PeriodSummaryTest {
+    @Test fun summarizesPeriod() {
+        val today = LocalDate.of(2026, 11, 23)
+        val from = today.minusDays(6)
+        val pos = Habit(id = 1, name = "Ler", startDate = today.minusDays(30))
+        val neg = Habit(id = 2, name = "Redes", kind = HabitKind.NEGATIVE, tracking = Tracking.DURATION, target = 60.0, startDate = today.minusDays(30))
+        val logs = mapOf(
+            1L to (0..6).filter { it % 2 == 0 }.associate { today.minusDays(it.toLong()) to HabitLog(1, today.minusDays(it.toLong()), 1.0) },
+            2L to mapOf(today.minusDays(1) to HabitLog(2, today.minusDays(1), 90.0), today.minusDays(2) to HabitLog(2, today.minusDays(2), 0.0)))
+        val moods = mapOf(today.minusDays(1) to MoodEntry(today.minusDays(1), 4, 3), today.minusDays(9) to MoodEntry(today.minusDays(9), 1))
+        val s = app.broto.core.report.PeriodSummary.build(from, today, today, listOf(pos, neg), logs, moods, mapOf(today to 80, today.minusDays(1) to 60), app.broto.core.schedule.RestDays())
+        assertEquals(7, s.days)
+        assertEquals(4, s.positiveDone)
+        assertEquals(7, s.positiveOpportunities)
+        assertEquals(1, s.negativeOccurrenceDays)
+        assertEquals(0.5, s.negativeControlRate)
+        assertEquals(4.0, s.moodAvg) // humor fora do período é ignorado
+        assertEquals(70.0, s.avgScore)
+        assertEquals(today, s.bestDay!!.first)
+    }
+}

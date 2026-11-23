@@ -248,7 +248,6 @@ class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: In
             repo.saveMood(e.copy(day = day))
             act.back()
             act.snack(when (e.mood) { 5 -> "Que dia lindo! ✨"; 4 -> "Que bom! 🌱"; 3 -> "Registrado. 🌿"; else -> "Registrado. Cuide-se com carinho. 💚" })
-            app.broto.AppEvents.afterCheckIn(act)
         }
     }
 

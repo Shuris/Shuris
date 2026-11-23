@@ -81,3 +81,24 @@ class Stage3ScreenshotTest {
         Shots.activity(a, "16_welcome")
     }
 }
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
+class Stage4ScreenshotTest {
+    @Test fun analysesGoalsConsistency() {
+        val repo = Repo.get(RuntimeEnvironment.getApplication())
+        repo.settings.onboarded = true; repo.settings.userName = "Ana"
+        DemoData.generate(repo)
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        a.switchTab(4, false)
+        Shots.view(a.tabs[4].container.getChildAt(0), "20_analyses_full", fullHeight = true)
+        a.push(InsightsScreen(a), false); Shots.view(a.currentScreen.container.getChildAt(0), "21_insights_full", fullHeight = true)
+        a.back(); a.push(ConsistencyScreen(a), false); Shots.view(a.currentScreen.container.getChildAt(0), "22_consistency_full", fullHeight = true)
+        a.back(); a.push(GoalsScreen(a), false); Shots.activity(a, "23_goals")
+        val g = repo.goals().first { it.mode == app.broto.core.model.GoalProgressMode.STEPS }
+        a.push(GoalDetailScreen(a, g.id), false); Shots.activity(a, "24_goal_detail")
+        a.push(GoalEditorScreen(a, null), false); Shots.activity(a, "25_goal_editor")
+        a.back(); a.back(); a.back(); a.push(ScoreSettingsScreen(a), false); Shots.activity(a, "26_score_settings")
+        AppEvents.celebrate(a, 7); Shots.activity(a, "27_celebrate")
+    }
+}

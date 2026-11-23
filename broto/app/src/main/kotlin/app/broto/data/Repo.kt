@@ -415,6 +415,12 @@ class Repo private constructor(context: Context, dbName: String?) {
         return out
     }
 
+    fun summary(from: LocalDate, to: LocalDate, today: LocalDate = LocalDate.now()): app.broto.core.report.PeriodSummary {
+        val scores = scoresInRange(from, minOf(to, today)).filter { it.score != null }.associate { it.day to it.score!! }
+        return app.broto.core.report.PeriodSummary.build(from, to, today, habits(true).filter { !it.archived || logsInRange(from, to).containsKey(it.id) },
+            logsInRange(from, to), moodsInRange(from, to), scores, restDays())
+    }
+
     // ------------------------------------------------------------------ Alertas
     fun lastSentAlerts(): Map<String, Long> {
         val m = HashMap<String, Long>()

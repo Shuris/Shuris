@@ -139,9 +139,14 @@ class MainActivity : Activity() {
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() = back()
 
+    private var celebrateQueued = false
     private fun onDataChanged() {
         tabs.forEach { it.invalidate() }
         stack.forEach { it.invalidate() }
+        if (!celebrateQueued && repo.settings.onboarded) {
+            celebrateQueued = true
+            root.postDelayed({ celebrateQueued = false; if (!isFinishing) AppEvents.afterCheckIn(this) }, 900)
+        }
     }
 
     override fun onResume() {

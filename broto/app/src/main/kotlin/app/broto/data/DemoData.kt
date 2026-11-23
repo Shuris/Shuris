@@ -83,8 +83,9 @@ object DemoData {
         repo.saveGoal(Goal(name = "30 dias de exercício", category = Category.EXERCISE, horizon = GoalHorizon.SHORT, createdDay = start, target = 30.0, mode = GoalProgressMode.HABITS, emoji = "🏃", habitIds = listOf(gym), demo = true))
         repo.saveGoal(Goal(name = "Projeto pessoal", description = "Construir meu portfólio", category = Category.PRODUCTIVITY, horizon = GoalHorizon.MEDIUM, createdDay = start, mode = GoalProgressMode.STEPS, emoji = "💻",
             steps = listOf(GoalStep(title = "Definir o escopo", done = true), GoalStep(title = "Fazer o protótipo", done = true), GoalStep(title = "Escrever os textos"), GoalStep(title = "Publicar")), demo = true))
-        repo.saveGoal(Goal(name = "Reduzir redes sociais", category = Category.PRODUCTIVITY, horizon = GoalHorizon.SHORT, createdDay = start, target = 20.0, mode = GoalProgressMode.HABITS, emoji = "📵", habitIds = listOf(social), demo = true))
+        repo.saveGoal(Goal(name = "Reduzir redes sociais", category = Category.PRODUCTIVITY, horizon = GoalHorizon.MEDIUM, createdDay = start, target = 90.0, mode = GoalProgressMode.HABITS, emoji = "📵", habitIds = listOf(social), demo = true))
         repo.recomputeAllScores()
+        repo.settings.lastCelebratedStreak = repo.consistency(today).current
         repo.notifyChanged()
     }
 }

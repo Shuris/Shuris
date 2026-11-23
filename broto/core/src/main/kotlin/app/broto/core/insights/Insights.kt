@@ -111,7 +111,7 @@ object InsightsEngine {
         }
 
         // 1) Hábitos positivos × humor / energia
-        for (h in habits.filter { it.isPositive && !it.archived }) {
+        for (h in habits.filter { it.isPositive && !it.archived && it.frequency == app.broto.core.model.Frequency.DAILY }) {
             groupTest("pos-mood-${h.id}", h.emoji, h.name, "Humor", { it.mood }, h.id, false)
             if (h.category == Category.EXERCISE || h.category == Category.SLEEP || h.category == Category.HEALTH || h.category == Category.FOOD)
                 groupTest("pos-energy-${h.id}", h.emoji, h.name, "Energia", { it.energy }, h.id, false)
@@ -152,7 +152,7 @@ object InsightsEngine {
             if (conf == Confidence.INSUFFICIENT || abs(c.r) < 0.25) return
             val strength = when { abs(c.r) >= 0.6 -> "forte"; abs(c.r) >= 0.4 -> "moderada"; else -> "fraca" }
             val together = if (c.r > 0) "costumam subir juntos" else "costumam andar em sentidos opostos"
-            found.add(Insight(id, title, "$xName e $yName $together nos seus registros (relação $strength).",
+            found.add(Insight(id, title, "${xName.replaceFirstChar { it.uppercase() }} e $yName $together nos seus registros (relação $strength).",
                 listOf("Coeficiente de correlação r = ${String.format(Locale.US, "%.2f", c.r)}", "Dias analisados: ${c.n}", "p = ${String.format(Locale.US, "%.3f", c.p)}"),
                 from, to, c.n, conf, InsightKind.CORRELATION, emoji, if (c.r > 0) 1 else -1))
         }
@@ -183,7 +183,7 @@ object InsightsEngine {
         }
 
         // 5) Consistência dos hábitos (descritivo)
-        val rates = habits.filter { it.isPositive && !it.archived }.mapNotNull { h ->
+        val rates = habits.filter { it.isPositive && !it.archived && it.frequency == app.broto.core.model.Frequency.DAILY }.mapNotNull { h ->
             val vals = recs.mapNotNull { it.habitDone[h.id] }
             if (vals.size >= MIN_TOTAL) h to (vals.count { it }.toDouble() / vals.size) to vals.size else null
         }
