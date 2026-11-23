@@ -284,7 +284,7 @@ fun ViewGroup.field(hint: String, value: String = "", multiline: Boolean = false
     val e = EditText(context)
     e.hint = hint; e.setText(value); e.style(TextStyle.BODY)
     e.setHintTextColor(Theme.p.textFaint)
-    e.background = rounded(Theme.p.surfaceAlt, dpf(16))
+    e.background = rounded(if (Theme.p.dark) Theme.p.surfaceAlt else Theme.blend(Theme.p.bg, Theme.p.surfaceAlt, 0.35f), dpf(16), Theme.p.outline, if (Theme.p.dark) 0 else 1)
     e.pad(16, 14)
     e.inputType = when {
         numeric -> InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL

@@ -59,8 +59,9 @@ object DemoData {
                     else if (m == 3) listOf(Emotion.CALM, Emotion.ANXIETY, Emotion.MOTIVATION, Emotion.GRATITUDE)
                     else listOf(Emotion.SADNESS, Emotion.ANXIETY, Emotion.DISCOURAGEMENT, Emotion.IRRITATION, Emotion.FRUSTRATION, Emotion.LONELINESS)
                     val emos = pool.shuffled(rnd).take(1 + rnd.nextInt(2))
-                    val notes = listOf("Dia produtivo, consegui focar nos estudos.", "Acordei cansado, mas o treino ajudou.", "Conversei com amigos, me senti leve.",
-                        "Muita coisa no trabalho hoje.", "Passei tempo demais no celular.", "Tarde tranquila lendo.", "")
+                    val notes = if (m >= 4) listOf("Dia produtivo, consegui focar nos estudos.", "O treino de manhã me deixou com energia.", "Conversei com amigos, me senti leve.", "Tarde tranquila lendo.", "")
+                        else if (m == 3) listOf("Dia normal, sem grandes novidades.", "Acordei cansado, mas o treino ajudou.", "Tarde tranquila lendo.", "")
+                        else listOf("Muita coisa no trabalho hoje.", "Passei tempo demais no celular.", "Dormi mal e fiquei sem energia.", "")
                     db.execSQL("INSERT OR REPLACE INTO mood(day, mood, energy, stress, sleep, emotions, note, updated_at, demo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
                         arrayOf<Any>(d.toEpochDay(), m, energy, stress, sleep, Emotion.toCsv(emos), notes[rnd.nextInt(notes.size)], System.currentTimeMillis()))
                 }

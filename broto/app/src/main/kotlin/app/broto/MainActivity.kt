@@ -98,7 +98,8 @@ class MainActivity : Activity() {
     val currentScreen: Screen get() = stack.lastOrNull() ?: tabs[currentTab]
 
     fun push(s: Screen, animate: Boolean = true) {
-        stack.lastOrNull()?.visible = false
+        currentScreen.visible = false
+        stack.add(s)
         s.visible = true
         s.render()
         s.container.setBackgroundColor(Theme.p.bg)

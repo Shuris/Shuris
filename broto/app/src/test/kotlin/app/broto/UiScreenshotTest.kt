@@ -54,3 +54,30 @@ class UiScreenshotTest {
         Shots.activity(a, "09_home_empty")
     }
 }
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], qualifiers = "w400dp-h860dp-xhdpi")
+class Stage3ScreenshotTest {
+    @Test fun moodAndJournal() {
+        val repo = Repo.get(RuntimeEnvironment.getApplication())
+        repo.settings.onboarded = true; repo.settings.userName = "Ana"
+        DemoData.generate(repo)
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        a.switchTab(2, false); Shots.activity(a, "10_mood")
+        Shots.view(a.tabs[2].container.getChildAt(0), "10_mood_full", fullHeight = true)
+        MoodDaySheet.show(a, LocalDate.now().minusDays(1)); Shots.activity(a, "11_mood_day")
+        ShadowDialog.getLatestDialog().dismiss()
+        a.push(MoodEditorScreen(a, LocalDate.now(), 4), false); Shots.activity(a, "12_mood_editor")
+        Shots.view(a.currentScreen.container.getChildAt(0), "12_mood_editor_full", fullHeight = true)
+        a.back(); Shots.idle()
+        a.switchTab(3, false); Shots.activity(a, "13_journal")
+        val id = repo.journal().first().id
+        a.push(JournalEntryScreen(a, id), false); Shots.activity(a, "14_journal_entry")
+        a.push(JournalEditorScreen(a, null), false); Shots.activity(a, "15_journal_editor")
+    }
+
+    @Test fun welcome() {
+        val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        Shots.activity(a, "16_welcome")
+    }
+}
