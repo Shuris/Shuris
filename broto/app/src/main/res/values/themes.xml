@@ -1,5 +1,24 @@
 <resources>
     <style name="Theme.Broto" parent="@android:style/Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">#F7F7EF</item>
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:colorAccent">#188B5B</item>
+        <item name="android:colorPrimary">#A5D879</item>
+        <item name="android:colorPrimaryDark">#F7F7EF</item>
+        <item name="android:statusBarColor">#F7F7EF</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorControlActivated">#188B5B</item>
+    </style>
+    <style name="Theme.Broto.Dark" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg_dark</item>
+        <item name="android:colorAccent">#A5D879</item>
+        <item name="android:colorPrimary">#A5D879</item>
+        <item name="android:colorPrimaryDark">#121814</item>
+        <item name="android:statusBarColor">#121814</item>
+        <item name="android:navigationBarColor">#1C241F</item>
+        <item name="android:colorControlActivated">#A5D879</item>
+    </style>
+    <style name="Theme.Broto.Launch" parent="Theme.Broto">
+        <item name="android:windowBackground">@drawable/splash</item>
     </style>
 </resources>
