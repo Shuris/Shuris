@@ -26,22 +26,36 @@ class Repo private constructor(context: Context, dbName: String?) {
     private val listeners = ArrayList<() -> Unit>()
     fun addListener(l: () -> Unit) { listeners.add(l) }
     fun removeListener(l: () -> Unit) { listeners.remove(l) }
-    fun notifyChanged() { for (l in ArrayList(listeners)) l() }
+    fun notifyChanged() { invalidateCaches(); for (l in ArrayList(listeners)) l() }
 
     inline fun <T> tx(block: () -> T): T {
         val d = db
         d.beginTransaction()
-        try { val r = block(); d.setTransactionSuccessful(); return r } finally { d.endTransaction() }
+        try { val r = block(); d.setTransactionSuccessful(); return r } finally { d.endTransaction(); invalidateCaches() }
     }
+
+    // ---- Cache de leitura (as telas consultam os mesmos dados várias vezes por renderização).
+    // Invalidado em toda escrita (tx) e em toda notificação de mudança.
+    private val cacheLock = Any()
+    private var habitsCache: List<Habit>? = null
+    private var restCache: RestDays? = null
+    private val habitLogsCache = HashMap<Long, Map<LocalDate, HabitLog>>()
+
+    fun invalidateCaches() = synchronized(cacheLock) { habitsCache = null; restCache = null; habitLogsCache.clear() }
 
     // ------------------------------------------------------------------ Hábitos
     fun habits(includeArchived: Boolean = false): List<Habit> {
+        val all = synchronized(cacheLock) { habitsCache } ?: loadHabits().also { synchronized(cacheLock) { habitsCache = it } }
+        return if (includeArchived) all else all.filter { !it.archived }
+    }
+
+    private fun loadHabits(): List<Habit> {
         val pauses = HashMap<Long, MutableList<PauseInterval>>()
         db.rawQuery("SELECT habit_id, from_day, to_day FROM habit_pause", null).use { c ->
             while (c.moveToNext()) pauses.getOrPut(c.getLong(0)) { ArrayList() }.add(PauseInterval(LocalDate.ofEpochDay(c.getLong(1)), if (c.isNull(2)) null else LocalDate.ofEpochDay(c.getLong(2))))
         }
         val out = ArrayList<Habit>()
-        db.rawQuery("SELECT * FROM habit ${if (includeArchived) "" else "WHERE archived = 0"} ORDER BY archived, sort, id", null).use { c ->
+        db.rawQuery("SELECT * FROM habit ORDER BY archived, sort, id", null).use { c ->
             while (c.moveToNext()) out.add(readHabit(c, pauses[c.long("id")] ?: emptyList()))
         }
         return out
@@ -139,6 +153,11 @@ class Repo private constructor(context: Context, dbName: String?) {
     }
 
     fun logsForHabit(id: Long): Map<LocalDate, HabitLog> {
+        synchronized(cacheLock) { habitLogsCache[id] }?.let { return it }
+        return loadLogsForHabit(id).also { synchronized(cacheLock) { habitLogsCache[id] = it } }
+    }
+
+    private fun loadLogsForHabit(id: Long): Map<LocalDate, HabitLog> {
         val m = HashMap<LocalDate, HabitLog>()
         db.rawQuery("SELECT day, value, note FROM habit_log WHERE habit_id = ?", arrayOf(id.toString())).use { c ->
             while (c.moveToNext()) { val d = LocalDate.ofEpochDay(c.getLong(0)); m[d] = HabitLog(id, d, c.getDouble(1), c.getString(2)) }
@@ -306,7 +325,8 @@ class Repo private constructor(context: Context, dbName: String?) {
     }
 
     // ------------------------------------------------------------------ Descanso
-    fun restDays(): RestDays = RestDays(Weekdays(settings.restWeekdays), db.daySet("SELECT day FROM rest_day"))
+    fun restDays(): RestDays = synchronized(cacheLock) { restCache }
+        ?: RestDays(Weekdays(settings.restWeekdays), db.daySet("SELECT day FROM rest_day")).also { synchronized(cacheLock) { restCache = it } }
 
     fun setRestDate(day: LocalDate, rest: Boolean) {
         tx {
@@ -391,7 +411,7 @@ class Repo private constructor(context: Context, dbName: String?) {
     // ------------------------------------------------------------------ Análises
     fun dayRecords(from: LocalDate, to: LocalDate): List<DayRecord> {
         val hs = habits(true); val logs = logsInRange(from, to); val moods = moodsInRange(from, to); val rest = restDays()
-        val scores = scoresInRange(from, to).associateBy { it.day }
+        val scores = storedScores(from, to)
         val out = ArrayList<DayRecord>()
         var d = from
         while (!d.isAfter(to)) {
@@ -406,7 +426,7 @@ class Repo private constructor(context: Context, dbName: String?) {
                 }
             }
             val m = moods[d]
-            val s = scores[d]?.score
+            val s = scores[d]
             if (m != null || values.isNotEmpty()) {
                 out.add(DayRecord(d, m?.mood, m?.energy, m?.stress, m?.sleep, s, if (sched == 0) null else ok.toDouble() / sched, done, values))
             }
@@ -416,7 +436,7 @@ class Repo private constructor(context: Context, dbName: String?) {
     }
 
     fun summary(from: LocalDate, to: LocalDate, today: LocalDate = LocalDate.now()): app.broto.core.report.PeriodSummary {
-        val scores = scoresInRange(from, minOf(to, today)).filter { it.score != null }.associate { it.day to it.score!! }
+        val scores = storedScores(from, minOf(to, today))
         return app.broto.core.report.PeriodSummary.build(from, to, today, habits(true).filter { !it.archived || logsInRange(from, to).containsKey(it.id) },
             logsInRange(from, to), moodsInRange(from, to), scores, restDays())
     }

@@ -5,12 +5,12 @@ e emoções, diário, objetivos, score diário, consistência com chamas, descob
 estatísticas, notificações inteligentes e relatórios em PDF. Funciona 100% offline,
 sem conta e sem enviar dados.
 
-**APK pronto para instalar:** [`release/broto-1.0.0.apk`](release/broto-1.0.0.apk)
+**APK pronto para instalar:** [`release/broto-1.0.1.apk`](release/broto-1.0.1.apk)
 (Android 8.0 ou superior).
 
 ## Instalação no celular
 
-1. Baixe o arquivo `release/broto-1.0.0.apk` no celular (pelo GitHub, Drive etc.).
+1. Baixe o arquivo `release/broto-1.0.1.apk` no celular (pelo GitHub, Drive etc.).
 2. Abra o arquivo. O Android vai pedir para permitir instalar apps desta fonte.
    Permita para o navegador ou gerenciador de arquivos que você usou.
 3. Toque em **Instalar** e abra o Broto.
@@ -76,7 +76,7 @@ Requisitos: JDK 17+, `bash`, Ubuntu/Debian (para as ferramentas Android do apt).
 ```bash
 cd broto
 ./tools/setup-toolchain.sh      # instala aapt2/dx/zipalign/apksigner e prepara o android.jar (API 34)
-./gradlew assembleApk           # gera app/build/apk/broto-1.0.0.apk (assinado)
+./gradlew assembleApk           # gera app/build/apk/broto-1.0.1.apk (assinado)
 ./gradlew test                  # testes de unidade, banco, UI, PDF, backup e notificações
 ```
 

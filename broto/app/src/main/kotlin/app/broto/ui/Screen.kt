@@ -10,12 +10,21 @@ import app.broto.MainActivity
 import app.broto.data.Repo
 
 /** Uma tela. Reconstrói a própria UI quando os dados mudam (os volumes são pequenos). */
+/** Controla se as animações de entrada devem rodar durante a construção atual da UI. */
+object Motion {
+    @JvmStatic var entrance = true
+    /** Quantas animações de entrada já foram disparadas (diagnóstico/testes). */
+    @JvmStatic var started = 0
+}
+
 abstract class Screen(val act: MainActivity) {
     val repo: Repo get() = act.repo
     val container = FrameLayout(act)
     private var scroll: ScrollView? = null
     var visible = false
     private var dirty = true
+    /** Quantas vezes a tela foi (re)construída — usado em diagnósticos. */
+    var renderCount = 0; private set
 
     abstract fun build(): View
 
@@ -25,14 +34,30 @@ abstract class Screen(val act: MainActivity) {
     fun render() {
         val y = scroll?.scrollY ?: 0
         container.removeAllViews()
-        val v = build()
+        // Animações de entrada só na primeira vez que a tela aparece; nas atualizações o conteúdo surge já no estado final.
+        val prev = Motion.entrance
+        Motion.entrance = renderCount == 0
+        val v = try { build() } finally { Motion.entrance = prev }
         container.addView(v, FrameLayout.LayoutParams(MATCH, MATCH))
         scroll = findScroll(v)
-        if (y > 0) scroll?.post { scroll?.scrollTo(0, y) }
+        if (y > 0) scroll?.let { sc ->
+            // Restaura a rolagem depois do layout e antes do primeiro desenho (sem quadro no topo seguido de salto).
+            sc.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+                override fun onPreDraw(): Boolean { sc.viewTreeObserver.removeOnPreDrawListener(this); sc.scrollTo(0, y); return true }
+            })
+        }
         dirty = false
+        renderCount++
     }
 
-    fun invalidate() { if (visible) render() else dirty = true }
+    private var renderPosted = false
+    /** Dados mudaram: a tela visível é atualizada uma única vez no próximo quadro (várias mudanças seguidas viram um render). */
+    fun invalidate() {
+        dirty = true
+        if (!visible || renderPosted) return
+        renderPosted = true
+        container.post { renderPosted = false; if (visible && dirty) render() }
+    }
     fun renderIfDirty() { if (dirty) render() }
 
     private fun findScroll(v: View): ScrollView? {
@@ -114,7 +139,7 @@ class BottomNav(private val act: MainActivity, private val onSelect: (Int) -> Un
             icons[j].color = if (on) Theme.p.deep else Theme.p.textSoft; icons[j].invalidateSelf()
             labels[j].setTextColor(if (on) Theme.p.text else Theme.p.textSoft)
             labels[j].typeface = if (on) Fonts.bold else Fonts.semibold
-            if (on && animate) p.pop()
+            if (on && animate) p.pop() else { p.animate().cancel(); p.scaleX = 1f; p.scaleY = 1f }
         }
     }
 }

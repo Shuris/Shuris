@@ -179,8 +179,8 @@ fun <T> ViewGroup.segmented(options: List<T>, selected: T, label: (T) -> String,
 // ----------------------------------------------------------------- Progresso
 class ProgressBarView(context: Context, var progress: Float, var color: Int = Theme.p.primary, var track: Int = Theme.p.surfaceAlt) : View(context) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var shown = 0f
-    init { animateTo(progress) }
+    private var shown = if (Motion.entrance) 0f else progress.coerceIn(0f, 1f)
+    init { if (Motion.entrance) { Motion.started++; animateTo(progress) } }
     fun animateTo(v: Float) {
         progress = v.coerceIn(0f, 1f)
         ValueAnimator.ofFloat(shown, progress).apply { duration = 600; interpolator = DecelerateInterpolator(); addUpdateListener { shown = it.animatedValue as Float; invalidate() }; start() }
@@ -205,8 +205,8 @@ class RingView(context: Context, var progress: Float, var color: Int = Theme.p.p
     var centerText: String? = null
     var subText: String? = null
     var centerTextSp = 30f
-    private var shown = 0f
-    init { animateTo(progress) }
+    private var shown = if (Motion.entrance) 0f else progress.coerceIn(0f, 1f)
+    init { if (Motion.entrance) { Motion.started++; animateTo(progress) } }
     fun animateTo(v: Float) {
         progress = v.coerceIn(0f, 1f)
         ValueAnimator.ofFloat(shown, progress).apply { duration = 900; interpolator = DecelerateInterpolator(1.6f); addUpdateListener { shown = it.animatedValue as Float; invalidate() }; start() }
@@ -382,11 +382,14 @@ fun ViewGroup.emptyState(title: String, message: String, moodLevel: Int = 3, act
 
 /** Animação de entrada suave para listas de cartões. */
 fun View.enter(delay: Long = 0) {
+    if (!Motion.entrance) { alpha = 1f; translationY = 0f; return }
+    Motion.started++
     alpha = 0f; translationY = dpf(14)
     animate().alpha(1f).translationY(0f).setStartDelay(delay).setDuration(320).setInterpolator(DecelerateInterpolator()).start()
 }
 
 fun View.pop() {
+    animate().cancel(); scaleX = 1f; scaleY = 1f
     animate().scaleX(1.15f).scaleY(1.15f).setDuration(110).withEndAction {
         animate().scaleX(1f).scaleY(1f).setDuration(260).setInterpolator(OvershootInterpolator(3f)).start()
     }.start()

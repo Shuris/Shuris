@@ -5,8 +5,8 @@ plugins { kotlin("jvm") }
 
 val androidJar = providers.environmentVariable("BROTO_ANDROID_JAR").orElse("/opt/android-stub/android.jar").get()
 val buildToolsDir = providers.environmentVariable("BROTO_BUILD_TOOLS").orElse("/usr/lib/android-sdk/build-tools/debian").get()
-val appVersionCode = 1
-val appVersionName = "1.0.0"
+val appVersionCode = 2
+val appVersionName = "1.0.1"
 val minSdk = 26
 val targetSdk = 34
 
@@ -122,6 +122,7 @@ val assembleApk by tasks.registering {
     val unaligned = outDir.get().file("unaligned.apk").asFile
     val aligned = outDir.get().file("aligned.apk").asFile
     val finalApk = outDir.get().file("broto-$appVersionName.apk").asFile
+    inputs.file(base); inputs.dir(dexDir); inputs.file(keystore).optional()
     outputs.file(finalApk)
     doLast {
         base.copyTo(unaligned, overwrite = true)

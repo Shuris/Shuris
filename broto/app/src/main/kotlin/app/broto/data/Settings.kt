@@ -20,6 +20,7 @@ class Settings(private val repo: Repo) {
         if (value == null) repo.db.delete("settings", "key = ?", arrayOf(key))
         else repo.db.execSQL("INSERT OR REPLACE INTO settings(key, value) VALUES (?, ?)", arrayOf<Any>(key, value))
         cache[key] = value
+        repo.invalidateCaches()
     }
 
     fun clearCache() = cache.clear()

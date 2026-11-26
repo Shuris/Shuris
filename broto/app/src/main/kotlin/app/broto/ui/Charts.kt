@@ -159,8 +159,9 @@ fun screenChartStyle(ctx: Context) = ChartStyle(Theme.p.textSoft, Theme.p.outlin
 
 class LineChartView(context: Context, val series: List<LineSeries>, val labels: List<String>, val yMin: Double, val yMax: Double, val yTicks: List<Double>,
                     val yLabel: (Double) -> String = { Fmt.num(it) }, val showDots: Boolean = true) : View(context) {
-    private var prog = 0f
-    init { ValueAnimator.ofFloat(0f, 1f).apply { duration = 900; interpolator = DecelerateInterpolator(); addUpdateListener { prog = it.animatedValue as Float; invalidate() }; start() } }
+    private var prog = if (Motion.entrance) 0f else 1f
+    init { if (Motion.entrance) Motion.started++
+        if (Motion.entrance) ValueAnimator.ofFloat(0f, 1f).apply { duration = 900; interpolator = DecelerateInterpolator(); addUpdateListener { prog = it.animatedValue as Float; invalidate() }; start() } }
     override fun onDraw(c: Canvas) {
         ChartPainter.line(c, RectF(0f, 0f, width.toFloat(), height.toFloat()), series, labels, yMin, yMax, yTicks, screenChartStyle(context), prog, yLabel, showDots)
     }
@@ -168,8 +169,9 @@ class LineChartView(context: Context, val series: List<LineSeries>, val labels: 
 
 class BarChartView(context: Context, val values: List<Double?>, val labels: List<String>, val maxV: Double, val color: (Int) -> Int,
                    val valueLabel: ((Double) -> String)? = null, val track: Int? = null) : View(context) {
-    private var prog = 0f
-    init { ValueAnimator.ofFloat(0f, 1f).apply { duration = 700; interpolator = DecelerateInterpolator(); addUpdateListener { prog = it.animatedValue as Float; invalidate() }; start() } }
+    private var prog = if (Motion.entrance) 0f else 1f
+    init { if (Motion.entrance) Motion.started++
+        if (Motion.entrance) ValueAnimator.ofFloat(0f, 1f).apply { duration = 700; interpolator = DecelerateInterpolator(); addUpdateListener { prog = it.animatedValue as Float; invalidate() }; start() } }
     override fun onDraw(c: Canvas) {
         ChartPainter.bars(c, RectF(0f, 0f, width.toFloat(), height.toFloat()), values, labels, maxV, color, screenChartStyle(context), valueLabel, prog, track)
     }

@@ -87,14 +87,18 @@ class MainActivity : Activity() {
         while (stack.isNotEmpty()) popTop(false)
         val old = tabs[currentTab]
         val new = tabs[i]
-        if (old !== new) { old.visible = false; old.container.visibility = View.GONE }
+        val changed = old !== new
         currentTab = i
         new.visible = true
+        // Atualiza o conteúdo ANTES de exibir: o primeiro quadro já mostra a tela pronta.
         new.renderIfDirty()
-        new.onShow()
+        // Troca atômica: as duas mudanças de visibilidade entram no mesmo quadro (sem fundo vazio e sem sobreposição).
+        for (t in tabs) t.container.animate().cancel()
+        new.container.alpha = 1f
         new.container.visibility = View.VISIBLE
-        if (animate && old !== new) { new.container.alpha = 0f; new.container.animate().alpha(1f).setDuration(180).start() }
-        nav.select(i, animate)
+        if (changed) { old.visible = false; old.container.visibility = View.GONE }
+        if (changed) new.onShow()
+        nav.select(i, animate && changed)
     }
 
     val currentScreen: Screen get() = stack.lastOrNull() ?: tabs[currentTab]
