@@ -18,9 +18,11 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
     private val isNew = habitId == null
     private val initial = h
     private var saved = false
+    private val initialApps: Set<String> = habitId?.let { repo.habitApps(it).toSet() } ?: emptySet()
+    private var apps: Set<String> = initialApps
 
     override fun onBack(): Boolean {
-        if (saved || h == initial) return false
+        if (saved || (h == initial && apps == initialApps)) return false
         confirm(act, "Descartar alterações?", if (isNew) "O hábito ainda não foi criado." else "As alterações neste hábito não foram salvas.", "Descartar", true) { saved = true; act.pop() }
         return true
     }
@@ -61,7 +63,16 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
             fieldLabel("Comece com uma sugestão (opcional)")
             flow(6, 6) {
                 for (t in templates()) addView(Chip(act, "${t.emoji} ${t.name}", false, if (t.isNegative) Theme.p.coral else Theme.p.primaryDark).apply {
-                    onClick { h = t.copy(); render() }
+                    onClick {
+                        h = t.copy()
+                        val installed = try { app.broto.screentime.ScreenTime.launchableApps(act) } catch (e: Exception) { emptyList() }
+                        apps = when (t.name) {
+                            "Redes sociais" -> installed.filter { it.pkg in app.broto.screentime.ScreenTime.SOCIAL }.map { it.pkg }.toSet()
+                            "Jogar videogame" -> installed.filter { it.isGame }.map { it.pkg }.toSet()
+                            else -> emptySet()
+                        }
+                        render()
+                    }
                 })
             }
             space(16)
@@ -138,6 +149,7 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
                 text("0 significa \"evitar completamente\". Passar do limite reduz o score de forma proporcional — nunca zera o seu dia.", TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, t = 6)
             }
         }
+        if (h.tracking == Tracking.DURATION) screenTimeCard()
         card {
             fieldLabel("Frequência")
             if (h.isPositive) {
@@ -187,6 +199,28 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
         }
     }
 
+    private fun android.widget.LinearLayout.screenTimeCard() {
+        val st = app.broto.screentime.ScreenTime
+        card {
+            settingRow("📱 Tempo de tela automático", if (apps.isEmpty()) "Medir pelo uso de apps no celular, sem anotar à mão" else "Medindo ${if (apps.size == 1) "1 app" else "${apps.size} apps"} automaticamente", right = {
+                addView(Toggle(act, apps.isNotEmpty()) { on -> if (on) AppPicker.show(act, apps) { apps = it; render() } else { apps = emptySet(); render() } })
+            })
+            if (apps.isNotEmpty()) {
+                flow(6, 6) { for (p in apps) addView(tagView(st.labelOf(act, p), Theme.p.primarySoft)) }
+                ghostButton("Escolher apps…", Theme.p.primaryDark) { AppPicker.show(act, apps) { apps = it; render() } }
+                if (!st.hasPermission(act)) {
+                    card(color = Theme.blend(Theme.p.surface, Theme.p.yellow, 0.3f), padding = 14) {
+                        text("Falta uma permissão", TextStyle.BODY_BOLD)
+                        text("No Android, ative \"Broto\" em Configurações › Acesso ao uso. O cálculo é feito só no seu celular; nada é enviado.", TextStyle.CAPTION, Theme.p.text).lp(MATCH, WRAP, t = 4)
+                        softButton("Abrir configuração", Icon.SETTINGS, Theme.p.surface, Theme.p.text) { act.startActivity(st.permissionIntent(act)) }.lp(MATCH, WRAP, t = 8)
+                    }
+                } else text("✓ Permissão concedida. O registro é atualizado sozinho; você ainda pode corrigir um dia à mão.", TextStyle.CAPTION, Theme.p.primaryDark).lp(MATCH, WRAP, t = 4)
+            }
+        }
+    }
+
+    override fun onShow() { if (apps.isNotEmpty()) container.post { if (visible) render() } }  // volta das Configurações do Android
+
     private fun pickTime(initial: Int) {
         TimePickerDialog(act, { _, hh, mm -> h = h.copy(reminderMinutes = hh * 60 + mm); render() }, initial / 60, initial % 60, true).show()
     }
@@ -195,6 +229,8 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
         if (h.name.isBlank()) { act.snack("Dê um nome ao hábito."); return }
         if (h.isPositive && h.tracking != Tracking.BOOLEAN && h.target <= 0) { act.snack("Defina uma meta maior que zero."); return }
         val id = repo.saveHabit(h)
+        repo.setHabitApps(id, if (h.tracking == Tracking.DURATION) apps else emptySet())
+        if (apps.isNotEmpty()) act.syncScreenTime()
         app.broto.notify.Scheduler.rescheduleAll(act)
         saved = true
         act.pop()

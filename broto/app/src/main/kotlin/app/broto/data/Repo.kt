@@ -166,6 +166,44 @@ class Repo private constructor(context: Context, dbName: String?) {
         notifyChanged()
     }
 
+    // ------------------------------------------------------------------ Tempo de tela (apps por hábito)
+    fun habitApps(id: Long): List<String> {
+        val out = ArrayList<String>()
+        db.rawQuery("SELECT package FROM habit_app WHERE habit_id = ? ORDER BY package", arrayOf(id.toString())).use { c -> while (c.moveToNext()) out.add(c.getString(0)) }
+        return out
+    }
+
+    fun allHabitApps(): Map<Long, List<String>> {
+        val m = HashMap<Long, MutableList<String>>()
+        db.rawQuery("SELECT habit_id, package FROM habit_app", null).use { c -> while (c.moveToNext()) m.getOrPut(c.getLong(0)) { ArrayList() }.add(c.getString(1)) }
+        return m
+    }
+
+    fun setHabitApps(id: Long, packages: Collection<String>) {
+        tx {
+            db.delete("habit_app", "habit_id = ?", arrayOf(id.toString()))
+            for (p in packages.distinct()) db.execSQL("INSERT OR IGNORE INTO habit_app(habit_id, package) VALUES (?, ?)", arrayOf<Any>(id, p))
+        }
+        notifyChanged()
+    }
+
+    /** Grava vários registros de uma vez (uma única notificação de mudança). Só escreve o que mudou. */
+    fun setLogsBatch(entries: List<HabitLog>): Int {
+        var changed = 0
+        val days = HashSet<LocalDate>()
+        tx {
+            for (e in entries) {
+                val cur = db.rawQuery("SELECT value, note FROM habit_log WHERE habit_id = ? AND day = ?", arrayOf(e.habitId.toString(), e.day.toEpochDay().toString())).use { c -> if (c.moveToFirst()) Pair(c.getDouble(0), c.getString(1)) else null }
+                if (cur != null && Math.abs(cur.first - e.value) < 0.5 && cur.second == e.note) continue
+                db.execSQL("INSERT INTO habit_log(habit_id, day, value, note, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(habit_id, day) DO UPDATE SET value = excluded.value, note = excluded.note, updated_at = excluded.updated_at",
+                    arrayOf<Any>(e.habitId, e.day.toEpochDay(), e.value.coerceAtLeast(0.0), e.note, System.currentTimeMillis()))
+                changed++; days.add(e.day)
+            }
+        }
+        if (changed > 0) { storeScores(days.sorted().map { dayScore(it) }); notifyChanged() }
+        return changed
+    }
+
     // ------------------------------------------------------------------ Registros de hábitos
     fun logsForDay(day: LocalDate): Map<Long, HabitLog> {
         val m = HashMap<Long, HabitLog>()

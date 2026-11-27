@@ -29,6 +29,10 @@ class UxFixesTest {
 
     /** Toque real (down/up) no centro da view, despachado pela janela — como o dedo faria. */
     private fun tapCenter(a: MainActivity, v: View) {
+        // rola até o elemento ficar visível (como uma pessoa faria antes de tocar)
+        var anc: View? = v; var offY = 0
+        while (anc != null && anc !is android.widget.ScrollView) { offY += anc.top; anc = anc.parent as? View }
+        (anc as? android.widget.ScrollView)?.let { sv -> sv.scrollTo(0, (offY - sv.height / 3).coerceAtLeast(0)); Shots.idle(100) }
         val loc = IntArray(2); v.getLocationInWindow(loc)
         val x = loc[0] + v.width / 2f; val y = loc[1] + v.height / 2f
         val t = SystemClock.uptimeMillis()

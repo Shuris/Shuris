@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+    <TextView android:id="@+id/nm_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textAppearance="@android:style/TextAppearance.Material.Notification.Title"/>
+    <TextView android:id="@+id/nm_text" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp"
+        android:textAppearance="@android:style/TextAppearance.Material.Notification" android:maxLines="8"/>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp">
+        <LinearLayout android:id="@+id/nm_cell1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
+            <ImageView android:id="@+id/nm_face1" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter" android:contentDescription="Péssimo"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Péssimo"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/nm_cell2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
+            <ImageView android:id="@+id/nm_face2" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter" android:contentDescription="Ruim"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Ruim"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/nm_cell3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
+            <ImageView android:id="@+id/nm_face3" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter" android:contentDescription="Neutro"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Neutro"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/nm_cell4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
+            <ImageView android:id="@+id/nm_face4" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter" android:contentDescription="Bom"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Bom"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/nm_cell5" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+            android:orientation="vertical" android:gravity="center_horizontal" android:paddingTop="4dp" android:paddingBottom="4dp">
+            <ImageView android:id="@+id/nm_face5" android:layout_width="44dp" android:layout_height="44dp" android:scaleType="fitCenter" android:contentDescription="Excelente"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Excelente"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Info"/>
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

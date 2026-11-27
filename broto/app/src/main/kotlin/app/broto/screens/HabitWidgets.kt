@@ -86,6 +86,7 @@ object HabitRow {
                 else -> "${HabitText.amount(h, log.value)} · acima do limite"
             })
         }
+        if (h.tracking == Tracking.DURATION && log?.note == app.broto.screentime.ScreenTime.AUTO) parts.add("📱 auto")
         val streak = ConsistencyEngine.habitStreak(h, repo.logsForHabit(h.id), repo.restDays(), day)
         if (streak >= 2) parts.add("🔥 $streak")
         return parts.joinToString("  ·  ")
@@ -183,7 +184,18 @@ object LogSheet {
                 text(Fmt.relative(day) + " · " + HabitText.goal(h), TextStyle.CAPTION, Theme.p.textSoft).lp(WRAP, WRAP, t = 2)
             }
         }
-        fun save(v: Double) { repo.setLog(h.id, day, v); s.dismiss() }
+        val auto = h.tracking == Tracking.DURATION && repo.habitApps(h.id).isNotEmpty()
+        // Em hábitos medidos automaticamente, um valor digitado vira correção manual (a medição não o sobrescreve).
+        fun save(v: Double) { repo.setLog(h.id, day, v, if (auto) app.broto.screentime.ScreenTime.MANUAL else ""); s.dismiss() }
+        if (auto) {
+            s.content.card(color = Theme.p.surfaceAlt, padding = 12) {
+                text(if (log?.note == app.broto.screentime.ScreenTime.MANUAL) "✏️ Valor corrigido à mão: ${HabitText.amount(h, log.value)}"
+                    else "📱 Medido automaticamente: ${HabitText.amount(h, log?.value ?: 0.0)}", TextStyle.LABEL)
+                if (log?.note == app.broto.screentime.ScreenTime.MANUAL) text("Voltar à medição automática", TextStyle.LABEL, Theme.p.primaryDark).link {
+                    repo.clearLog(h.id, day); s.dismiss(); act.syncScreenTime()
+                } else text("Você pode corrigir o valor abaixo, se precisar.", TextStyle.CAPTION, Theme.p.textSoft).lp(WRAP, WRAP, t = 2)
+            }
+        }
         val c = s.content
         if (h.isPositive) {
             if (h.tracking == Tracking.BOOLEAN) {

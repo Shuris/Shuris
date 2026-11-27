@@ -5,12 +5,12 @@ e emoções, diário, objetivos, score diário, consistência com chamas, descob
 estatísticas, notificações inteligentes e relatórios em PDF. Funciona 100% offline,
 sem conta e sem enviar dados.
 
-**APK pronto para instalar:** [`release/broto-1.0.1.apk`](release/broto-1.0.1.apk)
+**APK pronto para instalar:** [`release/broto-1.1.0.apk`](release/broto-1.1.0.apk)
 (Android 8.0 ou superior).
 
 ## Instalação no celular
 
-1. Baixe o arquivo `release/broto-1.0.1.apk` no celular (pelo GitHub, Drive etc.).
+1. Baixe o arquivo `release/broto-1.1.0.apk` no celular (pelo GitHub, Drive etc.).
 2. Abra o arquivo. O Android vai pedir para permitir instalar apps desta fonte.
    Permita para o navegador ou gerenciador de arquivos que você usou.
 3. Toque em **Instalar** e abra o Broto.
@@ -33,7 +33,8 @@ sem conta e sem enviar dados.
 | **Descobertas sobre mim** | Teste t de Welch, correlação de Pearson e tamanho de efeito, calculados no aparelho. Exige um mínimo de registros, mostra grau de confiança e lembra que correlação não é causalidade |
 | **Minha Consistência** | Chama que cresce (1, 3, 7, 30 e 100 dias), melhor sequência, calendário, histórico de sequências, celebração de marcos. O critério é configurável e há dias de descanso |
 | **Objetivos** | Curto, médio e longo prazo; progresso por valor, etapas ou dias de hábitos relacionados; concluir, pausar, reabrir |
-| **Notificações** | Lembrete por hábito, lembrete de humor, verificação diária de padrões (hábito parado ou irregular, limite ultrapassado, aumento semanal, humor ou energia baixos) e lembrete de sequência. Limite diário, horário silencioso, sem repetição e linguagem acolhedora |
+| **Notificações** | 3 notificações diárias por padrão (manhã, tarde e noite), ajustáveis de 0 a 6 com horários editáveis. Botões direto na notificação ("✓ Ler", "+15 min", "Não aconteceu") e as 5 carinhas de humor na notificação da noite; a notificação se atualiza ao tocar. Dicas de padrões (hábito parado, limite ultrapassado, humor baixo…) entram dentro delas, sem notificações extras. Lembrete por hábito com botões |
+| **Tempo de tela automático** | Hábitos medidos em tempo (ex.: "Redes sociais", "Jogar videogame") podem somar sozinhos o uso dos apps escolhidos, com permissão de "Acesso ao uso" do Android. Cálculo 100% local; correções manuais são respeitadas |
 | **Relatórios PDF** | Diário, semanal, mensal, anual ou personalizado. Capa ilustrada, resumo, tabelas, gráficos, calendários de humor e de atividades, objetivos, descobertas e (opcionalmente) o diário. Estilo colorido ou econômico. Abrir, compartilhar, salvar em… e gerar novamente |
 | **Backup** | Backup completo em JSON (opcionalmente com senha: AES-256-GCM), restauração atômica, cópia automática diária (7 últimas), exportação CSV e verificação de integridade |
 | **Segurança** | PIN (PBKDF2), biometria, bloqueio temporário após 5 erros, conteúdo oculto em "recentes" |
@@ -76,7 +77,7 @@ Requisitos: JDK 17+, `bash`, Ubuntu/Debian (para as ferramentas Android do apt).
 ```bash
 cd broto
 ./tools/setup-toolchain.sh      # instala aapt2/dx/zipalign/apksigner e prepara o android.jar (API 34)
-./gradlew assembleApk           # gera app/build/apk/broto-1.0.1.apk (assinado)
+./gradlew assembleApk           # gera app/build/apk/broto-1.1.0.apk (assinado)
 ./gradlew test                  # testes de unidade, banco, UI, PDF, backup e notificações
 ```
 
@@ -87,7 +88,7 @@ instale a nova versão e restaure o backup.
 
 ## Testes
 
-São 71 testes automatizados:
+São 96 testes automatizados:
 
 - **core:** score, consistência, alertas, estatística e descobertas, resumos de período e JSON.
 - **app (Robolectric):** repositório SQLite, notificações (agendamento e disparo),

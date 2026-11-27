@@ -25,6 +25,8 @@ object Scheduler {
     const val EXTRA_KIND = "kind"
     const val EXTRA_HABIT = "habit"
     const val KIND_HABIT = "habit"; const val KIND_MOOD = "mood"; const val KIND_CHECK = "check"; const val KIND_STREAK = "streak"
+    const val KIND_CHECKIN = "checkin"
+    const val EXTRA_SLOT = "slot"
     private const val PREFS = "broto_alarms"
 
     fun canExact(ctx: Context): Boolean {
@@ -32,8 +34,8 @@ object Scheduler {
         return Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()
     }
 
-    private fun pi(ctx: Context, code: Int, kind: String, habitId: Long = 0): PendingIntent {
-        val i = Intent(ctx, AlarmReceiver::class.java).setAction(ACTION).putExtra(EXTRA_KIND, kind).putExtra(EXTRA_HABIT, habitId)
+    private fun pi(ctx: Context, code: Int, kind: String, habitId: Long = 0, slot: Int = 0): PendingIntent {
+        val i = Intent(ctx, AlarmReceiver::class.java).setAction(ACTION).putExtra(EXTRA_KIND, kind).putExtra(EXTRA_HABIT, habitId).putExtra(EXTRA_SLOT, slot)
         return PendingIntent.getBroadcast(ctx, code, i, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
     }
 
@@ -66,7 +68,9 @@ object Scheduler {
         // cancela lembretes de hábitos antigos
         val old = prefs.getStringSet("habits", emptySet()).orEmpty()
         for (id in old) am.cancel(pi(app, 10_000 + id.toInt(), KIND_HABIT, id.toLong()))
+        // alarmes da versão anterior (humor/verificação/sequência separados) e notificações diárias
         for ((code, kind) in listOf(1 to KIND_MOOD, 2 to KIND_CHECK, 3 to KIND_STREAK)) am.cancel(pi(app, code, kind))
+        for (i in 0 until 6) am.cancel(pi(app, 20 + i, KIND_CHECKIN, slot = i))
         val s = repo.settings
         if (!s.notificationsEnabled) { prefs.edit().putStringSet("habits", emptySet()).apply(); return }
         val now = LocalDateTime.now()
@@ -80,8 +84,7 @@ object Scheduler {
             scheduled.add(h.id.toString())
         }
         prefs.edit().putStringSet("habits", scheduled).apply()
-        if (s.moodReminderMinutes >= 0) nextAt(now, s.moodReminderMinutes)?.let { set(app, it, pi(app, 1, KIND_MOOD)) }
-        nextAt(now, s.dailyCheckMinutes)?.let { set(app, it, pi(app, 2, KIND_CHECK)) }
-        if (s.streakReminderMinutes >= 0) nextAt(now, s.streakReminderMinutes)?.let { set(app, it, pi(app, 3, KIND_STREAK)) }
+        // Notificações diárias (manhã/tarde/noite por padrão). Humor, sequência e dicas de padrões vão dentro delas.
+        s.checkInTimes.take(6).forEachIndexed { i, m -> nextAt(now, m)?.let { set(app, it, pi(app, 20 + i, KIND_CHECKIN, slot = i)) } }
     }
 }

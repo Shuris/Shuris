@@ -14,6 +14,7 @@ class HabitsScreen(act: MainActivity) : Screen(act) {
 
     override fun onShow() {
         if (day.isAfter(LocalDate.now())) { day = LocalDate.now(); weekStart = Schedule.weekStart(day) }
+        act.syncScreenTime(force = false)
     }
 
     override fun build(): View {

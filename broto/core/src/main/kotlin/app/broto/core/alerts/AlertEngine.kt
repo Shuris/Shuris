@@ -15,10 +15,10 @@ import kotlin.math.roundToInt
 
 enum class AlertCategory(val label: String, val description: String) {
     HABIT_REMINDER("Lembretes de hábitos", "No horário que você escolheu para cada hábito"),
-    POSITIVE("Hábitos positivos", "Quando um hábito fica parado ou irregular"),
-    NEGATIVE("Hábitos negativos", "Quando um comportamento que você quer reduzir aumenta"),
-    MOOD("Humor e bem-estar", "Lembrete diário e cuidado em dias difíceis"),
-    STREAK("Consistência", "Para não perder sua sequência");
+    POSITIVE("Dicas: hábitos positivos", "Quando um hábito fica parado ou irregular"),
+    NEGATIVE("Dicas: hábitos negativos", "Quando um comportamento que você quer reduzir aumenta"),
+    MOOD("Dicas: humor e bem-estar", "Cuidado em dias de humor ou energia baixos"),
+    STREAK("Consistência", "Lembrar da sequência na notificação da noite");
 }
 
 data class Alert(

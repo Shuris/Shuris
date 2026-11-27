@@ -94,6 +94,12 @@ class Settings(private val repo: Repo) {
         get() = int("streak_rem_min", 21 * 60 + 30)
         set(v) = put("streak_rem_min", v.toString())
 
+    /** Horários (minutos) das notificações diárias de acompanhamento. Padrão: manhã, tarde e noite. */
+    var checkInTimes: List<Int>
+        get() = get("checkin_times")?.let { v -> if (v.isBlank()) emptyList() else v.split(',').mapNotNull { it.trim().toIntOrNull() }.filter { it in 0 until 1440 }.sorted() }
+            ?: app.broto.core.alerts.CheckInEngine.defaultTimes(3)
+        set(v) = put("checkin_times", v.distinct().sorted().joinToString(","))
+
     var reportIncludeJournal: Boolean
         get() = bool("report_journal", false)
         set(v) = put("report_journal", if (v) "1" else "0")

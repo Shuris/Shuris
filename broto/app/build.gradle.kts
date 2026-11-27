@@ -5,8 +5,8 @@ plugins { kotlin("jvm") }
 
 val androidJar = providers.environmentVariable("BROTO_ANDROID_JAR").orElse("/opt/android-stub/android.jar").get()
 val buildToolsDir = providers.environmentVariable("BROTO_BUILD_TOOLS").orElse("/usr/lib/android-sdk/build-tools/debian").get()
-val appVersionCode = 2
-val appVersionName = "1.0.1"
+val appVersionCode = 3
+val appVersionName = "1.1.0"
 val minSdk = 26
 val targetSdk = 34
 

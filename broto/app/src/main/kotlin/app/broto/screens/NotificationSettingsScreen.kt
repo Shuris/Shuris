@@ -8,6 +8,8 @@ import android.view.View
 import app.broto.MainActivity
 import app.broto.core.alerts.Alert
 import app.broto.core.alerts.AlertCategory
+import app.broto.core.alerts.CheckInEngine
+import app.broto.core.alerts.DayPart
 import app.broto.notify.Notifier
 import app.broto.notify.Scheduler
 import app.broto.ui.*
@@ -38,40 +40,45 @@ class NotificationSettingsScreen(act: MainActivity) : Screen(act) {
             }
             if (!s.notificationsEnabled) return@page
             card {
+                text("Notificações diárias", TextStyle.HEADLINE)
+                text("Acompanhamento ao longo do dia, com botões para marcar hábitos e as carinhas de humor direto na notificação.", TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, t = 4, b = 10)
+                val times = s.checkInTimes
+                horizontal {
+                    vertical { lp(0, WRAP, 1f)
+                        text("Quantas por dia", TextStyle.BODY_BOLD)
+                        text(if (times.isEmpty()) "Desativadas" else "${times.size} por dia", TextStyle.CAPTION, Theme.p.textSoft) }
+                    addView(Stepper(act, times.size.toDouble(), 1.0, 0.0) { v ->
+                        val n = v.toInt().coerceIn(0, CheckInEngine.MAX_PER_DAY)
+                        s.checkInTimes = CheckInEngine.defaultTimes(n); changed()
+                    })
+                }
+                for ((i, m) in times.withIndex()) {
+                    divider()
+                    val part = CheckInEngine.partOf(m)
+                    val emoji = when (part) { DayPart.MORNING -> "☀️"; DayPart.AFTERNOON -> "🌤️"; DayPart.EVENING -> "🌙" }
+                    val what = when {
+                        i == times.lastIndex -> "Humor do dia, o que falta e a sequência"
+                        part == DayPart.MORNING -> "Hábitos do dia com botões para marcar"
+                        else -> "Progresso do dia e o que ainda falta"
+                    }
+                    settingRow("$emoji ${part.label} · ${Fmt.time(m)}", what, Icon.CLOCK) {
+                        TimePickerDialog(act, { _, h, mm ->
+                            s.checkInTimes = times.toMutableList().also { it[i] = h * 60 + mm }; changed()
+                        }, m / 60, m % 60, true).show()
+                    }
+                }
+                if (times.isNotEmpty() && times != CheckInEngine.defaultTimes(times.size))
+                    ghostButton("Restaurar horários padrão", Theme.p.primaryDark) { s.checkInTimes = CheckInEngine.defaultTimes(times.size); changed() }
+                text("Toque num horário para mudar. Dicas de padrões (ex.: um hábito que ficou parado) aparecem dentro dessas notificações, sem notificações extras. Lembretes de cada hábito são definidos no próprio hábito.",
+                    TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, t = 8)
+            }
+            card {
                 text("Categorias", TextStyle.HEADLINE).lp(WRAP, WRAP, b = 6)
                 for (c in AlertCategory.values()) {
                     settingRow(c.label, c.description, right = {
                         addView(Toggle(act, c in a.enabled) { on -> s.alertSettings = a.copy(enabled = if (on) a.enabled + c else a.enabled - c); changed() })
                     })
                 }
-            }
-            card {
-                text("Horários", TextStyle.HEADLINE).lp(WRAP, WRAP, b = 6)
-                fun timeRow(title: String, sub: String, minutes: Int, allowOff: Boolean, set: (Int) -> Unit) {
-                    settingRow(title, if (minutes < 0) "Desativado" else "$sub às ${Fmt.time(minutes)}", Icon.CLOCK, right = {
-                        if (allowOff) addView(Toggle(act, minutes >= 0) { on -> set(if (on) 21 * 60 else -1); changed() })
-                    }) {
-                        val m = if (minutes < 0) 21 * 60 else minutes
-                        TimePickerDialog(act, { _, h, mm -> set(h * 60 + mm); changed() }, m / 60, m % 60, true).show()
-                    }
-                }
-                timeRow("Lembrete de humor", "Todos os dias", s.moodReminderMinutes, true) { s.moodReminderMinutes = it }
-                timeRow("Verificação de padrões", "Análise diária", s.dailyCheckMinutes, false) { s.dailyCheckMinutes = it }
-                timeRow("Lembrete de consistência", "Se o dia ainda não foi registrado", s.streakReminderMinutes, true) { s.streakReminderMinutes = it }
-                text("Lembretes de cada hábito são definidos no próprio hábito.", TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, t = 4)
-            }
-            card {
-                text("Sem excessos", TextStyle.HEADLINE).lp(WRAP, WRAP, b = 4)
-                text("Alertas de padrões por dia (os lembretes de hábitos não entram nessa conta)", TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, b = 8)
-                choiceChips(listOf(1, 2, 3, 5), a.maxPerDay, { "até $it" }) { s.alertSettings = s.alertSettings.copy(maxPerDay = it) }
-                divider()
-                settingRow("Horário silencioso", "Sem alertas de padrões entre ${Fmt.time(a.quietStart)} e ${Fmt.time(a.quietEnd)}", Icon.MOON) {
-                    TimePickerDialog(act, { _, h, m ->
-                        val start = h * 60 + m
-                        TimePickerDialog(act, { _, h2, m2 -> s.alertSettings = s.alertSettings.copy(quietStart = start, quietEnd = h2 * 60 + m2); changed() }, a.quietEnd / 60, a.quietEnd % 60, true).apply { setTitle("Fim do silêncio") }.show()
-                    }, a.quietStart / 60, a.quietStart % 60, true).apply { setTitle("Início do silêncio") }.show()
-                }
-                text("Um mesmo alerta nunca se repete antes de alguns dias, e nada é enviado fora dos dias programados de cada hábito.", TextStyle.CAPTION, Theme.p.textSoft).lp(MATCH, WRAP, t = 4)
             }
             if (Build.VERSION.SDK_INT >= 31 && !Scheduler.canExact(act)) {
                 card(color = Theme.p.surfaceAlt) {
@@ -83,7 +90,12 @@ class NotificationSettingsScreen(act: MainActivity) : Screen(act) {
                 }
             }
             softButton("Enviar notificação de teste", Icon.BELL) {
-                Notifier.post(act, Alert("test", AlertCategory.MOOD, "Oi! Eu sou o Broto 🌱", "As notificações estão funcionando. Até o próximo lembrete!", 0, 0, "home"))
+                val times = s.checkInTimes
+                val nowMin = java.time.LocalTime.now().let { it.hour * 60 + it.minute }
+                val slot = times.indexOfLast { it <= nowMin }.coerceAtLeast(0)
+                val c = if (times.isNotEmpty()) app.broto.notify.AlarmReceiver.buildCheckIn(act, repo, slot, record = false) else null
+                if (c != null) Notifier.postCheckIn(act, c, slot)
+                else Notifier.post(act, Alert("test", AlertCategory.MOOD, "Oi! Eu sou o Broto 🌱", "As notificações estão funcionando. Até o próximo lembrete!", 0, 0, "home"))
                 act.snack(if (Notifier.canPost(act)) "Notificação enviada." else "Permita as notificações para recebê-las.")
             }
         }

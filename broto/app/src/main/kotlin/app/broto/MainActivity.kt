@@ -190,8 +190,22 @@ class MainActivity : Activity() {
 
     override fun startActivity(intent: Intent?) { suppressLock = true; super.startActivity(intent) }
 
+    private var lastSync = 0L
+    /** Atualiza os hábitos de tempo de tela: cálculo em segundo plano, gravação na thread principal. */
+    fun syncScreenTime(force: Boolean = true) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastSync < 60_000) return
+        lastSync = now
+        val appCtx = applicationContext
+        Thread {
+            val entries = try { app.broto.screentime.ScreenTime.compute(appCtx, repo) } catch (e: Exception) { emptyList() }
+            if (entries.isNotEmpty()) runOnUiThread { if (!isDestroyed) repo.setLogsBatch(entries) }
+        }.start()
+    }
+
     override fun onResume() {
         super.onResume()
+        syncScreenTime(force = false)
         val today = LocalDate.now()
         if (today != renderedDay) { renderedDay = today; onDataChanged() }
         AppInit.onResume(this)

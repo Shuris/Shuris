@@ -18,14 +18,23 @@ class BrotoDatabase(context: Context, name: String? = DB_NAME) : SQLiteOpenHelpe
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Migrações futuras: if (oldVersion < 2) { ... }
+        // v2: apps medidos automaticamente (tempo de tela) por hábito
+        if (oldVersion < 2) for (sql in V2) db.execSQL(sql)
     }
 
     companion object {
         const val DB_NAME = "broto.db"
-        const val VERSION = 1
+        const val VERSION = 2
 
-        val TABLES = listOf("habit", "habit_pause", "habit_log", "mood", "journal", "goal", "goal_step", "goal_habit", "rest_day", "daily_score", "alert_log", "settings")
+        val V2 = listOf(
+            """CREATE TABLE IF NOT EXISTS habit_app (
+                habit_id INTEGER NOT NULL REFERENCES habit(id) ON DELETE CASCADE,
+                package TEXT NOT NULL,
+                PRIMARY KEY (habit_id, package)
+            )""",
+        )
+
+        val TABLES = listOf("habit", "habit_app", "habit_pause", "habit_log", "mood", "journal", "goal", "goal_step", "goal_habit", "rest_day", "daily_score", "alert_log", "settings")
 
         val SCHEMA = listOf(
             """CREATE TABLE habit (
@@ -130,6 +139,6 @@ class BrotoDatabase(context: Context, name: String? = DB_NAME) : SQLiteOpenHelpe
             "CREATE TABLE alert_log (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, category TEXT NOT NULL, sent_at INTEGER NOT NULL)",
             "CREATE INDEX idx_alert_key ON alert_log(key)",
             "CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
-        )
+        ) + V2
     }
 }

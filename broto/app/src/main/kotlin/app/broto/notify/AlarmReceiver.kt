@@ -31,14 +31,42 @@ class AlarmReceiver : BroadcastReceiver() {
                 repo.restDays(), repo.alertSettings(), repo.lastSentAlerts(), repo.smartAlertsSentSince(startOfDay))
         }
 
+        /** Monta a notificação diária do horário [slot] com os dados atuais. [record]: registra a dica incluída (evita repetir). */
+        fun buildCheckIn(ctx: Context, repo: Repo, slot: Int, now: LocalDateTime = LocalDateTime.now(), record: Boolean = true): app.broto.core.alerts.CheckIn? {
+            val times = repo.settings.checkInTimes
+            if (slot !in times.indices) return null
+            val input = buildInput(repo, now)
+            val today = now.toLocalDate()
+            val cons = repo.consistency(today)
+            val screen = try { app.broto.screentime.ScreenTime.todayMinutes(ctx, repo, today) } catch (e: Exception) { emptyMap<Long, Double>() }
+            val c = app.broto.core.alerts.CheckInEngine.build(input, slot, slot == times.lastIndex, repo.settings.userName, cons.current, cons.todayDone,
+                repo.storedScores(today, today)[today], screen, app.broto.screentime.ScreenTime.autoHabitIds(repo))
+            if (record) c.insight?.let { repo.recordAlert(it.key, it.category) }
+            return c
+        }
+
         fun handle(ctx: Context, intent: Intent, now: LocalDateTime = LocalDateTime.now()): List<Alert> {
             val repo = Repo.get(ctx)
             if (!repo.settings.notificationsEnabled) return emptyList()
+            try { app.broto.screentime.ScreenTime.sync(ctx, repo, now.toLocalDate()) } catch (_: Exception) {}
             val input = buildInput(repo, now)
             val alerts: List<Alert> = when (intent.getStringExtra(Scheduler.EXTRA_KIND)) {
+                Scheduler.KIND_CHECKIN -> {
+                    val slot = intent.getIntExtra(Scheduler.EXTRA_SLOT, 0)
+                    val key = "checkin:${now.toLocalDate()}:$slot"
+                    // não repete se o alarme disparar de novo no mesmo dia
+                    if (input.lastSent.containsKey(key)) return emptyList()
+                    val c = buildCheckIn(ctx, repo, slot, now) ?: return emptyList()
+                    Notifier.postCheckIn(ctx, c, slot)
+                    repo.recordAlert(key, app.broto.core.alerts.AlertCategory.HABIT_REMINDER)
+                    return listOf(Alert(key, app.broto.core.alerts.AlertCategory.HABIT_REMINDER, c.title, c.text, 1, 0))
+                }
                 Scheduler.KIND_HABIT -> {
                     val h = repo.habit(intent.getLongExtra(Scheduler.EXTRA_HABIT, -1)) ?: return emptyList()
-                    listOfNotNull(AlertEngine.habitReminder(h, input))
+                    val a = AlertEngine.habitReminder(h, input) ?: return emptyList()
+                    Notifier.post(ctx, a, app.broto.core.alerts.QuickActions.forHabit(h, input.logs[h.id]?.get(now.toLocalDate())), "reminder")
+                    repo.recordAlert(a.key, a.category)
+                    return listOf(a)
                 }
                 Scheduler.KIND_MOOD -> listOfNotNull(AlertEngine.moodReminder(input))
                 Scheduler.KIND_CHECK -> AlertEngine.dailyCheck(input)
