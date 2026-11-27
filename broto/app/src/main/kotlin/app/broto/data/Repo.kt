@@ -95,6 +95,41 @@ class Repo private constructor(context: Context, dbName: String?) {
         return id
     }
 
+    /** Tudo o que pertence a um hábito, para poder desfazer a exclusão. */
+    class HabitSnapshot(val habitRow: ContentValues, val rows: Map<String, List<ContentValues>>)
+
+    fun snapshotHabit(id: Long): HabitSnapshot? {
+        fun rows(sql: String): List<ContentValues> {
+            val out = ArrayList<ContentValues>()
+            db.rawQuery(sql, arrayOf(id.toString())).use { c ->
+                while (c.moveToNext()) out.add(ContentValues().also { cv ->
+                    for (i in 0 until c.columnCount) when (c.getType(i)) {
+                        Cursor.FIELD_TYPE_NULL -> cv.putNull(c.getColumnName(i))
+                        Cursor.FIELD_TYPE_INTEGER -> cv.put(c.getColumnName(i), c.getLong(i))
+                        Cursor.FIELD_TYPE_FLOAT -> cv.put(c.getColumnName(i), c.getDouble(i))
+                        else -> cv.put(c.getColumnName(i), c.getString(i))
+                    }
+                })
+            }
+            return out
+        }
+        val h = rows("SELECT * FROM habit WHERE id = ?").firstOrNull() ?: return null
+        val children = LinkedHashMap<String, List<ContentValues>>()
+        for (t in listOf("habit_pause", "habit_log", "goal_habit") + extraHabitTables) children[t] = rows("SELECT * FROM $t WHERE habit_id = ?")
+        return HabitSnapshot(h, children)
+    }
+
+    /** Tabelas filhas de hábito adicionadas em versões posteriores do esquema. */
+    private val extraHabitTables: List<String> get() = BrotoDatabase.TABLES.filter { it == "habit_app" }
+
+    fun restoreHabit(s: HabitSnapshot) {
+        tx {
+            db.insertWithOnConflict("habit", null, s.habitRow, SQLiteDatabase.CONFLICT_REPLACE)
+            for ((t, rows) in s.rows) for (r in rows) db.insertWithOnConflict(t, null, r, SQLiteDatabase.CONFLICT_IGNORE)
+        }
+        recomputeAllScores(); notifyChanged()
+    }
+
     fun deleteHabit(id: Long) {
         tx { db.delete("habit", "id = ?", arrayOf(id.toString())) }
         recomputeAllScores(); notifyChanged()

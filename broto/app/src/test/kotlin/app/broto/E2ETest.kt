@@ -61,7 +61,7 @@ class E2ETest {
             val check = all(a.currentScreen.container).first { it.contentDescription == "Marcar ${h.name}" }
             check.performClick(); Shots.idle()
             assertEquals(1.0, a.repo.logsForDay(day)[h.id]?.value)
-            check.let { all(a.currentScreen.container).first { v -> v.contentDescription == "Marcar ${h.name}" }.performClick() }; Shots.idle()
+            check.let { all(a.currentScreen.container).first { v -> v.contentDescription == "Desmarcar ${h.name}" }.performClick() }; Shots.idle()
             assertNull(a.repo.logsForDay(day)[h.id]) // desmarcar
         }
     }

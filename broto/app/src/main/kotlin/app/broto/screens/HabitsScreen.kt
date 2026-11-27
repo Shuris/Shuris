@@ -43,6 +43,21 @@ class HabitsScreen(act: MainActivity) : Screen(act) {
                 emptyState("Nenhum hábito ainda", "Crie hábitos positivos para cultivar e negativos para reduzir.", 4, "Criar meu primeiro hábito") { act.push(HabitEditorScreen(act, null)) }
                 return@page
             }
+            val prefs = act.getSharedPreferences("broto_ui", 0)
+            if (!prefs.getBoolean("hint_gestures", false)) {
+                card(color = Theme.blend(Theme.p.surface, Theme.p.yellow, 0.28f), padding = 16) {
+                    horizontal {
+                        gravity = Gravity.TOP
+                        text("💡", TextStyle.TITLE)
+                        vertical { lp(0, WRAP, 1f, l = 12)
+                            text("Atalhos dos hábitos", TextStyle.BODY_BOLD)
+                            text("• Toque no círculo para concluir (toque de novo para desmarcar).\n• Toque e segure um hábito para registrar quantidade, \"não fiz\" ou corrigir.\n• Toque no nome para ver calendário e histórico.",
+                                TextStyle.CAPTION, Theme.p.text).lp(MATCH, WRAP, t = 4)
+                        }
+                    }
+                    text("Entendi", TextStyle.LABEL, Theme.p.primaryDark).link { prefs.edit().putBoolean("hint_gestures", true).apply(); render() }.lp(WRAP, WRAP, gravity = Gravity.END)
+                }
+            }
             if (rest.isRest(day)) {
                 card(color = Theme.p.surfaceAlt, padding = 14) {
                     horizontal {
@@ -116,7 +131,7 @@ class ManageHabitsScreen(act: MainActivity) : Screen(act) {
                             pad(4, 6)
                             emojiBubble(h.emoji, Theme.p.outline, 40)
                             text(h.name, TextStyle.BODY_BOLD, Theme.p.textSoft).lp(0, WRAP, 1f, l = 10)
-                            text("Restaurar", TextStyle.LABEL, Theme.p.primaryDark) { pad(10, 6); ripple(dpf(12)); onClick { repo.setArchived(h.id, false) } }
+                            text("Restaurar", TextStyle.LABEL, Theme.p.primaryDark).link { repo.setArchived(h.id, false) }
                         }
                     }
                 }

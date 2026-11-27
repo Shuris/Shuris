@@ -38,7 +38,7 @@ fun ViewGroup.section(title: String, action: String? = null, onAction: (() -> Un
     horizontal {
         lp(MATCH, WRAP, t = 8, b = 10)
         text(title, TextStyle.HEADLINE).lp(0, WRAP, 1f)
-        if (action != null) text(action, TextStyle.LABEL, Theme.p.primaryDark) { pad(8, 4); ripple(dpf(12)); onClick { onAction?.invoke() } }
+        if (action != null) text(action, TextStyle.LABEL, Theme.p.primaryDark).link { onAction?.invoke() }
     }
 }
 
@@ -64,15 +64,43 @@ fun ViewGroup.ghostButton(label: String, color: Int = Theme.p.primaryDark, onCli
         onClick { onClickF() }
     }
 
-fun ViewGroup.iconButton(icon: Icon, tint: Int = Theme.p.text, bg: Int? = null, sizeDp: Int = 44, iconDp: Int = 22, onClickF: () -> Unit): FrameLayout {
+/**
+ * Botão de ícone. O círculo visível mantém [sizeDp], mas a área de toque tem no mínimo [minTouchDp]
+ * (48dp por padrão, recomendação de acessibilidade do Android).
+ */
+fun ViewGroup.iconButton(icon: Icon, tint: Int = Theme.p.text, bg: Int? = null, sizeDp: Int = 44, iconDp: Int = 22, minTouchDp: Int = 48, onClickF: () -> Unit): FrameLayout {
     val f = FrameLayout(context)
-    f.layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
-    if (bg != null) f.ripple(dpf(sizeDp / 2f), bg) else f.ripple(dpf(sizeDp / 2f))
+    val touch = maxOf(sizeDp, minTouchDp)
+    f.layoutParams = LinearLayout.LayoutParams(dp(touch), dp(touch))
+    val inset = dp((touch - sizeDp) / 2)
+    val r = dpf(sizeDp / 2f)
+    val content = bg?.let { android.graphics.drawable.InsetDrawable(rounded(it, r), inset) }
+    val mask = android.graphics.drawable.InsetDrawable(rounded(0xFFFFFFFF.toInt(), r), inset)
+    f.background = android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Theme.alpha(Theme.p.primaryDark, 0.14f)), content, mask)
     val iv = ImageView(context); iv.setImageDrawable(IconDrawable(icon, tint, dp(iconDp)))
     f.addView(iv, FrameLayout.LayoutParams(dp(iconDp), dp(iconDp), Gravity.CENTER))
-    f.onClick { onClickF() }
-    f.contentDescription = icon.name
+    f.onClick { it.haptic(); onClickF() }
+    f.contentDescription = iconLabel(icon)
     addView(f); return f
+}
+
+/** Descrição falada (leitores de tela) dos ícones. */
+fun iconLabel(i: Icon): String = when (i) {
+    Icon.BACK -> "Voltar"; Icon.LEFT -> "Anterior"; Icon.RIGHT -> "Próximo"; Icon.PLUS -> "Adicionar"; Icon.MINUS -> "Diminuir"
+    Icon.EDIT -> "Editar"; Icon.TRASH -> "Excluir"; Icon.MORE -> "Mais opções"; Icon.SETTINGS -> "Ajustes"; Icon.SEARCH -> "Buscar"
+    Icon.CLOSE -> "Remover"; Icon.CALENDAR -> "Escolher data"; Icon.UP -> "Mover para cima"; Icon.DOWN -> "Mover para baixo"
+    Icon.PAUSE -> "Pausar"; Icon.PLAY -> "Retomar"; Icon.DOC -> "Relatórios"; else -> i.name.lowercase()
+}
+
+/** Vibração curta de confirmação (respeita a configuração de vibração ao toque do sistema). */
+fun View.haptic(long: Boolean = false) {
+    performHapticFeedback(if (long) android.view.HapticFeedbackConstants.LONG_PRESS else android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+}
+
+/** Texto clicável (links como "Abrir ›") com altura mínima de toque. */
+fun TextView.link(f: () -> Unit): TextView {
+    minHeight = dp(48); gravity = Gravity.CENTER_VERTICAL; pad(12, 0); ripple(dpf(14)); onClick { f() }
+    return this
 }
 
 // ----------------------------------------------------------------- Chips
@@ -81,12 +109,15 @@ class Chip(context: Context, label: String, selected: Boolean, private val accen
         set(v) { field = v; refresh() }
     init {
         text = label; style(TextStyle.LABEL); gravity = Gravity.CENTER
-        pad(14, 9); minHeight = dp(36)
+        pad(14, 14); minHeight = dp(48); minWidth = dp(48)
         refresh()
     }
     private fun refresh() {
-        background = if (selectedState) rounded(Theme.blend(Theme.p.surface, accent, 0.18f), dpf(18), accent, dp(1))
+        val pill = if (selectedState) rounded(Theme.blend(Theme.p.surface, accent, 0.18f), dpf(18), accent, dp(1))
         else rounded(Theme.p.surface, dpf(18), Theme.p.outline, dp(1))
+        // Fundo recuado (pílula de 40dp numa área de toque de 48dp). Trocar o fundo redefine o padding: restauramos depois.
+        background = android.graphics.drawable.InsetDrawable(pill, 0, dp(4), 0, dp(4))
+        setPadding(dp(14), dp(14), dp(14), dp(14))
         setTextColor(if (selectedState) Theme.deepen(accent, 0.25f).let { if (Theme.p.dark) Theme.p.text else it } else Theme.p.textSoft)
     }
 }
@@ -100,7 +131,11 @@ class FlowLayout(context: Context, private val hGap: Int = 8, private val vGap: 
         for (i in 0 until childCount) {
             val c = getChildAt(i)
             if (c.visibility == GONE) continue
-            c.measure(MeasureSpec.makeMeasureSpec(maxW, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+            // Respeita o tamanho fixo definido no item (ex.: emoji de 48dp); senão, mede pelo conteúdo.
+            val lp = c.layoutParams
+            val ws = if (lp != null && lp.width > 0) MeasureSpec.makeMeasureSpec(minOf(lp.width, maxW), MeasureSpec.EXACTLY) else MeasureSpec.makeMeasureSpec(maxW, MeasureSpec.AT_MOST)
+            val hs = if (lp != null && lp.height > 0) MeasureSpec.makeMeasureSpec(lp.height, MeasureSpec.EXACTLY) else MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED)
+            c.measure(ws, hs)
             if (x > 0 && x + c.measuredWidth > maxW) { x = 0; y += rowH + vg; rowH = 0 }
             x += c.measuredWidth + hg
             rowH = maxOf(rowH, c.measuredHeight)
@@ -122,7 +157,7 @@ class FlowLayout(context: Context, private val hGap: Int = 8, private val vGap: 
     }
 }
 
-fun ViewGroup.flow(hGap: Int = 8, vGap: Int = 8, block: FlowLayout.() -> Unit): FlowLayout {
+fun ViewGroup.flow(hGap: Int = 8, vGap: Int = 0, block: FlowLayout.() -> Unit): FlowLayout {
     val f = FlowLayout(context, hGap, vGap); f.layoutParams = LinearLayout.LayoutParams(MATCH, WRAP)
     addView(f); f.block(); return f
 }
@@ -133,7 +168,7 @@ fun <T> ViewGroup.choiceChips(options: List<T>, selected: T?, label: (T) -> Stri
     return flow {
         for (o in options) {
             val c = Chip(context, label(o), o == selected)
-            c.onClick { chips.forEach { it.selectedState = false }; c.selectedState = true; onSelect(o) }
+            c.onClick { it.haptic(); chips.forEach { it.selectedState = false }; c.selectedState = true; onSelect(o) }
             chips.add(c); addView(c)
         }
     }
@@ -145,7 +180,7 @@ fun <T> ViewGroup.multiChips(options: List<T>, selected: Set<T>, label: (T) -> S
     return flow {
         for (o in options) {
             val c = Chip(context, label(o), o in sel)
-            c.onClick { if (o in sel) sel.remove(o) else sel.add(o); c.selectedState = o in sel; onChange(LinkedHashSet(sel)) }
+            c.onClick { it.haptic(); if (o in sel) sel.remove(o) else sel.add(o); c.selectedState = o in sel; onChange(LinkedHashSet(sel)) }
             addView(c)
         }
     }
@@ -171,7 +206,7 @@ fun <T> ViewGroup.segmented(options: List<T>, selected: T, label: (T) -> String,
                 v.elevation = if (i == j && !Theme.p.dark) dpf(1) else 0f
             }
         }
-        views.forEachIndexed { i, v -> v.onClick { select(i); onSelect(options[i]) } }
+        views.forEachIndexed { i, v -> v.minHeight = dp(48); v.onClick { it.haptic(); select(i); onSelect(options[i]) } }
         select(options.indexOf(selected).coerceAtLeast(0))
     }
 }
@@ -213,7 +248,7 @@ class RingView(context: Context, var progress: Float, var color: Int = Theme.p.p
     }
     override fun onDraw(c: Canvas) {
         val sw = dpf(strokeDp); p.strokeWidth = sw
-        val sz = minOf(width, height) - sw
+        val sz = minOf(width - paddingLeft - paddingRight, height - paddingTop - paddingBottom) - sw
         val r = RectF((width - sz) / 2f, (height - sz) / 2f, (width + sz) / 2f, (height + sz) / 2f)
         p.color = track; c.drawArc(r, 0f, 360f, false, p)
         if (shown > 0.001f) { p.color = color; c.drawArc(r, -90f, 360f * shown, false, p) }
@@ -244,21 +279,24 @@ class Toggle(context: Context, on: Boolean, private val onChange: (Boolean) -> U
     private var pos = if (on) 1f else 0f
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     init {
-        layoutParams = LinearLayout.LayoutParams(dp(50), dp(30))
+        layoutParams = LinearLayout.LayoutParams(dp(50), dp(48))
         setOnClickListener { set(!this.on, true) }
+        contentDescription = "Interruptor"
     }
     fun set(v: Boolean, notify: Boolean) {
+        if (notify) haptic()
         on = v
         ValueAnimator.ofFloat(pos, if (v) 1f else 0f).apply { duration = 180; addUpdateListener { pos = it.animatedValue as Float; invalidate() }; start() }
         if (notify) onChange(v)
     }
     override fun onDraw(c: Canvas) {
-        val h = height.toFloat(); val w = width.toFloat()
+        val h = minOf(height.toFloat(), dpf(30)); val w = width.toFloat()
+        val top = (height - h) / 2
         p.color = Theme.blend(Theme.p.outline, Theme.p.primaryDark, pos)
-        c.drawRoundRect(0f, 0f, w, h, h / 2, h / 2, p)
+        c.drawRoundRect(0f, top, w, top + h, h / 2, h / 2, p)
         p.color = 0xFFFFFFFF.toInt()
         val r = h / 2 - dpf(3)
-        c.drawCircle(h / 2 + (w - h) * pos, h / 2, r, p)
+        c.drawCircle(h / 2 + (w - h) * pos, top + h / 2, r, p)
     }
 }
 
@@ -277,6 +315,11 @@ fun ViewGroup.settingRow(title: String, subtitle: String? = null, icon: Icon? = 
         }
         right?.invoke(this)
         if (onClickF != null) { ripple(dpf(14)); onClick { onClickF() } }
+        else {
+            // Linha com interruptor: tocar em qualquer parte da linha alterna (não só no interruptor).
+            val t = (0 until childCount).map { getChildAt(it) }.filterIsInstance<Toggle>().firstOrNull()
+            if (t != null) { ripple(dpf(14)); onClick { t.set(!t.on, true) }; contentDescription = title }
+        }
     }
 
 // ----------------------------------------------------------------- Campos de texto
@@ -305,8 +348,29 @@ class Stepper(context: Context, initial: Double, private val step: Double, priva
     init {
         orientation = HORIZONTAL; gravity = Gravity.CENTER_VERTICAL
         iconButton(Icon.MINUS, Theme.p.deep, Theme.p.primarySoft, 44, 20) { set(value - step) }
-        label = text(Fmt.num(value), TextStyle.TITLE) { gravity = Gravity.CENTER; minWidth = dp(70) }
+        label = text(Fmt.num(value), TextStyle.TITLE) { gravity = Gravity.CENTER; minWidth = dp(70); minHeight = dp(48) }
+        label.background = rounded(0, dpf(12))
+        label.ripple(dpf(12))
+        label.contentDescription = "Digitar valor"
+        label.onClick { typeValue() }
         iconButton(Icon.PLUS, Theme.p.deep, Theme.p.primarySoft, 44, 20) { set(value + step) }
+    }
+
+    /** Digitar o valor exato (ex.: 120) em vez de tocar várias vezes no +. */
+    private fun typeValue() {
+        val s = BottomSheet(context)
+        s.title("Digite o valor")
+        val f = s.content.field("Valor", Fmt.num(value), numeric = true)
+        f.setSelectAllOnFocus(true)
+        fun ok() {
+            val v = f.text.toString().replace(',', '.').trim().toDoubleOrNull()
+            if (v == null || v < min) { f.error = "Digite um número${if (min > 0) " a partir de ${Fmt.num(min)}" else ""}"; return }
+            set(v); s.dismiss()
+        }
+        f.setOnEditorActionListener { _, _, _ -> ok(); true }
+        s.content.primaryButton("OK") { ok() }
+        s.setOnShowListener { f.requestFocus(); s.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE or WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE) }
+        s.show()
     }
     fun set(v: Double) { value = maxOf(min, Math.round(v * 100) / 100.0); label.text = Fmt.num(value); onChange(value) }
 }
@@ -314,20 +378,26 @@ class Stepper(context: Context, initial: Double, private val step: Double, priva
 // ----------------------------------------------------------------- Bottom sheet
 open class BottomSheet(protected val ctx: Context) : Dialog(ctx) {
     val content: LinearLayout
-    private val scroll: ScrollView
+    private val scroll: SheetScroll
+    private val root: LinearLayout
     init {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-        content = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; pad(22, 10, 22, 22) }
-        val handle = View(ctx).apply { background = rounded(Theme.p.outline, ctx.dpf(3)) }
-        val root = LinearLayout(ctx).apply {
+        content = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; pad(22, 4, 22, 22) }
+        root = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Theme.p.bg); cornerRadii = floatArrayOf(ctx.dpf(30), ctx.dpf(30), ctx.dpf(30), ctx.dpf(30), 0f, 0f, 0f, 0f)
             }
-            addView(handle, LinearLayout.LayoutParams(ctx.dp(40), ctx.dp(5)).apply { gravity = Gravity.CENTER_HORIZONTAL; topMargin = ctx.dp(10) })
         }
-        scroll = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false; addView(content) }
+        // Alça: área de 28dp que pode ser arrastada para baixo para fechar.
+        val handleZone = FrameLayout(ctx)
+        handleZone.addView(View(ctx).apply { background = rounded(Theme.p.outline, ctx.dpf(3)) }, FrameLayout.LayoutParams(ctx.dp(40), ctx.dp(5), Gravity.CENTER))
+        handleZone.contentDescription = "Arraste para baixo para fechar"
+        root.addView(handleZone, LinearLayout.LayoutParams(MATCH, ctx.dp(28)))
+        scroll = SheetScroll(ctx, root) { dismiss() }
+        scroll.isVerticalScrollBarEnabled = false; scroll.addView(content)
         root.addView(scroll, LinearLayout.LayoutParams(MATCH, WRAP))
+        handleZone.setOnTouchListener { _, e -> scroll.dragFromHandle(e); true }
         setContentView(root)
         window?.apply {
             setBackgroundDrawable(ColorDrawable(0))
@@ -347,6 +417,55 @@ open class BottomSheet(protected val ctx: Context) : Dialog(ctx) {
     fun title(t: String, sub: String? = null) {
         content.text(t, TextStyle.TITLE).lp(WRAP, WRAP, t = 10, b = if (sub == null) 14 else 4)
         if (sub != null) content.text(sub, TextStyle.BODY, Theme.p.textSoft).lp(MATCH, WRAP, b = 14)
+    }
+}
+
+/**
+ * Rolagem do bottom sheet que também permite arrastar o painel para baixo para fechar
+ * (pela alça ou puxando o conteúdo quando ele já está no topo).
+ */
+class SheetScroll(ctx: Context, private val sheet: View, private val onDismiss: () -> Unit) : ScrollView(ctx) {
+    private var startY = 0f
+    private var lastY = 0f
+    private var lastT = 0L
+    private var velocity = 0f
+    private var dragging = false
+    private val slop = android.view.ViewConfiguration.get(ctx).scaledTouchSlop
+
+    override fun onInterceptTouchEvent(e: android.view.MotionEvent): Boolean {
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> { startY = e.rawY; lastY = e.rawY; lastT = e.eventTime; dragging = false }
+            android.view.MotionEvent.ACTION_MOVE -> if (scrollY == 0 && e.rawY - startY > slop) { dragging = true; return true }
+        }
+        return super.onInterceptTouchEvent(e)
+    }
+
+    override fun onTouchEvent(e: android.view.MotionEvent): Boolean {
+        if (dragging || (scrollY == 0 && e.actionMasked == android.view.MotionEvent.ACTION_MOVE && e.rawY - startY > slop)) { dragging = true; return drag(e) }
+        return super.onTouchEvent(e)
+    }
+
+    fun dragFromHandle(e: android.view.MotionEvent) {
+        if (e.actionMasked == android.view.MotionEvent.ACTION_DOWN) { startY = e.rawY; lastY = e.rawY; lastT = e.eventTime; dragging = true; return }
+        drag(e)
+    }
+
+    private fun drag(e: android.view.MotionEvent): Boolean {
+        when (e.actionMasked) {
+            android.view.MotionEvent.ACTION_MOVE -> {
+                val dt = (e.eventTime - lastT).coerceAtLeast(1)
+                velocity = (e.rawY - lastY) / dt
+                lastY = e.rawY; lastT = e.eventTime
+                sheet.translationY = (e.rawY - startY).coerceAtLeast(0f)
+            }
+            android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> {
+                dragging = false
+                val far = sheet.translationY > minOf(sheet.height * 0.3f, dpf(160))
+                if (far || velocity > 1.2f) sheet.animate().translationY(sheet.height.toFloat()).setDuration(160).withEndAction { onDismiss() }.start()
+                else sheet.animate().translationY(0f).setDuration(160).start()
+            }
+        }
+        return true
     }
 }
 

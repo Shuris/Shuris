@@ -232,7 +232,7 @@ class AnalysesScreen(act: MainActivity) : Screen(act) {
         card {
             horizontal {
                 text("💡 Descobertas sobre mim", TextStyle.HEADLINE).lp(0, WRAP, 1f)
-                text("Ver todas ›", TextStyle.LABEL, Theme.p.primaryDark) { pad(8, 6) }
+                text("Ver todas ›", TextStyle.LABEL, Theme.p.primaryDark) { pad(8, 6); minHeight = dp(48); gravity = Gravity.CENTER_VERTICAL }
             }
             val top = report.found.take(2)
             if (top.isEmpty()) text("Ainda não há dados suficientes para apontar padrões com segurança. Continue registrando! 🌱", TextStyle.BODY, Theme.p.textSoft).lp(MATCH, WRAP, t = 8)

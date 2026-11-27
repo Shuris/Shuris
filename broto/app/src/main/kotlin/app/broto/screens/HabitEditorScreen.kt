@@ -16,6 +16,14 @@ import java.time.LocalDate
 class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(act) {
     private var h: Habit = habitId?.let { repo.habit(it) } ?: Habit(name = "", startDate = LocalDate.now(), emoji = "🌱", category = Category.PERSONAL)
     private val isNew = habitId == null
+    private val initial = h
+    private var saved = false
+
+    override fun onBack(): Boolean {
+        if (saved || h == initial) return false
+        confirm(act, "Descartar alterações?", if (isNew) "O hábito ainda não foi criado." else "As alterações neste hábito não foram salvas.", "Descartar", true) { saved = true; act.pop() }
+        return true
+    }
 
     data class Template(val h: Habit)
 
@@ -43,7 +51,9 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
     override fun build(): View = page(if (isNew) "Novo hábito" else "Editar hábito", actions = {
         if (!isNew) iconButton(Icon.TRASH, Theme.p.coral) {
             confirm(act, "Excluir \"${h.name}\"?", "O hábito e todo o seu histórico serão apagados. Se quiser só parar de acompanhar, use Arquivar.", "Excluir", true) {
-                repo.deleteHabit(h.id); app.broto.notify.Scheduler.rescheduleAll(act); act.back(); act.snack("Hábito excluído.")
+                val snap = repo.snapshotHabit(h.id)
+                repo.deleteHabit(h.id); app.broto.notify.Scheduler.rescheduleAll(act); saved = true; act.pop()
+                act.snack("Hábito excluído.", if (snap != null) "Desfazer" else null) { snap?.let { repo.restoreHabit(it); app.broto.notify.Scheduler.rescheduleAll(act) } }
             }
         }
     }) {
@@ -75,21 +85,21 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
             fieldLabel("Ícone")
             val preview = emojiBubble(h.emoji, h.color, 56)
             preview.lp(dp(56), dp(56), b = 10)
-            flow(4, 4) {
+            flow(0, 0) {
                 for (e in emojis) addView(TextView(act).apply {
                     text = e; textSize = 22f; gravity = Gravity.CENTER
-                    layoutParams = android.view.ViewGroup.LayoutParams(dp(42), dp(42))
+                    layoutParams = android.view.ViewGroup.LayoutParams(dp(48), dp(48))
                     background = if (e == h.emoji) rounded(Theme.p.primarySoft, dpf(12)) else null
                     onClick { h = h.copy(emoji = e); render() }
                 })
             }
             fieldLabel("Cor")
-            flow(8, 8) {
+            flow(0, 0) {
                 for (col in Theme.habitColors) addView(DrawView(act) { c, w, hh ->
                     val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-                    p.color = col; c.drawCircle(w / 2f, hh / 2f, w / 2f - dpf(4), p)
-                    if (col == h.color) { p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = dpf(2.5f); p.color = Theme.p.text; c.drawCircle(w / 2f, hh / 2f, w / 2f - dpf(1.5f), p) }
-                }.apply { layoutParams = android.view.ViewGroup.LayoutParams(dp(36), dp(36)); onClick { h = h.copy(color = col); render() } })
+                    p.color = col; c.drawCircle(w / 2f, hh / 2f, dpf(14), p)
+                    if (col == h.color) { p.style = android.graphics.Paint.Style.STROKE; p.strokeWidth = dpf(2.5f); p.color = Theme.p.text; c.drawCircle(w / 2f, hh / 2f, dpf(16.5f), p) }
+                }.apply { layoutParams = android.view.ViewGroup.LayoutParams(dp(48), dp(48)); contentDescription = "Cor"; onClick { it.haptic(); h = h.copy(color = col); render() } })
             }
             fieldLabel("Categoria")
             choiceChips(Category.values().toList(), h.category, { "${it.emoji} ${it.label}" }) { h = h.copy(category = it) }
@@ -141,7 +151,7 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
                         text(Fmt.dowLetter(d), TextStyle.BODY_BOLD, if (on) Theme.p.onPrimary else Theme.p.textSoft) {
                             gravity = Gravity.CENTER
                             background = rounded(if (on) Theme.p.primary else Theme.p.surfaceAlt, dpf(20))
-                            layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f).apply { setMargins(dp(2), 0, dp(2), 0) }
+                            layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { setMargins(dp(2), 0, dp(2), 0) }
                             contentDescription = Fmt.dow(d)
                             onClick { val nw = h.weekdays.with(d, !on); if (!nw.isEmpty) { h = h.copy(weekdays = nw); render() } }
                         }
@@ -172,7 +182,7 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
         primaryButton(if (isNew) "Criar hábito" else "Salvar alterações", Icon.CHECK) { save() }
         if (!isNew) {
             softButton(if (h.archived) "Restaurar hábito" else "Arquivar (parar de acompanhar)", Icon.ARCHIVE, Theme.p.surfaceAlt, Theme.p.text) {
-                repo.setArchived(h.id, !h.archived); act.back(); act.snack(if (h.archived) "Hábito restaurado." else "Hábito arquivado. O histórico foi mantido.")
+                repo.setArchived(h.id, !h.archived); saved = true; act.pop(); act.snack(if (h.archived) "Hábito restaurado." else "Hábito arquivado. O histórico foi mantido.")
             }
         }
     }
@@ -186,7 +196,8 @@ class HabitEditorScreen(act: MainActivity, private val habitId: Long?) : Screen(
         if (h.isPositive && h.tracking != Tracking.BOOLEAN && h.target <= 0) { act.snack("Defina uma meta maior que zero."); return }
         val id = repo.saveHabit(h)
         app.broto.notify.Scheduler.rescheduleAll(act)
-        act.back()
+        saved = true
+        act.pop()
         act.snack(if (isNew) "${h.emoji} Hábito criado!" else "Alterações salvas.")
         if (isNew) id.let { }
     }

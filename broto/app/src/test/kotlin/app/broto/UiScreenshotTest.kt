@@ -69,7 +69,7 @@ class Stage3ScreenshotTest {
         ShadowDialog.getLatestDialog().dismiss()
         a.push(MoodEditorScreen(a, LocalDate.now(), 4), false); Shots.activity(a, "12_mood_editor")
         Shots.view(a.currentScreen.container.getChildAt(0), "12_mood_editor_full", fullHeight = true)
-        a.back(); Shots.idle()
+        a.pop(); Shots.idle()
         a.switchTab(3, false); Shots.activity(a, "13_journal")
         val id = repo.journal().first().id
         a.push(JournalEntryScreen(a, id), false); Shots.activity(a, "14_journal_entry")

@@ -179,8 +179,9 @@ class ScoreSettingsScreen(act: MainActivity) : Screen(act) {
                     val on = rest.contains(d)
                     text(Fmt.dowShort(d), TextStyle.LABEL, if (on) Theme.p.onPrimary else Theme.p.textSoft) {
                         gravity = Gravity.CENTER; background = rounded(if (on) Theme.p.primary else Theme.p.surfaceAlt, dpf(16))
-                        layoutParams = LinearLayout.LayoutParams(0, dp(42), 1f).apply { setMargins(dp(2), 0, dp(2), 0) }
-                        onClick { repo.settings.restWeekdays = rest.with(d, !on).mask; repo.recomputeAllScores(); repo.notifyChanged() }
+                        layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { setMargins(dp(2), 0, dp(2), 0) }
+                        contentDescription = Fmt.dow(d) + if (on) ", dia de descanso" else ""
+                        onClick { it.haptic(); repo.settings.restWeekdays = rest.with(d, !on).mask; repo.recomputeAllScores(); repo.notifyChanged() }
                     }
                 }
             }

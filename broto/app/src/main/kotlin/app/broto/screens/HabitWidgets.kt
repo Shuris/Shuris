@@ -59,10 +59,12 @@ object HabitRow {
             val sub = subtitle(act, h, day, log)
             text(sub, TextStyle.CAPTION, Theme.p.textSoft).ellipsize().lp(WRAP, WRAP, t = 3)
         }
+        texts.minimumHeight = act.dp(48); texts.gravity = Gravity.CENTER_VERTICAL
         texts.ripple(act.dpf(12)); texts.onClick { act.push(HabitDetailScreen(act, h.id)) }
         val ctl = control(act, h, day, log)
         row.addView(ctl)
-        row.setOnLongClickListener { LogSheet.show(act, h, day); true }
+        row.setOnLongClickListener { row.haptic(true); LogSheet.show(act, h, day); true }
+        texts.setOnLongClickListener { texts.haptic(true); LogSheet.show(act, h, day); true }
         return row
     }
 
@@ -95,12 +97,19 @@ object HabitRow {
             val done = log != null && log.value > 0
             val missed = log != null && log.value <= 0
             val v = CheckView(act, if (done) 2 else if (missed) 1 else 0)
-            v.layoutParams = LinearLayout.LayoutParams(act.dp(44), act.dp(44))
-            v.contentDescription = "Marcar ${h.name}"
+            v.layoutParams = LinearLayout.LayoutParams(act.dp(48), act.dp(48))
+            v.contentDescription = if (done) "Desmarcar ${h.name}" else "Marcar ${h.name}"
+            v.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+            v.ripple(act.dpf(22), mask = true)
             v.setOnClickListener {
-                if (done) repo.clearLog(h.id, day) else { repo.setLog(h.id, day, 1.0); act.snack("${h.emoji} ${h.name} concluído!") }
+                v.haptic()
+                if (done) {
+                    val prev = log!!
+                    repo.clearLog(h.id, day)
+                    act.snack("${h.name} desmarcado.", "Desfazer") { repo.setLog(h.id, day, prev.value, prev.note) }
+                } else { repo.setLog(h.id, day, 1.0); act.snack("${h.emoji} ${h.name} concluído!") }
             }
-            v.setOnLongClickListener { LogSheet.show(act, h, day); true }
+            v.setOnLongClickListener { v.haptic(true); LogSheet.show(act, h, day); true }
             return v
         }
         if (h.isPositive) {
@@ -108,12 +117,14 @@ object HabitRow {
             val pr = Schedule.progress(h, log).toFloat()
             val ring = RingView(act, pr, if (pr >= 1f) Theme.p.primaryDark else Theme.p.primary, Theme.p.surfaceAlt, 5f)
             ring.centerText = if (pr >= 1f) "✓" else "${(pr * 100).toInt()}%"; ring.centerTextSp = 10f
-            box.addView(ring, LinearLayout.LayoutParams(act.dp(42), act.dp(42)))
+            ring.setPadding(act.dp(3), act.dp(3), act.dp(3), act.dp(3))   // círculo de 42dp visível, área de toque de 48dp
+            box.addView(ring, LinearLayout.LayoutParams(act.dp(48), act.dp(48)))
             box.iconButton(Icon.PLUS, Theme.p.deep, Theme.p.primarySoft, 38, 18) {
                 val nv = (log?.value ?: 0.0) + HabitText.step(h)
                 repo.setLog(h.id, day, nv)
                 if ((log?.value ?: 0.0) < h.target && nv >= h.target) act.snack("${h.emoji} Meta de ${h.name} atingida! 🎉")
-            }.lp(act.dp(38), act.dp(38), l = 8)
+            }.lp(act.dp(48), act.dp(48), l = 2)
+            ring.ripple(act.dpf(21)); ring.contentDescription = "Registrar quantidade de ${h.name}"
             ring.setOnClickListener { LogSheet.show(act, h, day) }
             return box
         }
@@ -126,7 +137,8 @@ object HabitRow {
             else -> Triple(shortAmount(h, log.value) + " !", Theme.p.coralSoft, Theme.deepen(Theme.p.coral, 0.3f).let { if (Theme.p.dark) Theme.p.coral else it })
         }
         t.text = label; t.style(TextStyle.LABEL, fg); t.gravity = Gravity.CENTER
-        t.background = rounded(bg, act.dpf(16)); t.pad(12, 9); t.minWidth = act.dp(78)
+        t.background = android.graphics.drawable.InsetDrawable(rounded(bg, act.dpf(16)), 0, act.dp(6), 0, act.dp(6)); t.pad(12, 15); t.minWidth = act.dp(78); t.minHeight = act.dp(48)
+        t.contentDescription = "Registrar ${h.name}: $label"
         t.setOnClickListener { LogSheet.show(act, h, day) }
         return t
     }
@@ -142,7 +154,7 @@ object HabitRow {
 class CheckView(ctx: android.content.Context, private val state: Int) : View(ctx) {
     private val p = Paint(Paint.ANTI_ALIAS_FLAG)
     private val icon = IconDrawable(Icon.CHECK, 0xFFFFFFFF.toInt(), dp(22), 2.6f)
-    init { isClickable = true }
+    init { isClickable = false; importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO }
     override fun onDraw(c: Canvas) {
         val r = minOf(width, height) / 2f - dpf(3)
         val cx = width / 2f; val cy = height / 2f
@@ -224,7 +236,10 @@ object LogSheet {
                 }
             }
         }
-        if (log != null) c.ghostButton("Limpar registro (deixar sem registro)", Theme.p.textSoft) { repo.clearLog(h.id, day); s.dismiss() }
+        if (log != null) c.ghostButton("Limpar registro (deixar sem registro)", Theme.p.textSoft) {
+            repo.clearLog(h.id, day); s.dismiss()
+            act.snack("Registro removido.", "Desfazer") { repo.setLog(h.id, day, log.value, log.note) }
+        }
         s.show()
     }
 }
@@ -260,7 +275,7 @@ object WeekStrip {
     fun build(act: MainActivity, selected: LocalDate, weekStart: LocalDate, progress: (LocalDate) -> Float?, onPick: (LocalDate) -> Unit, onShift: (Int) -> Unit): View {
         val today = LocalDate.now()
         val row = LinearLayout(act).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        row.iconButton(Icon.LEFT, Theme.p.textSoft, null, 34, 18) { onShift(-1) }
+        row.iconButton(Icon.LEFT, Theme.p.textSoft, null, 34, 18, minTouchDp = 40) { onShift(-1) }.also { it.layoutParams.height = act.dp(48) }
         for (i in 0..6) {
             val d = weekStart.plusDays(i.toLong())
             val future = d.isAfter(today)
@@ -282,11 +297,13 @@ object WeekStrip {
                     c.drawText(d.dayOfMonth.toString(), w / 2f, h / 2f + dpf(4.5f), pnt)
                 }
                 addView(dv, LinearLayout.LayoutParams(dp(34), dp(34)).apply { topMargin = dp(4) })
-                if (!future) { onClick { onPick(d) } }
+                minimumHeight = dp(48)
+                contentDescription = Fmt.longDate(d)
+                if (!future) { onClick { it.haptic(); onPick(d) } }
             }
         }
         val canNext = weekStart.plusDays(7) <= today
-        row.iconButton(Icon.RIGHT, if (canNext) Theme.p.textSoft else Theme.p.outline, null, 34, 18) { if (canNext) onShift(1) }
+        row.iconButton(Icon.RIGHT, if (canNext) Theme.p.textSoft else Theme.p.outline, null, 34, 18, minTouchDp = 40) { if (canNext) onShift(1) }.also { it.layoutParams.height = act.dp(48) }
         return row
     }
 }

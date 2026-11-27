@@ -115,7 +115,10 @@ class JournalEntryScreen(act: MainActivity, private val entryId: Long) : Screen(
         return page(Fmt.relative(e.day), Fmt.fullDate(e.day), actions = {
             iconButton(Icon.EDIT, Theme.p.text) { act.push(JournalEditorScreen(act, e.id)) }
             iconButton(Icon.TRASH, Theme.p.coral) {
-                confirm(act, "Excluir entrada?", "Esta entrada do diário será apagada permanentemente.", "Excluir", true) { repo.deleteJournal(e.id); act.back(); act.snack("Entrada excluída.") }
+                confirm(act, "Excluir entrada?", "Esta entrada do diário será apagada permanentemente.", "Excluir", true) {
+                    repo.deleteJournal(e.id); act.pop()
+                    act.snack("Entrada excluída.", "Desfazer") { repo.saveJournal(e.copy(id = 0)) }
+                }
             }
         }) {
             card(padding = 22) {
@@ -159,7 +162,7 @@ class JournalEditorScreen(act: MainActivity, private val entryId: Long?) : Scree
 
     override fun onBack(): Boolean {
         if (!dirty()) return false
-        confirm(act, "Descartar alterações?", "O que você escreveu ainda não foi salvo.", "Descartar", true) { e = original ?: JournalEntry(day = e.day, body = ""); act.back() }
+        confirm(act, "Descartar alterações?", "O que você escreveu ainda não foi salvo.", "Descartar", true) { saved = true; act.pop() }
         return true
     }
 
@@ -209,7 +212,7 @@ class JournalEditorScreen(act: MainActivity, private val entryId: Long?) : Scree
             if (e.body.isBlank() && e.title.isBlank()) { act.snack("Escreva algo antes de salvar."); return@primaryButton }
             val newId = repo.saveJournal(e.copy(tags = parseTags()))
             e = repo.journalEntry(newId)!!; saved = true
-            act.back()
+            act.pop()
             act.snack("Entrada salva no seu diário. 📖")
         }
     }

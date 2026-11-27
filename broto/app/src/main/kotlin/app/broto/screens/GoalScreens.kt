@@ -152,7 +152,10 @@ class GoalDetailScreen(act: MainActivity, private val goalId: Long) : Screen(act
                 GoalStatus.DONE -> softButton("Reabrir objetivo", Icon.REFRESH, Theme.p.surfaceAlt, Theme.p.text) { save(g.copy(status = GoalStatus.ACTIVE, completedDay = null)) }
             }
             ghostButton("Excluir objetivo", Theme.p.coral) {
-                confirm(act, "Excluir \"${g.name}\"?", "Esta ação não pode ser desfeita.", "Excluir", true) { repo.deleteGoal(g.id); act.back() }
+                confirm(act, "Excluir \"${g.name}\"?", "O objetivo, suas etapas e vínculos serão removidos.", "Excluir", true) {
+                    repo.deleteGoal(g.id); act.pop()
+                    act.snack("Objetivo excluído.", "Desfazer") { repo.saveGoal(g.copy(id = 0)) }
+                }
             }
         }
     }
@@ -170,6 +173,14 @@ class GoalEditorScreen(act: MainActivity, private val goalId: Long?) : Screen(ac
     private var g: Goal = goalId?.let { repo.goal(it) } ?: Goal(name = "", createdDay = LocalDate.now(), target = 10.0)
     private val emojis = listOf("🎯", "📚", "🧠", "🏃", "💪", "📵", "💻", "✍️", "🎸", "🌍", "💰", "🏆", "🌱", "🧘", "🍎", "✈️", "🏠", "❤️")
     private var newStep = ""
+    private val initial = g
+    private var saved = false
+
+    override fun onBack(): Boolean {
+        if (saved || (g == initial && newStep.isBlank())) return false
+        confirm(act, "Descartar alterações?", "As alterações neste objetivo não foram salvas.", "Descartar", true) { saved = true; act.pop() }
+        return true
+    }
 
     override fun build(): View = page(if (goalId == null) "Novo objetivo" else "Editar objetivo") {
         card {
@@ -178,10 +189,10 @@ class GoalEditorScreen(act: MainActivity, private val goalId: Long?) : Screen(ac
             fieldLabel("Descrição")
             field("Por que este objetivo importa?", g.description, multiline = true).addTextChangedListener(watcher { g = g.copy(description = it) })
             fieldLabel("Ícone")
-            flow(4, 4) {
+            flow(0, 0) {
                 for (e in emojis) addView(TextView(act).apply {
                     text = e; textSize = 22f; gravity = Gravity.CENTER
-                    layoutParams = android.view.ViewGroup.LayoutParams(dp(42), dp(42))
+                    layoutParams = android.view.ViewGroup.LayoutParams(dp(48), dp(48))
                     background = if (e == g.emoji) rounded(Theme.p.primarySoft, dpf(12)) else null
                     onClick { g = g.copy(emoji = e); render() }
                 })
@@ -230,9 +241,11 @@ class GoalEditorScreen(act: MainActivity, private val goalId: Long?) : Screen(ac
             horizontal {
                 val f = field("Nova etapa", newStep); f.lp(0, WRAP, 1f)
                 f.addTextChangedListener(watcher { newStep = it })
+                f.imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+                f.setOnEditorActionListener { _, _, _ -> if (newStep.isNotBlank()) { g = g.copy(steps = g.steps + GoalStep(title = newStep.trim())); newStep = ""; render() }; true }
                 iconButton(Icon.PLUS, Theme.p.deep, Theme.p.primarySoft, 44, 20) {
                     if (newStep.isNotBlank()) { g = g.copy(steps = g.steps + GoalStep(title = newStep.trim())); newStep = ""; render() }
-                }.lp(dp(44), dp(44), l = 8)
+                }.lp(dp(48), dp(48), l = 4)
             }
         }
         val habits = repo.habits()
@@ -243,7 +256,7 @@ class GoalEditorScreen(act: MainActivity, private val goalId: Long?) : Screen(ac
         primaryButton(if (goalId == null) "Criar objetivo" else "Salvar", Icon.CHECK) {
             if (g.name.isBlank()) { act.snack("Dê um nome ao objetivo."); return@primaryButton }
             if (g.mode == GoalProgressMode.STEPS && g.steps.isEmpty()) { act.snack("Adicione pelo menos uma etapa."); return@primaryButton }
-            repo.saveGoal(g); act.back(); act.snack(if (goalId == null) "${g.emoji} Objetivo criado!" else "Objetivo salvo.")
+            repo.saveGoal(g); saved = true; act.pop(); act.snack(if (goalId == null) "${g.emoji} Objetivo criado!" else "Objetivo salvo.")
         }
     }
 }

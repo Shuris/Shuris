@@ -26,7 +26,7 @@ class MoodScreen(act: MainActivity) : Screen(act) {
             card(padding = 16) {
                 horizontal {
                     iconButton(Icon.LEFT, Theme.p.textSoft, null, 38, 20) { month = month.minusMonths(1); render() }
-                    text(Fmt.monthYear(month), TextStyle.HEADLINE) { gravity = Gravity.CENTER; pad(6, 6); ripple(dpf(12)); onClick { pickMonth() } }.lp(0, WRAP, 1f)
+                    text(Fmt.monthYear(month), TextStyle.HEADLINE) { gravity = Gravity.CENTER; pad(6, 6); minHeight = dp(48); ripple(dpf(12)); contentDescription = "${Fmt.monthYear(month)}, escolher mês"; onClick { pickMonth() } }.lp(0, WRAP, 1f)
                     val canNext = month.plusMonths(1) <= today
                     iconButton(Icon.RIGHT, if (canNext) Theme.p.textSoft else Theme.p.outline, null, 38, 20) { if (canNext) { month = month.plusMonths(1); render() } }
                 }
@@ -195,6 +195,14 @@ object MoodDaySheet {
 class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: Int? = null) : Screen(act) {
     private val existing = repo.mood(day)
     private var e: MoodEntry = existing?.copy(mood = preset ?: existing.mood) ?: MoodEntry(day, preset ?: 0)
+    private val initial = existing ?: MoodEntry(day, 0)
+    private var saved = false
+
+    override fun onBack(): Boolean {
+        if (saved || e == initial) return false
+        confirm(act, "Descartar registro?", "O registro de humor ainda não foi salvo.", "Descartar", true) { saved = true; act.pop() }
+        return true
+    }
 
     override fun build(): View = page(if (existing == null) "Registrar humor" else "Editar humor", Fmt.relative(day), actions = {
         iconButton(Icon.CALENDAR, Theme.p.text) {
@@ -204,7 +212,11 @@ class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: In
             }, day.year, day.monthValue - 1, day.dayOfMonth).apply { datePicker.maxDate = System.currentTimeMillis() }.show()
         }
         if (existing != null) iconButton(Icon.TRASH, Theme.p.coral) {
-            confirm(act, "Apagar registro de humor?", "O registro de ${Fmt.relative(day).lowercase()} será removido.", "Apagar", true) { repo.deleteMood(day); act.back() }
+            confirm(act, "Apagar registro de humor?", "O registro de ${Fmt.relative(day).lowercase()} será removido.", "Apagar", true) {
+                val old = existing
+                repo.deleteMood(day); saved = true; act.pop()
+                act.snack("Registro de humor apagado.", "Desfazer") { repo.saveMood(old) }
+            }
         }
     }) {
         card(padding = 16) {
@@ -221,7 +233,7 @@ class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: In
                         addView(iv, LinearLayout.LayoutParams(dp(58), dp(sz)))
                         text(Mood.of(lvl).label, TextStyle.TINY, if (sel) Theme.p.text else Theme.p.textSoft).lp(WRAP, WRAP, t = 4)
                         contentDescription = Mood.of(lvl).label
-                        onClick { e = e.copy(mood = lvl); render() }
+                        onClick { it.haptic(); e = e.copy(mood = lvl); render() }
                     }
                 }
             }
@@ -246,7 +258,8 @@ class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: In
         primaryButton(if (existing == null) "Salvar registro" else "Salvar alterações", Icon.CHECK) {
             if (e.mood == 0) { act.snack("Escolha uma carinha para o seu dia."); return@primaryButton }
             repo.saveMood(e.copy(day = day))
-            act.back()
+            saved = true
+            act.pop()
             act.snack(when (e.mood) { 5 -> "Que dia lindo! ✨"; 4 -> "Que bom! 🌱"; 3 -> "Registrado. 🌿"; else -> "Registrado. Cuide-se com carinho. 💚" })
         }
     }
@@ -259,7 +272,7 @@ class MoodEditorScreen(act: MainActivity, private var day: LocalDate, preset: In
                 text(i.toString(), TextStyle.BODY_BOLD, if (sel) Theme.p.onPrimary else Theme.p.textSoft) {
                     gravity = Gravity.CENTER
                     background = rounded(if (sel) Theme.p.primary else Theme.p.surfaceAlt, dpf(16))
-                    layoutParams = LinearLayout.LayoutParams(0, dp(42), 1f).apply { setMargins(dp(3), 0, dp(3), 0) }
+                    layoutParams = LinearLayout.LayoutParams(0, dp(48), 1f).apply { setMargins(dp(3), 0, dp(3), 0) }
                     onClick { onPick(if (sel) null else i) }
                 }
             }

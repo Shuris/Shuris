@@ -130,7 +130,7 @@ class HomeScreen(act: MainActivity) : Screen(act) {
                         }
                         text(sub, TextStyle.CAPTION, Theme.p.textSoft).lp(WRAP, WRAP, t = 3)
                     }
-                    text("Abrir ›", TextStyle.LABEL, Theme.p.primaryDark) { pad(8, 6); ripple(dpf(12)); onClick { act.switchTab(1) } }
+                    text("Abrir ›", TextStyle.LABEL, Theme.p.primaryDark).link { act.switchTab(1) }
                 }
                 if (positives.isNotEmpty()) progressBar(done / positives.size.toFloat()).lp(MATCH, dp(10), t = 12, b = 6)
                 if (habits.isEmpty()) {
@@ -180,7 +180,7 @@ class HomeScreen(act: MainActivity) : Screen(act) {
             card {
                 horizontal {
                     text("Sua evolução", TextStyle.HEADLINE).lp(0, WRAP, 1f)
-                    text("Análises ›", TextStyle.LABEL, Theme.p.primaryDark) { pad(8, 6); ripple(dpf(12)); onClick { act.switchTab(4) } }
+                    text("Análises ›", TextStyle.LABEL, Theme.p.primaryDark).link { act.switchTab(4) }
                 }
                 if (scores.size < 2) {
                     text("Registre alguns dias para ver sua evolução aqui. 🌱", TextStyle.BODY, Theme.p.textSoft).lp(MATCH, WRAP, t = 8)
